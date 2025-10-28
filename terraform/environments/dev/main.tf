@@ -112,3 +112,4 @@ output "database_name" {
   description = "Database name"
   value       = module.rds.db_name
 }
+
