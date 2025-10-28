@@ -113,5 +113,3 @@ output "database_name" {
   value       = module.rds.db_name
 }
 
-#CI/CD pipeline test
-
