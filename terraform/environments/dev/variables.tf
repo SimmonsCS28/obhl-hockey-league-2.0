@@ -45,3 +45,28 @@ variable "enable_nat_gateway" {
   type        = bool
   default     = true
 }
+
+# RDS Configuration
+variable "db_instance_class" {
+  description = "RDS instance class"
+  type        = string
+  default     = "db.t3.micro"
+}
+
+variable "db_allocated_storage" {
+  description = "RDS allocated storage in GB"
+  type        = number
+  default     = 20
+}
+
+variable "db_deletion_protection" {
+  description = "Enable RDS deletion protection"
+  type        = bool
+  default     = false
+}
+
+variable "db_final_snapshot" {
+  description = "Create final snapshot on RDS deletion"
+  type        = bool
+  default     = false
+}
