@@ -1,0 +1,507 @@
+﻿
+> Task :compileJava
+.\gradlew.bat : E:\pro
+jects\obhl-hockey-leag
+ue-2.0\backend\api-gat
+eway\src\main\java\com
+\obhl\api\controller\T
+eamController.java:11:
+ error: package main.j
+ava.com.obhl.api.dto 
+does not exist
+At line:1 char:1
++ .\gradlew.bat 
+compileJava 2>&1 | 
+Out-File 
+build_output_ps.txt 
+-Encodi ...
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: (E:\project   
+ s\obh... does not    
+ exist:String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+import main.java.com.o
+bhl.api.dto.TeamCreate
+Dto;
+                      
+           ^
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\contro
+ller\TeamController.ja
+va:12: error: package 
+main.java.com.obhl.api
+.dto does not exist
+import main.java.com.o
+bhl.api.dto.TeamRespon
+seDto;
+                      
+           ^
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\contro
+ller\TeamController.ja
+va:13: error: package 
+main.java.com.obhl.api
+.dto does not exist
+import main.java.com.o
+bhl.api.dto.TeamUpdate
+Dto;
+                      
+           ^
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\contro
+ller\TeamController.ja
+va:14: error: package 
+main.java.com.obhl.api
+.service does not 
+exist
+import main.java.com.o
+bhl.api.service.TeamSe
+rvice;
+                      
+               ^
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\contro
+ller\TeamController.ja
+va:21: error: cannot 
+find symbol
+    private final 
+TeamService 
+teamService;
+                  ^
+  symbol:   class 
+TeamService
+  location: class 
+TeamController
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\contro
+ller\TeamController.ja
+va:27: error: cannot 
+find symbol
+    public ResponseEnt
+ity<List<TeamResponseD
+to>> getTeams(
+                      
+         ^
+  symbol:   class 
+TeamResponseDto
+  location: class 
+TeamController
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\contro
+ller\TeamController.ja
+va:38: error: cannot 
+find symbol
+    public ResponseEnt
+ity<TeamResponseDto> 
+getTeam(@PathVariable 
+Long teamId) {
+                      
+    ^
+  symbol:   class 
+TeamResponseDto
+  location: class 
+TeamController
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\contro
+ller\TeamController.ja
+va:48: error: cannot 
+find symbol
+    public 
+ResponseEntity<?> 
+createTeam(@Valid 
+@RequestBody 
+TeamCreateDto 
+teamDto) {
+                      
+                      
+                ^
+  symbol:   class 
+TeamCreateDto
+  location: class 
+TeamController
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\contro
+ller\TeamController.ja
+va:66: error: cannot 
+find symbol
+            @Valid 
+@RequestBody 
+TeamUpdateDto 
+updateDto) {
+                      
+          ^
+  symbol:   class 
+TeamUpdateDto
+  location: class 
+TeamController
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\contro
+ller\TeamController.ja
+va:18: error: cannot 
+find symbol
+@RequiredArgsConstruct
+or
+^
+  symbol:   class 
+TeamService
+  location: class 
+TeamController
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\reposi
+tory\TeamRepository.ja
+va:9: error: package m
+ain.java.com.obhl.api.
+model does not exist
+import main.java.com.o
+bhl.api.model.Team;
+                      
+             ^
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\reposi
+tory\TeamRepository.ja
+va:12: error: cannot 
+find symbol
+public interface 
+TeamRepository 
+extends 
+JpaRepository<Team, 
+Long> {
+                      
+                      
+          ^
+  symbol: class Team
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\reposi
+tory\TeamRepository.ja
+va:14: error: cannot 
+find symbol
+    Optional<Team> 
+findByName(String 
+name);
+             ^
+  symbol:   class Team
+  location: interface 
+TeamRepository
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\reposi
+tory\TeamRepository.ja
+va:16: error: cannot 
+find symbol
+    List<Team> 
+findByActiveTrue();
+         ^
+  symbol:   class Team
+  location: interface 
+TeamRepository
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\reposi
+tory\TeamRepository.ja
+va:18: error: cannot 
+find symbol
+    Optional<Team> fin
+dByIdAndActiveTrue(Lon
+g id);
+             ^
+  symbol:   class Team
+  location: interface 
+TeamRepository
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\servic
+e\TeamService.java:11:
+ error: package main.j
+ava.com.obhl.api.dto 
+does not exist
+import main.java.com.o
+bhl.api.dto.TeamCreate
+Dto;
+                      
+           ^
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\servic
+e\TeamService.java:12:
+ error: package main.j
+ava.com.obhl.api.dto 
+does not exist
+import main.java.com.o
+bhl.api.dto.TeamRespon
+seDto;
+                      
+           ^
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\servic
+e\TeamService.java:13:
+ error: package main.j
+ava.com.obhl.api.dto 
+does not exist
+import main.java.com.o
+bhl.api.dto.TeamUpdate
+Dto;
+                      
+           ^
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\servic
+e\TeamService.java:14:
+ error: package main.j
+ava.com.obhl.api.model
+ does not exist
+import main.java.com.o
+bhl.api.model.Team;
+                      
+             ^
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\servic
+e\TeamService.java:15:
+ error: package main.j
+ava.com.obhl.api.repos
+itory does not exist
+import main.java.com.o
+bhl.api.repository.Tea
+mRepository;
+                      
+                  ^
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\servic
+e\TeamService.java:21:
+ error: cannot find 
+symbol
+    private final 
+TeamRepository 
+teamRepository;
+                  ^
+  symbol:   class 
+TeamRepository
+  location: class 
+TeamService
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\servic
+e\TeamService.java:27:
+ error: cannot find 
+symbol
+    public 
+List<TeamResponseDto> 
+getTeams(int skip, 
+int limit) {
+                ^
+  symbol:   class 
+TeamResponseDto
+  location: class 
+TeamService
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\servic
+e\TeamService.java:40:
+ error: cannot find 
+symbol
+    public Optional<Te
+amResponseDto> 
+getTeamById(Long id) {
+                    ^
+  symbol:   class 
+TeamResponseDto
+  location: class 
+TeamService
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\servic
+e\TeamService.java:49:
+ error: cannot find 
+symbol
+    public Optional<Te
+amResponseDto> 
+getTeamByName(String 
+name) {
+                    ^
+  symbol:   class 
+TeamResponseDto
+  location: class 
+TeamService
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\servic
+e\TeamService.java:58:
+ error: cannot find 
+symbol
+    public 
+TeamResponseDto create
+Team(TeamCreateDto 
+teamDto) {
+                      
+                ^
+  symbol:   class 
+TeamCreateDto
+  location: class 
+TeamService
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\servic
+e\TeamService.java:58:
+ error: cannot find 
+symbol
+    public 
+TeamResponseDto create
+Team(TeamCreateDto 
+teamDto) {
+           ^
+  symbol:   class 
+TeamResponseDto
+  location: class 
+TeamService
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\servic
+e\TeamService.java:84:
+ error: cannot find 
+symbol
+    public 
+TeamResponseDto 
+updateTeam(Long id, 
+TeamUpdateDto 
+updateDto) {
+                      
+                      
+   ^
+  symbol:   class 
+TeamUpdateDto
+  location: class 
+TeamService
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\servic
+e\TeamService.java:84:
+ error: cannot find 
+symbol
+    public 
+TeamResponseDto 
+updateTeam(Long id, 
+TeamUpdateDto 
+updateDto) {
+           ^
+  symbol:   class 
+TeamResponseDto
+  location: class 
+TeamService
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\servic
+e\TeamService.java:138
+: error: cannot find 
+symbol
+    private 
+TeamResponseDto 
+convertToDto(Team 
+team) {
+                      
+                   ^
+  symbol:   class Team
+  location: class 
+TeamService
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\servic
+e\TeamService.java:138
+: error: cannot find 
+symbol
+    private 
+TeamResponseDto 
+convertToDto(Team 
+team) {
+            ^
+  symbol:   class 
+TeamResponseDto
+  location: class 
+TeamService
+E:\projects\obhl-hocke
+y-league-2.0\backend\a
+pi-gateway\src\main\ja
+va\com\obhl\api\servic
+e\TeamService.java:18:
+ error: cannot find 
+symbol
+@RequiredArgsConstruct
+or
+^
+  symbol:   class 
+TeamRepository
+  location: class 
+TeamService
+31 errors
+
+> Task :compileJava FAILED
+
+FAILURE: Build failed 
+with an exception.
+
+* What went wrong:
+Execution failed for 
+task ':compileJava'.
+> Compilation failed; 
+see the compiler 
+error output for 
+details.
+
+* Try:
+> Run with --info 
+option to get more 
+log output.
+> Run with --scan to 
+get full insights.
+
+BUILD FAILED in 6s
+1 actionable task: 1 executed

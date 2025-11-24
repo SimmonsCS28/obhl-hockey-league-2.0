@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: obhl-postgres
+    environment:
+      POSTGRES_DB: obhl_db
+      POSTGRES_USER: obhl_admin
+      POSTGRES_PASSWORD: changeme
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U obhl_admin -d obhl_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - obhl-network
+
+  # API Gateway Service
+  api-gateway:
+    build:
+      context: ./backend/api-gateway
+      dockerfile: Dockerfile
+    container_name: obhl-api-gateway
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/obhl_db
+      SPRING_DATASOURCE_USERNAME: obhl_admin
+      SPRING_DATASOURCE_PASSWORD: changeme
+      ENVIRONMENT: docker
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - obhl-network
+    restart: unless-stopped
+
+  # League Service
+  league-service:
+    build:
+      context: ./backend/league-service
+      dockerfile: Dockerfile
+    container_name: obhl-league-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/obhl_db
+      SPRING_DATASOURCE_USERNAME: obhl_admin
+      SPRING_DATASOURCE_PASSWORD: changeme
+      ENVIRONMENT: docker
+    ports:
+      - "8001:8001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - obhl-network
+    restart: unless-stopped
+
+  # Game Service
+  game-service:
+    build:
+      context: ./backend/game-service
+      dockerfile: Dockerfile
+    container_name: obhl-game-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/obhl_db
+      SPRING_DATASOURCE_USERNAME: obhl_admin
+      SPRING_DATASOURCE_PASSWORD: changeme
+      ENVIRONMENT: docker
+    ports:
+      - "8002:8002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - obhl-network
+    restart: unless-stopped
+
+  # Stats Service
+  stats-service:
+    build:
+      context: ./backend/stats-service
+      dockerfile: Dockerfile
+    container_name: obhl-stats-service
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/obhl_db
+      SPRING_DATASOURCE_USERNAME: obhl_admin
+      SPRING_DATASOURCE_PASSWORD: changeme
+      ENVIRONMENT: docker
+    ports:
+      - "8003:8003"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - obhl-network
+    restart: unless-stopped
+
+networks:
+  obhl-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

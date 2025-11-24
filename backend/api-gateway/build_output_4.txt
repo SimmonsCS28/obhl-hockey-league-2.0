@@ -1,0 +1,152 @@
+
+> Task :compileJava
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\controller\TeamController.java:11: error: package main.java.com.obhl.api.dto does not exist
+import main.java.com.obhl.api.dto.TeamCreateDto;
+                                 ^
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\controller\TeamController.java:12: error: package main.java.com.obhl.api.dto does not exist
+import main.java.com.obhl.api.dto.TeamResponseDto;
+                                 ^
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\controller\TeamController.java:13: error: package main.java.com.obhl.api.dto does not exist
+import main.java.com.obhl.api.dto.TeamUpdateDto;
+                                 ^
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\controller\TeamController.java:14: error: package main.java.com.obhl.api.service does not exist
+import main.java.com.obhl.api.service.TeamService;
+                                     ^
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\controller\TeamController.java:21: error: cannot find symbol
+    private final TeamService teamService;
+                  ^
+  symbol:   class TeamService
+  location: class TeamController
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\controller\TeamController.java:27: error: cannot find symbol
+    public ResponseEntity<List<TeamResponseDto>> getTeams(
+                               ^
+  symbol:   class TeamResponseDto
+  location: class TeamController
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\controller\TeamController.java:38: error: cannot find symbol
+    public ResponseEntity<TeamResponseDto> getTeam(@PathVariable Long teamId) {
+                          ^
+  symbol:   class TeamResponseDto
+  location: class TeamController
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\controller\TeamController.java:48: error: cannot find symbol
+    public ResponseEntity<?> createTeam(@Valid @RequestBody TeamCreateDto teamDto) {
+                                                            ^
+  symbol:   class TeamCreateDto
+  location: class TeamController
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\controller\TeamController.java:66: error: cannot find symbol
+            @Valid @RequestBody TeamUpdateDto updateDto) {
+                                ^
+  symbol:   class TeamUpdateDto
+  location: class TeamController
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\controller\TeamController.java:18: error: cannot find symbol
+@RequiredArgsConstructor
+^
+  symbol:   class TeamService
+  location: class TeamController
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\repository\TeamRepository.java:9: error: package main.java.com.obhl.api.model does not exist
+import main.java.com.obhl.api.model.Team;
+                                   ^
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\repository\TeamRepository.java:12: error: cannot find symbol
+public interface TeamRepository extends JpaRepository<Team, Long> {
+                                                      ^
+  symbol: class Team
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\repository\TeamRepository.java:14: error: cannot find symbol
+    Optional<Team> findByName(String name);
+             ^
+  symbol:   class Team
+  location: interface TeamRepository
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\repository\TeamRepository.java:16: error: cannot find symbol
+    List<Team> findByActiveTrue();
+         ^
+  symbol:   class Team
+  location: interface TeamRepository
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\repository\TeamRepository.java:18: error: cannot find symbol
+    Optional<Team> findByIdAndActiveTrue(Long id);
+             ^
+  symbol:   class Team
+  location: interface TeamRepository
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\service\TeamService.java:11: error: package main.java.com.obhl.api.dto does not exist
+import main.java.com.obhl.api.dto.TeamCreateDto;
+                                 ^
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\service\TeamService.java:12: error: package main.java.com.obhl.api.dto does not exist
+import main.java.com.obhl.api.dto.TeamResponseDto;
+                                 ^
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\service\TeamService.java:13: error: package main.java.com.obhl.api.dto does not exist
+import main.java.com.obhl.api.dto.TeamUpdateDto;
+                                 ^
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\service\TeamService.java:14: error: package main.java.com.obhl.api.model does not exist
+import main.java.com.obhl.api.model.Team;
+                                   ^
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\service\TeamService.java:15: error: package main.java.com.obhl.api.repository does not exist
+import main.java.com.obhl.api.repository.TeamRepository;
+                                        ^
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\service\TeamService.java:21: error: cannot find symbol
+    private final TeamRepository teamRepository;
+                  ^
+  symbol:   class TeamRepository
+  location: class TeamService
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\service\TeamService.java:27: error: cannot find symbol
+    public List<TeamResponseDto> getTeams(int skip, int limit) {
+                ^
+  symbol:   class TeamResponseDto
+  location: class TeamService
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\service\TeamService.java:40: error: cannot find symbol
+    public Optional<TeamResponseDto> getTeamById(Long id) {
+                    ^
+  symbol:   class TeamResponseDto
+  location: class TeamService
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\service\TeamService.java:49: error: cannot find symbol
+    public Optional<TeamResponseDto> getTeamByName(String name) {
+                    ^
+  symbol:   class TeamResponseDto
+  location: class TeamService
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\service\TeamService.java:58: error: cannot find symbol
+    public TeamResponseDto createTeam(TeamCreateDto teamDto) {
+                                      ^
+  symbol:   class TeamCreateDto
+  location: class TeamService
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\service\TeamService.java:58: error: cannot find symbol
+    public TeamResponseDto createTeam(TeamCreateDto teamDto) {
+           ^
+  symbol:   class TeamResponseDto
+  location: class TeamService
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\service\TeamService.java:84: error: cannot find symbol
+    public TeamResponseDto updateTeam(Long id, TeamUpdateDto updateDto) {
+                                               ^
+  symbol:   class TeamUpdateDto
+  location: class TeamService
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\service\TeamService.java:84: error: cannot find symbol
+    public TeamResponseDto updateTeam(Long id, TeamUpdateDto updateDto) {
+           ^
+  symbol:   class TeamResponseDto
+  location: class TeamService
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\service\TeamService.java:138: error: cannot find symbol
+    private TeamResponseDto convertToDto(Team team) {
+                                         ^
+  symbol:   class Team
+  location: class TeamService
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\service\TeamService.java:138: error: cannot find symbol
+    private TeamResponseDto convertToDto(Team team) {
+            ^
+  symbol:   class TeamResponseDto
+  location: class TeamService
+E:\projects\obhl-hockey-league-2.0\backend\api-gateway\src\main\java\com\obhl\api\service\TeamService.java:18: error: cannot find symbol
+@RequiredArgsConstructor
+^
+  symbol:   class TeamRepository
+  location: class TeamService
+31 errors
+
+> Task :compileJava FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':compileJava'.
+> Compilation failed; see the compiler error output for details.
+
+* Try:
+> Run with --info option to get more log output.
+> Run with --scan to get full insights.
+
+BUILD FAILED in 3s
+1 actionable task: 1 executed

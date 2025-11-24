@@ -1,0 +1,119 @@
+package com.obhl.game.dto;
+
+import java.time.LocalDateTime;
+
+import jakarta.validation.constraints.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+public class GameDto {
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Create {
+        @NotNull(message = "Season ID is required")
+        @Positive
+        private Long seasonId;
+
+        @Positive
+        private Long leagueId;
+
+        @NotNull(message = "Home team ID is required")
+        @Positive
+        private Long homeTeamId;
+
+        @NotNull(message = "Away team ID is required")
+        @Positive
+        private Long awayTeamId;
+
+        @NotNull(message = "Game date is required")
+        private LocalDateTime gameDate;
+
+        @Size(max = 200)
+        private String venue;
+
+        @Pattern(regexp = "^(scheduled|in_progress|completed|postponed|cancelled)$")
+        private String status = "scheduled";
+
+        @Min(0)
+        private Integer homeScore = 0;
+
+        @Min(0)
+        private Integer awayScore = 0;
+
+        private Boolean overtime = false;
+
+        private Boolean shootout = false;
+
+        @Min(1)
+        @Max(5)
+        private Integer period = 1;
+
+        private String gameNotes;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Update {
+        @Positive
+        private Long seasonId;
+
+        @Positive
+        private Long leagueId;
+
+        @Positive
+        private Long homeTeamId;
+
+        @Positive
+        private Long awayTeamId;
+
+        private LocalDateTime gameDate;
+
+        @Size(max = 200)
+        private String venue;
+
+        @Pattern(regexp = "^(scheduled|in_progress|completed|postponed|cancelled)$")
+        private String status;
+
+        @Min(0)
+        private Integer homeScore;
+
+        @Min(0)
+        private Integer awayScore;
+
+        private Boolean overtime;
+
+        private Boolean shootout;
+
+        @Min(1)
+        @Max(5)
+        private Integer period;
+
+        private String gameNotes;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Response {
+        private Long id;
+        private Long seasonId;
+        private Long leagueId;
+        private Long homeTeamId;
+        private Long awayTeamId;
+        private LocalDateTime gameDate;
+        private String venue;
+        private String status;
+        private Integer homeScore;
+        private Integer awayScore;
+        private Boolean overtime;
+        private Boolean shootout;
+        private Integer period;
+        private String gameNotes;
+        private LocalDateTime createdAt;
+        private LocalDateTime updatedAt;
+    }
+}

@@ -1,0 +1,132 @@
+package com.obhl.gateway.service;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import lombok.RequiredArgsConstructor;
+import com.obhl.gateway.dto.TeamDto;
+import com.obhl.gateway.model.Team;
+import com.obhl.gateway.repository.TeamRepository;
+
+@Service
+@RequiredArgsConstructor
+public class TeamService {
+
+    private final TeamRepository teamRepository;
+
+    @Transactional(readOnly = true)
+    public List<TeamDto.Response> getTeams(int skip, int limit) {
+        return teamRepository.findByActiveTrue()
+                .stream()
+                .skip(skip)
+                .limit(limit)
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<TeamDto.Response> getTeamById(Long id) {
+        return teamRepository.findById(id).map(this::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<TeamDto.Response> getTeamByName(String name) {
+        return teamRepository.findByName(name).map(this::toResponse);
+    }
+
+    @Transactional
+    public TeamDto.Response createTeam(TeamDto.Create dto) {
+        Team team = new Team();
+        team.setName(dto.getName());
+        team.setAbbreviation(dto.getAbbreviation());
+        team.setSeasonId(dto.getSeasonId());
+        team.setLogoUrl(dto.getLogoUrl());
+        team.setTeamColor(dto.getTeamColor());
+        team.setGmId(dto.getGmId());
+        team.setActive(dto.getActive());
+        team.setPoints(dto.getPoints());
+        team.setWins(dto.getWins());
+        team.setLosses(dto.getLosses());
+        team.setTies(dto.getTies());
+        team.setOvertimeWins(dto.getOvertimeWins());
+        team.setOvertimeLosses(dto.getOvertimeLosses());
+        team.setGoalsFor(dto.getGoalsFor());
+        team.setGoalsAgainst(dto.getGoalsAgainst());
+
+        return toResponse(teamRepository.save(team));
+    }
+
+    @Transactional
+    public TeamDto.Response updateTeam(Long id, TeamDto.Update dto) {
+        Team team = teamRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Team not found"));
+
+        if (dto.getName() != null)
+            team.setName(dto.getName());
+        if (dto.getAbbreviation() != null)
+            team.setAbbreviation(dto.getAbbreviation());
+        if (dto.getSeasonId() != null)
+            team.setSeasonId(dto.getSeasonId());
+        if (dto.getLogoUrl() != null)
+            team.setLogoUrl(dto.getLogoUrl());
+        if (dto.getTeamColor() != null)
+            team.setTeamColor(dto.getTeamColor());
+        if (dto.getGmId() != null)
+            team.setGmId(dto.getGmId());
+        if (dto.getActive() != null)
+            team.setActive(dto.getActive());
+        if (dto.getPoints() != null)
+            team.setPoints(dto.getPoints());
+        if (dto.getWins() != null)
+            team.setWins(dto.getWins());
+        if (dto.getLosses() != null)
+            team.setLosses(dto.getLosses());
+        if (dto.getTies() != null)
+            team.setTies(dto.getTies());
+        if (dto.getOvertimeWins() != null)
+            team.setOvertimeWins(dto.getOvertimeWins());
+        if (dto.getOvertimeLosses() != null)
+            team.setOvertimeLosses(dto.getOvertimeLosses());
+        if (dto.getGoalsFor() != null)
+            team.setGoalsFor(dto.getGoalsFor());
+        if (dto.getGoalsAgainst() != null)
+            team.setGoalsAgainst(dto.getGoalsAgainst());
+
+        return toResponse(teamRepository.save(team));
+    }
+
+    @Transactional
+    public void deleteTeam(Long id) {
+        Team team = teamRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Team not found"));
+        team.setActive(false);
+        teamRepository.save(team);
+    }
+
+    private TeamDto.Response toResponse(Team team) {
+        TeamDto.Response dto = new TeamDto.Response();
+        dto.setId(team.getId());
+        dto.setName(team.getName());
+        dto.setAbbreviation(team.getAbbreviation());
+        dto.setSeasonId(team.getSeasonId());
+        dto.setLogoUrl(team.getLogoUrl());
+        dto.setTeamColor(team.getTeamColor());
+        dto.setGmId(team.getGmId());
+        dto.setActive(team.getActive());
+        dto.setPoints(team.getPoints());
+        dto.setWins(team.getWins());
+        dto.setLosses(team.getLosses());
+        dto.setTies(team.getTies());
+        dto.setOvertimeWins(team.getOvertimeWins());
+        dto.setOvertimeLosses(team.getOvertimeLosses());
+        dto.setGoalsFor(team.getGoalsFor());
+        dto.setGoalsAgainst(team.getGoalsAgainst());
+        dto.setCreatedAt(team.getCreatedAt());
+        dto.setUpdatedAt(team.getUpdatedAt());
+        return dto;
+    }
+}

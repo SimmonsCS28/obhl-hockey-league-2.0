@@ -1,0 +1,11 @@
+{
+    "java.completion.importOrder": [],
+    "java.saveActions.organizeImports": false,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": "never"
+    },
+    "java.project.sourcePaths": [
+        "src/main/java"
+    ],
+    "java.project.outputPath": "bin"
+}

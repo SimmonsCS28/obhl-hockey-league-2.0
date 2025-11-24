@@ -1,0 +1,149 @@
+.game-schedule {
+    padding: 20px;
+}
+
+.schedule-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.schedule-header h2 {
+    font-size: 24px;
+    color: #1e293b;
+    margin: 0;
+}
+
+.filters {
+    display: flex;
+    gap: 8px;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    border: 2px solid #e2e8f0;
+    background: white;
+    color: #64748b;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.filter-btn:hover {
+    background: #f8fafc;
+    border-color: #1e40af;
+}
+
+.filter-btn.active {
+    background: #1e40af;
+    color: white;
+    border-color: #1e40af;
+}
+
+.games-list {
+    display: grid;
+    gap: 16px;
+}
+
+.game-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.game-card:hover {
+    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+    border-color: #1e40af;
+    transform: translateY(-2px);
+}
+
+.game-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.game-date {
+    font-size: 14px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.game-status {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.game-status.scheduled {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.game-status.in_progress {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.game-status.completed {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.game-matchup {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.team {
+    flex: 1;
+    text-align: center;
+}
+
+.team-name {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #1e293b;
+}
+
+.team-score {
+    font-size: 32px;
+    font-weight: 700;
+    color: #1e40af;
+}
+
+.vs {
+    font-size: 14px;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
+.game-venue {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 14px;
+    color: #64748b;
+    text-align: center;
+}
+
+.loading,
+.no-games {
+    text-align: center;
+    padding: 60px 20px;
+    color: #94a3b8;
+    font-size: 16px;
+}
