@@ -8,13 +8,13 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import main.java.com.obhl.game.dto.GameEventDto;
-import main.java.com.obhl.game.dto.GoalValidationRequest;
-import main.java.com.obhl.game.dto.GoalValidationResponse;
-import main.java.com.obhl.game.dto.PenaltyValidationResponse;
-import main.java.com.obhl.game.service.GameEventService;
-import main.java.com.obhl.game.service.GoalLimitValidator;
-import main.java.com.obhl.game.service.PenaltyValidator;
+import com.obhl.game.dto.GameEventDto;
+import com.obhl.game.dto.GoalValidationRequest;
+import com.obhl.game.dto.GoalValidationResponse;
+import com.obhl.game.dto.PenaltyValidationResponse;
+import com.obhl.game.service.GameEventService;
+import com.obhl.game.service.GoalLimitValidator;
+import com.obhl.game.service.PenaltyValidator;
 
 @RestController
 @RequestMapping("${api.v1.prefix}/game-events")

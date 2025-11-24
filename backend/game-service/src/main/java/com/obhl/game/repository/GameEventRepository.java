@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import main.java.com.obhl.game.model.GameEvent;
+import com.obhl.game.model.GameEvent;
 
 @Repository
 public interface GameEventRepository extends JpaRepository<GameEvent, Long> {

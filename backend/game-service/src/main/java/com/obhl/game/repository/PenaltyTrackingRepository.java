@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import main.java.com.obhl.game.model.PenaltyTracking;
+import com.obhl.game.model.PenaltyTracking;
 
 @Repository
 public interface PenaltyTrackingRepository extends JpaRepository<PenaltyTracking, Long> {

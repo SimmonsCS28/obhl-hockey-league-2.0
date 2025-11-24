@@ -7,9 +7,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import main.java.com.obhl.game.dto.PenaltyValidationResponse;
-import main.java.com.obhl.game.model.PenaltyTracking;
-import main.java.com.obhl.game.repository.PenaltyTrackingRepository;
+import com.obhl.game.dto.PenaltyValidationResponse;
+import com.obhl.game.model.PenaltyTracking;
+import com.obhl.game.repository.PenaltyTrackingRepository;
 
 @Service
 @RequiredArgsConstructor

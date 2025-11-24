@@ -112,8 +112,48 @@ public class GameDto {
         private Boolean overtime;
         private Boolean shootout;
         private Integer period;
+        private Boolean endedInOT;
+        private Integer homeTeamPoints;
+        private Integer awayTeamPoints;
         private String gameNotes;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ScoreUpdate {
+        @NotNull
+        @Min(0)
+        private Integer homeScore;
+
+        @NotNull
+        @Min(0)
+        private Integer awayScore;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class FinalizeRequest {
+        @NotNull
+        @Min(0)
+        private Integer homeScore;
+
+        @NotNull
+        @Min(0)
+        private Integer awayScore;
+
+        private Boolean endedInOT = false;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PenaltyValidationRequest {
+        @NotNull
+        @Positive
+        private Long playerId;
     }
 }

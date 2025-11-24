@@ -9,12 +9,12 @@ import org.springframework.web.client.RestTemplate;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import main.java.com.obhl.game.dto.GoalValidationRequest;
-import main.java.com.obhl.game.dto.GoalValidationResponse;
-import main.java.com.obhl.game.model.Game;
-import main.java.com.obhl.game.model.GameEvent;
-import main.java.com.obhl.game.repository.GameEventRepository;
-import main.java.com.obhl.game.repository.GameRepository;
+import com.obhl.game.dto.GoalValidationRequest;
+import com.obhl.game.dto.GoalValidationResponse;
+import com.obhl.game.model.Game;
+import com.obhl.game.model.GameEvent;
+import com.obhl.game.repository.GameEventRepository;
+import com.obhl.game.repository.GameRepository;
 
 @Service
 @RequiredArgsConstructor

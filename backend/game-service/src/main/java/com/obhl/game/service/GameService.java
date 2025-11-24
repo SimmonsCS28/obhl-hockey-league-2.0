@@ -8,15 +8,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
-import main.java.com.obhl.game.dto.GameDto;
-import main.java.com.obhl.game.model.Game;
-import main.java.com.obhl.game.repository.GameRepository;
+import com.obhl.game.dto.GameDto;
+import com.obhl.game.model.Game;
+import com.obhl.game.repository.GameRepository;
 
 @Service
 @RequiredArgsConstructor
 public class GameService {
 
     private final GameRepository gameRepository;
+    private final PointsCalculator pointsCalculator;
 
     @Transactional(readOnly = true)
     public List<GameDto.Response> getAllGames() {
@@ -115,6 +116,49 @@ public class GameService {
         gameRepository.deleteById(id);
     }
 
+    @Transactional
+    public GameDto.Response updateGameScore(Long id, GameDto.ScoreUpdate scoreUpdate) {
+        Game game = gameRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Game not found"));
+
+        game.setHomeScore(scoreUpdate.getHomeScore());
+        game.setAwayScore(scoreUpdate.getAwayScore());
+
+        return toResponse(gameRepository.save(game));
+    }
+
+    @Transactional
+    public GameDto.Response finalizeGame(Long id, GameDto.FinalizeRequest finalizeRequest) {
+        Game game = gameRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Game not found"));
+
+        // Update scores
+        game.setHomeScore(finalizeRequest.getHomeScore());
+        game.setAwayScore(finalizeRequest.getAwayScore());
+        game.setEndedInOT(finalizeRequest.getEndedInOT());
+        game.setStatus("completed");
+
+        // Calculate points using PointsCalculator
+        int homePoints = pointsCalculator.calculatePoints(
+                finalizeRequest.getHomeScore(),
+                finalizeRequest.getAwayScore(),
+                finalizeRequest.getEndedInOT(),
+                0 // TODO: Get actual penalty count from game events
+        );
+
+        int awayPoints = pointsCalculator.calculatePoints(
+                finalizeRequest.getAwayScore(),
+                finalizeRequest.getHomeScore(),
+                finalizeRequest.getEndedInOT(),
+                0 // TODO: Get actual penalty count from game events
+        );
+
+        game.setHomeTeamPoints(homePoints);
+        game.setAwayTeamPoints(awayPoints);
+
+        return toResponse(gameRepository.save(game));
+    }
+
     private GameDto.Response toResponse(Game game) {
         GameDto.Response dto = new GameDto.Response();
         dto.setId(game.getId());
@@ -130,6 +174,9 @@ public class GameService {
         dto.setOvertime(game.getOvertime());
         dto.setShootout(game.getShootout());
         dto.setPeriod(game.getPeriod());
+        dto.setEndedInOT(game.getEndedInOT());
+        dto.setHomeTeamPoints(game.getHomeTeamPoints());
+        dto.setAwayTeamPoints(game.getAwayTeamPoints());
         dto.setGameNotes(game.getGameNotes());
         dto.setCreatedAt(game.getCreatedAt());
         dto.setUpdatedAt(game.getUpdatedAt());
