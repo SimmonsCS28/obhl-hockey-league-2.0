@@ -8,9 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
-import main.java.com.obhl.game.dto.GameDto;
-import main.java.com.obhl.game.model.Game;
-import main.java.com.obhl.game.repository.GameRepository;
+import com.obhl.game.dto.GameDto;
+import com.obhl.game.model.Game;
+import com.obhl.game.repository.GameRepository;
 
 @Service
 @RequiredArgsConstructor
