@@ -8,9 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import lombok.RequiredArgsConstructor;
-import com.obhl.game.dto.GameDto;
-import com.obhl.game.model.Game;
-import com.obhl.game.repository.GameRepository;
+import main.java.com.obhl.game.dto.GameDto;
+import main.java.com.obhl.game.model.Game;
+import main.java.com.obhl.game.repository.GameRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -139,22 +139,7 @@ public class GameService {
         game.setStatus("completed");
 
         // Calculate points using PointsCalculator
-        int homePoints = pointsCalculator.calculatePoints(
-                finalizeRequest.getHomeScore(),
-                finalizeRequest.getAwayScore(),
-                finalizeRequest.getEndedInOT(),
-                0 // TODO: Get actual penalty count from game events
-        );
-
-        int awayPoints = pointsCalculator.calculatePoints(
-                finalizeRequest.getAwayScore(),
-                finalizeRequest.getHomeScore(),
-                finalizeRequest.getEndedInOT(),
-                0 // TODO: Get actual penalty count from game events
-        );
-
-        game.setHomeTeamPoints(homePoints);
-        game.setAwayTeamPoints(awayPoints);
+        pointsCalculator.calculateAndSetPoints(game);
 
         return toResponse(gameRepository.save(game));
     }
