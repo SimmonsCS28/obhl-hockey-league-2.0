@@ -1,7 +1,43 @@
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
+// Helper to get auth token
+const getAuthToken = () => localStorage.getItem('token');
+
+// Helper to add auth header
+const getAuthHeaders = () => {
+    const token = getAuthToken();
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+};
+
 // API client for backend services
 const api = {
+    // ============================================
+    // AUTHENTICATION API
+    // ============================================
+    async login(usernameOrEmail, password) {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usernameOrEmail, password })
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Login failed');
+        }
+        return response.json();
+    },
+
+    async logout() {
+        try {
+            await fetch(`${API_BASE_URL}/auth/logout`, {
+                method: 'POST',
+                headers: { ...getAuthHeaders() }
+            });
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+    },
+
     // ============================================
     // TEAMS API
     // ============================================
@@ -143,7 +179,167 @@ const api = {
 
         console.warn('getPlayersByTeam not yet implemented');
         return Promise.resolve([]);
+    },
+
+    // ============================================
+    // TEAM CRUD OPERATIONS
+    // ============================================
+    async createTeam(data) {
+        const response = await fetch(`${API_BASE_URL}/teams`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || 'Failed to create team');
+        }
+        return response.json();
+    },
+
+    async deleteTeam(id) {
+        const response = await fetch(`${API_BASE_URL}/teams/${id}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to delete team');
+        return response.ok;
+    },
+
+    // ============================================
+    // SEASON CRUD OPERATIONS
+    // ============================================
+    async getSeasons() {
+        const response = await fetch(`${API_BASE_URL}/seasons`, {
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to fetch seasons');
+        return response.json();
+    },
+
+    // ============================================
+    // PLAYER CRUD OPERATIONS
+    // ============================================
+    async getPlayers(params = {}) {
+        const queryString = new URLSearchParams({ ...params, _t: Date.now() }).toString();
+        const url = `${API_BASE_URL}/players${queryString ? `?${queryString}` : ''}`;
+        const response = await fetch(url, {
+            headers: getAuthHeaders(),
+            cache: 'no-store'
+        });
+        if (!response.ok) throw new Error('Failed to fetch players');
+        return response.json();
+    },
+
+    async createPlayer(data) {
+        const response = await fetch(`${API_BASE_URL}/players`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) throw new Error('Failed to create player');
+        return response.json();
+    },
+
+    async updatePlayer(id, data) {
+        const response = await fetch(`${API_BASE_URL}/players/${id}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) throw new Error('Failed to update player');
+        return response.json();
+    },
+
+    async deletePlayer(id) {
+        const response = await fetch(`${API_BASE_URL}/players/${id}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to delete player');
+        return response.ok;
+    },
+
+    // ============================================
+    // SEASON CRUD OPERATIONS
+    // ============================================
+    async getSeasons() {
+        const response = await fetch(`${API_BASE_URL}/seasons`, {
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to fetch seasons');
+        return response.json();
+    },
+
+    async createSeason(data) {
+        const response = await fetch(`${API_BASE_URL}/seasons`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) throw new Error('Failed to create season');
+        return response.json();
+    },
+
+    async updateSeason(id, data) {
+        const response = await fetch(`${API_BASE_URL}/seasons/${id}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) throw new Error('Failed to update season');
+        return response.json();
+    },
+
+    async deleteSeason(id) {
+        const response = await fetch(`${API_BASE_URL}/seasons/${id}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to delete season');
+        return response.ok;
     }
 };
+
+// Export all functions individually
+export const {
+    login,
+    logout,
+    getTeams,
+    getTeam,
+    updateTeam,
+    createTeam,
+    deleteTeam,
+    getGames,
+    updateGameScore,
+    saveGameEvent,
+    finalizeGame,
+    validatePenalty,
+    getPlayersByGame,
+    getPlayersByTeam,
+    getPlayers,
+    createPlayer,
+    updatePlayer,
+    deletePlayer,
+    getSeasons,
+    createSeason,
+    updateSeason,
+    deleteSeason
+} = api;
 
 export default api;

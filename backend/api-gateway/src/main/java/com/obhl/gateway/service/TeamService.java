@@ -7,10 +7,11 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import lombok.RequiredArgsConstructor;
 import com.obhl.gateway.dto.TeamDto;
 import com.obhl.gateway.model.Team;
 import com.obhl.gateway.repository.TeamRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -20,7 +21,7 @@ public class TeamService {
 
     @Transactional(readOnly = true)
     public List<TeamDto.Response> getTeams(int skip, int limit) {
-        return teamRepository.findByActiveTrue()
+        return teamRepository.findAll()
                 .stream()
                 .skip(skip)
                 .limit(limit)

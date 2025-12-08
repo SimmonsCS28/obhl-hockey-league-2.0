@@ -7,10 +7,11 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.obhl.league.dto.SeasonDto;
+import com.obhl.league.model.Season;
+import com.obhl.league.repository.SeasonRepository;
+
 import lombok.RequiredArgsConstructor;
-import main.java.com.obhl.league.dto.SeasonDto;
-import main.java.com.obhl.league.model.Season;
-import main.java.com.obhl.league.repository.SeasonRepository;
 
 @Service
 @RequiredArgsConstructor

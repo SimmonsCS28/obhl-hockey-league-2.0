@@ -4,11 +4,20 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.obhl.stats.model.Player;
+import com.obhl.stats.repository.PlayerRepository;
 
 import lombok.RequiredArgsConstructor;
-import main.java.com.obhl.stats.model.Player;
-import main.java.com.obhl.stats.repository.PlayerRepository;
 
 @RestController
 @RequestMapping("${api.v1.prefix}/players")
@@ -20,16 +29,24 @@ public class PlayerController {
     @GetMapping
     public ResponseEntity<List<Player>> getPlayers(
             @RequestParam(required = false) Long teamId,
+            @RequestParam(required = false) Long seasonId,
             @RequestParam(required = false) String position,
-            @RequestParam(required = false) Boolean active) {
+            @RequestParam(required = false) Boolean active,
+            @RequestParam(required = false) Boolean unassigned) {
 
-        if (teamId != null && active != null && active) {
+        if (Boolean.TRUE.equals(unassigned)) {
+            return ResponseEntity.ok(playerRepository.findByTeamIdIsNull());
+        } else if (seasonId != null && teamId != null) {
+            return ResponseEntity.ok(playerRepository.findBySeasonIdAndTeamId(seasonId, teamId));
+        } else if (seasonId != null) {
+            return ResponseEntity.ok(playerRepository.findBySeasonId(seasonId));
+        } else if (teamId != null && Boolean.TRUE.equals(active)) {
             return ResponseEntity.ok(playerRepository.findByTeamIdAndIsActiveTrue(teamId));
         } else if (teamId != null) {
             return ResponseEntity.ok(playerRepository.findByTeamId(teamId));
         } else if (position != null) {
             return ResponseEntity.ok(playerRepository.findByPosition(position));
-        } else if (active != null && active) {
+        } else if (Boolean.TRUE.equals(active)) {
             return ResponseEntity.ok(playerRepository.findByIsActiveTrue());
         }
 
@@ -52,31 +69,46 @@ public class PlayerController {
     @PatchMapping("/{playerId}")
     public ResponseEntity<Player> updatePlayer(
             @PathVariable Long playerId,
-            @RequestBody Player playerUpdate) {
+            @RequestBody java.util.Map<String, Object> updates) {
         return playerRepository.findById(playerId)
                 .map(existing -> {
-                    if (playerUpdate.getTeamId() != null)
-                        existing.setTeamId(playerUpdate.getTeamId());
-                    if (playerUpdate.getFirstName() != null)
-                        existing.setFirstName(playerUpdate.getFirstName());
-                    if (playerUpdate.getLastName() != null)
-                        existing.setLastName(playerUpdate.getLastName());
-                    if (playerUpdate.getJerseyNumber() != null)
-                        existing.setJerseyNumber(playerUpdate.getJerseyNumber());
-                    if (playerUpdate.getPosition() != null)
-                        existing.setPosition(playerUpdate.getPosition());
-                    if (playerUpdate.getShoots() != null)
-                        existing.setShoots(playerUpdate.getShoots());
-                    if (playerUpdate.getHeightInches() != null)
-                        existing.setHeightInches(playerUpdate.getHeightInches());
-                    if (playerUpdate.getWeightLbs() != null)
-                        existing.setWeightLbs(playerUpdate.getWeightLbs());
-                    if (playerUpdate.getBirthDate() != null)
-                        existing.setBirthDate(playerUpdate.getBirthDate());
-                    if (playerUpdate.getHometown() != null)
-                        existing.setHometown(playerUpdate.getHometown());
-                    if (playerUpdate.getIsActive() != null)
-                        existing.setIsActive(playerUpdate.getIsActive());
+                    if (updates.containsKey("teamId")) {
+                        Object val = updates.get("teamId");
+                        existing.setTeamId(val == null ? null : ((Number) val).longValue());
+                    }
+                    if (updates.containsKey("firstName"))
+                        existing.setFirstName((String) updates.get("firstName"));
+                    if (updates.containsKey("lastName"))
+                        existing.setLastName((String) updates.get("lastName"));
+                    if (updates.containsKey("jerseyNumber")) {
+                        Object val = updates.get("jerseyNumber");
+                        existing.setJerseyNumber(val == null ? null : ((Number) val).intValue());
+                    }
+                    if (updates.containsKey("position"))
+                        existing.setPosition((String) updates.get("position"));
+                    if (updates.containsKey("shoots"))
+                        existing.setShoots((String) updates.get("shoots"));
+                    if (updates.containsKey("seasonId")) {
+                        Object val = updates.get("seasonId");
+                        existing.setSeasonId(val == null ? null : ((Number) val).longValue());
+                    }
+                    if (updates.containsKey("skillRating")) {
+                        Object val = updates.get("skillRating");
+                        existing.setSkillRating(val == null ? 5 : ((Number) val).intValue());
+                    }
+                    if (updates.containsKey("email"))
+                        existing.setEmail((String) updates.get("email"));
+                    if (updates.containsKey("isVeteran"))
+                        existing.setIsVeteran((Boolean) updates.get("isVeteran"));
+                    if (updates.containsKey("birthDate")) {
+                        Object val = updates.get("birthDate");
+                        existing.setBirthDate(val == null ? null : java.time.LocalDate.parse((String) val));
+                    }
+                    if (updates.containsKey("hometown"))
+                        existing.setHometown((String) updates.get("hometown"));
+                    if (updates.containsKey("isActive"))
+                        existing.setIsActive((Boolean) updates.get("isActive"));
+
                     return ResponseEntity.ok(playerRepository.save(existing));
                 })
                 .orElse(ResponseEntity.notFound().build());

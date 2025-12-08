@@ -7,10 +7,11 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.obhl.league.dto.LeagueDto;
+import com.obhl.league.model.League;
+import com.obhl.league.repository.LeagueRepository;
+
 import lombok.RequiredArgsConstructor;
-import main.java.com.obhl.league.dto.LeagueDto;
-import main.java.com.obhl.league.model.League;
-import main.java.com.obhl.league.repository.LeagueRepository;
 
 @Service
 @RequiredArgsConstructor

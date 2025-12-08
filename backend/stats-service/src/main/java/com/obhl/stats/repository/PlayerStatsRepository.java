@@ -6,7 +6,7 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import main.java.com.obhl.stats.model.PlayerStats;
+import com.obhl.stats.model.PlayerStats;
 
 @Repository
 public interface PlayerStatsRepository extends JpaRepository<PlayerStats, Long> {

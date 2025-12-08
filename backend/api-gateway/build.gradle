@@ -29,6 +29,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	
+	// HTTP Client for PATCH support
+	implementation 'org.apache.httpcomponents.client5:httpclient5:5.2.1'
+	
 	// Database
 	runtimeOnly 'org.postgresql:postgresql'
 	

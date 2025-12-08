@@ -1,0 +1,190 @@
+.season-management {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.seasons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 2rem;
+}
+
+.season-card {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.season-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.season-card-header {
+    padding: 1.5rem;
+    color: white;
+    position: relative;
+}
+
+.season-card-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.active-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: rgba(255, 255, 255, 0.3);
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    backdrop-filter: blur(10px);
+}
+
+.season-card-body {
+    padding: 1.5rem;
+}
+
+.season-dates {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.date-item {
+    text-align: center;
+    padding: 1rem;
+    background: #f7fafc;
+    border-radius: 8px;
+}
+
+.date-label {
+    display: block;
+    font-size: 0.75rem;
+    color: #718096;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.date-value {
+    display: block;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #2d3748;
+}
+
+.season-status {
+    text-align: center;
+}
+
+.status-badge.upcoming {
+    background: #bee3f8;
+    color: #2c5282;
+}
+
+.status-badge.active {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.status-badge.completed {
+    background: #e2e8f0;
+    color: #2d3748;
+}
+
+.season-card-actions {
+    display: flex;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    background: #f7fafc;
+    border-top: 1px solid #e2e8f0;
+}
+
+.season-card-actions .btn-edit,
+.season-card-actions .btn-delete {
+    flex: 1;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.season-card-actions .btn-edit {
+    background: #4299e1;
+    color: white;
+}
+
+.season-card-actions .btn-edit:hover {
+    background: #3182ce;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(66, 153, 225, 0.3);
+}
+
+.season-card-actions .btn-delete {
+    background: #fc8181;
+    color: white;
+}
+
+.season-card-actions .btn-delete:hover {
+    background: #f56565;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(252, 129, 129, 0.3);
+}
+
+.season-form {
+    padding: 1.5rem;
+}
+
+.delete-modal .modal-body {
+    padding: 2rem 1.5rem;
+    text-align: center;
+}
+
+.delete-modal .modal-body p {
+    margin: 0.5rem 0;
+    font-size: 1.1rem;
+    color: #2d3748;
+}
+
+.delete-modal .modal-body .warning-text {
+    color: #e53e3e;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .seasons-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,0 +1,32 @@
+.login-footer {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    text-align: center;
+}
+
+.temp-password-note {
+    background: #fef5e7;
+    color: #d68910;
+    padding: 0.75rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    margin: 0 0 0.75rem 0;
+    border-left: 3px solid #f39c12;
+}
+
+.help-text {
+    color: #718096;
+    font-size: 0.85rem;
+    margin: 0;
+}
+
+@media (max-width: 480px) {
+    .login-card {
+        padding: 2rem 1.5rem;
+    }
+
+    .login-header h1 {
+        font-size: 1.75rem;
+    }
+}

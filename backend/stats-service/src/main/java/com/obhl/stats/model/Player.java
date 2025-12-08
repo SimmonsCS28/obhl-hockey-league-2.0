@@ -6,7 +6,12 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -25,6 +30,15 @@ public class Player {
     @Column(name = "team_id")
     private Long teamId;
 
+    @Column(name = "season_id")
+    private Long seasonId;
+
+    @Column(unique = true)
+    private String email;
+
+    @Column(name = "is_veteran")
+    private Boolean isVeteran = false;
+
     @Column(name = "first_name", nullable = false, length = 50)
     private String firstName;
 
@@ -39,12 +53,6 @@ public class Player {
 
     @Column(length = 5)
     private String shoots;
-
-    @Column(name = "height_inches")
-    private Integer heightInches;
-
-    @Column(name = "weight_lbs")
-    private Integer weightLbs;
 
     @Column(name = "birth_date")
     private LocalDate birthDate;
@@ -65,4 +73,20 @@ public class Player {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public Boolean getIsVeteran() {
+        return isVeteran;
+    }
+
+    public void setIsVeteran(Boolean isVeteran) {
+        this.isVeteran = isVeteran;
+    }
 }
