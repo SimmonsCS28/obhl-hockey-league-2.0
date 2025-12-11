@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import './AdminDashboard.css';
+import DraftDashboard from './DraftDashboard';
 import PlayerManagement from './PlayerManagement';
 import SeasonManagement from './SeasonManagement';
 import TeamManagement from './TeamManagement';
@@ -47,6 +48,12 @@ function AdminDashboard() {
                     >
                         Seasons
                     </button>
+                    <button
+                        className={`nav-tab ${activeTab === 'draft' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('draft')}
+                    >
+                        Draft Tool
+                    </button>
                 </div>
             </nav>
 
@@ -54,6 +61,7 @@ function AdminDashboard() {
                 {activeTab === 'teams' && <TeamManagement />}
                 {activeTab === 'players' && <PlayerManagement />}
                 {activeTab === 'seasons' && <SeasonManagement />}
+                {activeTab === 'draft' && <DraftDashboard />}
             </main>
         </div>
     );
