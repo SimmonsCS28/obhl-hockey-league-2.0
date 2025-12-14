@@ -17,6 +17,16 @@ configurations {
 	}
 }
 
+ext {
+	set('springCloudVersion', "2023.0.0")
+}
+
+dependencyManagement {
+	imports {
+		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+	}
+}
+
 repositories {
 	mavenCentral()
 }
@@ -28,6 +38,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:4.1.0'
 	
 	// HTTP Client for PATCH support
 	implementation 'org.apache.httpcomponents.client5:httpclient5:5.2.1'
