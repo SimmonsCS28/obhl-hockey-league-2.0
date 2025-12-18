@@ -196,9 +196,57 @@ const DraftDashboard = () => {
         );
     };
 
+    // Handler for assigning GMs to teams
+    const handleAssignGMs = () => {
+        // Get all GMs from player pool
+        const gms = playerPool.filter(player => player.isGm);
+
+        // Check if we have enough GMs
+        if (gms.length < teams.length) {
+            setWarning(`Not enough GMs! Found ${gms.length} GMs but need ${teams.length} (one per team)`);
+            return;
+        }
+
+        // Shuffle GMs for random assignment
+        const shuffledGMs = [...gms].sort(() => Math.random() - 0.5);
+
+        // Assign one GM to each team
+        const updatedTeams = teams.map((team, index) => ({
+            ...team,
+            players: [...team.players, shuffledGMs[index]]
+        }));
+
+        // Remove assigned GMs from player pool
+        const assignedGMEmails = shuffledGMs.slice(0, teams.length).map(gm => gm.email);
+        const updatedPool = playerPool.filter(player => !assignedGMEmails.includes(player.email));
+
+        setTeams(updatedTeams);
+        setPlayerPool(updatedPool);
+        setWarning(`Successfully assigned ${teams.length} GMs to teams!`);
+    };
+
+    // Validation: Check if each team has at least one GM
+    const validateGMAssignments = () => {
+        const teamsWithoutGM = teams.filter(team =>
+            !team.players.some(player => player.isGm)
+        );
+
+        if (teamsWithoutGM.length > 0) {
+            const teamNames = teamsWithoutGM.map(t => t.name).join(', ');
+            setWarning(`Error: The following teams need at least one GM: ${teamNames}`);
+            return false;
+        }
+        return true;
+    };
+
     // ===== Draft Save/Load Handlers =====
 
     const handleSaveDraft = async () => {
+        // Validate GM assignments
+        if (!validateGMAssignments()) {
+            return;
+        }
+
         try {
             const draftData = {
                 seasonName,
@@ -311,6 +359,11 @@ const DraftDashboard = () => {
             return;
         }
 
+        // Validate GM assignments
+        if (!validateGMAssignments()) {
+            return;
+        }
+
         try {
             const response = await fetch(
                 `http://localhost:8000/api/league/draft/${currentDraftSaveId}/complete`,
@@ -327,11 +380,6 @@ const DraftDashboard = () => {
             console.error('Error finalizing draft:', error);
             setWarning('Error finalizing draft');
         }
-    };
-
-    const handleAssignGMs = () => {
-        console.log('Assign GMs - Feature coming soon');
-        setWarning('Assign GMs feature coming soon!');
     };
 
 
@@ -649,8 +697,22 @@ const DraftDashboard = () => {
                 <div className="player-header">
                     <span className="player-name">{player.firstName} {player.lastName}</span>
                     <div className="player-badges">
-                        {player.isGm && <span className="badge badge-gm">GM</span>}
-                        {player.isRef && <span className="badge badge-ref">REF</span>}
+                        <span
+                            className={`badge ${player.isGm ? 'badge-gm' : 'badge-gm-inactive'}`}
+                            onClick={() => updatePlayerField(player.email, 'isGm', !player.isGm, source, teamId)}
+                            title="Click to toggle GM status"
+                            style={{ cursor: 'pointer' }}
+                        >
+                            GM
+                        </span>
+                        <span
+                            className={`badge ${player.isRef ? 'badge-ref' : 'badge-ref-inactive'}`}
+                            onClick={() => updatePlayerField(player.email, 'isRef', !player.isRef, source, teamId)}
+                            title="Click to toggle Ref status"
+                            style={{ cursor: 'pointer' }}
+                        >
+                            REF
+                        </span>
                     </div>
                 </div>
                 <div className="player-field">
@@ -689,7 +751,14 @@ const DraftDashboard = () => {
                 </div>
                 <div className="player-field">
                     <label>Buddies:</label>
-                    <span className="buddy-names">{buddyNames || 'None'}</span>
+                    <input
+                        type="text"
+                        value={player.buddyPick || ''}
+                        onChange={(e) => updatePlayerField(player.email, 'buddyPick', e.target.value, source, teamId)}
+                        placeholder="Enter buddy names"
+                        className="player-select"
+                        style={{ flex: 1 }}
+                    />
                 </div>
             </div>
         );

@@ -633,3 +633,47 @@ button {
     margin-top: 1.5rem;
     justify-content: center;
 }
+
+/* GM/Ref Badge Styles */
+.badge {
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    margin-left: 0.25rem;
+    transition: all 0.2s ease;
+}
+
+.badge-gm {
+    background-color: #f59e0b;
+    color: white;
+}
+
+.badge-gm-inactive {
+    background-color: #4a5568;
+    color: #a0aec0;
+    opacity: 0.6;
+}
+
+.badge-gm:hover,
+.badge-gm-inactive:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
+}
+
+.badge-ref {
+    background-color: #10b981;
+    color: white;
+}
+
+.badge-ref-inactive {
+    background-color: #4a5568;
+    color: #a0aec0;
+    opacity: 0.6;
+}
+
+.badge-ref:hover,
+.badge-ref-inactive:hover {
+    opacity: 0.8;
+    transform: scale(1.05);
+}
