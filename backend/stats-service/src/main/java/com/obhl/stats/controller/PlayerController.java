@@ -66,6 +66,12 @@ public class PlayerController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
+    @PostMapping("/batch")
+    public ResponseEntity<List<Player>> createPlayers(@RequestBody List<Player> players) {
+        List<Player> created = playerRepository.saveAll(players);
+        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
     @PatchMapping("/{playerId}")
     public ResponseEntity<Player> updatePlayer(
             @PathVariable Long playerId,

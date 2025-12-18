@@ -44,7 +44,17 @@ public class ExcelParserService {
                 player.put("email", getCellValue(currentRow.getCell(2)));
                 player.put("position", getCellValue(currentRow.getCell(3)));
                 player.put("skillRating", getNumericCellValue(currentRow.getCell(4)));
-                player.put("isVeteran", getBooleanCellValue(currentRow.getCell(5)));
+
+                // Parse Veteran Status column (can be "veteran", "rookie", etc.) and set both
+                // status and isVeteran
+                String statusRaw = getCellValue(currentRow.getCell(5));
+                // Capitalize first letter for display (e.g., "rookie" -> "Rookie")
+                String status = (statusRaw != null && !statusRaw.isEmpty())
+                        ? statusRaw.substring(0, 1).toUpperCase() + statusRaw.substring(1).toLowerCase()
+                        : "Rookie";
+                player.put("status", status);
+                player.put("isVeteran", statusRaw != null && statusRaw.equalsIgnoreCase("veteran"));
+
                 player.put("buddyPick", getCellValue(currentRow.getCell(6)));
                 player.put("isRef", getBooleanCellValue(currentRow.getCell(7)));
                 player.put("isGm", getBooleanCellValue(currentRow.getCell(8)));
