@@ -23,6 +23,12 @@ const DraftDashboard = () => {
     const [teamSortOptions, setTeamSortOptions] = useState({});
     const [editingTeamId, setEditingTeamId] = useState(null);
 
+    // Draft save state
+    const [currentDraftSaveId, setCurrentDraftSaveId] = useState(null);
+    const [showResumePrompt, setShowResumePrompt] = useState(false);
+    const [savedDraft, setSavedDraft] = useState(null);
+
+
     // Color options with exact hex codes
     const TEAM_COLORS = {
         'White': '#f0f0f0',
@@ -60,6 +66,28 @@ const DraftDashboard = () => {
             setTeamSortOptions(sortOpts);
         }
     }, [teamCount, isLive]);
+
+    // Check for saved drafts on mount
+    useEffect(() => {
+        checkForSavedDraft();
+    }, []);
+
+    const checkForSavedDraft = async () => {
+        try {
+            const response = await fetch('http://localhost:8000/api/league/draft/latest');
+            if (response.ok && response.status !== 204) {
+                const draft = await response.json();
+                if (draft && draft.status === 'saved') {
+                    setSavedDraft(draft);
+                    setShowResumePrompt(true);
+                }
+            }
+            // If 204 No Content, no drafts exist - this is normal, do nothing
+        } catch (error) {
+            console.error('Error checking for saved draft:', error);
+        }
+    };
+
 
     // Handlers
     const handleFileUpload = async (e, type) => {
@@ -99,44 +127,6 @@ const DraftDashboard = () => {
         }
         setIsLive(true);
         setWarning('');
-    };
-
-    const handleAssignGMs = () => {
-        const gms = playerPool.filter(p => p.isGm);
-        if (gms.length === 0) {
-            setWarning('No GMs found in the player pool.');
-            return;
-        }
-
-        const newTeams = teams.map(t => ({ ...t, players: [...t.players] }));
-        const assignedEmails = new Set();
-
-        gms.forEach((gm, index) => {
-            const teamIndex = index % newTeams.length;
-            newTeams[teamIndex].players.push(gm);
-            assignedEmails.add(gm.email);
-        });
-
-        setTeams(newTeams);
-        setPlayerPool(prev => prev.filter(p => !assignedEmails.has(p.email)));
-        setWarning(`Assigned ${gms.length} GMs to teams.`);
-    };
-
-    const handleSaveDraft = () => {
-        const state = { seasonName, teamCount, playerPool, teams, isLive, teamColors, teamSortOptions, viewMode };
-        DraftService.saveDraftState(state);
-    };
-
-    const handleFinalizeDraft = async () => {
-        if (!window.confirm('Are you sure you want to finalize the draft? This will create the season and teams in the database.')) return;
-
-        try {
-            const state = { seasonName, teamCount, playerPool, teams, isLive };
-            await DraftService.finalizeDraft(state);
-            setWarning('Draft finalized successfully!');
-        } catch (error) {
-            setWarning(`Finalization failed: ${error.message}`);
-        }
     };
 
     const handleReset = () => {
@@ -205,6 +195,145 @@ const DraftDashboard = () => {
             )
         );
     };
+
+    // ===== Draft Save/Load Handlers =====
+
+    const handleSaveDraft = async () => {
+        try {
+            const draftData = {
+                seasonName,
+                teamCount,
+                isLive,
+                teams: teams.map(team => ({
+                    id: team.id,
+                    name: team.name,
+                    color: teamColors[team.id] || 'White',
+                    sortOption: teamSortOptions[team.id] || 'Position + Rating',
+                    players: team.players.map(player => ({
+                        ...player,
+                        // Ensure all player properties are included
+                        firstName: player.firstName,
+                        lastName: player.lastName,
+                        email: player.email,
+                        position: player.position,
+                        skillRating: player.skillRating,
+                        isVeteran: player.isVeteran,
+                        isGm: player.isGm || false,
+                        isRef: player.isRef || false,
+                        status: player.status || (player.isVeteran ? 'Veteran' : 'Rookie'),
+                        buddyEmail: player.buddyEmail || null
+                    }))
+                })),
+                playerPool: playerPool.map(player => ({
+                    ...player,
+                    firstName: player.firstName,
+                    lastName: player.lastName,
+                    email: player.email,
+                    position: player.position,
+                    skillRating: player.skillRating,
+                    isVeteran: player.isVeteran,
+                    isGm: player.isGm || false,
+                    isRef: player.isRef || false,
+                    status: player.status || (player.isVeteran ? 'Veteran' : 'Rookie'),
+                    buddyEmail: player.buddyEmail || null
+                }))
+            };
+
+            // Use PUT to update if we have an ID, POST to create new
+            const url = currentDraftSaveId
+                ? `http://localhost:8000/api/league/draft/save/${currentDraftSaveId}`
+                : 'http://localhost:8000/api/league/draft/save';
+            const method = currentDraftSaveId ? 'PUT' : 'POST';
+
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(draftData)
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                setCurrentDraftSaveId(result.id);
+                const action = currentDraftSaveId ? 'updated' : 'saved';
+                setWarning(`Draft "${seasonName}" ${action} successfully! (ID: ${result.id})`);
+            } else {
+                setWarning('Failed to save draft');
+            }
+        } catch (error) {
+            console.error('Error saving draft:', error);
+            setWarning('Error saving draft. Check console for details.');
+        }
+    };
+
+    const handleResumeDraft = async () => {
+        if (!savedDraft) return;
+
+        try {
+            const data = JSON.parse(savedDraft.draftData);
+
+            // Restore team colors and sort options FIRST
+            const colors = {};
+            const sortOpts = {};
+            data.teams.forEach(team => {
+                colors[team.id] = team.color;
+                sortOpts[team.id] = team.sortOption;
+            });
+
+            setTeamColors(colors);
+            setTeamSortOptions(sortOpts);
+
+            // Then restore other state
+            setSeasonName(data.seasonName);
+            setTeamCount(data.teamCount);
+            setIsLive(data.isLive || false);
+            setTeams(data.teams);
+            setPlayerPool(data.playerPool || []);
+
+            setCurrentDraftSaveId(savedDraft.id);
+            setShowResumePrompt(false);
+            setWarning('Draft resumed successfully!');
+        } catch (error) {
+            console.error('Error resuming draft:', error);
+            setWarning('Error resuming draft');
+        }
+    };
+
+    const handleStartNewDraft = () => {
+        setShowResumePrompt(false);
+        setSavedDraft(null);
+        setCurrentDraftSaveId(null); // Clear ID so next save creates new draft
+        // Keep current empty state
+    };
+
+    const handleFinalizeDraft = async () => {
+        if (!currentDraftSaveId) {
+            setWarning('Please save the draft first');
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `http://localhost:8000/api/league/draft/${currentDraftSaveId}/complete`,
+                { method: 'PUT' }
+            );
+
+            if (response.ok) {
+                setWarning('Draft finalized successfully!');
+                setCurrentDraftSaveId(null);
+            } else {
+                setWarning('Failed to finalize draft');
+            }
+        } catch (error) {
+            console.error('Error finalizing draft:', error);
+            setWarning('Error finalizing draft');
+        }
+    };
+
+    const handleAssignGMs = () => {
+        console.log('Assign GMs - Feature coming soon');
+        setWarning('Assign GMs feature coming soon!');
+    };
+
 
 
     // Fallback download function for browsers without File System Access API
@@ -633,6 +762,34 @@ const DraftDashboard = () => {
 
     return (
         <div className={`draft-dashboard ${viewMode}`}>
+            {/* Resume Draft Prompt Modal */}
+            {showResumePrompt && savedDraft && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h2>Resume Draft?</h2>
+                        <p>
+                            Found saved draft: <strong>{JSON.parse(savedDraft.draftData).seasonName}</strong>
+                            <br />
+                            Last saved: {new Date(savedDraft.updatedAt).toLocaleString()}
+                        </p>
+                        <div className="modal-actions">
+                            <button
+                                className="btn-draft btn-start"
+                                onClick={handleResumeDraft}
+                            >
+                                Resume Draft
+                            </button>
+                            <button
+                                className="btn-draft btn-secondary"
+                                onClick={handleStartNewDraft}
+                            >
+                                Start New Draft
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Top Controls */}
             <div className="draft-controls">
                 <div className="control-group">
