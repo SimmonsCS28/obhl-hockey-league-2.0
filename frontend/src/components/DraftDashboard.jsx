@@ -166,8 +166,8 @@ const DraftDashboard = () => {
         setTeams(newTeams);
         setTeamColors(colors);
         setTeamSortOptions(sortOpts);
-        setIsLive(false);
-        setWarning('Draft reset - all players returned to pool. Player edits preserved.');
+        // Keep isLive as true - draft stays active
+        setWarning('Draft board reset - all players returned to pool.');
         console.log('=== RESET COMPLETE ===');
     };
 
@@ -198,8 +198,12 @@ const DraftDashboard = () => {
 
     // Handler for assigning GMs to teams
     const handleAssignGMs = () => {
-        // Get all GMs from player pool
-        const gms = playerPool.filter(player => player.isGm);
+        // Get all GMs from player pool AND teams
+        const allPlayers = [...playerPool];
+        teams.forEach(team => {
+            allPlayers.push(...team.players);
+        });
+        const gms = allPlayers.filter(player => player.isGm);
 
         // Check if we have enough GMs
         if (gms.length < teams.length) {
@@ -207,22 +211,49 @@ const DraftDashboard = () => {
             return;
         }
 
-        // Shuffle GMs for random assignment
-        const shuffledGMs = [...gms].sort(() => Math.random() - 0.5);
+        // Find teams that don't have a GM yet
+        const teamsWithoutGM = teams.filter(team =>
+            !team.players.some(player => player.isGm)
+        );
 
-        // Assign one GM to each team
-        const updatedTeams = teams.map((team, index) => ({
-            ...team,
-            players: [...team.players, shuffledGMs[index]]
-        }));
+        if (teamsWithoutGM.length === 0) {
+            setWarning('All teams already have a GM assigned!');
+            return;
+        }
+
+        // Get GMs that are still in the player pool (not already on teams)
+        const availableGMs = gms.filter(gm =>
+            playerPool.some(p => p.email === gm.email)
+        );
+
+        if (availableGMs.length < teamsWithoutGM.length) {
+            setWarning(`Not enough GMs in player pool! Found ${availableGMs.length} available GMs but need ${teamsWithoutGM.length} more (${teamsWithoutGM.length} teams without GMs).`);
+            return;
+        }
+
+        // Shuffle available GMs for random assignment
+        const shuffledGMs = [...availableGMs].sort(() => Math.random() - 0.5);
+
+        // Assign one GM to each team that doesn't have one
+        let gmIndex = 0;
+        const updatedTeams = teams.map(team => {
+            const hasGM = team.players.some(player => player.isGm);
+            if (!hasGM && gmIndex < shuffledGMs.length) {
+                return {
+                    ...team,
+                    players: [...team.players, shuffledGMs[gmIndex++]]
+                };
+            }
+            return team;
+        });
 
         // Remove assigned GMs from player pool
-        const assignedGMEmails = shuffledGMs.slice(0, teams.length).map(gm => gm.email);
+        const assignedGMEmails = shuffledGMs.slice(0, teamsWithoutGM.length).map(gm => gm.email);
         const updatedPool = playerPool.filter(player => !assignedGMEmails.includes(player.email));
 
         setTeams(updatedTeams);
         setPlayerPool(updatedPool);
-        setWarning(`Successfully assigned ${teams.length} GMs to teams!`);
+        setWarning(`Successfully assigned ${teamsWithoutGM.length} GMs to teams without GMs!`);
     };
 
     // Validation: Check if each team has at least one GM
@@ -691,8 +722,8 @@ const DraftDashboard = () => {
             <div
                 key={player.email}
                 className="player-card detailed"
-                draggable
-                onDragStart={(e) => handleDragStart(e, player, source)}
+                draggable={isLive}
+                onDragStart={(e) => isLive ? handleDragStart(e, player, source) : null}
             >
                 <div className="player-header">
                     <span className="player-name">{player.firstName} {player.lastName}</span>
@@ -721,6 +752,7 @@ const DraftDashboard = () => {
                         value={player.position}
                         onChange={(e) => updatePlayerField(player.email, 'position', e.target.value, source, teamId)}
                         className="player-select"
+                        disabled={!isLive}
                     >
                         <option value="Forward">Forward</option>
                         <option value="Defense">Defense</option>
@@ -732,6 +764,7 @@ const DraftDashboard = () => {
                         value={player.skillRating}
                         onChange={(e) => updatePlayerField(player.email, 'skillRating', parseInt(e.target.value), source, teamId)}
                         className="player-select"
+                        disabled={!isLive}
                     >
                         {[...Array(10)].map((_, i) => (
                             <option key={i + 1} value={i + 1}>{i + 1}</option>
@@ -744,6 +777,7 @@ const DraftDashboard = () => {
                         value={player.status || 'Rookie'}
                         onChange={(e) => updatePlayerField(player.email, 'status', e.target.value, source, teamId)}
                         className="player-select"
+                        disabled={!isLive}
                     >
                         <option value="Veteran">Veteran</option>
                         <option value="Rookie">Rookie</option>
@@ -758,6 +792,7 @@ const DraftDashboard = () => {
                         placeholder="Enter buddy names"
                         className="player-select"
                         style={{ flex: 1 }}
+                        disabled={!isLive}
                     />
                 </div>
             </div>
@@ -772,8 +807,8 @@ const DraftDashboard = () => {
             <div
                 key={player.email}
                 className="player-card balanced"
-                draggable
-                onDragStart={(e) => handleDragStart(e, player, source)}
+                draggable={isLive}
+                onDragStart={(e) => isLive ? handleDragStart(e, player, source) : null}
             >
                 <div className="player-info-balanced">
                     <span className="player-name-balanced">
@@ -802,8 +837,8 @@ const DraftDashboard = () => {
             <div
                 key={player.email}
                 className="player-card overview"
-                draggable
-                onDragStart={(e) => handleDragStart(e, player, source)}
+                draggable={isLive}
+                onDragStart={(e) => isLive ? handleDragStart(e, player, source) : null}
                 title={`${player.firstName} ${player.lastName} - ${player.position} (${player.skillRating}) - ${player.status || 'Rookie'}`}
             >
                 <span className="player-initials">{initials}</span>
