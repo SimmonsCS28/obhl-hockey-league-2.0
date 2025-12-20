@@ -28,6 +28,9 @@ const DraftDashboard = () => {
     const [showResumePrompt, setShowResumePrompt] = useState(false);
     const [savedDraft, setSavedDraft] = useState(null);
 
+    // Buddy pick map: email → array of buddy emails
+    const [buddyPickMap, setBuddyPickMap] = useState({});
+
 
     // Color options with exact hex codes
     const TEAM_COLORS = {
@@ -72,6 +75,13 @@ const DraftDashboard = () => {
         checkForSavedDraft();
     }, []);
 
+    // Rebuild buddy pick map when players move between pool and teams
+    useEffect(() => {
+        if (playerPool.length > 0 || teams.some(t => t.players && t.players.length > 0)) {
+            buildBuddyPickMap(playerPool, teams);
+        }
+    }, [playerPool, teams]);
+
     const checkForSavedDraft = async () => {
         try {
             const response = await fetch('http://localhost:8000/api/league/draft/latest');
@@ -88,6 +98,46 @@ const DraftDashboard = () => {
         }
     };
 
+    // Build buddy pick map from player data
+    const buildBuddyPickMap = (players, teamsData = null) => {
+        // Collect all players from pool AND teams
+        const allPlayers = [...players];
+        if (teamsData) {
+            teamsData.forEach(team => {
+                if (team.players) {
+                    allPlayers.push(...team.players);
+                }
+            });
+        }
+
+        // First, build a name→email lookup map (case-insensitive)
+        const nameToEmail = {};
+        allPlayers.forEach(player => {
+            const fullName = `${player.firstName} ${player.lastName}`.toLowerCase().trim();
+            nameToEmail[fullName] = player.email;
+        });
+
+        // Now build email→buddy emails map
+        const buddyMap = {};
+        allPlayers.forEach(player => {
+            if (player.buddyPick && player.buddyPick.trim() !== '') {
+                // Split by comma and trim each buddy name
+                const buddyNames = player.buddyPick.split(',').map(name => name.trim().toLowerCase());
+
+                // Resolve buddy names to emails
+                const buddyEmails = buddyNames
+                    .map(name => nameToEmail[name])
+                    .filter(email => email !== undefined); // Remove unmatched names
+
+                if (buddyEmails.length > 0) {
+                    buddyMap[player.email] = buddyEmails;
+                }
+            }
+        });
+
+        setBuddyPickMap(buddyMap);
+        console.log('Buddy pick map built:', buddyMap);
+    };
 
     // Handlers
     const handleFileUpload = async (e, type) => {
@@ -98,6 +148,10 @@ const DraftDashboard = () => {
             if (type === 'registration') {
                 const players = await DraftService.uploadRegistration(file);
                 setPlayerPool(players);
+
+                // Build buddy pick map
+                buildBuddyPickMap(players);
+
                 setWarning('');
             } else if (type === 'draft') {
                 const state = await DraftService.loadDraftState(file);
@@ -109,6 +163,10 @@ const DraftDashboard = () => {
                 setTeamColors(state.teamColors || {});
                 setTeamSortOptions(state.teamSortOptions || {});
                 setViewMode(state.viewMode || 'balanced');
+
+                // Build buddy pick map from both pool and teams
+                buildBuddyPickMap(state.playerPool || [], state.teams || []);
+
                 setWarning('');
             }
         } catch (error) {
@@ -254,6 +312,78 @@ const DraftDashboard = () => {
         setTeams(updatedTeams);
         setPlayerPool(updatedPool);
         setWarning(`Successfully assigned ${teamsWithoutGM.length} GMs to teams without GMs!`);
+    };
+
+    // Handler for assigning GM buddy picks to teams
+    const handleAssignGMBuddies = () => {
+        // Find all GMs currently on teams
+        const gmsOnTeams = [];
+        teams.forEach(team => {
+            const teamGMs = team.players.filter(player => player.isGm);
+            teamGMs.forEach(gm => {
+                gmsOnTeams.push({ gm, teamId: team.id });
+            });
+        });
+
+        if (gmsOnTeams.length === 0) {
+            setWarning('No GMs assigned to teams yet! Assign GMs first.');
+            return;
+        }
+
+        let totalAssigned = 0;
+        let warnings = [];
+        const updatedTeams = [...teams];
+
+        // For each GM on a team, find and assign their buddies
+        gmsOnTeams.forEach(({ gm, teamId }) => {
+            const buddyEmails = buddyPickMap[gm.email];
+
+            if (!buddyEmails || buddyEmails.length === 0) {
+                return; // GM has no buddy picks
+            }
+
+            // Find buddies still in player pool
+            const availableBuddies = buddyEmails
+                .map(email => playerPool.find(p => p.email === email))
+                .filter(buddy => buddy !== undefined);
+
+            if (availableBuddies.length === 0) {
+                warnings.push(`${gm.firstName} ${gm.lastName}'s buddies are already assigned or not found`);
+                return;
+            }
+
+            // Assign buddies to the same team as the GM
+            const teamIndex = updatedTeams.findIndex(t => t.id === teamId);
+            if (teamIndex !== -1) {
+                updatedTeams[teamIndex] = {
+                    ...updatedTeams[teamIndex],
+                    players: [...updatedTeams[teamIndex].players, ...availableBuddies]
+                };
+                totalAssigned += availableBuddies.length;
+            }
+        });
+
+        if (totalAssigned === 0) {
+            setWarning('No buddy picks were available to assign. ' + (warnings.length > 0 ? warnings.join('. ') : ''));
+            return;
+        }
+
+        // Remove assigned buddies from player pool
+        const assignedEmails = [];
+        gmsOnTeams.forEach(({ gm }) => {
+            const buddyEmails = buddyPickMap[gm.email] || [];
+            assignedEmails.push(...buddyEmails);
+        });
+        const updatedPool = playerPool.filter(player => !assignedEmails.includes(player.email));
+
+        setTeams(updatedTeams);
+        setPlayerPool(updatedPool);
+
+        let message = `Successfully assigned ${totalAssigned} buddy picks to GM teams!`;
+        if (warnings.length > 0) {
+            message += ` Note: ${warnings.join('. ')}`;
+        }
+        setWarning(message);
     };
 
     // Validation: Check if each team has at least one GM
@@ -600,8 +730,55 @@ const DraftDashboard = () => {
 
     const handleDragOver = (e) => e.preventDefault();
 
+    // Update buddy pick map when a player's buddy pick field is edited
+    const updateBuddyPickMapForPlayer = (playerEmail, newBuddyPickValue) => {
+        // Build name→email lookup from all players (pool + teams)
+        const allPlayers = [...playerPool];
+        teams.forEach(team => {
+            allPlayers.push(...team.players);
+        });
+
+        const nameToEmail = {};
+        allPlayers.forEach(player => {
+            const fullName = `${player.firstName} ${player.lastName}`.toLowerCase().trim();
+            nameToEmail[fullName] = player.email;
+        });
+
+        // Parse new buddy pick value
+        const newBuddyEmails = [];
+        if (newBuddyPickValue && newBuddyPickValue.trim() !== '') {
+            const buddyNames = newBuddyPickValue.split(',').map(name => name.trim().toLowerCase());
+            buddyNames.forEach(name => {
+                const email = nameToEmail[name];
+                if (email) {
+                    newBuddyEmails.push(email);
+                }
+            });
+        }
+
+        // Update the buddy pick map
+        setBuddyPickMap(prev => {
+            const updated = { ...prev };
+
+            if (newBuddyEmails.length > 0) {
+                // Add or update the entry
+                updated[playerEmail] = newBuddyEmails;
+            } else {
+                // Remove the entry if no buddies
+                delete updated[playerEmail];
+            }
+
+            return updated;
+        });
+    };
+
     // Player field updates
     const updatePlayerField = (playerEmail, field, value, source, teamId = null) => {
+        // If updating buddyPick field, update the buddy pick map
+        if (field === 'buddyPick') {
+            updateBuddyPickMapForPlayer(playerEmail, value);
+        }
+
         if (source === 'pool') {
             setPlayerPool(prev => prev.map(p =>
                 p.email === playerEmail ? { ...p, [field]: value } : p
@@ -947,6 +1124,7 @@ const DraftDashboard = () => {
                     ) : (
                         <>
                             <button className="btn-draft btn-secondary" onClick={handleAssignGMs}>Assign GMs</button>
+                            <button className="btn-draft btn-secondary" onClick={handleAssignGMBuddies}>Assign GM Buddies</button>
                             <button className="btn-draft btn-save" onClick={handleSaveDraft}>Save Draft</button>
                             <button className="btn-draft btn-finalize" onClick={handleFinalizeDraft}>Finalize Draft</button>
                         </>
@@ -1066,14 +1244,28 @@ const DraftDashboard = () => {
                                 </div>
                                 <div className="team-stats">
                                     <div className="stat-row">
-                                        <span>F: {stats.forwards}</span>
-                                        <span>D: {stats.defense}</span>
-                                        <span>Avg F: {stats.avgF}</span>
-                                        <span>Avg D: {stats.avgD}</span>
+                                        <span>Forwards:</span>
+                                        <span>{stats.forwards}</span>
                                     </div>
                                     <div className="stat-row">
-                                        <span>Total: {stats.total}</span>
-                                        <span>Avg: {stats.avg}</span>
+                                        <span>Defense:</span>
+                                        <span>{stats.defense}</span>
+                                    </div>
+                                    <div className="stat-row">
+                                        <span>Avg Fwd Rating:</span>
+                                        <span>{stats.avgF}</span>
+                                    </div>
+                                    <div className="stat-row">
+                                        <span>Avg Def Rating:</span>
+                                        <span>{stats.avgD}</span>
+                                    </div>
+                                    <div className="stat-row">
+                                        <span>Total Skill:</span>
+                                        <span>{stats.total}</span>
+                                    </div>
+                                    <div className="stat-row">
+                                        <span>Avg Rating:</span>
+                                        <span>{stats.avg}</span>
                                     </div>
                                 </div>
                                 <div className="team-roster">

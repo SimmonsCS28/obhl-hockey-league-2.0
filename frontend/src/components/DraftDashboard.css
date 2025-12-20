@@ -2,7 +2,7 @@
     display: flex;
     flex-direction: column;
     height: calc(100vh - 140px);
-    background: #1a202c;
+    background: #222222;
     color: white;
     overflow: hidden;
 }
@@ -11,7 +11,7 @@
 .draft-controls {
     background: #2d3748;
     padding: 1rem;
-    border-bottom: 1px solid #4a5568;
+    border-bottom: 1px solid white;
     display: flex;
     flex-wrap: nowrap;
     gap: 1rem;
@@ -30,8 +30,8 @@
 .draft-input {
     padding: 0.5rem;
     border-radius: 4px;
-    border: 1px solid #4a5568;
-    background: #1a202c;
+    border: 1px solid white;
+    background: #3a3a3a;
     color: white;
 }
 
@@ -43,7 +43,7 @@
     background: #1a202c;
     padding: 0.25rem;
     border-radius: 6px;
-    border: 1px solid #4a5568;
+    border: 1px solid white;
 }
 
 .view-mode-label {
@@ -71,7 +71,7 @@
 }
 
 .view-mode-option.active {
-    background: #4299e1;
+    background: #3182ce;
     color: white;
     font-weight: 600;
 }
@@ -109,11 +109,12 @@ button {
 }
 
 .btn-save {
-    background: #4299e1;
+    background: #3182ce;
+    color: white;
 }
 
 .btn-save:hover {
-    background: #3182ce;
+    background: #2c5aa0;
 }
 
 .btn-finalize {
@@ -137,7 +138,7 @@ button {
 }
 
 .btn-secondary:hover {
-    background: #4a5568;
+    background: white;
 }
 
 /* Main Layout */
@@ -150,8 +151,8 @@ button {
 /* Left Column: Player Pool */
 .player-pool-container {
     width: 350px;
-    background: #2d3748;
-    border-right: 1px solid #4a5568;
+    background: #2a2a2a;
+    border-right: 1px solid white;
     display: flex;
     flex-direction: column;
     transition: width 0.3s;
@@ -159,8 +160,8 @@ button {
 
 .pool-header {
     padding: 1rem;
-    background: #1a202c;
-    border-bottom: 1px solid #4a5568;
+    background: #2a2a2a;
+    border-bottom: 1px solid white;
 }
 
 .pool-filters {
@@ -173,7 +174,7 @@ button {
 .filter-btn {
     padding: 0.25rem 0.5rem;
     font-size: 0.8rem;
-    background: #4a5568;
+    background: white;
     border: none;
     border-radius: 4px;
     color: #cbd5e0;
@@ -181,7 +182,7 @@ button {
 }
 
 .filter-btn.active {
-    background: #4299e1;
+    background: white;
     color: white;
 }
 
@@ -201,10 +202,10 @@ button {
 
 /* Player Card - Normal Mode */
 .player-card {
-    background: #1a202c;
+    background: #3a3a3a;
     padding: 0.5rem;
     border-radius: 4px;
-    border: 1px solid #4a5568;
+    border: 1px solid white;
     cursor: grab;
     display: flex;
     flex-direction: column;
@@ -212,7 +213,7 @@ button {
 }
 
 .player-card:hover {
-    border-color: #4299e1;
+    border-color: white;
 }
 
 .player-header {
@@ -243,8 +244,8 @@ button {
 .player-card.detailed select {
     padding: 0.25rem 0.5rem !important;
     border-radius: 4px;
-    border: 1px solid #4a5568;
-    background: #2d3748;
+    border: 1px solid white;
+    background: #2a2a2a;
     color: white;
     font-size: 0.8rem !important;
     flex: 1;
@@ -290,10 +291,10 @@ button {
 
 /* Player Card - Detailed View */
 .player-card.detailed {
-    background: #1a202c;
+    background: #3a3a3a;
     padding: 0.5rem;
     border-radius: 4px;
-    border: 1px solid #4a5568;
+    border: 1px solid white;
     cursor: grab;
     display: flex;
     flex-direction: column;
@@ -301,15 +302,15 @@ button {
 }
 
 .player-card.detailed:hover {
-    border-color: #4299e1;
+    border-color: white;
 }
 
 /* Player Card - Balanced View */
 .player-card.balanced {
-    background: #1a202c;
+    background: #3a3a3a;
     padding: 0.4rem 0.6rem;
     border-radius: 4px;
-    border: 1px solid #4a5568;
+    border: 1px solid white;
     cursor: grab;
     display: flex;
     flex-direction: row;
@@ -317,7 +318,7 @@ button {
 }
 
 .player-card.balanced:hover {
-    border-color: #4299e1;
+    border-color: white;
 }
 
 .player-info-balanced {
@@ -379,10 +380,10 @@ button {
 
 /* Player Card - Overview View */
 .player-card.overview {
-    background: #1a202c;
+    background: #3a3a3a;
     padding: 0.3rem 0.5rem;
     border-radius: 4px;
-    border: 1px solid #4a5568;
+    border: 1px solid white;
     cursor: grab;
     display: flex;
     flex-direction: row;
@@ -392,7 +393,7 @@ button {
 }
 
 .player-card.overview:hover {
-    border-color: #4299e1;
+    border-color: white;
     background: #2d3748;
 }
 
@@ -404,7 +405,7 @@ button {
 
 .player-pos-icon {
     font-weight: 600;
-    color: #4299e1;
+    color: white;
     min-width: 12px;
 }
 
@@ -444,10 +445,10 @@ button {
 }
 
 .draft-team-card {
-    background: #2d3748;
+    background: #2a2a2a;
     border-radius: 8px;
     overflow: hidden;
-    border: 1px solid #4a5568;
+    border: 1px solid white;
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
@@ -470,7 +471,7 @@ button {
 .team-header {
     padding: 0.75rem;
     background: #1a202c;
-    border-bottom: 1px solid #4a5568;
+    border-bottom: 1px solid white;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -508,8 +509,8 @@ button {
 .team-sort-select {
     padding: 0.25rem 0.5rem;
     border-radius: 4px;
-    border: 1px solid #4a5568;
-    background: #2d3748;
+    border: 1px solid white;
+    background: #3a3a3a;
     color: white;
     font-size: 0.8rem;
     flex: 1;
@@ -520,17 +521,20 @@ button {
 .team-stats {
     padding: 0.75rem;
     background: rgba(0, 0, 0, 0.3);
-    border-bottom: 1px solid #4a5568;
+    border-bottom: 1px solid white;
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0;
+    font-size: 0.8rem;
+    line-height: 1.0;
 }
 
 .stat-row {
     display: flex;
-    gap: 1rem;
-    font-size: 0.85rem;
+    justify-content: space-between;
+    font-size: 0.8rem;
     font-weight: 500;
+    line-height: 1.0;
 }
 
 .stat-row span {
@@ -549,7 +553,7 @@ button {
 
 .roster-slot {
     padding: 0.5rem;
-    border: 1px dashed #4a5568;
+    border: 1px dashed white;
     border-radius: 4px;
     font-size: 0.9rem;
     color: #718096;
@@ -619,7 +623,7 @@ button {
 
 .modal-content h2 {
     margin-top: 0;
-    color: #4299e1;
+    color: white;
 }
 
 .modal-content p {
@@ -650,7 +654,7 @@ button {
 }
 
 .badge-gm-inactive {
-    background-color: #4a5568;
+    background-color: white;
     color: #a0aec0;
     opacity: 0.6;
 }
@@ -667,7 +671,7 @@ button {
 }
 
 .badge-ref-inactive {
-    background-color: #4a5568;
+    background-color: white;
     color: #a0aec0;
     opacity: 0.6;
 }

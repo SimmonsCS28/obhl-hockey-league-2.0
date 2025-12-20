@@ -50,9 +50,9 @@
 }
 
 .admin-content>* {
-    max-width: 1600px;
-    margin: 0 auto;
-    padding: 0 2rem;
+    width: 100%;
+    margin: 0;
+    padding: 0;
 }
 
 .admin-nav-tabs {
