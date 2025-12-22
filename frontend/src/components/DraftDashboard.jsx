@@ -727,7 +727,7 @@ const DraftDashboard = () => {
             const sourceTeamId = parseInt(source.split('-')[1]);
             setTeams(prev => prev.map(t =>
                 t.id === sourceTeamId
-                    ? { ...t, players: t.players.filter(p => p.email === currentPlayer.email) }
+                    ? { ...t, players: t.players.filter(p => p.email !== currentPlayer.email) }
                     : t
             ));
             setPlayerPool(prev => [...prev, currentPlayer]);
