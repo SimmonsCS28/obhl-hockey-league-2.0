@@ -31,6 +31,13 @@ const DraftDashboard = () => {
     // Buddy pick map: email → array of buddy emails
     const [buddyPickMap, setBuddyPickMap] = useState({});
 
+    // Buddy pick modal state
+    const [showBuddyModal, setShowBuddyModal] = useState(false);
+    const [modalPlayer, setModalPlayer] = useState(null);
+    const [modalTargetTeam, setModalTargetTeam] = useState(null);
+    const [modalBuddies, setModalBuddies] = useState([]);
+    const [selectedBuddies, setSelectedBuddies] = useState([]);
+
 
     // Color options with exact hex codes
     const TEAM_COLORS = {
@@ -697,38 +704,143 @@ const DraftDashboard = () => {
 
     const handleDrop = (e, targetTeamId) => {
         e.preventDefault();
-        const player = JSON.parse(e.dataTransfer.getData('player'));
+        const draggedPlayer = JSON.parse(e.dataTransfer.getData('player'));
         const source = e.dataTransfer.getData('source');
 
+        // Get the current player data from state (not stale drag data)
+        let currentPlayer = draggedPlayer;
+        if (source === 'pool') {
+            const poolPlayer = playerPool.find(p => p.email === draggedPlayer.email);
+            if (poolPlayer) currentPlayer = poolPlayer;
+        } else {
+            const sourceTeamId = parseInt(source.split('-')[1]);
+            const sourceTeam = teams.find(t => t.id === sourceTeamId);
+            if (sourceTeam) {
+                const teamPlayer = sourceTeam.players.find(p => p.email === draggedPlayer.email);
+                if (teamPlayer) currentPlayer = teamPlayer;
+            }
+        }
+
         if (targetTeamId === 'pool') {
+            // Moving player back to pool
             if (source === 'pool') return;
+            const sourceTeamId = parseInt(source.split('-')[1]);
+            setTeams(prev => prev.map(t =>
+                t.id === sourceTeamId
+                    ? { ...t, players: t.players.filter(p => p.email === currentPlayer.email) }
+                    : t
+            ));
+            setPlayerPool(prev => [...prev, currentPlayer]);
+        } else {
+            // Moving player to a team - check for buddy picks using CURRENT player data
+            const buddyEmails = buddyPickMap[currentPlayer.email] || [];
+
+            // Also check for "reverse" buddy picks - players who picked this player as their buddy
+            const reverseBuddyEmails = [];
+            Object.entries(buddyPickMap).forEach(([email, picks]) => {
+                if (picks.includes(currentPlayer.email) && !buddyEmails.includes(email)) {
+                    reverseBuddyEmails.push(email);
+                }
+            });
+
+            // Combine both lists
+            const allPotentialBuddyEmails = [...buddyEmails, ...reverseBuddyEmails];
+
+            if (allPotentialBuddyEmails.length > 0) {
+                // Player has buddy picks or is picked by others - get buddy details from player pool
+                const availableBuddies = playerPool.filter(p => allPotentialBuddyEmails.includes(p.email));
+
+                if (availableBuddies.length > 0) {
+                    // Show modal to let user select which buddies to add
+                    setModalPlayer(currentPlayer);
+                    setModalTargetTeam(targetTeamId);
+                    setModalBuddies(availableBuddies);
+                    setSelectedBuddies(availableBuddies.map(b => b.email)); // Pre-select all by default
+                    setShowBuddyModal(true);
+
+                    // Don't move the player yet - wait for modal confirmation
+                    return;
+                }
+            }
+
+            // No buddy picks or no available buddies - proceed normally
+            completeDrop(currentPlayer, source, targetTeamId);
+        }
+    };
+
+    // Complete the drop operation (called directly or after modal confirmation)
+    const completeDrop = (player, source, targetTeamId, additionalPlayers = []) => {
+        // Remove player from source
+        if (source === 'pool') {
+            setPlayerPool(prev => prev.filter(p => p.email !== player.email));
+        } else {
             const sourceTeamId = parseInt(source.split('-')[1]);
             setTeams(prev => prev.map(t =>
                 t.id === sourceTeamId
                     ? { ...t, players: t.players.filter(p => p.email !== player.email) }
                     : t
             ));
-            setPlayerPool(prev => [...prev, player]);
-        } else {
-            if (source === 'pool') {
-                setPlayerPool(prev => prev.filter(p => p.email !== player.email));
-            } else {
-                const sourceTeamId = parseInt(source.split('-')[1]);
-                setTeams(prev => prev.map(t =>
-                    t.id === sourceTeamId
-                        ? { ...t, players: t.players.filter(p => p.email !== player.email) }
-                        : t
-                ));
-            }
-            setTeams(prev => prev.map(t =>
-                t.id === targetTeamId
-                    ? { ...t, players: [...t.players, player] }
-                    : t
-            ));
         }
+
+        // Remove additional players (buddies) from pool
+        if (additionalPlayers.length > 0) {
+            setPlayerPool(prev => prev.filter(p => !additionalPlayers.some(ap => ap.email === p.email)));
+        }
+
+        // Add player and buddies to target team
+        setTeams(prev => prev.map(t =>
+            t.id === targetTeamId
+                ? { ...t, players: [...t.players, player, ...additionalPlayers] }
+                : t
+        ));
     };
 
     const handleDragOver = (e) => e.preventDefault();
+
+    // Buddy pick modal handlers
+    const handleConfirmBuddies = () => {
+        if (!modalPlayer) return;
+
+        // Get the source from the dragged player (we need to store this)
+        const source = 'pool'; // Buddies are always from pool
+
+        // Get selected buddy objects
+        const selectedBuddyObjects = modalBuddies.filter(b => selectedBuddies.includes(b.email));
+
+        // Complete the drop with selected buddies
+        completeDrop(modalPlayer, source, modalTargetTeam, selectedBuddyObjects);
+
+        // Close modal and reset state
+        setShowBuddyModal(false);
+        setModalPlayer(null);
+        setModalTargetTeam(null);
+        setModalBuddies([]);
+        setSelectedBuddies([]);
+    };
+
+    const handleSkipBuddies = () => {
+        if (!modalPlayer) return;
+
+        const source = 'pool';
+
+        // Complete drop without buddies
+        completeDrop(modalPlayer, source, modalTargetTeam, []);
+
+        // Close modal and reset state
+        setShowBuddyModal(false);
+        setModalPlayer(null);
+        setModalTargetTeam(null);
+        setModalBuddies([]);
+        setSelectedBuddies([]);
+    };
+
+    const toggleBuddySelection = (buddyEmail) => {
+        setSelectedBuddies(prev =>
+            prev.includes(buddyEmail)
+                ? prev.filter(e => e !== buddyEmail)
+                : [...prev, buddyEmail]
+        );
+    };
 
     // Update buddy pick map when a player's buddy pick field is edited
     const updateBuddyPickMapForPlayer = (playerEmail, newBuddyPickValue) => {
@@ -1277,6 +1389,78 @@ const DraftDashboard = () => {
                     })}
                 </div>
             </div>
+
+            {/* Buddy Pick Modal */}
+            {showBuddyModal && modalPlayer && (
+                <div className="buddy-modal-overlay" onClick={handleSkipBuddies}>
+                    <div className="buddy-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="buddy-modal-header">
+                            <h3>Buddy Picks Available</h3>
+                            <p>{modalPlayer.firstName} {modalPlayer.lastName} has buddy picks!</p>
+                        </div>
+
+                        <div className="buddy-modal-body">
+                            <p className="buddy-modal-instruction">
+                                Select which buddies to add to the team:
+                            </p>
+
+                            {modalBuddies.map(buddy => {
+                                const buddyHasPicks = buddyPickMap[buddy.email] && buddyPickMap[buddy.email].length > 0;
+                                // Check if it's reciprocal: does the modal player ALSO pick this buddy back?
+                                const modalPlayerPicks = buddyPickMap[modalPlayer.email] || [];
+                                const isReciprocal = modalPlayerPicks.includes(buddy.email) && buddyHasPicks && buddyPickMap[buddy.email].includes(modalPlayer.email);
+
+                                return (
+                                    <div key={buddy.email} className="buddy-option">
+                                        <label className="buddy-checkbox-label">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedBuddies.includes(buddy.email)}
+                                                onChange={() => toggleBuddySelection(buddy.email)}
+                                            />
+                                            <div className="buddy-info">
+                                                <div className="buddy-name-row">
+                                                    <span className="buddy-name">{buddy.firstName} {buddy.lastName}</span>
+                                                    {isReciprocal && <span className="reciprocal-badge">↔️ Reciprocal</span>}
+                                                </div>
+                                                <div className="buddy-details">
+                                                    <span>{buddy.position}</span>
+                                                    <span>•</span>
+                                                    <span>Skill: {buddy.skillRating}</span>
+                                                    {buddyHasPicks && (
+                                                        <>
+                                                            <span>•</span>
+                                                            <span className="buddy-has-picks">
+                                                                Has {buddyPickMap[buddy.email].length} buddy pick(s)
+                                                            </span>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </label>
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <div className="buddy-modal-footer">
+                            <button
+                                className="btn-secondary"
+                                onClick={handleSkipBuddies}
+                            >
+                                Skip Buddies
+                            </button>
+                            <button
+                                className="btn-start"
+                                onClick={handleConfirmBuddies}
+                                disabled={selectedBuddies.length === 0}
+                            >
+                                Add Selected ({selectedBuddies.length})
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

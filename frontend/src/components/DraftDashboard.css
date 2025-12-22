@@ -681,3 +681,139 @@ button {
     opacity: 0.8;
     transform: scale(1.05);
 }
+/* Buddy Pick Modal */
+.buddy-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.buddy-modal {
+    background: #2a2a2a;
+    border-radius: 8px;
+    border: 2px solid white;
+    max-width: 500px;
+    width: 90%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+.buddy-modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid white;
+}
+
+.buddy-modal-header h3 {
+    margin: 0 0 0.5rem 0;
+    color: white;
+    font-size: 1.25rem;
+}
+
+.buddy-modal-header p {
+    margin: 0;
+    color: #cbd5e0;
+    font-size: 0.9rem;
+}
+
+.buddy-modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.buddy-modal-instruction {
+    margin: 0 0 1rem 0;
+    color: #e2e8f0;
+    font-size: 0.9rem;
+}
+
+.buddy-option {
+    background: #3a3a3a;
+    border: 1px solid white;
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-bottom: 0.75rem;
+    transition: all 0.2s;
+}
+
+.buddy-option:hover {
+    background: #444;
+}
+
+.buddy-checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    cursor: pointer;
+}
+
+.buddy-checkbox-label input[type=" checkbox\] {
+ margin-top: 0.25rem;
+ width: 18px;
+ height: 18px;
+ cursor: pointer;
+}
+
+.buddy-info {
+ flex: 1;
+}
+
+.buddy-name-row {
+ display: flex;
+ align-items: center;
+ gap: 0.5rem;
+ margin-bottom: 0.25rem;
+}
+
+.buddy-name {
+ font-weight: 600;
+ color: white;
+ font-size: 1rem;
+}
+
+.reciprocal-badge {
+ background: #48bb78;
+ color: white;
+ padding: 0.15rem 0.5rem;
+ border-radius: 4px;
+ font-size: 0.75rem;
+ font-weight: 600;
+}
+
+.buddy-details {
+ display: flex;
+ gap: 0.5rem;
+ color: #cbd5e0;
+ font-size: 0.85rem;
+}
+
+.buddy-has-picks {
+ color: #f6ad55;
+ font-weight: 500;
+}
+
+.buddy-modal-footer {
+ padding: 1rem 1.5rem;
+ border-top: 1px solid white;
+ display: flex;
+ gap: 1rem;
+ justify-content: flex-end;
+}
+
+.buddy-modal-footer button {
+ padding: 0.5rem 1.5rem;
+}
+
+.buddy-modal-footer button:disabled {
+ opacity: 0.5;
+ cursor: not-allowed;
+}
