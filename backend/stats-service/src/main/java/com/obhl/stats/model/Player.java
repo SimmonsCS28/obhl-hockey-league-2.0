@@ -12,12 +12,13 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "players")
+@Table(name = "players", uniqueConstraints = @UniqueConstraint(columnNames = { "email", "season_id" }))
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -33,7 +34,7 @@ public class Player {
     @Column(name = "season_id")
     private Long seasonId;
 
-    @Column(unique = true)
+    @Column(nullable = false)
     private String email;
 
     @Column(name = "is_veteran")

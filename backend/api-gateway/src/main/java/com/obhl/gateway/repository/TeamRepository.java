@@ -15,4 +15,10 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
     List<Team> findByActiveTrue();
 
     Optional<Team> findByIdAndActiveTrue(Long id);
+
+    List<Team> findBySeasonId(Long seasonId);
+
+    Optional<Team> findBySeasonIdAndName(Long seasonId, String name);
+
+    Optional<Team> findBySeasonIdAndAbbreviation(Long seasonId, String abbreviation);
 }

@@ -481,6 +481,41 @@ const DraftDashboard = () => {
         }
     };
 
+    // Handler for finalizing draft
+    const handleFinalizeDraft = async () => {
+        if (!currentDraftSaveId) {
+            setWarning('Please save the draft before finalizing');
+            return;
+        }
+
+        if (!validateGMAssignments()) {
+            return;
+        }
+
+        if (!window.confirm(`Are you sure you want to finalize the draft for "${seasonName}"? This will create the season, teams, and players in the database.`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(
+                `http://localhost:8000/api/league/draft/${currentDraftSaveId}/finalize`,
+                { method: 'POST' }
+            );
+
+            if (!response.ok) {
+                const error = await response.json();
+                setWarning(error.error || 'Failed to finalize draft');
+                return;
+            }
+
+            const result = await response.json();
+            setWarning(`✅ Draft finalized successfully! Season ID: ${result.seasonId}`);
+            setIsLive(false);
+        } catch (error) {
+            setWarning(`Error finalizing draft: ${error.message}`);
+        }
+    };
+
     const handleResumeDraft = async () => {
         if (!savedDraft) return;
 
@@ -519,35 +554,6 @@ const DraftDashboard = () => {
         setSavedDraft(null);
         setCurrentDraftSaveId(null); // Clear ID so next save creates new draft
         // Keep current empty state
-    };
-
-    const handleFinalizeDraft = async () => {
-        if (!currentDraftSaveId) {
-            setWarning('Please save the draft first');
-            return;
-        }
-
-        // Validate GM assignments
-        if (!validateGMAssignments()) {
-            return;
-        }
-
-        try {
-            const response = await fetch(
-                `http://localhost:8000/api/league/draft/${currentDraftSaveId}/complete`,
-                { method: 'PUT' }
-            );
-
-            if (response.ok) {
-                setWarning('Draft finalized successfully!');
-                setCurrentDraftSaveId(null);
-            } else {
-                setWarning('Failed to finalize draft');
-            }
-        } catch (error) {
-            console.error('Error finalizing draft:', error);
-            setWarning('Error finalizing draft');
-        }
     };
 
 

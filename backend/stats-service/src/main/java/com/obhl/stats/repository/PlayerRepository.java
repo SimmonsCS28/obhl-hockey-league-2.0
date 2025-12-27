@@ -28,4 +28,6 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
     List<Player> findBySeasonIdAndTeamId(Long seasonId, Long teamId);
 
     Optional<Player> findByEmail(String email);
+
+    Optional<Player> findByEmailAndSeasonId(String email, Long seasonId);
 }

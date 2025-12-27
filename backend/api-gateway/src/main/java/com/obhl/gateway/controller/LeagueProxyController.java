@@ -1,5 +1,8 @@
 package com.obhl.gateway.controller;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -16,6 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
@@ -25,6 +30,7 @@ import lombok.RequiredArgsConstructor;
 public class LeagueProxyController {
 
     private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${league.service.url}")
     private String leagueServiceUrl;
@@ -71,8 +77,13 @@ public class LeagueProxyController {
         } catch (Exception e) {
             System.err.println("Error proxying import request: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.internalServerError()
-                    .body("{\"error\": \"Failed to upload file: " + e.getMessage() + "\"}");
+            try {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Failed to upload file: " + e.getMessage());
+                return ResponseEntity.internalServerError().body(objectMapper.writeValueAsString(errorResponse));
+            } catch (Exception jsonEx) {
+                return ResponseEntity.internalServerError().body("{\"error\":\"Internal server error\"}");
+            }
         }
     }
 
@@ -112,8 +123,13 @@ public class LeagueProxyController {
         } catch (Exception e) {
             System.err.println("Error proxying draft finalize request: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.internalServerError()
-                    .body("{\"error\": \"Failed to finalize draft: " + e.getMessage() + "\"}");
+            try {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Failed to finalize draft: " + e.getMessage());
+                return ResponseEntity.internalServerError().body(objectMapper.writeValueAsString(errorResponse));
+            } catch (Exception jsonEx) {
+                return ResponseEntity.internalServerError().body("{\"error\":\"Internal server error\"}");
+            }
         }
     }
 
@@ -151,8 +167,13 @@ public class LeagueProxyController {
         } catch (Exception e) {
             System.err.println("Error proxying draft save request: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.internalServerError()
-                    .body("{\"error\": \"Failed to save draft: " + e.getMessage() + "\"}");
+            try {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Failed to save draft: " + e.getMessage());
+                return ResponseEntity.internalServerError().body(objectMapper.writeValueAsString(errorResponse));
+            } catch (Exception jsonEx) {
+                return ResponseEntity.internalServerError().body("{\"error\":\"Internal server error\"}");
+            }
         }
     }
 
@@ -190,8 +211,56 @@ public class LeagueProxyController {
         } catch (Exception e) {
             System.err.println("Error proxying draft update request: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.internalServerError()
-                    .body("{\"error\": \"Failed to update draft: " + e.getMessage() + "\"}");
+            try {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Failed to update draft: " + e.getMessage());
+                return ResponseEntity.internalServerError().body(objectMapper.writeValueAsString(errorResponse));
+            } catch (Exception jsonEx) {
+                return ResponseEntity.internalServerError().body("{\"error\":\"Internal server error\"}");
+            }
+        }
+    }
+
+    @PostMapping("/draft/{id}/finalize")
+    public ResponseEntity<?> finalizeDraft(
+            @PathVariable Long id,
+            HttpServletRequest request) {
+
+        System.out.println("=== Draft Finalize Proxy Request ===");
+        System.out.println("Draft ID: " + id);
+
+        try {
+            String targetUrl = leagueServiceUrl + "/draft/" + id + "/finalize";
+            System.out.println("Target URL: " + targetUrl);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Content-Type", "application/json");
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null) {
+                headers.set("Authorization", authHeader);
+            }
+
+            HttpEntity<String> requestEntity = new HttpEntity<>(null, headers);
+
+            ResponseEntity<String> response = restTemplate.exchange(
+                    targetUrl,
+                    HttpMethod.POST,
+                    requestEntity,
+                    String.class);
+
+            System.out.println("Response Status: " + response.getStatusCode());
+            return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+
+        } catch (Exception e) {
+            System.err.println("Error proxying draft finalize request: " + e.getMessage());
+            e.printStackTrace();
+            try {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Failed to finalize draft: " + e.getMessage());
+                return ResponseEntity.internalServerError().body(objectMapper.writeValueAsString(errorResponse));
+            } catch (Exception jsonEx) {
+                return ResponseEntity.internalServerError().body("{\"error\":\"Internal server error\"}");
+            }
         }
     }
 
@@ -224,8 +293,13 @@ public class LeagueProxyController {
         } catch (Exception e) {
             System.err.println("Error proxying get latest draft request: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.internalServerError()
-                    .body("{\"error\": \"Failed to get latest draft: " + e.getMessage() + "\"}");
+            try {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Failed to get latest draft: " + e.getMessage());
+                return ResponseEntity.internalServerError().body(objectMapper.writeValueAsString(errorResponse));
+            } catch (Exception jsonEx) {
+                return ResponseEntity.internalServerError().body("{\"error\":\"Internal server error\"}");
+            }
         }
     }
 
@@ -261,8 +335,13 @@ public class LeagueProxyController {
         } catch (Exception e) {
             System.err.println("Error proxying complete draft request: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.internalServerError()
-                    .body("{\"error\": \"Failed to complete draft: " + e.getMessage() + "\"}");
+            try {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Failed to complete draft: " + e.getMessage());
+                return ResponseEntity.internalServerError().body(objectMapper.writeValueAsString(errorResponse));
+            } catch (Exception jsonEx) {
+                return ResponseEntity.internalServerError().body("{\"error\":\"Internal server error\"}");
+            }
         }
     }
 }

@@ -2,7 +2,12 @@ package com.obhl.gateway.dto;
 
 import java.time.LocalDateTime;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -31,8 +36,7 @@ public class TeamDto {
         @Pattern(regexp = "^#[0-9A-Fa-f]{6}$")
         private String teamColor;
 
-        @Positive
-        private Long gmId;
+        private Long gmId; // Can be null initially, set after players are created
 
         private Boolean active = true;
 

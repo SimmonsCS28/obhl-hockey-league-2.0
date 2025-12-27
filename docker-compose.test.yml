@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  test-postgres:
+    image: postgres:15
+    container_name: obhl-test-db
+    environment:
+      POSTGRES_DB: obhl_test
+      POSTGRES_USER: obhl_user
+      POSTGRES_PASSWORD: obhl_password
+    ports:
+      - "5433:5432" # Different port from production (5432)
+    volumes:
+      - test-db-data:/var/lib/postgresql/data
+    networks:
+      - obhl-test-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U obhl_user -d obhl_test" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  test-db-data:
+
+
+networks:
+  obhl-test-network:
+    driver: bridge
