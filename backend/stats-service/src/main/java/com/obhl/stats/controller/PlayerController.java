@@ -60,6 +60,15 @@ public class PlayerController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/by-email-season")
+    public ResponseEntity<Player> getPlayerByEmailAndSeason(
+            @RequestParam String email,
+            @RequestParam Long seasonId) {
+        return playerRepository.findByEmailAndSeasonId(email, seasonId)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @PostMapping
     public ResponseEntity<Player> createPlayer(@RequestBody Player player) {
         Player created = playerRepository.save(player);

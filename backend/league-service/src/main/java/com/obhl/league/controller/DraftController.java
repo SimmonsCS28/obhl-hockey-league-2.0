@@ -26,14 +26,19 @@ public class DraftController {
 
     private final DraftService draftService;
 
-    @PostMapping("/finalize")
-    public ResponseEntity<?> finalizeDraft(@RequestBody DraftStateDTO draftState) {
+    @PostMapping("/{id}/finalize")
+    public ResponseEntity<?> finalizeDraft(@PathVariable Long id) {
         try {
-            draftService.finalizeDraft(draftState);
-            return ResponseEntity.ok().body("{\"message\": \"Draft finalized successfully\"}");
+            Long seasonId = draftService.finalizeDraft(id);
+            return ResponseEntity.ok(java.util.Map.of(
+                    "message", "Draft finalized successfully",
+                    "seasonId", seasonId));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.internalServerError().body("{\"error\": \"" + e.getMessage() + "\"}");
+            return ResponseEntity.internalServerError()
+                    .body(java.util.Map.of("error", "Failed to finalize draft: " + e.getMessage()));
         }
     }
 
@@ -115,5 +120,10 @@ public class DraftController {
         } catch (Exception e) {
             throw new RuntimeException("Failed to convert draft state to JSON", e);
         }
-    }
-}
+    }}
+
+    
+    
+        
+        
+    

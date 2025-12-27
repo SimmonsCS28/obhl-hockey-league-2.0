@@ -39,6 +39,11 @@ public class TeamService {
         return teamRepository.findByName(name).map(this::toResponse);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<TeamDto.Response> getTeamByNameAndSeason(String name, Long seasonId) {
+        return teamRepository.findBySeasonIdAndName(seasonId, name).map(this::toResponse);
+    }
+
     @Transactional
     public TeamDto.Response createTeam(TeamDto.Create dto) {
         Team team = new Team();

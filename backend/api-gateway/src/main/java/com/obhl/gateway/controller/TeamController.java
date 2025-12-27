@@ -4,12 +4,20 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import com.obhl.gateway.dto.TeamDto;
 import com.obhl.gateway.service.TeamService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("${api.v1.prefix}/teams")
@@ -33,20 +41,22 @@ public class TeamController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createTeam(@Valid @RequestBody TeamDto.Create teamDto) {
-        if (teamService.getTeamByName(teamDto.getName()).isPresent()) {
+    public ResponseEntity<?> createTeam(@RequestBody TeamDto.Create teamDto) {
+        // Check if team with same name exists in the same season
+        if (teamDto.getSeasonId() != null &&
+                teamService.getTeamByNameAndSeason(teamDto.getName(), teamDto.getSeasonId()).isPresent()) {
             return ResponseEntity.badRequest()
-                    .body("Team with name '" + teamDto.getName() + "' already exists");
+                    .body("Team with name '" + teamDto.getName() + "' already exists in this season");
         }
 
         TeamDto.Response created = teamService.createTeam(teamDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
-    @PatchMapping("/{teamId}")
+    @PutMapping("/{teamId}")
     public ResponseEntity<?> updateTeam(
             @PathVariable Long teamId,
-            @Valid @RequestBody TeamDto.Update updateDto) {
+            @RequestBody TeamDto.Update updateDto) {
         try {
             TeamDto.Response updated = teamService.updateTeam(teamId, updateDto);
             return ResponseEntity.ok(updated);
