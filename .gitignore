@@ -74,3 +74,8 @@ logs/
 
 # AWS
 .aws/
+
+# Temporary files and scripts (may contain sensitive data)
+temp_*.sql
+generate_*.py
+*_hash.py
