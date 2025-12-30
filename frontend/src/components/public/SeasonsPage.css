@@ -1,0 +1,139 @@
+.seasons-page {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.seasons-page h1 {
+    color: white;
+    margin-bottom: 2rem;
+    font-size: 2.5rem;
+}
+
+.season-selector {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.season-selector label {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 1.1rem;
+}
+
+.season-dropdown {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    color: #2d3748;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.season-dropdown:hover {
+    border-color: #4a5568;
+}
+
+.season-dropdown:focus {
+    outline: none;
+    border-color: #2d3748;
+}
+
+.season-details {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.season-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.season-header h2 {
+    margin: 0;
+    color: #2d3748;
+    font-size: 2rem;
+}
+
+.active-badge {
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.season-info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.info-card {
+    background: #e2e8f0;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid #4a5568;
+}
+
+.info-card h3 {
+    margin: 0 0 0.5rem 0;
+    color: #4a5568;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-card p {
+    margin: 0;
+    color: #2d3748;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+.status-value {
+    text-transform: capitalize;
+}
+
+.loading,
+.error,
+.no-data {
+    text-align: center;
+    padding: 3rem;
+    font-size: 1.2rem;
+}
+
+.error {
+    color: #dc3545;
+}
+
+.no-data {
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    .season-selector {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .season-info-grid {
+        grid-template-columns: 1fr;
+    }
+}
