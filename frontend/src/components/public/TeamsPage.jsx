@@ -5,6 +5,7 @@ function TeamsPage() {
     const [seasons, setSeasons] = useState([]);
     const [selectedSeason, setSelectedSeason] = useState(null);
     const [teams, setTeams] = useState([]);
+    const [players, setPlayers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -15,6 +16,7 @@ function TeamsPage() {
     useEffect(() => {
         if (selectedSeason) {
             fetchTeams(selectedSeason.id);
+            fetchPlayers(selectedSeason.id);
         }
     }, [selectedSeason]);
 
@@ -50,10 +52,28 @@ function TeamsPage() {
         }
     };
 
+    const fetchPlayers = async (seasonId) => {
+        try {
+            const response = await fetch(`http://localhost:8003/api/v1/players?seasonId=${seasonId}`);
+            if (!response.ok) throw new Error('Failed to fetch players');
+
+            const data = await response.json();
+            setPlayers(data);
+        } catch (err) {
+            console.error('Failed to fetch players:', err);
+        }
+    };
+
     const handleSeasonChange = (event) => {
         const seasonId = parseInt(event.target.value);
         const season = seasons.find(s => s.id === seasonId);
         setSelectedSeason(season);
+    };
+
+    const getGMName = (gmId) => {
+        if (!gmId) return 'Not assigned';
+        const gm = players.find(p => p.id === gmId);
+        return gm ? `${gm.firstName} ${gm.lastName}` : 'Not assigned';
     };
 
     if (loading) return <div className="loading">Loading teams...</div>;
@@ -97,7 +117,7 @@ function TeamsPage() {
                             <div className="team-info">
                                 <div className="info-row">
                                     <span className="label">General Manager:</span>
-                                    <span className="value">{team.gmName || 'Not assigned'}</span>
+                                    <span className="value">{getGMName(team.gmId)}</span>
                                 </div>
                             </div>
                         </div>
