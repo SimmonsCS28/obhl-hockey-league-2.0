@@ -1,0 +1,156 @@
+import { useEffect, useState } from 'react';
+import './StandingsPage.css';
+
+function StandingsPage() {
+    const [seasons, setSeasons] = useState([]);
+    const [selectedSeason, setSelectedSeason] = useState(null);
+    const [teams, setTeams] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    useEffect(() => {
+        fetchSeasons();
+    }, []);
+
+    useEffect(() => {
+        if (selectedSeason) {
+            fetchTeams(selectedSeason.id);
+        }
+    }, [selectedSeason]);
+
+    const fetchSeasons = async () => {
+        try {
+            const response = await fetch('http://localhost:8000/api/v1/seasons');
+            if (!response.ok) throw new Error('Failed to fetch seasons');
+
+            const data = await response.json();
+            setSeasons(data);
+
+            // Set active season as default
+            const activeSeason = data.find(season => season.isActive);
+            setSelectedSeason(activeSeason || data[0] || null);
+        } catch (err) {
+            setError(err.message);
+            setLoading(false);
+        }
+    };
+
+    const fetchTeams = async (seasonId) => {
+        try {
+            setLoading(true);
+            const response = await fetch(`http://localhost:8000/api/v1/teams?seasonId=${seasonId}`);
+            if (!response.ok) throw new Error('Failed to fetch teams');
+
+            const data = await response.json();
+
+            // Sort teams by points (desc), then goal differential (desc)
+            const sorted = data.sort((a, b) => {
+                if (b.points !== a.points) {
+                    return b.points - a.points;
+                }
+                // Tiebreaker: goal differential
+                const aDiff = a.goalsFor - a.goalsAgainst;
+                const bDiff = b.goalsFor - b.goalsAgainst;
+                return bDiff - aDiff;
+            });
+
+            setTeams(sorted);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSeasonChange = (event) => {
+        const seasonId = parseInt(event.target.value);
+        const season = seasons.find(s => s.id === seasonId);
+        setSelectedSeason(season);
+    };
+
+    const calculateGoalDiff = (team) => {
+        return team.goalsFor - team.goalsAgainst;
+    };
+
+    if (loading) return <div className="loading">Loading standings...</div>;
+    if (error) return <div className="error">Error: {error}</div>;
+
+    return (
+        <div className="standings-page">
+            <h1>Standings</h1>
+
+            {selectedSeason && (
+                <div className="season-selector">
+                    <label htmlFor="season-select">Season:</label>
+                    <select
+                        id="season-select"
+                        value={String(selectedSeason.id)}
+                        onChange={handleSeasonChange}
+                        className="season-dropdown"
+                    >
+                        {seasons.map(season => (
+                            <option
+                                key={season.id}
+                                value={String(season.id)}
+                            >
+                                {season.name} {season.isActive ? '(Active)' : ''}
+                            </option>
+                        ))}
+                    </select>
+                </div>
+            )}
+
+            {teams.length === 0 ? (
+                <div className="no-data">No teams found for this season.</div>
+            ) : (
+                <div className="standings-table-container">
+                    <table className="standings-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Team</th>
+                                <th>W</th>
+                                <th>L</th>
+                                <th>T</th>
+                                <th>OTL</th>
+                                <th>GF</th>
+                                <th>GA</th>
+                                <th>Pts</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {teams.map((team, index) => (
+                                <tr
+                                    key={team.id}
+                                    className={index < 4 ? 'playoff-spot' : ''}
+                                >
+                                    <td
+                                        className="rank"
+                                        style={{ backgroundColor: team.teamColor || '#ccc', color: 'white' }}
+                                    >
+                                        {index + 1}
+                                    </td>
+                                    <td
+                                        className="team-name"
+                                        style={{ backgroundColor: team.teamColor || '#ccc', color: 'white' }}
+                                    >
+                                        <strong>{team.name}</strong>
+                                    </td>
+                                    <td>{team.wins}</td>
+                                    <td>{team.losses}</td>
+                                    <td>{team.ties}</td>
+                                    <td>{team.overtimeLosses}</td>
+                                    <td>{team.goalsFor}</td>
+                                    <td>{team.goalsAgainst}</td>
+                                    <td className="points"><strong>{team.points}</strong></td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+        </div>
+    );
+}
+
+export default StandingsPage;

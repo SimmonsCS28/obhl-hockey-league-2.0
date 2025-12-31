@@ -117,6 +117,32 @@ public class TeamService {
         teamRepository.save(team);
     }
 
+    @Transactional
+    public void incrementTeamStats(Long id, java.util.Map<String, Integer> statsUpdate) {
+        Team team = teamRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Team not found"));
+
+        // Increment stats (not replace)
+        if (statsUpdate.containsKey("wins"))
+            team.setWins(team.getWins() + statsUpdate.get("wins"));
+        if (statsUpdate.containsKey("losses"))
+            team.setLosses(team.getLosses() + statsUpdate.get("losses"));
+        if (statsUpdate.containsKey("ties"))
+            team.setTies(team.getTies() + statsUpdate.get("ties"));
+        if (statsUpdate.containsKey("overtimeWins"))
+            team.setOvertimeWins(team.getOvertimeWins() + statsUpdate.get("overtimeWins"));
+        if (statsUpdate.containsKey("overtimeLosses"))
+            team.setOvertimeLosses(team.getOvertimeLosses() + statsUpdate.get("overtimeLosses"));
+        if (statsUpdate.containsKey("goalsFor"))
+            team.setGoalsFor(team.getGoalsFor() + statsUpdate.get("goalsFor"));
+        if (statsUpdate.containsKey("goalsAgainst"))
+            team.setGoalsAgainst(team.getGoalsAgainst() + statsUpdate.get("goalsAgainst"));
+        if (statsUpdate.containsKey("points"))
+            team.setPoints(team.getPoints() + statsUpdate.get("points"));
+
+        teamRepository.save(team);
+    }
+
     private TeamDto.Response toResponse(Team team) {
         TeamDto.Response dto = new TeamDto.Response();
         dto.setId(team.getId());
