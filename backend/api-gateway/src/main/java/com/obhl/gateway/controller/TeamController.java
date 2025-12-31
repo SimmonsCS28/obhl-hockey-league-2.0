@@ -28,9 +28,10 @@ public class TeamController {
 
     @GetMapping
     public ResponseEntity<List<TeamDto.Response>> getTeams(
+            @RequestParam(required = false) Long seasonId,
             @RequestParam(defaultValue = "0") int skip,
             @RequestParam(defaultValue = "100") int limit) {
-        return ResponseEntity.ok(teamService.getTeams(skip, limit));
+        return ResponseEntity.ok(teamService.getTeams(seasonId, skip, limit));
     }
 
     @GetMapping("/{teamId}")

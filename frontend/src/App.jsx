@@ -7,6 +7,7 @@ import PublicLayout from './components/PublicLayout';
 import Scorekeeper from './components/Scorekeeper';
 import Home from './components/public/Home';
 import SeasonsPage from './components/public/SeasonsPage';
+import TeamsPage from './components/public/TeamsPage';
 import { AuthProvider } from './contexts/AuthContext';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
           <Route path="/" element={<PublicLayout />}>
             <Route index element={<Home />} />
             <Route path="seasons" element={<SeasonsPage />} />
+            <Route path="teams" element={<TeamsPage />} />
             {/* Other public pages will be added here */}
           </Route>
 

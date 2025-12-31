@@ -7,6 +7,8 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.obhl.gateway.client.StatsClient;
+import com.obhl.gateway.dto.PlayerDto;
 import com.obhl.gateway.dto.TeamDto;
 import com.obhl.gateway.model.Team;
 import com.obhl.gateway.repository.TeamRepository;
@@ -18,11 +20,13 @@ import lombok.RequiredArgsConstructor;
 public class TeamService {
 
     private final TeamRepository teamRepository;
+    private final StatsClient statsClient;
 
     @Transactional(readOnly = true)
-    public List<TeamDto.Response> getTeams(int skip, int limit) {
+    public List<TeamDto.Response> getTeams(Long seasonId, int skip, int limit) {
         return teamRepository.findAll()
                 .stream()
+                .filter(team -> seasonId == null || team.getSeasonId().equals(seasonId))
                 .skip(skip)
                 .limit(limit)
                 .map(this::toResponse)
@@ -122,6 +126,18 @@ public class TeamService {
         dto.setLogoUrl(team.getLogoUrl());
         dto.setTeamColor(team.getTeamColor());
         dto.setGmId(team.getGmId());
+
+        // Fetch GM name from stats-service if gmId is present
+        if (team.getGmId() != null) {
+            try {
+                PlayerDto.Response player = statsClient.getPlayer(team.getGmId());
+                dto.setGmName(player.getFirstName() + " " + player.getLastName());
+            } catch (Exception e) {
+                // If stats-service is down, set GM name to null
+                dto.setGmName(null);
+            }
+        }
+
         dto.setActive(team.getActive());
         dto.setPoints(team.getPoints());
         dto.setWins(team.getWins());
