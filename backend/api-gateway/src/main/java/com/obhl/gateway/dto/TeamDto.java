@@ -125,6 +125,7 @@ public class TeamDto {
         private String logoUrl;
         private String teamColor;
         private Long gmId;
+        private String gmName;
         private Boolean active;
         private Integer points;
         private Integer wins;
