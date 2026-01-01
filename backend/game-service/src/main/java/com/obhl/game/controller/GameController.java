@@ -4,16 +4,25 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import com.obhl.game.dto.GameDto;
 import com.obhl.game.dto.GameEventDto;
 import com.obhl.game.dto.PenaltyValidationResponse;
 import com.obhl.game.service.GameEventService;
 import com.obhl.game.service.GameService;
 import com.obhl.game.service.PenaltyValidator;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("${api.v1.prefix}/games")
@@ -23,6 +32,7 @@ public class GameController {
     private final GameService gameService;
     private final GameEventService gameEventService;
     private final PenaltyValidator penaltyValidator;
+    private final com.obhl.game.service.CsvParserService csvParserService;
 
     @GetMapping
     public ResponseEntity<List<GameDto.Response>> getGames(
@@ -86,6 +96,31 @@ public class GameController {
             return ResponseEntity.ok(updated);
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    // Schedule Management Endpoints
+    @PostMapping("/upload-slots")
+    public ResponseEntity<?> uploadGameSlots(
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        try {
+            // Validate file type
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest().body("File is empty");
+            }
+
+            String filename = file.getOriginalFilename();
+            if (filename == null || !filename.endsWith(".csv")) {
+                return ResponseEntity.badRequest().body("File must be a CSV");
+            }
+
+            // Parse and validate
+            java.util.List<com.obhl.game.dto.GameSlot> slots = csvParserService.parseGameSlots(file);
+            csvParserService.validateGameSlots(slots);
+
+            return ResponseEntity.ok(slots);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
