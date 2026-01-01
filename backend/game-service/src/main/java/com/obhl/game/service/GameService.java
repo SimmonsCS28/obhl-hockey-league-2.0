@@ -7,10 +7,11 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import lombok.RequiredArgsConstructor;
 import com.obhl.game.dto.GameDto;
 import com.obhl.game.model.Game;
 import com.obhl.game.repository.GameRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -71,6 +72,8 @@ public class GameService {
         game.setOvertime(dto.getOvertime());
         game.setShootout(dto.getShootout());
         game.setPeriod(dto.getPeriod());
+        game.setWeek(dto.getWeek());
+        game.setRink(dto.getRink());
         game.setGameNotes(dto.getGameNotes());
 
         return toResponse(gameRepository.save(game));
@@ -105,6 +108,10 @@ public class GameService {
             game.setShootout(dto.getShootout());
         if (dto.getPeriod() != null)
             game.setPeriod(dto.getPeriod());
+        if (dto.getWeek() != null)
+            game.setWeek(dto.getWeek());
+        if (dto.getRink() != null)
+            game.setRink(dto.getRink());
         if (dto.getGameNotes() != null)
             game.setGameNotes(dto.getGameNotes());
 
@@ -162,6 +169,8 @@ public class GameService {
         dto.setEndedInOT(game.getEndedInOT());
         dto.setHomeTeamPoints(game.getHomeTeamPoints());
         dto.setAwayTeamPoints(game.getAwayTeamPoints());
+        dto.setWeek(game.getWeek());
+        dto.setRink(game.getRink());
         dto.setGameNotes(game.getGameNotes());
         dto.setCreatedAt(game.getCreatedAt());
         dto.setUpdatedAt(game.getUpdatedAt());
