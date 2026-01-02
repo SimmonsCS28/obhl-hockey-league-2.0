@@ -5,7 +5,12 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -59,6 +64,12 @@ public class Game {
 
     @Column(name = "game_type", length = 20, nullable = false)
     private String gameType = "REGULAR_SEASON";
+
+    @Column(name = "week")
+    private Integer week;
+
+    @Column(name = "rink", length = 20)
+    private String rink;
 
     @Column(name = "ended_in_ot")
     private Boolean endedInOT = false;

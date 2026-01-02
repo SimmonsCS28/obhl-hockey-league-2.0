@@ -2,7 +2,12 @@ package com.obhl.game.dto;
 
 import java.time.LocalDateTime;
 
-import jakarta.validation.constraints.*;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -51,6 +56,12 @@ public class GameDto {
         @Max(5)
         private Integer period = 1;
 
+        @Min(1)
+        private Integer week;
+
+        @Size(max = 20)
+        private String rink;
+
         private String gameNotes;
     }
 
@@ -92,6 +103,12 @@ public class GameDto {
         @Max(5)
         private Integer period;
 
+        @Min(1)
+        private Integer week;
+
+        @Size(max = 20)
+        private String rink;
+
         private String gameNotes;
     }
 
@@ -115,6 +132,8 @@ public class GameDto {
         private Boolean endedInOT;
         private Integer homeTeamPoints;
         private Integer awayTeamPoints;
+        private Integer week;
+        private String rink;
         private String gameNotes;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
