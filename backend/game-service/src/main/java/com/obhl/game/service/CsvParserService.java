@@ -83,18 +83,37 @@ public class CsvParserService {
                 throw new RuntimeException("Week must be positive");
             }
 
-            // Validate rink value
-            if (!rink.equalsIgnoreCase("Tubbs") && !rink.equalsIgnoreCase("Cardinal")) {
-                throw new RuntimeException("Rink must be 'Tubbs' or 'Cardinal', found: " + rink);
+            // Normalize rink name - accept variations like "Cardinal Rink", "Tubbs Rink",
+            // etc.
+            String normalizedRink = normalizeRinkName(rink);
+            if (normalizedRink == null) {
+                throw new RuntimeException("Rink must contain 'Tubbs' or 'Cardinal', found: " + rink);
             }
 
-            return new GameSlot(week, date, time, rink);
+            return new GameSlot(week, date, time, normalizedRink);
 
         } catch (NumberFormatException e) {
             throw new RuntimeException("Invalid week number: " + parts[0]);
         } catch (DateTimeParseException e) {
             throw new RuntimeException("Invalid date format (expected yyyy-MM-dd): " + parts[1]);
         }
+    }
+
+    /**
+     * Normalize rink name to standard format
+     * Accepts variations like "Cardinal Rink", "Tubbs Rink", "cardinal", etc.
+     * Returns "Cardinal" or "Tubbs", or null if neither is found
+     */
+    private String normalizeRinkName(String rink) {
+        String normalized = rink.trim().toLowerCase();
+
+        if (normalized.contains("cardinal")) {
+            return "Cardinal";
+        } else if (normalized.contains("tubbs")) {
+            return "Tubbs";
+        }
+
+        return null;
     }
 
     /**
