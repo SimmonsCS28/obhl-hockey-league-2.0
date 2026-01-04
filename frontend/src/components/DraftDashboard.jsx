@@ -90,6 +90,16 @@ const DraftDashboard = () => {
         }
     }, [playerPool, teams]);
 
+    // Auto-clear warning/info banner after 10 seconds
+    useEffect(() => {
+        if (warning) {
+            const timer = setTimeout(() => {
+                setWarning('');
+            }, 10000);
+            return () => clearTimeout(timer);
+        }
+    }, [warning]);
+
     const checkForSavedDraft = async () => {
         try {
             const response = await fetch('http://localhost:8000/api/league/draft/latest');
@@ -317,6 +327,16 @@ const DraftDashboard = () => {
         const assignedGMEmails = shuffledGMs.slice(0, teamsWithoutGM.length).map(gm => gm.email);
         const updatedPool = playerPool.filter(player => !assignedGMEmails.includes(player.email));
 
+        // Sort teams by average skill rating (Low to High)
+        updatedTeams.sort((a, b) => {
+            const getAvg = (players) => {
+                if (!players || players.length === 0) return 0;
+                const total = players.reduce((sum, p) => sum + (p.skillRating || 0), 0);
+                return total / players.length;
+            };
+            return getAvg(a.players) - getAvg(b.players);
+        });
+
         setTeams(updatedTeams);
         setPlayerPool(updatedPool);
         setWarning(`Successfully assigned ${teamsWithoutGM.length} GMs to teams without GMs!`);
@@ -383,6 +403,16 @@ const DraftDashboard = () => {
             assignedEmails.push(...buddyEmails);
         });
         const updatedPool = playerPool.filter(player => !assignedEmails.includes(player.email));
+
+        // Sort teams by average skill rating (Low to High)
+        updatedTeams.sort((a, b) => {
+            const getAvg = (players) => {
+                if (!players || players.length === 0) return 0;
+                const total = players.reduce((sum, p) => sum + (p.skillRating || 0), 0);
+                return total / players.length;
+            };
+            return getAvg(a.players) - getAvg(b.players);
+        });
 
         setTeams(updatedTeams);
         setPlayerPool(updatedPool);
@@ -795,11 +825,23 @@ const DraftDashboard = () => {
         }
 
         // Add player and buddies to target team
-        setTeams(prev => prev.map(t =>
-            t.id === targetTeamId
-                ? { ...t, players: [...t.players, player, ...additionalPlayers] }
-                : t
-        ));
+        // Add player and buddies to target team and sort by average rating (Low to High)
+        setTeams(prev => {
+            const updatedTeams = prev.map(t =>
+                t.id === targetTeamId
+                    ? { ...t, players: [...t.players, player, ...additionalPlayers] }
+                    : t
+            );
+
+            return updatedTeams.sort((a, b) => {
+                const getAvg = (players) => {
+                    if (!players || players.length === 0) return 0;
+                    const total = players.reduce((sum, p) => sum + (p.skillRating || 0), 0);
+                    return total / players.length;
+                };
+                return getAvg(a.players) - getAvg(b.players);
+            });
+        });
     };
 
     const handleDragOver = (e) => e.preventDefault();
@@ -1188,15 +1230,15 @@ const DraftDashboard = () => {
         <div className={`draft-dashboard ${viewMode}`}>
             {/* Resume Draft Prompt Modal */}
             {showResumePrompt && savedDraft && (
-                <div className="modal-overlay">
-                    <div className="modal-content">
+                <div className="resume-modal-overlay">
+                    <div className="resume-modal-content">
                         <h2>Resume Draft?</h2>
                         <p>
                             Found saved draft: <strong>{JSON.parse(savedDraft.draftData).seasonName}</strong>
                             <br />
                             Last saved: {new Date(savedDraft.updatedAt).toLocaleString()}
                         </p>
-                        <div className="modal-actions">
+                        <div className="resume-modal-actions">
                             <button
                                 className="btn-draft btn-start"
                                 onClick={handleResumeDraft}
