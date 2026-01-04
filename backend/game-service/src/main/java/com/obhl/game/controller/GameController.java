@@ -100,23 +100,12 @@ public class GameController {
         }
     }
 
-    @PostMapping("/{gameId}/finalize")
-    public ResponseEntity<?> finalizeGame(
-            @PathVariable Long gameId,
-            @RequestBody GameDto.FinalizeRequest finalizeRequest) {
-        try {
-            GameDto.Response finalized = gameService.finalizeGame(gameId, finalizeRequest);
-            return ResponseEntity.ok(finalized);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        }
-    }
-
     // Schedule Management Endpoints
     @PostMapping("/upload-slots")
     public ResponseEntity<?> uploadGameSlots(
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
         try {
+            // Validate file type
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body("File is empty");
             }
@@ -126,10 +115,23 @@ public class GameController {
                 return ResponseEntity.badRequest().body("File must be a CSV");
             }
 
+            // Parse and validate
             java.util.List<com.obhl.game.dto.GameSlot> slots = csvParserService.parseGameSlots(file);
             csvParserService.validateGameSlots(slots);
 
             return ResponseEntity.ok(slots);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{gameId}/finalize")
+    public ResponseEntity<?> finalizeGame(
+            @PathVariable Long gameId,
+            @RequestBody GameDto.FinalizeRequest finalizeRequest) {
+        try {
+            GameDto.Response finalized = gameService.finalizeGame(gameId, finalizeRequest);
+            return ResponseEntity.ok(finalized);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
