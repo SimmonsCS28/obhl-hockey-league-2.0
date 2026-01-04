@@ -44,6 +44,9 @@ const DraftDashboard = () => {
     // New Draft confirmation modal state
     const [showNewDraftConfirm, setShowNewDraftConfirm] = useState(false);
 
+    // Finalize Draft confirmation modal state
+    const [showFinalizeDraftConfirm, setShowFinalizeDraftConfirm] = useState(false);
+
     // Undo History State
     const [history, setHistory] = useState([]);
 
@@ -559,7 +562,13 @@ const DraftDashboard = () => {
     };
 
     // Handler for finalizing draft
-    const handleFinalizeDraft = async () => {
+    const handleFinalizeDraft = async (e) => {
+        // Prevent default behavior
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
         if (!currentDraftSaveId) {
             setWarning('Please save the draft before finalizing');
             return;
@@ -569,9 +578,13 @@ const DraftDashboard = () => {
             return;
         }
 
-        if (!window.confirm(`Are you sure you want to finalize the draft for "${seasonName}"? This will create the season, teams, and players in the database.`)) {
-            return;
-        }
+        // Show confirmation modal instead of window.confirm
+        setShowFinalizeDraftConfirm(true);
+    };
+
+    // Perform the actual finalization (called after confirmation)
+    const performFinalizeDraft = async () => {
+        setShowFinalizeDraftConfirm(false);
 
         try {
             const response = await fetch(
@@ -591,6 +604,11 @@ const DraftDashboard = () => {
         } catch (error) {
             setWarning(`Error finalizing draft: ${error.message}`);
         }
+    };
+
+    // Handler for canceling finalize draft from modal
+    const cancelFinalizeDraft = () => {
+        setShowFinalizeDraftConfirm(false);
     };
 
     const handleResumeDraft = async () => {
@@ -633,22 +651,17 @@ const DraftDashboard = () => {
             e.stopPropagation();
         }
 
-        console.log('handleStartNewDraft called', { isLive, playerPoolLength: playerPool.length, teamsLength: teams.length });
-
         // If there's data to clear, show confirmation modal
         if (isLive || playerPool.length > 0 || teams.length > 0) {
-            console.log('Showing custom confirmation modal...');
             setShowNewDraftConfirm(true);
         } else {
             // No data, proceed directly
-            console.log('No data to clear, resetting directly...');
             performNewDraftReset();
         }
     };
 
     // Perform the actual reset (called after confirmation)
     const performNewDraftReset = () => {
-        console.log('Resetting draft state...');
         setShowResumePrompt(false);
         setSavedDraft(null);
         setCurrentDraftSaveId(null);
@@ -666,7 +679,6 @@ const DraftDashboard = () => {
 
         // Reset team count to default
         setTeamCount(4);
-        console.log('Draft reset complete');
     };
 
     // Handler for confirming new draft from modal
@@ -677,7 +689,6 @@ const DraftDashboard = () => {
 
     // Handler for canceling new draft from modal
     const cancelNewDraft = () => {
-        console.log('User cancelled new draft');
         setShowNewDraftConfirm(false);
     };
 
@@ -1537,6 +1548,37 @@ const DraftDashboard = () => {
                                 }}
                             >
                                 Start New Draft
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Finalize Draft Confirmation Modal */}
+            {showFinalizeDraftConfirm && (
+                <div className="resume-modal-overlay">
+                    <div className="resume-modal-content">
+                        <h2>Finalize Draft?</h2>
+                        <p>
+                            Are you sure you want to finalize the draft for <strong>"{seasonName}"</strong>?
+                            <br />
+                            <br />
+                            This will create the season, teams, and players in the database.
+                            <br />
+                            This action cannot be undone.
+                        </p>
+                        <div className="resume-modal-actions">
+                            <button
+                                className="btn-draft btn-secondary"
+                                onClick={cancelFinalizeDraft}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="btn-draft btn-finalize"
+                                onClick={performFinalizeDraft}
+                            >
+                                Finalize Draft
                             </button>
                         </div>
                     </div>

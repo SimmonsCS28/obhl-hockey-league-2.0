@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -27,4 +28,7 @@ public interface TeamClient {
 
     @GetMapping("/api/v1/teams")
     List<Map<String, Object>> getTeamsBySeasonId(@RequestParam("seasonId") Long seasonId);
+
+    @DeleteMapping("/api/v1/teams/{id}")
+    void deleteTeam(@PathVariable("id") Long id);
 }
