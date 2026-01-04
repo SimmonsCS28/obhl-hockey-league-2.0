@@ -525,20 +525,20 @@ button {
     display: flex;
     flex-direction: column;
     gap: 0;
-    font-size: 0.8rem;
-    line-height: 1.0;
+    font-size: 0.95rem;
+    line-height: 1.1;
 }
 
 .stat-row {
     display: flex;
     justify-content: space-between;
-    font-size: 0.8rem;
-    font-weight: 500;
-    line-height: 1.0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    line-height: 1.2;
 }
 
 .stat-row span {
-    color: #cbd5e0;
+    color: #e2e8f0;
 }
 
 .team-roster {

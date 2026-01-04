@@ -38,6 +38,7 @@ const DraftDashboard = () => {
     const [modalTargetTeam, setModalTargetTeam] = useState(null);
     const [modalBuddies, setModalBuddies] = useState([]);
     const [selectedBuddies, setSelectedBuddies] = useState([]);
+    const [buddyQueue, setBuddyQueue] = useState([]); // Queue for GM buddy carousel
 
 
     // Color options with exact hex codes
@@ -342,7 +343,7 @@ const DraftDashboard = () => {
         setWarning(`Successfully assigned ${teamsWithoutGM.length} GMs to teams without GMs!`);
     };
 
-    // Handler for assigning GM buddy picks to teams
+    // Handler for assigning GM buddy picks to teams using the wizard
     const handleAssignGMBuddies = () => {
         // Find all GMs currently on teams
         const gmsOnTeams = [];
@@ -358,70 +359,69 @@ const DraftDashboard = () => {
             return;
         }
 
-        let totalAssigned = 0;
-        let warnings = [];
-        const updatedTeams = [...teams];
+        const queue = [];
+        const warnings = [];
 
-        // For each GM on a team, find and assign their buddies
+        // For each GM on a team, find valid buddies in the pool (including recursive picks)
         gmsOnTeams.forEach(({ gm, teamId }) => {
-            const buddyEmails = buddyPickMap[gm.email];
+            // Collect ALL chained buddies using BFS
+            const allBuddyEmails = new Set();
+            const searchQueue = [...(buddyPickMap[gm.email] || [])];
+            const visited = new Set([gm.email]); // Don't pick self
 
-            if (!buddyEmails || buddyEmails.length === 0) {
-                return; // GM has no buddy picks
+            while (searchQueue.length > 0) {
+                const currentEmail = searchQueue.shift();
+                if (visited.has(currentEmail)) continue;
+
+                visited.add(currentEmail);
+                allBuddyEmails.add(currentEmail);
+
+                // Add this person's buddies to queue
+                const nextBuddies = buddyPickMap[currentEmail] || [];
+                nextBuddies.forEach(b => {
+                    if (!visited.has(b)) searchQueue.push(b);
+                });
             }
 
             // Find buddies still in player pool
-            const availableBuddies = buddyEmails
+            const availableBuddies = Array.from(allBuddyEmails)
                 .map(email => playerPool.find(p => p.email === email))
                 .filter(buddy => buddy !== undefined);
 
             if (availableBuddies.length === 0) {
-                warnings.push(`${gm.firstName} ${gm.lastName}'s buddies are already assigned or not found`);
+                // Determine if they are already on the team or just missing
+                const team = teams.find(t => t.id === teamId);
+                const onTeam = buddyEmails.every(email => team.players.some(p => p.email === email));
+
+                if (!onTeam) {
+                    warnings.push(`${gm.firstName} ${gm.lastName}'s buddies not found in pool (likely already assigned elsewhere)`);
+                }
                 return;
             }
 
-            // Assign buddies to the same team as the GM
-            const teamIndex = updatedTeams.findIndex(t => t.id === teamId);
-            if (teamIndex !== -1) {
-                updatedTeams[teamIndex] = {
-                    ...updatedTeams[teamIndex],
-                    players: [...updatedTeams[teamIndex].players, ...availableBuddies]
-                };
-                totalAssigned += availableBuddies.length;
-            }
+            // Add to queue
+            queue.push({
+                gm,
+                teamId,
+                availableBuddies
+            });
         });
 
-        if (totalAssigned === 0) {
-            setWarning('No buddy picks were available to assign. ' + (warnings.length > 0 ? warnings.join('. ') : ''));
+        if (queue.length === 0) {
+            setWarning('No available buddy picks found to assign for current GMs.');
             return;
         }
 
-        // Remove assigned buddies from player pool
-        const assignedEmails = [];
-        gmsOnTeams.forEach(({ gm }) => {
-            const buddyEmails = buddyPickMap[gm.email] || [];
-            assignedEmails.push(...buddyEmails);
-        });
-        const updatedPool = playerPool.filter(player => !assignedEmails.includes(player.email));
+        // Start the wizard with the first GM
+        const firstItem = queue[0];
+        setBuddyQueue(queue.slice(1)); // Store remaining items
 
-        // Sort teams by average skill rating (Low to High)
-        updatedTeams.sort((a, b) => {
-            const getAvg = (players) => {
-                if (!players || players.length === 0) return 0;
-                const total = players.reduce((sum, p) => sum + (p.skillRating || 0), 0);
-                return total / players.length;
-            };
-            return getAvg(a.players) - getAvg(b.players);
-        });
-
-        setTeams(updatedTeams);
-        setPlayerPool(updatedPool);
-
-        let message = `Successfully assigned ${totalAssigned} buddy picks to GM teams!`;
-        if (warnings.length > 0) {
-            message += ` Note: ${warnings.join('. ')}`;
-        }
-        setWarning(message);
+        // Setup modal
+        setModalPlayer(firstItem.gm);
+        setModalTargetTeam(firstItem.teamId);
+        setModalBuddies(firstItem.availableBuddies);
+        setSelectedBuddies(firstItem.availableBuddies.map(p => p.email)); // Pre-select all
+        setShowBuddyModal(true);
     };
 
     // Validation: Check if each team has at least one GM
@@ -846,49 +846,107 @@ const DraftDashboard = () => {
 
     const handleDragOver = (e) => e.preventDefault();
 
-    // Buddy pick modal handlers
-    const handleConfirmBuddies = () => {
-        if (!modalPlayer) return;
+    // Modal Handlers
+    const toggleBuddySelection = (email) => {
+        setSelectedBuddies(prev =>
+            prev.includes(email)
+                ? prev.filter(e => e !== email)
+                : [...prev, email]
+        );
+    };
 
-        // Get the source from the dragged player (we need to store this)
-        const source = 'pool'; // Buddies are always from pool
+    const processNextInQueue = () => {
+        const nextItem = buddyQueue[0];
+        setBuddyQueue(prev => prev.slice(1));
 
-        // Get selected buddy objects
-        const selectedBuddyObjects = modalBuddies.filter(b => selectedBuddies.includes(b.email));
-
-        // Complete the drop with selected buddies
-        completeDrop(modalPlayer, source, modalTargetTeam, selectedBuddyObjects);
-
-        // Close modal and reset state
-        setShowBuddyModal(false);
-        setModalPlayer(null);
-        setModalTargetTeam(null);
-        setModalBuddies([]);
-        setSelectedBuddies([]);
+        setModalPlayer(nextItem.gm);
+        setModalTargetTeam(nextItem.teamId);
+        setModalBuddies(nextItem.availableBuddies);
+        setSelectedBuddies(nextItem.availableBuddies.map(p => p.email));
     };
 
     const handleSkipBuddies = () => {
-        if (!modalPlayer) return;
+        // If in queue mode, process next
+        if (buddyQueue.length > 0) {
+            processNextInQueue();
+            return;
+        }
 
-        const source = 'pool';
-
-        // Complete drop without buddies
-        completeDrop(modalPlayer, source, modalTargetTeam, []);
-
-        // Close modal and reset state
         setShowBuddyModal(false);
         setModalPlayer(null);
         setModalTargetTeam(null);
         setModalBuddies([]);
         setSelectedBuddies([]);
+
+        // If we were dragging a player (single drop), complete without buddies
+        if (modalPlayer && modalTargetTeam) {
+            // Check if player is already on target team
+            const targetTeam = teams.find(t => t.id === modalTargetTeam);
+            const isAlreadyOnTeam = targetTeam && targetTeam.players.some(p => p.email === modalPlayer.email);
+
+            if (!isAlreadyOnTeam) {
+                completeDrop(modalPlayer, 'pool', modalTargetTeam, []);
+            }
+        }
     };
 
-    const toggleBuddySelection = (buddyEmail) => {
-        setSelectedBuddies(prev =>
-            prev.includes(buddyEmail)
-                ? prev.filter(e => e !== buddyEmail)
-                : [...prev, buddyEmail]
-        );
+    const handleConfirmBuddies = () => {
+        if (!modalPlayer || !modalTargetTeam) return;
+
+        const playersToAdd = modalBuddies.filter(b => selectedBuddies.includes(b.email));
+
+        completeDropWithWizardCheck(modalPlayer, modalTargetTeam, playersToAdd);
+
+        // If in queue mode, process next
+        if (buddyQueue.length > 0) {
+            processNextInQueue();
+        } else {
+            setShowBuddyModal(false);
+            setModalPlayer(null);
+            setModalTargetTeam(null);
+            setModalBuddies([]);
+            setSelectedBuddies([]);
+
+            // If this was a queue process finishing (active wizard), show summary
+            // We don't have a flag for 'wizard active' other than queue. 
+            // But if queue was just emptied, maybe?
+            // Simple approach: explicit check is hard without state.
+        }
+    };
+
+    const completeDropWithWizardCheck = (player, targetTeamId, buddies) => {
+        // Check if player is already on team
+        const targetTeam = teams.find(t => t.id === targetTeamId);
+        const isAlreadyOnTeam = targetTeam && targetTeam.players.some(p => p.email === player.email);
+
+        if (isAlreadyOnTeam) {
+            // Just add buddies to the team and remove from pool
+            if (buddies.length > 0) {
+                // Remove buddies from pool
+                setPlayerPool(prev => prev.filter(p => !buddies.some(b => b.email === p.email)));
+
+                // Add buddies to team and sort
+                setTeams(prev => {
+                    const updatedTeams = prev.map(t =>
+                        t.id === targetTeamId
+                            ? { ...t, players: [...t.players, ...buddies] }
+                            : t
+                    );
+
+                    return updatedTeams.sort((a, b) => {
+                        const getAvg = (players) => {
+                            if (!players || players.length === 0) return 0;
+                            const total = players.reduce((sum, p) => sum + (p.skillRating || 0), 0);
+                            return total / players.length;
+                        };
+                        return getAvg(a.players) - getAvg(b.players);
+                    });
+                });
+            }
+        } else {
+            // Standard drop logic
+            completeDrop(player, 'pool', targetTeamId, buddies);
+        }
     };
 
     // Update buddy pick map when a player's buddy pick field is edited
@@ -1449,28 +1507,15 @@ const DraftDashboard = () => {
                                 </div>
                                 <div className="team-stats">
                                     <div className="stat-row">
-                                        <span>Forwards:</span>
-                                        <span>{stats.forwards}</span>
+                                        <span>Players: {team.players.length}</span>
+                                        <span>Skill: {stats.total}</span>
                                     </div>
                                     <div className="stat-row">
-                                        <span>Defense:</span>
-                                        <span>{stats.defense}</span>
+                                        <span>F/D: {stats.forwards}/{stats.defense}</span>
+                                        <span>Avg: {stats.avg}</span>
                                     </div>
-                                    <div className="stat-row">
-                                        <span>Avg Fwd Rating:</span>
-                                        <span>{stats.avgF}</span>
-                                    </div>
-                                    <div className="stat-row">
-                                        <span>Avg Def Rating:</span>
-                                        <span>{stats.avgD}</span>
-                                    </div>
-                                    <div className="stat-row">
-                                        <span>Total Skill:</span>
-                                        <span>{stats.total}</span>
-                                    </div>
-                                    <div className="stat-row">
-                                        <span>Avg Rating:</span>
-                                        <span>{stats.avg}</span>
+                                    <div className="stat-row" title="Average Rating (Forwards / Defense)">
+                                        <span>Avg F/D: {stats.avgF} / {stats.avgD}</span>
                                     </div>
                                 </div>
                                 <div className="team-roster">
@@ -1488,7 +1533,7 @@ const DraftDashboard = () => {
                 <div className="buddy-modal-overlay" onClick={handleSkipBuddies}>
                     <div className="buddy-modal" onClick={(e) => e.stopPropagation()}>
                         <div className="buddy-modal-header">
-                            <h3>Buddy Picks Available</h3>
+                            <h3>{buddyQueue.length > 0 ? `Assign Buddies for GM (${buddyQueue.length + 1} Remaining)` : 'Buddy Picks Available'}</h3>
                             <p>{modalPlayer.firstName} {modalPlayer.lastName} has buddy picks!</p>
                         </div>
 
@@ -1523,8 +1568,8 @@ const DraftDashboard = () => {
                                                     {buddyHasPicks && (
                                                         <>
                                                             <span>•</span>
-                                                            <span className="buddy-has-picks">
-                                                                Has {buddyPickMap[buddy.email].length} buddy pick(s)
+                                                            <span className="buddy-has-picks" title={buddy.buddyPick}>
+                                                                Picks: {buddy.buddyPick}
                                                             </span>
                                                         </>
                                                     )}
@@ -1541,14 +1586,14 @@ const DraftDashboard = () => {
                                 className="btn-secondary"
                                 onClick={handleSkipBuddies}
                             >
-                                Skip Buddies
+                                {buddyQueue.length > 0 ? 'Skip & Next' : 'Skip Buddies'}
                             </button>
                             <button
                                 className="btn-start"
                                 onClick={handleConfirmBuddies}
                                 disabled={selectedBuddies.length === 0}
                             >
-                                Add Selected ({selectedBuddies.length})
+                                {buddyQueue.length > 0 ? `Add & Next (${selectedBuddies.length})` : `Add Selected (${selectedBuddies.length})`}
                             </button>
                         </div>
                     </div>
