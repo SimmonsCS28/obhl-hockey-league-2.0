@@ -1,0 +1,167 @@
+.standings-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.standings-page h1 {
+    color: white;
+    margin-bottom: 2rem;
+    font-size: 2.5rem;
+}
+
+.season-selector {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.season-selector label {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 1.1rem;
+}
+
+.season-dropdown {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    color: #2d3748;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.season-dropdown:hover {
+    border-color: #4a5568;
+}
+
+.season-dropdown:focus {
+    outline: none;
+    border-color: #2d3748;
+}
+
+.standings-table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.standings-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.standings-table thead {
+    background: #4a5568 !important;
+    color: white;
+}
+
+.standings-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    background: #4a5568 !important;
+    color: white !important;
+}
+
+.standings-table th:first-child {
+    text-align: center;
+}
+
+.standings-table tbody tr {
+    border-bottom: 1px solid #e2e8f0;
+    transition: background-color 0.2s;
+}
+
+.standings-table tbody tr:hover {
+    background-color: #f7fafc;
+}
+
+.standings-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.standings-table tbody tr.playoff-spot {
+    background-color: #f0fdf4;
+}
+
+.standings-table tbody tr.playoff-spot:hover {
+    background-color: #dcfce7;
+}
+
+.standings-table td {
+    padding: 1rem;
+    color: #2d3748;
+}
+
+.standings-table td.rank {
+    text-align: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #4a5568;
+}
+
+.standings-table td.team-name {
+    min-width: 200px;
+}
+
+.standings-table td.team-name strong {
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.standings-table td.team-name .team-abbr {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.875rem;
+}
+
+.standings-table td.points {
+    font-size: 1.1rem;
+    color: #2d3748;
+}
+
+.loading,
+.error,
+.no-data {
+    text-align: center;
+    padding: 3rem;
+    font-size: 1.2rem;
+}
+
+.error {
+    color: #dc3545;
+}
+
+.no-data {
+    background: white;
+    border-radius: 12px;
+    padding: 3rem;
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    .season-selector {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .standings-table-container {
+        overflow-x: auto;
+    }
+
+    .standings-table {
+        min-width: 700px;
+    }
+}

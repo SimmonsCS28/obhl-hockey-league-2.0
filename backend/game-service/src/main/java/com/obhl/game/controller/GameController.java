@@ -33,6 +33,7 @@ public class GameController {
     private final GameEventService gameEventService;
     private final PenaltyValidator penaltyValidator;
     private final com.obhl.game.service.CsvParserService csvParserService;
+    private final com.obhl.game.service.ScheduleGeneratorService scheduleGeneratorService;
 
     @GetMapping
     public ResponseEntity<List<GameDto.Response>> getGames(
@@ -131,6 +132,32 @@ public class GameController {
         try {
             GameDto.Response finalized = gameService.finalizeGame(gameId, finalizeRequest);
             return ResponseEntity.ok(finalized);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/generate")
+    public ResponseEntity<?> generateSchedule(@Valid @RequestBody com.obhl.game.dto.ScheduleGenerateRequest request) {
+        try {
+            java.util.List<com.obhl.game.model.Game> games = scheduleGeneratorService.generateSchedule(
+                    request.getSeasonId(),
+                    request.getLeagueId(),
+                    request.getTeamIds(),
+                    request.getGameSlots(),
+                    request.getMaxWeeks());
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(games.size() + " games generated successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/season/{seasonId}")
+    public ResponseEntity<?> resetSchedule(@PathVariable Long seasonId) {
+        try {
+            scheduleGeneratorService.resetSchedule(seasonId);
+            return ResponseEntity.ok("Schedule reset successfully");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

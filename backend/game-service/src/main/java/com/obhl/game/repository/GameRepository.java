@@ -22,4 +22,6 @@ public interface GameRepository extends JpaRepository<Game, Long> {
     List<Game> findByGameDateBetween(LocalDateTime startDate, LocalDateTime endDate);
 
     List<Game> findByHomeTeamIdAndAwayTeamId(Long homeTeamId, Long awayTeamId);
+
+    boolean existsBySeasonId(Long seasonId);
 }

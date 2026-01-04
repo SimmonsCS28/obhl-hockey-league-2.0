@@ -1,0 +1,159 @@
+.players-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.players-page h1 {
+    color: white;
+    margin-bottom: 2rem;
+    font-size: 2.5rem;
+}
+
+.filters-container {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+    display: flex;
+    gap: 2rem;
+    flex-wrap: wrap;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex: 1;
+    min-width: 250px;
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 1.1rem;
+    white-space: nowrap;
+}
+
+.filter-dropdown {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    color: #2d3748;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.filter-dropdown:hover {
+    border-color: #4a5568;
+}
+
+.filter-dropdown:focus {
+    outline: none;
+    border-color: #2d3748;
+}
+
+.players-table-container {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.players-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.players-table thead {
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+    color: white;
+}
+
+.players-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.players-table th.sortable {
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s;
+}
+
+.players-table th.sortable:hover {
+    background: linear-gradient(135deg, #5a6678 0%, #3d4758 100%);
+}
+
+.players-table tbody tr {
+    border-bottom: 1px solid #e2e8f0;
+    transition: background-color 0.2s;
+}
+
+.players-table tbody tr:hover {
+    background-color: #f7fafc;
+}
+
+.players-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.players-table td {
+    padding: 1rem;
+    color: #2d3748;
+}
+
+.gm-badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    background: #fbbf24;
+    color: #000000;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.loading,
+.error,
+.no-data {
+    text-align: center;
+    padding: 3rem;
+    font-size: 1.2rem;
+}
+
+.error {
+    color: #dc3545;
+}
+
+.no-data {
+    background: white;
+    border-radius: 12px;
+    padding: 3rem;
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    .season-selector {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .players-table-container {
+        overflow-x: auto;
+    }
+
+    .players-table {
+        min-width: 600px;
+    }
+}
