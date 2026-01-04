@@ -167,18 +167,30 @@ const SchedulePage = () => {
                                 {gamesByWeek[week].map(game => {
                                     const homeTeam = getTeamById(game.homeTeamId);
                                     const awayTeam = getTeamById(game.awayTeamId);
+                                    const gameDate = new Date(game.gameDate);
+                                    const dayOfWeek = gameDate.getDay(); // 0=Sunday, 5=Friday
+                                    const isNotFriday = dayOfWeek !== 5;
+                                    const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
 
                                     return (
-                                        <div key={game.id} className="game-card">
+                                        <div
+                                            key={game.id}
+                                            className={`game-card ${isNotFriday ? 'non-friday-game' : ''}`}
+                                        >
+                                            {isNotFriday && (
+                                                <div className="day-badge">
+                                                    ⚠️ {dayName.toUpperCase()}
+                                                </div>
+                                            )}
                                             <div className="game-date">
-                                                {new Date(game.gameDate).toLocaleDateString('en-US', {
+                                                {gameDate.toLocaleDateString('en-US', {
                                                     weekday: 'short',
                                                     month: 'short',
                                                     day: 'numeric'
                                                 })}
                                             </div>
                                             <div className="game-time">
-                                                {new Date(game.gameDate).toLocaleTimeString('en-US', {
+                                                {gameDate.toLocaleTimeString('en-US', {
                                                     hour: 'numeric',
                                                     minute: '2-digit'
                                                 })}
