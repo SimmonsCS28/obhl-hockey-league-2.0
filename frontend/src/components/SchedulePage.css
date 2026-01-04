@@ -1,0 +1,227 @@
+.schedule-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.schedule-header {
+    margin-bottom: 30px;
+}
+
+.schedule-header h1 {
+    color: white;
+    margin-bottom: 20px;
+    font-size: 2.5rem;
+}
+
+/* Filters */
+.filters {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 200px;
+}
+
+.filter-group label {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.9em;
+}
+
+.filter-select {
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+    background: white;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.filter-select:hover {
+    border-color: #3498db;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #3498db;
+}
+
+/* Loading and Empty States */
+.loading,
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #7f8c8d;
+    font-size: 1.2em;
+}
+
+/* Schedule Grid */
+.schedule-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.week-section {
+    background: white;
+    border-radius: 8px;
+    padding: 25px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.week-section h2 {
+    color: #2c3e50;
+    margin: 0 0 20px 0;
+    padding-bottom: 10px;
+    border-bottom: 3px solid #3498db;
+    font-size: 1.5em;
+}
+
+.games-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+/* Game Cards */
+.game-card {
+    background: #2c3e50;
+    border-radius: 8px;
+    padding: 20px;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    position: relative;
+}
+
+.game-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    border-color: #3498db;
+}
+
+/* Non-Friday Game Styling */
+.game-card.non-friday-game {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+}
+
+.game-card.non-friday-game:hover {
+    border-color: #f59e0b;
+    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+}
+
+.day-badge {
+    position: absolute;
+    top: -12px;
+    right: 10px;
+    background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.game-date {
+    color: white !important;
+    font-size: 0.9em;
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.game-time {
+    color: white;
+    font-size: 1.3em;
+    font-weight: 700;
+    margin-bottom: 15px;
+}
+
+.game-teams {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.team-badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 16px;
+    color: white;
+    font-weight: 600;
+    font-size: 0.95em;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.vs {
+    color: white;
+    font-weight: 500;
+    font-size: 0.9em;
+}
+
+.game-location {
+    color: #ecf0f1;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .schedule-page {
+        padding: 10px;
+    }
+
+    .filters {
+        flex-direction: column;
+    }
+
+    .filter-group {
+        width: 100%;
+    }
+
+    .games-list {
+        grid-template-columns: 1fr;
+    }
+
+    .schedule-header h1 {
+        font-size: 1.5em;
+    }
+
+    .week-section {
+        padding: 15px;
+    }
+
+    .week-section h2 {
+        font-size: 1.2em;
+    }
+}

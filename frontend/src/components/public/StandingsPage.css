@@ -61,7 +61,7 @@
 }
 
 .standings-table thead {
-    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+    background: #4a5568 !important;
     color: white;
 }
 
@@ -72,6 +72,8 @@
     font-size: 0.95rem;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    background: #4a5568 !important;
+    color: white !important;
 }
 
 .standings-table th:first-child {

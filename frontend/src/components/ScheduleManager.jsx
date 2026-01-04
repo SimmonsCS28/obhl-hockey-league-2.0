@@ -585,18 +585,27 @@ const ScheduleManager = () => {
                                     {gamesByWeek[week].map(game => {
                                         const homeTeam = getTeamById(game.homeTeamId);
                                         const awayTeam = getTeamById(game.awayTeamId);
+                                        const gameDate = new Date(game.gameDate);
+                                        const dayOfWeek = gameDate.getDay(); // 0=Sunday, 5=Friday
+                                        const isNotFriday = dayOfWeek !== 5;
+                                        const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
 
                                         return (
                                             <div
                                                 key={game.id}
-                                                className="game-card clickable"
+                                                className={`game-card clickable ${isNotFriday ? 'non-friday-game' : ''}`}
                                                 onClick={() => setEditingGame(game)}
                                             >
+                                                {isNotFriday && (
+                                                    <div className="day-badge">
+                                                        ⚠️ {dayName.toUpperCase()}
+                                                    </div>
+                                                )}
                                                 <div className="game-time">
                                                     {game.homeTeamId && game.awayTeamId ? (
                                                         <>
-                                                            {new Date(game.gameDate).toLocaleDateString()} {' '}
-                                                            {new Date(game.gameDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            {gameDate.toLocaleDateString()} {' '}
+                                                            {gameDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                         </>
                                                     ) : (
                                                         <span className="placeholder">Click to set date/time</span>
