@@ -19,6 +19,7 @@ public class GameService {
 
     private final GameRepository gameRepository;
     private final PointsCalculator pointsCalculator;
+    private final TeamStatsUpdater teamStatsUpdater;
 
     @Transactional(readOnly = true)
     public List<GameDto.Response> getAllGames() {
@@ -148,7 +149,13 @@ public class GameService {
         // Calculate points using PointsCalculator
         pointsCalculator.calculateAndSetPoints(game);
 
-        return toResponse(gameRepository.save(game));
+        // Save game first
+        Game savedGame = gameRepository.save(game);
+
+        // Update team standings
+        teamStatsUpdater.updateTeamStats(savedGame);
+
+        return toResponse(savedGame);
     }
 
     private GameDto.Response toResponse(Game game) {
