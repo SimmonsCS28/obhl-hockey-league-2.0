@@ -624,15 +624,34 @@ const DraftDashboard = () => {
     };
 
     const handleStartNewDraft = () => {
+        // Confirmation check
+        if (isLive || playerPool.length > 0 || teams.length > 0) {
+            if (!window.confirm("Are you sure you want to START A NEW DRAFT? This will clear all current players, teams, and progress. Unsaved changes will be lost.")) {
+                return;
+            }
+        }
+
         setShowResumePrompt(false);
         setSavedDraft(null);
-        setCurrentDraftSaveId(null); // Clear ID so next save creates new draft
-        // Keep current empty state
+        setCurrentDraftSaveId(null);
+
+        // Full Hard Reset
+        setSeasonName('');
+        setIsLive(false);
+        setPlayerPool([]);
+        setTeams([]);
+        setHistory([]);
+        setTeamColors({});
+        setTeamSortOptions({});
+        setBuddyPickMap({});
+        setWarning('');
+
+        // Reset team count to default
+        setTeamCount(4);
     };
 
 
 
-    // Fallback download function for browsers without File System Access API
     const fallbackDownload = (blob, filename) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -1382,6 +1401,53 @@ const DraftDashboard = () => {
         }
     };
 
+    // Check if we should show "Assign GMs" button
+    const shouldShowAssignGMs = () => {
+        // Show if ANY team is missing a GM
+        return teams.some(team => !team.players.some(p => p.isGm));
+    };
+
+    // Check if we should show "Assign GM Buddies" button
+    const shouldShowAssignGMBuddies = () => {
+        // Show if there are any GMs on teams whose buddies are still in the pool
+        // This is a simplified check. A more robust one mimics `handleAssignGMBuddies` logic without side effects.
+
+        let hasWorkToDo = false;
+
+        // Iterate teams to find GMs
+        teams.forEach(team => {
+            if (hasWorkToDo) return;
+            const gms = team.players.filter(p => p.isGm);
+
+            gms.forEach(gm => {
+                if (hasWorkToDo) return;
+                const buddies = buddyPickMap[gm.email] || [];
+                // Check if any direct buddy is in the pool
+                const buddyInPool = buddies.some(email => playerPool.some(p => p.email === email));
+                if (buddyInPool) hasWorkToDo = true;
+            });
+        });
+
+        return hasWorkToDo;
+    };
+
+    const handleCancelDrop = () => {
+        // Cancel the current action (whether from Queue or Drag)
+        // Does NOT add player to team.
+        setShowBuddyModal(false);
+        setModalPlayer(null);
+        setModalTargetTeam(null);
+        setModalSource(null);
+        setModalBuddies([]);
+        setSelectedBuddies([]);
+
+        // If in wizard, we might want to stop? 
+        // User said "cancel the action of moving...". 
+        // If it's a wizard flow, "Cancel" implies aborting the wizard or skipping?
+        // Let's assume Abort Wizard for safety, user can restart.
+        setBuddyQueue([]);
+    };
+
     return (
         <div className={`draft-dashboard ${viewMode}`}>
             {/* Resume Draft Prompt Modal */}
@@ -1464,8 +1530,12 @@ const DraftDashboard = () => {
                         <button className="btn-draft btn-start" onClick={handleStartDraft}>Start Draft</button>
                     ) : (
                         <>
-                            <button className="btn-draft btn-secondary" onClick={handleAssignGMs}>Assign GMs</button>
-                            <button className="btn-draft btn-secondary" onClick={handleAssignGMBuddies}>Assign GM Buddies</button>
+                            {shouldShowAssignGMs() && (
+                                <button className="btn-draft btn-secondary" onClick={handleAssignGMs}>Assign GMs</button>
+                            )}
+                            {shouldShowAssignGMBuddies() && (
+                                <button className="btn-draft btn-secondary" onClick={handleAssignGMBuddies}>Assign GM Buddies</button>
+                            )}
                             <button
                                 className="btn-draft btn-undo"
                                 onClick={handleUndo}
@@ -1483,18 +1553,51 @@ const DraftDashboard = () => {
                             </button>
                             <button className="btn-draft btn-save" onClick={handleSaveDraft}>Save Draft</button>
                             <button className="btn-draft btn-finalize" onClick={handleFinalizeDraft}>Finalize Draft</button>
+                            <button
+                                className="btn-draft btn-reset"
+                                onClick={handleStartNewDraft}
+                                style={{
+                                    backgroundColor: '#eab308',
+                                    border: '1px solid #ca8a04',
+                                    color: '#000',
+                                    fontWeight: '600',
+                                    marginLeft: '1rem'
+                                }}
+                                title="Clear everything and start fresh"
+                            >
+                                New Draft
+                            </button>
                         </>
+                    )}
+                    {/* Show New Draft button even if not live IF there's data (e.g. uploaded file but not started) */}
+                    {!isLive && (playerPool.length > 0 || teams.length > 0) && (
+                        <button
+                            className="btn-draft btn-reset"
+                            onClick={handleStartNewDraft}
+                            style={{
+                                backgroundColor: '#eab308',
+                                border: '1px solid #ca8a04',
+                                color: '#000',
+                                fontWeight: '600',
+                                marginLeft: '0.5rem'
+                            }}
+                            title="Clear everything and start fresh"
+                        >
+                            New Draft
+                        </button>
                     )}
                     <button className="btn-draft btn-reset" onClick={handleReset}>Reset Draft</button>
                 </div>
 
-                <div className="menu-section">
-                    <label className="btn-draft btn-secondary">
-                        Upload File
-                        <input type="file" hidden accept=".xlsx" onChange={(e) => handleFileUpload(e, 'registration')} disabled={isLive} />
-                    </label>
-                    <button className="btn-draft btn-secondary" onClick={handleDownloadTemplate}>Download Template</button>
-                </div>
+                {!isLive && (
+                    <div className="menu-section">
+                        <label className="btn-draft btn-secondary">
+                            Upload File
+                            <input type="file" hidden accept=".xlsx" onChange={(e) => handleFileUpload(e, 'registration')} disabled={isLive} />
+                        </label>
+                        <button className="btn-draft btn-secondary" onClick={handleDownloadTemplate}>Download Template</button>
+                    </div>
+                )}
             </div>
 
             {warning && (
@@ -1695,6 +1798,13 @@ const DraftDashboard = () => {
                         </div>
 
                         <div className="buddy-modal-footer">
+                            <button
+                                className="btn-secondary"
+                                onClick={handleCancelDrop}
+                                style={{ backgroundColor: '#e53e3e', color: 'white', marginRight: 'auto' }}
+                            >
+                                Cancel
+                            </button>
                             <button
                                 className="btn-secondary"
                                 onClick={handleSkipBuddies}
