@@ -4,16 +4,25 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import com.obhl.game.dto.GameDto;
 import com.obhl.game.dto.GameEventDto;
 import com.obhl.game.dto.PenaltyValidationResponse;
 import com.obhl.game.service.GameEventService;
 import com.obhl.game.service.GameService;
 import com.obhl.game.service.PenaltyValidator;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("${api.v1.prefix}/games")
@@ -23,6 +32,8 @@ public class GameController {
     private final GameService gameService;
     private final GameEventService gameEventService;
     private final PenaltyValidator penaltyValidator;
+    private final com.obhl.game.service.CsvParserService csvParserService;
+    private final com.obhl.game.service.ScheduleGeneratorService scheduleGeneratorService;
 
     @GetMapping
     public ResponseEntity<List<GameDto.Response>> getGames(
@@ -96,6 +107,55 @@ public class GameController {
         try {
             GameDto.Response finalized = gameService.finalizeGame(gameId, finalizeRequest);
             return ResponseEntity.ok(finalized);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // Schedule Management Endpoints
+    @PostMapping("/upload-slots")
+    public ResponseEntity<?> uploadGameSlots(
+            @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
+        try {
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest().body("File is empty");
+            }
+
+            String filename = file.getOriginalFilename();
+            if (filename == null || !filename.endsWith(".csv")) {
+                return ResponseEntity.badRequest().body("File must be a CSV");
+            }
+
+            java.util.List<com.obhl.game.dto.GameSlot> slots = csvParserService.parseGameSlots(file);
+            csvParserService.validateGameSlots(slots);
+
+            return ResponseEntity.ok(slots);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/generate")
+    public ResponseEntity<?> generateSchedule(@Valid @RequestBody com.obhl.game.dto.ScheduleGenerateRequest request) {
+        try {
+            java.util.List<com.obhl.game.model.Game> games = scheduleGeneratorService.generateSchedule(
+                    request.getSeasonId(),
+                    request.getLeagueId(),
+                    request.getTeamIds(),
+                    request.getGameSlots(),
+                    request.getMaxWeeks());
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(games.size() + " games generated successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/season/{seasonId}")
+    public ResponseEntity<?> resetSchedule(@PathVariable Long seasonId) {
+        try {
+            scheduleGeneratorService.resetSchedule(seasonId);
+            return ResponseEntity.ok("Schedule reset successfully");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

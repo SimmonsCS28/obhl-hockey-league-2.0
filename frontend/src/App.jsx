@@ -4,6 +4,7 @@ import AdminDashboard from './components/AdminDashboard';
 import Login from './components/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicLayout from './components/PublicLayout';
+import ScheduleManager from './components/ScheduleManager';
 import Scorekeeper from './components/Scorekeeper';
 import Home from './components/public/Home';
 import PlayersPage from './components/public/PlayersPage';
@@ -43,6 +44,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Scorekeeper />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/schedule"
+            element={
+              <ProtectedRoute>
+                <ScheduleManager />
               </ProtectedRoute>
             }
           />
