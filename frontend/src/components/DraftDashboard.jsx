@@ -41,6 +41,9 @@ const DraftDashboard = () => {
     const [selectedBuddies, setSelectedBuddies] = useState([]);
     const [buddyQueue, setBuddyQueue] = useState([]); // Queue for GM buddy carousel
 
+    // New Draft confirmation modal state
+    const [showNewDraftConfirm, setShowNewDraftConfirm] = useState(false);
+
     // Undo History State
     const [history, setHistory] = useState([]);
 
@@ -623,14 +626,29 @@ const DraftDashboard = () => {
         }
     };
 
-    const handleStartNewDraft = () => {
-        // Confirmation check
-        if (isLive || playerPool.length > 0 || teams.length > 0) {
-            if (!window.confirm("Are you sure you want to START A NEW DRAFT? This will clear all current players, teams, and progress. Unsaved changes will be lost.")) {
-                return;
-            }
+    const handleStartNewDraft = (e) => {
+        // Prevent default form submission or other browser behavior
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
         }
 
+        console.log('handleStartNewDraft called', { isLive, playerPoolLength: playerPool.length, teamsLength: teams.length });
+
+        // If there's data to clear, show confirmation modal
+        if (isLive || playerPool.length > 0 || teams.length > 0) {
+            console.log('Showing custom confirmation modal...');
+            setShowNewDraftConfirm(true);
+        } else {
+            // No data, proceed directly
+            console.log('No data to clear, resetting directly...');
+            performNewDraftReset();
+        }
+    };
+
+    // Perform the actual reset (called after confirmation)
+    const performNewDraftReset = () => {
+        console.log('Resetting draft state...');
         setShowResumePrompt(false);
         setSavedDraft(null);
         setCurrentDraftSaveId(null);
@@ -648,6 +666,19 @@ const DraftDashboard = () => {
 
         // Reset team count to default
         setTeamCount(4);
+        console.log('Draft reset complete');
+    };
+
+    // Handler for confirming new draft from modal
+    const confirmNewDraft = () => {
+        setShowNewDraftConfirm(false);
+        performNewDraftReset();
+    };
+
+    // Handler for canceling new draft from modal
+    const cancelNewDraft = () => {
+        console.log('User cancelled new draft');
+        setShowNewDraftConfirm(false);
     };
 
 
@@ -1470,6 +1501,40 @@ const DraftDashboard = () => {
                             <button
                                 className="btn-draft btn-secondary"
                                 onClick={handleStartNewDraft}
+                            >
+                                Start New Draft
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* New Draft Confirmation Modal */}
+            {showNewDraftConfirm && (
+                <div className="resume-modal-overlay">
+                    <div className="resume-modal-content">
+                        <h2>Start New Draft?</h2>
+                        <p>
+                            <strong>Warning:</strong> This will completely clear all current players, teams, and progress.
+                            <br />
+                            Any unsaved changes will be lost.
+                        </p>
+                        <div className="resume-modal-actions">
+                            <button
+                                className="btn-draft btn-secondary"
+                                onClick={cancelNewDraft}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="btn-draft btn-start"
+                                onClick={confirmNewDraft}
+                                style={{
+                                    backgroundColor: '#eab308',
+                                    border: '1px solid #ca8a04',
+                                    color: '#000',
+                                    fontWeight: '600'
+                                }}
                             >
                                 Start New Draft
                             </button>
