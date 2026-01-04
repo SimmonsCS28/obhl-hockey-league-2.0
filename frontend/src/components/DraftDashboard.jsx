@@ -15,6 +15,7 @@ const DraftDashboard = () => {
 
     // Filters & Sorting
     const [filter, setFilter] = useState('All');
+    const [searchQuery, setSearchQuery] = useState('');
     const [sortOption, setSortOption] = useState('Name');
     const [sortAsc, setSortAsc] = useState(true);
 
@@ -939,26 +940,50 @@ const DraftDashboard = () => {
     // Sort team players
     const getSortedTeamPlayers = (players, sortOption) => {
         const sorted = [...players];
+
+        // Helper to handle GM prioritization
+        const compareWithGMPriority = (a, b, normalCompare) => {
+            // GMs always come first
+            if (a.isGm && !b.isGm) return -1;
+            if (!a.isGm && b.isGm) return 1;
+            // Valid comparison if neither or both are GMs
+            return normalCompare(a, b);
+        };
+
         switch (sortOption) {
             case 'Rating: High to Low':
-                return sorted.sort((a, b) => (b.skillRating || 0) - (a.skillRating || 0));
+                return sorted.sort((a, b) => compareWithGMPriority(a, b, (p1, p2) => (p2.skillRating || 0) - (p1.skillRating || 0)));
             case 'Rating: Low to High':
-                return sorted.sort((a, b) => (a.skillRating || 0) - (b.skillRating || 0));
+                return sorted.sort((a, b) => compareWithGMPriority(a, b, (p1, p2) => (p1.skillRating || 0) - (p2.skillRating || 0)));
             case 'Position':
-                return sorted.sort((a, b) => a.position.localeCompare(b.position));
+                return sorted.sort((a, b) => compareWithGMPriority(a, b, (p1, p2) => p1.position.localeCompare(p2.position)));
             case 'Position + Rating':
-                return sorted.sort((a, b) => {
-                    if (a.position !== b.position) return a.position.localeCompare(b.position);
-                    return (b.skillRating || 0) - (a.skillRating || 0);
-                });
+                return sorted.sort((a, b) => compareWithGMPriority(a, b, (p1, p2) => {
+                    if (p1.position !== p2.position) return p1.position.localeCompare(p2.position);
+                    return (p2.skillRating || 0) - (p1.skillRating || 0);
+                }));
             default:
-                return sorted;
+                // Even for default sort, prioritize GMs
+                return sorted.sort((a, b) => {
+                    if (a.isGm && !b.isGm) return -1;
+                    if (!a.isGm && b.isGm) return 1;
+                    return 0;
+                });
         }
     };
 
     // Filtering & Sorting Logic for Player Pool
     const getFilteredPlayers = () => {
         let filtered = [...playerPool];
+
+        // Search text filtering
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase().trim();
+            filtered = filtered.filter(p =>
+                (p.firstName && p.firstName.toLowerCase().includes(query)) ||
+                (p.lastName && p.lastName.toLowerCase().includes(query))
+            );
+        }
 
         switch (filter) {
             case 'Forwards':
@@ -1259,7 +1284,12 @@ const DraftDashboard = () => {
                 </div>
             </div>
 
-            {warning && <div className="warnings-area visible">{warning}</div>}
+            {warning && (
+                <div className="warnings-area visible">
+                    <span className="warning-text">{warning}</span>
+                    <button className="close-warning-btn" onClick={() => setWarning('')} title="Dismiss">×</button>
+                </div>
+            )}
 
             <div className="draft-workspace">
                 {/* Left Column: Player Pool */}
@@ -1269,27 +1299,42 @@ const DraftDashboard = () => {
                     onDragOver={handleDragOver}
                 >
                     <div className="pool-header">
-                        <div className="pool-filters">
-                            {['All', 'Forwards', 'Defense', 'Refs', 'GMs', 'Has Buddy'].map(f => (
-                                <button
-                                    key={f}
-                                    className={`filter-btn ${filter === f ? 'active' : ''}`}
-                                    onClick={() => setFilter(f)}
-                                >
-                                    {f}
-                                </button>
-                            ))}
+                        <div className="pool-search" style={{ marginBottom: '0.75rem' }}>
+                            <input
+                                type="text"
+                                placeholder="Search players..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="draft-input"
+                                style={{ width: '100%', padding: '0.5rem', background: '#3a3a3a' }}
+                            />
                         </div>
-                        <div className="pool-sorting">
-                            <select className="draft-input" value={sortOption} onChange={(e) => setSortOption(e.target.value)}>
-                                <option>Name</option>
-                                <option>Position</option>
-                                <option>Skill</option>
-                                <option>Veteran</option>
+                        <div className="pool-filters">
+                            <label style={{ display: 'block', fontSize: '0.8rem', color: '#a0aec0', marginBottom: '0.25rem' }}>FILTER</label>
+                            <select
+                                className="draft-input"
+                                value={filter}
+                                onChange={(e) => setFilter(e.target.value)}
+                                style={{ width: '100%' }}
+                            >
+                                {['All', 'Forwards', 'Defense', 'Refs', 'GMs', 'Has Buddy'].map(f => (
+                                    <option key={f} value={f}>{f}</option>
+                                ))}
                             </select>
-                            <button className="filter-btn" onClick={() => setSortAsc(!sortAsc)}>
-                                {sortAsc ? '↑' : '↓'}
-                            </button>
+                        </div>
+                        <div className="pool-sorting" style={{ marginTop: '0.5rem', display: 'block' }}>
+                            <label style={{ display: 'block', fontSize: '0.8rem', color: '#a0aec0', marginBottom: '0.25rem' }}>SORT</label>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <select className="draft-input" value={sortOption} onChange={(e) => setSortOption(e.target.value)} style={{ flex: 1 }}>
+                                    <option>Name</option>
+                                    <option>Position</option>
+                                    <option>Skill</option>
+                                    <option>Veteran</option>
+                                </select>
+                                <button className="filter-btn" onClick={() => setSortAsc(!sortAsc)} style={{ padding: '0 0.5rem' }}>
+                                    {sortAsc ? '↑' : '↓'}
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div className="pool-list">
