@@ -36,9 +36,49 @@ const DraftDashboard = () => {
     const [showBuddyModal, setShowBuddyModal] = useState(false);
     const [modalPlayer, setModalPlayer] = useState(null);
     const [modalTargetTeam, setModalTargetTeam] = useState(null);
+    const [modalSource, setModalSource] = useState(null); // Track source of drag for modal
     const [modalBuddies, setModalBuddies] = useState([]);
     const [selectedBuddies, setSelectedBuddies] = useState([]);
     const [buddyQueue, setBuddyQueue] = useState([]); // Queue for GM buddy carousel
+
+    // Undo History State
+    const [history, setHistory] = useState([]);
+
+    // Save current state to history stack
+    const saveHistory = () => {
+        const currentState = {
+            playerPool: [...playerPool],
+            teams: JSON.parse(JSON.stringify(teams)), // Deep copy for nested players array
+            buddyPickMap: { ...buddyPickMap },
+            warning,
+            teamColors: { ...teamColors },
+            teamSortOptions: { ...teamSortOptions }
+        };
+
+        setHistory(prev => {
+            const newHistory = [...prev, currentState];
+            // Limit history size to 20
+            if (newHistory.length > 20) {
+                return newHistory.slice(newHistory.length - 20);
+            }
+            return newHistory;
+        });
+    };
+
+    // Undo last action
+    const handleUndo = () => {
+        if (history.length === 0) return;
+
+        const previousState = history[history.length - 1];
+        setHistory(prev => prev.slice(0, prev.length - 1));
+
+        setPlayerPool(previousState.playerPool);
+        setTeams(previousState.teams);
+        setBuddyPickMap(previousState.buddyPickMap);
+        setWarning('Action undone.');
+        setTeamColors(previousState.teamColors);
+        setTeamSortOptions(previousState.teamSortOptions);
+    };
 
 
     // Color options with exact hex codes
@@ -207,8 +247,9 @@ const DraftDashboard = () => {
     };
 
     const handleReset = () => {
-        console.log('=== RESET BUTTON CLICKED ===');
+        saveHistory(); // Save state before mutation
 
+        console.log('=== RESET BUTTON CLICKED ===');
         console.log('Reset starting - Current state:', {
             playerPoolSize: playerPool.length,
             teamsCount: teams.length,
@@ -275,6 +316,8 @@ const DraftDashboard = () => {
 
     // Handler for assigning GMs to teams
     const handleAssignGMs = () => {
+        saveHistory(); // Save state before mutation
+
         // Get all GMs from player pool AND teams
         const allPlayers = [...playerPool];
         teams.forEach(team => {
@@ -761,6 +804,9 @@ const DraftDashboard = () => {
         if (targetTeamId === 'pool') {
             // Moving player back to pool
             if (source === 'pool') return;
+
+            saveHistory(); // Save state before mutation
+
             const sourceTeamId = parseInt(source.split('-')[1]);
             setTeams(prev => prev.map(t =>
                 t.id === sourceTeamId
@@ -770,9 +816,13 @@ const DraftDashboard = () => {
             setPlayerPool(prev => [...prev, currentPlayer]);
         } else {
             // Moving player to a team - check for buddy picks using CURRENT player data
+            // Gather all chained buddies recursively (similar to wizard) to be safe?
+            // For now, stick to direct & reverse picks as per original logic, 
+            // but finding them in BOTH pool and source team.
+
             const buddyEmails = buddyPickMap[currentPlayer.email] || [];
 
-            // Also check for "reverse" buddy picks - players who picked this player as their buddy
+            // Also check for "reverse" buddy picks
             const reverseBuddyEmails = [];
             Object.entries(buddyPickMap).forEach(([email, picks]) => {
                 if (picks.includes(currentPlayer.email) && !buddyEmails.includes(email)) {
@@ -784,15 +834,35 @@ const DraftDashboard = () => {
             const allPotentialBuddyEmails = [...buddyEmails, ...reverseBuddyEmails];
 
             if (allPotentialBuddyEmails.length > 0) {
-                // Player has buddy picks or is picked by others - get buddy details from player pool
-                const availableBuddies = playerPool.filter(p => allPotentialBuddyEmails.includes(p.email));
+                // Find these buddies in Pool OR Source Team
+                let availableBuddies = [];
+
+                // 1. Check Pool
+                const poolBuddies = playerPool.filter(p => allPotentialBuddyEmails.includes(p.email));
+                availableBuddies = [...poolBuddies];
+
+                // 2. Check Source Team (if source is a team)
+                if (source !== 'pool') {
+                    const sourceTeamId = parseInt(source.split('-')[1]);
+                    const sourceTeam = teams.find(t => t.id === sourceTeamId);
+                    if (sourceTeam) {
+                        const teamBuddies = sourceTeam.players.filter(p => allPotentialBuddyEmails.includes(p.email));
+                        // Avoid duplicates if weird state
+                        teamBuddies.forEach(tb => {
+                            if (!availableBuddies.some(ab => ab.email === tb.email)) {
+                                availableBuddies.push(tb);
+                            }
+                        });
+                    }
+                }
 
                 if (availableBuddies.length > 0) {
                     // Show modal to let user select which buddies to add
                     setModalPlayer(currentPlayer);
                     setModalTargetTeam(targetTeamId);
+                    setModalSource(source); // Capture source
                     setModalBuddies(availableBuddies);
-                    setSelectedBuddies(availableBuddies.map(b => b.email)); // Pre-select all by default
+                    setSelectedBuddies(availableBuddies.map(b => b.email)); // Pre-select all
                     setShowBuddyModal(true);
 
                     // Don't move the player yet - wait for modal confirmation
@@ -807,33 +877,48 @@ const DraftDashboard = () => {
 
     // Complete the drop operation (called directly or after modal confirmation)
     const completeDrop = (player, source, targetTeamId, additionalPlayers = []) => {
-        // Remove player from source
-        if (source === 'pool') {
-            setPlayerPool(prev => prev.filter(p => p.email !== player.email));
-        } else {
-            const sourceTeamId = parseInt(source.split('-')[1]);
-            setTeams(prev => prev.map(t =>
-                t.id === sourceTeamId
-                    ? { ...t, players: t.players.filter(p => p.email !== player.email) }
-                    : t
-            ));
-        }
+        saveHistory(); // Save state before mutation
 
-        // Remove additional players (buddies) from pool
-        if (additionalPlayers.length > 0) {
-            setPlayerPool(prev => prev.filter(p => !additionalPlayers.some(ap => ap.email === p.email)));
-        }
+        const allPlayersToMove = [player, ...additionalPlayers];
+        const allEmails = allPlayersToMove.map(p => p.email);
 
-        // Add player and buddies to target team
-        // Add player and buddies to target team and sort by average rating (Low to High)
+        // 1. Update Player Pool: Remove ANY players that are currently in the pool
+        setPlayerPool(prev => prev.filter(p => !allEmails.includes(p.email)));
+
+        // 2. Update Teams: Remove from ANY source team and Add to Target Team
         setTeams(prev => {
-            const updatedTeams = prev.map(t =>
-                t.id === targetTeamId
-                    ? { ...t, players: [...t.players, player, ...additionalPlayers] }
-                    : t
-            );
+            const updatedTeams = prev.map(team => {
+                let newPlayers = [...team.players];
 
-            return updatedTeams.sort((a, b) => {
+                // Remove moving players from this team (so we don't duplicate if moving between teams)
+                newPlayers = newPlayers.filter(p => !allEmails.includes(p.email));
+
+                // If this is the target team, add all players
+                if (team.id === targetTeamId) {
+                    newPlayers = [...newPlayers, ...allPlayersToMove];
+                }
+
+                return { ...team, players: newPlayers };
+            });
+
+            // 3. Sort Target Team by Average Rating
+            return updatedTeams.map(team => {
+                if (team.id === targetTeamId) {
+                    const getAvg = (players) => {
+                        if (!players || players.length === 0) return 0;
+                        const total = players.reduce((sum, p) => sum + (p.skillRating || 0), 0);
+                        return total / players.length;
+                    };
+                    // We need to sort the Teams ARRAY? No, user wants Players sorted within team?
+                    // Wait, "automatic sorting of teams by average skill rating" -> Sort the TEAMS list order?
+                    // Re-reading Step 3012: "Implement automatic sorting of teams by average skill rating (lowest to highest) whenever the "Assign GMs" ... buttons are clicked".
+                    // And "whenever a player is dropped onto a team".
+                    // This implies sorting the TEAMS in the DASHBOARD view.
+                    // Yes.
+                    // So I need to sort `updatedTeams` Array.
+                }
+                return team;
+            }).sort((a, b) => {
                 const getAvg = (players) => {
                     if (!players || players.length === 0) return 0;
                     const total = players.reduce((sum, p) => sum + (p.skillRating || 0), 0);
@@ -875,6 +960,7 @@ const DraftDashboard = () => {
         setShowBuddyModal(false);
         setModalPlayer(null);
         setModalTargetTeam(null);
+        setModalSource(null);
         setModalBuddies([]);
         setSelectedBuddies([]);
 
@@ -885,7 +971,7 @@ const DraftDashboard = () => {
             const isAlreadyOnTeam = targetTeam && targetTeam.players.some(p => p.email === modalPlayer.email);
 
             if (!isAlreadyOnTeam) {
-                completeDrop(modalPlayer, 'pool', modalTargetTeam, []);
+                completeDrop(modalPlayer, modalSource || 'pool', modalTargetTeam, []);
             }
         }
     };
@@ -895,7 +981,7 @@ const DraftDashboard = () => {
 
         const playersToAdd = modalBuddies.filter(b => selectedBuddies.includes(b.email));
 
-        completeDropWithWizardCheck(modalPlayer, modalTargetTeam, playersToAdd);
+        completeDropWithWizardCheck(modalPlayer, modalSource || 'pool', modalTargetTeam, playersToAdd);
 
         // If in queue mode, process next
         if (buddyQueue.length > 0) {
@@ -904,34 +990,44 @@ const DraftDashboard = () => {
             setShowBuddyModal(false);
             setModalPlayer(null);
             setModalTargetTeam(null);
+            setModalSource(null);
             setModalBuddies([]);
             setSelectedBuddies([]);
-
-            // If this was a queue process finishing (active wizard), show summary
-            // We don't have a flag for 'wizard active' other than queue. 
-            // But if queue was just emptied, maybe?
-            // Simple approach: explicit check is hard without state.
         }
     };
 
-    const completeDropWithWizardCheck = (player, targetTeamId, buddies) => {
-        // Check if player is already on team
+    const completeDropWithWizardCheck = (player, source, targetTeamId, buddies) => {
+        // Check if player is already on team (e.g. from Auto-Assign GM)
         const targetTeam = teams.find(t => t.id === targetTeamId);
         const isAlreadyOnTeam = targetTeam && targetTeam.players.some(p => p.email === player.email);
 
         if (isAlreadyOnTeam) {
-            // Just add buddies to the team and remove from pool
-            if (buddies.length > 0) {
-                // Remove buddies from pool
-                setPlayerPool(prev => prev.filter(p => !buddies.some(b => b.email === p.email)));
+            saveHistory(); // Save state before mutation
 
-                // Add buddies to team and sort
+            // Just add buddies to the team and remove from wherever they are
+            if (buddies.length > 0) {
+                const buddyEmails = buddies.map(b => b.email);
+
+                // 1. Remove buddies from Pool
+                setPlayerPool(prev => prev.filter(p => !buddyEmails.includes(p.email)));
+
+                // 2. Remove buddies from Source teams (including 'source' argued, but generic search is safer)
                 setTeams(prev => {
-                    const updatedTeams = prev.map(t =>
-                        t.id === targetTeamId
-                            ? { ...t, players: [...t.players, ...buddies] }
-                            : t
-                    );
+                    const updatedTeams = prev.map(t => {
+                        let newPlayers = t.players;
+
+                        // Remove buddies if present
+                        if (newPlayers.some(p => buddyEmails.includes(p.email))) {
+                            newPlayers = newPlayers.filter(p => !buddyEmails.includes(p.email));
+                        }
+
+                        // Add buddies if target team
+                        if (t.id === targetTeamId) {
+                            newPlayers = [...newPlayers, ...buddies];
+                        }
+
+                        return { ...t, players: newPlayers };
+                    });
 
                     return updatedTeams.sort((a, b) => {
                         const getAvg = (players) => {
@@ -944,8 +1040,8 @@ const DraftDashboard = () => {
                 });
             }
         } else {
-            // Standard drop logic
-            completeDrop(player, 'pool', targetTeamId, buddies);
+            // Standard drop logic (Player + Buddies moving together)
+            completeDrop(player, source, targetTeamId, buddies);
         }
     };
 
@@ -993,6 +1089,8 @@ const DraftDashboard = () => {
 
     // Player field updates
     const updatePlayerField = (playerEmail, field, value, source, teamId = null) => {
+        saveHistory(); // Save state before mutation
+
         // If updating buddyPick field, update the buddy pick map
         if (field === 'buddyPick') {
             updateBuddyPickMapForPlayer(playerEmail, value);
@@ -1368,6 +1466,21 @@ const DraftDashboard = () => {
                         <>
                             <button className="btn-draft btn-secondary" onClick={handleAssignGMs}>Assign GMs</button>
                             <button className="btn-draft btn-secondary" onClick={handleAssignGMBuddies}>Assign GM Buddies</button>
+                            <button
+                                className="btn-draft btn-undo"
+                                onClick={handleUndo}
+                                disabled={history.length === 0}
+                                title="Undo last action"
+                                style={{
+                                    opacity: history.length === 0 ? 0.5 : 1,
+                                    cursor: history.length === 0 ? 'not-allowed' : 'pointer',
+                                    backgroundColor: history.length === 0 ? '#718096' : '#e53e3e',
+                                    color: 'white',
+                                    marginLeft: '0.5rem'
+                                }}
+                            >
+                                Undo {history.length > 0 && `(${history.length})`}
+                            </button>
                             <button className="btn-draft btn-save" onClick={handleSaveDraft}>Save Draft</button>
                             <button className="btn-draft btn-finalize" onClick={handleFinalizeDraft}>Finalize Draft</button>
                         </>
