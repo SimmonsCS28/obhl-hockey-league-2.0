@@ -5,6 +5,7 @@ import Login from './components/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicLayout from './components/PublicLayout';
 import ScheduleManager from './components/ScheduleManager';
+import SchedulePage from './components/SchedulePage';
 import Scorekeeper from './components/Scorekeeper';
 import Home from './components/public/Home';
 import PlayersPage from './components/public/PlayersPage';
@@ -24,6 +25,7 @@ function App() {
             <Route path="teams" element={<TeamsPage />} />
             <Route path="players" element={<PlayersPage />} />
             <Route path="standings" element={<StandingsPage />} />
+            <Route path="schedule" element={<SchedulePage />} />
             {/* Other public pages will be added here */}
           </Route>
 
@@ -48,7 +50,7 @@ function App() {
             }
           />
           <Route
-            path="/schedule"
+            path="/admin/schedule"
             element={
               <ProtectedRoute>
                 <ScheduleManager />

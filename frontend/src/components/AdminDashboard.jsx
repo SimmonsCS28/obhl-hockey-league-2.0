@@ -54,6 +54,12 @@ function AdminDashboard() {
                     >
                         Draft Tool
                     </button>
+                    <button
+                        className="nav-tab"
+                        onClick={() => navigate('/admin/schedule')}
+                    >
+                        📅 Schedule Manager
+                    </button>
                 </div>
             </nav>
 
