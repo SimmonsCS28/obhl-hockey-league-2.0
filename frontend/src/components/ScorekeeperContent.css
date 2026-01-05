@@ -10,7 +10,35 @@
     padding: 1rem 2rem;
     border-bottom: 1px solid #e2e8f0;
     display: flex;
+    justify-content: space-between;
+    align-items: center;
     gap: 1rem;
+}
+
+.nav-left {
+    display: flex;
+    gap: 1rem;
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.nav-right label {
+    color: #64748b;
+    font-weight: 500;
+}
+
+.season-select,
+.week-select {
+    padding: 0.5rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    background: white;
+    cursor: pointer;
 }
 
 .scorekeeper-nav .nav-btn {

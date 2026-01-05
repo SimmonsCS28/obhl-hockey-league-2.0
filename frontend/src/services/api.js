@@ -55,7 +55,7 @@ const api = {
 
     async updateTeam(id, data) {
         const response = await fetch(`${API_BASE_URL}/teams/${id}`, {
-            method: 'PATCH',
+            method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
@@ -64,17 +64,17 @@ const api = {
     },
 
     // ============================================
-    // GAMES API
-    // TODO: Connect to Game Service on port 8002
+    // GAMES API (Game Service on port 8002)
     // ============================================
-    async getGames(status = null) {
-        // TODO: Implement real API call to Game Service
-        // const response = await fetch(`${API_BASE_URL}/games${status ? `?status=${status}` : ''}`);
-        // if (!response.ok) throw new Error('Failed to fetch games');
-        // return response.json();
-
-        // TEMPORARY: Return empty array until backend is connected
-        return Promise.resolve([]);
+    async getGames(seasonId = null) {
+        const GAME_SERVICE_URL = 'http://localhost:8002/api/v1';
+        let url = `${GAME_SERVICE_URL}/games`;
+        if (seasonId) {
+            url += `?seasonId=${seasonId}`;
+        }
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to fetch games');
+        return response.json();
     },
 
     async updateGameScore(gameId, homeScore, awayScore) {

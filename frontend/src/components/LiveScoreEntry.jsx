@@ -51,14 +51,20 @@ function LiveScoreEntry(props) {
 
     const loadPlayers = async () => {
         try {
-            // TODO: Fetch real players from backend when API is ready
-            // const players = await api.getPlayersByGame(game.id);
-            // setPlayers(players);
+            // Fetch players for both teams in the game
+            const [homePlayers, awayPlayers] = await Promise.all([
+                api.getPlayers({ teamId: game.homeTeamId }),
+                api.getPlayers({ teamId: game.awayTeamId })
+            ]);
 
-            // TEMPORARY: Empty players array until backend is connected
-            // Admin interface will allow adding players to teams
-            console.warn('loadPlayers: Backend integration pending - no players loaded');
-            setPlayers([]);
+            // Add goalsInGame tracking and full name for each player
+            const allPlayers = [...homePlayers, ...awayPlayers].map(player => ({
+                ...player,
+                name: `${player.firstName || ''} ${player.lastName || ''}`.trim() || 'Unknown',
+                goalsInGame: 0 // Initialize goal count for this game
+            }));
+
+            setPlayers(allPlayers);
         } catch (error) {
             console.error('Error loading players:', error);
             setPlayers([]);
@@ -72,7 +78,7 @@ function LiveScoreEntry(props) {
 
     const getTeamPlayers = (team) => {
         const teamId = team === 'home' ? game.homeTeamId : game.awayTeamId;
-        return players.filter(p => p.teamId === teamId);
+        return players.filter(p => Number(p.teamId) === Number(teamId));
     };
 
     const checkGoalLimit = (playerId) => {

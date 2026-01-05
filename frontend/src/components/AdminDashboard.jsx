@@ -62,10 +62,10 @@ function AdminDashboard() {
                         Draft Tool
                     </button>
                     <button
-                        className={`nav-tab ${activeTab === 'scoring' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('scoring')}
+                        className={`nav-tab ${activeTab === 'gameManagement' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('gameManagement')}
                     >
-                        Scoring
+                        Game Management
                     </button>
                     <button
                         className="nav-tab"
@@ -81,7 +81,7 @@ function AdminDashboard() {
                 {activeTab === 'players' && <PlayerManagement />}
                 {activeTab === 'seasons' && <SeasonManagement />}
                 {activeTab === 'draft' && <DraftDashboard />}
-                {activeTab === 'scoring' && <ScorekeeperContent />}
+                {activeTab === 'gameManagement' && <ScorekeeperContent />}
             </main>
         </div>
     );

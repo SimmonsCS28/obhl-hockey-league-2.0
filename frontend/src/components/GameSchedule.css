@@ -113,10 +113,12 @@
 }
 
 .team-name {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 600;
     margin-bottom: 8px;
-    color: #1e293b;
+    padding: 8px 16px;
+    border-radius: 8px;
+    display: inline-block;
 }
 
 .team-score {

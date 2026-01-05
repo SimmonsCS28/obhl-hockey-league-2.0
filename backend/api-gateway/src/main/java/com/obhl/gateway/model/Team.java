@@ -39,7 +39,7 @@ public class Team {
     @Column(length = 500)
     private String logoUrl;
 
-    @Column(length = 7)
+    @Column(length = 30)
     private String teamColor;
 
     @Column(nullable = false)
