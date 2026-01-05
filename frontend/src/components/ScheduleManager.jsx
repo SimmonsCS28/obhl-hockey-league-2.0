@@ -23,6 +23,14 @@ const ScheduleManager = () => {
         editedGames: {},     // Map of gameId -> updated game data
         deletedGameIds: []   // IDs of games to delete from DB
     });
+    const [confirmModal, setConfirmModal] = useState({
+        show: false,
+        title: '',
+        message: '',
+        confirmText: 'Confirm',
+        isDestructive: false,
+        onConfirm: () => { }
+    });
     const fileInputRef = useRef(null);
 
     // Fetch seasons on mount
@@ -146,25 +154,26 @@ const ScheduleManager = () => {
     const handleResetSchedule = async () => {
         if (!selectedSeason) return;
 
-        const confirmed = window.confirm(
-            '⚠️ WARNING: This will delete ALL games for this season!\n\n' +
-            'This action cannot be undone. Are you absolutely sure?'
-        );
-
-        if (!confirmed) return;
-
-        setLoading(true);
-
-        try {
-            await axios.delete(`${API_BASE_URL}/games/season/${selectedSeason}`);
-            showMessage('success', 'Schedule reset successfully');
-            setGames([]);
-            setScheduleMode('none');
-        } catch (error) {
-            showMessage('error', error.response?.data || 'Failed to reset schedule');
-        } finally {
-            setLoading(false);
-        }
+        setConfirmModal({
+            show: true,
+            title: 'Reset Schedule?',
+            message: '⚠️ WARNING: This will delete ALL games for this season!\n\nThis action cannot be undone. Are you absolutely sure?',
+            confirmText: 'Reset Schedule',
+            isDestructive: true,
+            onConfirm: async () => {
+                setLoading(true);
+                try {
+                    await axios.delete(`${API_BASE_URL}/games/season/${selectedSeason}`);
+                    showMessage('success', 'Schedule reset successfully');
+                    setGames([]);
+                    setScheduleMode('none');
+                } catch (error) {
+                    showMessage('error', error.response?.data || 'Failed to reset schedule');
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
     };
 
     const handleSaveSchedule = async () => {
@@ -172,45 +181,50 @@ const ScheduleManager = () => {
             ? 'Are you sure you want to finalize this schedule? Once saved, you can only edit individual games or add weeks.'
             : 'Are you sure you want to save all changes? This will overwrite the current schedule.';
 
-        const confirmed = window.confirm(message);
+        setConfirmModal({
+            show: true,
+            title: 'Save Schedule?',
+            message: message,
+            confirmText: 'Save Schedule',
+            isDestructive: false,
+            onConfirm: async () => {
+                setLoading(true);
 
-        if (!confirmed) return;
+                try {
+                    // 1. Delete games
+                    for (const gameId of pendingChanges.deletedGameIds) {
+                        await axios.delete(`${API_BASE_URL}/games/${gameId}`);
+                    }
 
-        setLoading(true);
+                    // 2. Create new games
+                    for (const game of pendingChanges.addedGames) {
+                        const { id, ...gameData } = game; // Remove temp ID
+                        await axios.post(`${API_BASE_URL}/games`, gameData);
+                    }
 
-        try {
-            // 1. Delete games
-            for (const gameId of pendingChanges.deletedGameIds) {
-                await axios.delete(`${API_BASE_URL}/games/${gameId}`);
+                    // 3. Update edited games
+                    for (const [gameId, gameData] of Object.entries(pendingChanges.editedGames)) {
+                        await axios.patch(`${API_BASE_URL}/games/${gameId}`, gameData);
+                    }
+
+                    // Clear pending changes
+                    setPendingChanges({
+                        addedGames: [],
+                        editedGames: {},
+                        deletedGameIds: []
+                    });
+
+                    // Reload games from DB
+                    await fetchGames(selectedSeason);
+
+                    showMessage('success', 'Schedule saved successfully!');
+                } catch (error) {
+                    showMessage('error', error.response?.data || 'Failed to save schedule');
+                } finally {
+                    setLoading(false);
+                }
             }
-
-            // 2. Create new games
-            for (const game of pendingChanges.addedGames) {
-                const { id, ...gameData } = game; // Remove temp ID
-                await axios.post(`${API_BASE_URL}/games`, gameData);
-            }
-
-            // 3. Update edited games
-            for (const [gameId, gameData] of Object.entries(pendingChanges.editedGames)) {
-                await axios.patch(`${API_BASE_URL}/games/${gameId}`, gameData);
-            }
-
-            // Clear pending changes
-            setPendingChanges({
-                addedGames: [],
-                editedGames: {},
-                deletedGameIds: []
-            });
-
-            // Reload games from DB
-            await fetchGames(selectedSeason);
-
-            showMessage('success', 'Schedule saved successfully!');
-        } catch (error) {
-            showMessage('error', error.response?.data || 'Failed to save schedule');
-        } finally {
-            setLoading(false);
-        }
+        });
     };
 
     const handleAddWeek = async () => {
@@ -345,22 +359,25 @@ const ScheduleManager = () => {
     };
 
     const handleClearChanges = async () => {
-        const confirmed = window.confirm(
-            'Are you sure you want to discard all changes?\n\nThis will reload the saved schedule.'
-        );
+        setConfirmModal({
+            show: true,
+            title: 'Discard Changes?',
+            message: 'Are you sure you want to discard all changes?\n\nThis will reload the saved schedule.',
+            confirmText: 'Discard Changes',
+            isDestructive: true,
+            onConfirm: async () => {
+                // Clear pending changes
+                setPendingChanges({
+                    addedGames: [],
+                    editedGames: {},
+                    deletedGameIds: []
+                });
 
-        if (confirmed) {
-            // Clear pending changes
-            setPendingChanges({
-                addedGames: [],
-                editedGames: {},
-                deletedGameIds: []
-            });
-
-            // Reload from DB
-            await fetchGames(selectedSeason);
-            showMessage('success', 'Changes discarded. Schedule reverted to saved state.');
-        }
+                // Reload from DB
+                await fetchGames(selectedSeason);
+                showMessage('success', 'Changes discarded. Schedule reverted to saved state.');
+            }
+        });
     };
 
     const showMessage = (type, text) => {
@@ -645,6 +662,33 @@ const ScheduleManager = () => {
                             ➕ Add Week
                         </button>
                     )}
+                </div>
+            )}
+
+            {/* Confirmation Modal */}
+            {confirmModal.show && (
+                <div className="resume-modal-overlay">
+                    <div className="resume-modal-content">
+                        <h3>{confirmModal.title}</h3>
+                        <p>{confirmModal.message}</p>
+                        <div className="resume-modal-actions">
+                            <button
+                                className="btn-secondary"
+                                onClick={() => setConfirmModal({ ...confirmModal, show: false })}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className={`btn-primary ${confirmModal.isDestructive ? 'btn-danger' : ''}`}
+                                onClick={() => {
+                                    confirmModal.onConfirm();
+                                    setConfirmModal({ ...confirmModal, show: false });
+                                }}
+                            >
+                                {confirmModal.confirmText}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 

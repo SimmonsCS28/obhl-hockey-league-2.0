@@ -20,6 +20,11 @@ timeout /t 3 /nobreak >nul
 echo Starting League Service on port 8081...
 start "League Service (TEST)" cmd /k "cd backend\league-service && gradlew bootRun"
 
+timeout /t 3 /nobreak >nul
+
+echo Starting Game Service on port 8002...
+start "Game Service (TEST)" cmd /k "cd backend\game-service && gradlew bootRun"
+
 echo.
 echo ================================================
 echo All services starting with TEST database!
