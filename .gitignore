@@ -15,7 +15,7 @@ pip-delete-this-directory.txt
 # Java
 *.class
 *.jar
-!gradle/wrapper/gradle-wrapper.jar
+!**/gradle-wrapper.jar
 *.war
 *.ear
 *.log
