@@ -13,6 +13,7 @@ COPY settings.gradle .
 COPY src src
 
 # Build the application
+RUN sed -i 's/\r$//' gradlew
 RUN chmod +x gradlew
 RUN ./gradlew build -x test --no-daemon
 

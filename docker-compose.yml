@@ -105,6 +105,20 @@ services:
       - obhl-network
     restart: unless-stopped
 
+  # Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: obhl-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - obhl-network
+    restart: unless-stopped
+
 networks:
   obhl-network:
     driver: bridge
