@@ -70,6 +70,41 @@ function TeamsPage() {
         setSelectedSeason(season);
     };
 
+    // Helper to get valid CSS color
+    const getValidColor = (color) => {
+        if (!color) return '#95a5a6';
+
+        // Map truncated DB values to valid CSS colors
+        const colorMap = {
+            'Lt. Blu': '#87CEEB', // SkyBlue
+            'Dk. Gre': '#006400', // DarkGreen
+            'White': '#FFFFFF',
+            'Yellow': '#FFD700',
+            'Gold': '#FFD700'
+        };
+
+        return colorMap[color] || color;
+    };
+
+    // Helper to determine text color based on background
+    const getTextColor = (bgColor) => {
+        if (!bgColor) return 'white';
+
+        const lightColors = [
+            'White', '#FFFFFF',
+            'Yellow', '#FFD700',
+            'Gold',
+            'Lt. Blu', '#87CEEB', 'LightBlue'
+        ];
+
+        // Check if color is in light list (case insensitive)
+        const isLight = lightColors.some(c =>
+            c.toLowerCase() === bgColor.toLowerCase()
+        );
+
+        return isLight ? '#2c3e50' : 'white';
+    };
+
     const getGMName = (gmId) => {
         if (!gmId) return 'Not assigned';
         const gm = players.find(p => p.id === gmId);
@@ -108,20 +143,31 @@ function TeamsPage() {
                 <div className="no-data">No teams found for this season.</div>
             ) : (
                 <div className="teams-grid">
-                    {teams.map(team => (
-                        <div key={team.id} className="team-card">
-                            <div className="team-header" style={{ backgroundColor: team.teamColor || '#2d3748' }}>
-                                <h2>{team.name}</h2>
-                            </div>
+                    {teams.map(team => {
+                        const bg = getValidColor(team.teamColor);
+                        const textColor = getTextColor(bg);
 
-                            <div className="team-info">
-                                <div className="info-row">
-                                    <span className="label">General Manager:</span>
-                                    <span className="value">{getGMName(team.gmId)}</span>
+                        return (
+                            <div key={team.id} className="team-card">
+                                <div
+                                    className="team-header"
+                                    style={{
+                                        backgroundColor: bg,
+                                        color: textColor
+                                    }}
+                                >
+                                    <h2>{team.name}</h2>
+                                </div>
+
+                                <div className="team-info">
+                                    <div className="info-row">
+                                        <span className="label">General Manager:</span>
+                                        <span className="value">{getGMName(team.gmId)}</span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>

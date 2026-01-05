@@ -101,6 +101,41 @@ const SchedulePage = () => {
     // Get unique weeks for filter dropdown
     const availableWeeks = [...new Set(games.map(g => g.week))].sort((a, b) => a - b);
 
+    // Helper to get valid CSS color
+    const getValidColor = (color) => {
+        if (!color) return '#95a5a6';
+
+        // Map truncated DB values to valid CSS colors
+        const colorMap = {
+            'Lt. Blu': '#87CEEB', // SkyBlue
+            'Dk. Gre': '#006400', // DarkGreen
+            'White': '#FFFFFF',
+            'Yellow': '#FFD700',
+            'Gold': '#FFD700'
+        };
+
+        return colorMap[color] || color;
+    };
+
+    // Helper to determine text color based on background
+    const getTextColor = (bgColor) => {
+        if (!bgColor) return 'white';
+
+        const lightColors = [
+            'White', '#FFFFFF',
+            'Yellow', '#FFD700',
+            'Gold',
+            'Lt. Blu', '#87CEEB', 'LightBlue'
+        ];
+
+        // Check if color is in light list (case insensitive)
+        const isLight = lightColors.some(c =>
+            c.toLowerCase() === bgColor.toLowerCase()
+        );
+
+        return isLight ? '#2c3e50' : 'white';
+    };
+
     return (
         <div className="schedule-page">
             <div className="schedule-header">
@@ -172,6 +207,9 @@ const SchedulePage = () => {
                                     const isNotFriday = dayOfWeek !== 5;
                                     const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
 
+                                    const homeBg = getValidColor(homeTeam?.teamColor);
+                                    const awayBg = getValidColor(awayTeam?.teamColor);
+
                                     return (
                                         <div
                                             key={game.id}
@@ -198,14 +236,20 @@ const SchedulePage = () => {
                                             <div className="game-teams">
                                                 <span
                                                     className="team-badge"
-                                                    style={{ backgroundColor: homeTeam?.teamColor || '#95a5a6' }}
+                                                    style={{
+                                                        backgroundColor: homeBg,
+                                                        color: getTextColor(homeBg)
+                                                    }}
                                                 >
                                                     {homeTeam?.name || `Team ${game.homeTeamId}`}
                                                 </span>
                                                 <span className="vs">vs</span>
                                                 <span
                                                     className="team-badge"
-                                                    style={{ backgroundColor: awayTeam?.teamColor || '#95a5a6' }}
+                                                    style={{
+                                                        backgroundColor: awayBg,
+                                                        color: getTextColor(awayBg)
+                                                    }}
                                                 >
                                                     {awayTeam?.name || `Team ${game.awayTeamId}`}
                                                 </span>

@@ -53,11 +53,18 @@ function PlayerManagement() {
         }
     };
 
+    // Helper to get team name (moved up for sorting access)
+    const getTeamName = (teamId) => {
+        if (!teamId) return 'N/A';
+        const team = teams.find(t => t.id === teamId);
+        return team ? team.name : 'N/A';
+    };
+
     // Filter teams based on active status and season
     const filteredTeams = teams.filter(team => {
         const matchesActive = activeTeamsOnly ? team.active : true;
         const matchesSeason = formData.seasonId ? team.seasonId === parseInt(formData.seasonId) : true;
-        return matchesActive && matchesSeason;
+        return matchesActive && matchesSeason; // and move filteredTeams calculation after getTeamName just in case, though unrelated
     });
 
     // Sort players
@@ -88,6 +95,41 @@ function PlayerManagement() {
             direction = 'descending';
         }
         setSortConfig({ key, direction });
+    };
+
+    // Helper to get valid CSS color
+    const getValidColor = (color) => {
+        if (!color) return '#95a5a6';
+
+        // Map truncated DB values to valid CSS colors
+        const colorMap = {
+            'Lt. Blu': '#87CEEB', // SkyBlue
+            'Dk. Gre': '#006400', // DarkGreen
+            'White': '#FFFFFF',
+            'Yellow': '#FFD700',
+            'Gold': '#FFD700'
+        };
+
+        return colorMap[color] || color;
+    };
+
+    // Helper to determine text color based on background
+    const getTextColor = (bgColor) => {
+        if (!bgColor) return 'white';
+
+        const lightColors = [
+            'White', '#FFFFFF',
+            'Yellow', '#FFD700',
+            'Gold',
+            'Lt. Blu', '#87CEEB', 'LightBlue'
+        ];
+
+        // Check if color is in light list (case insensitive)
+        const isLight = lightColors.some(c =>
+            c.toLowerCase() === bgColor.toLowerCase()
+        );
+
+        return isLight ? '#2c3e50' : 'white';
     };
 
     const handleSubmit = async (e) => {
@@ -173,11 +215,7 @@ function PlayerManagement() {
         resetForm();
     };
 
-    const getTeamName = (teamId) => {
-        if (!teamId) return 'N/A';
-        const team = teams.find(t => t.id === teamId);
-        return team ? team.abbreviation : 'N/A';
-    };
+
 
     if (loading) {
         return <div className="loading">Loading players...</div>;
@@ -214,38 +252,56 @@ function PlayerManagement() {
                             <th onClick={() => requestSort('lastName')} className="sortable">Name</th>
                             <th onClick={() => requestSort('teamId')} className="sortable">Team</th>
                             <th onClick={() => requestSort('position')} className="sortable">Position</th>
-                            <th onClick={() => requestSort('shoots')} className="sortable">Shoots</th>
                             <th onClick={() => requestSort('skillRating')} className="sortable">Skill</th>
                             <th onClick={() => requestSort('isActive')} className="sortable">Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {sortedPlayers.map(player => (
-                            <tr key={player.id}>
-                                <td className="jersey-number">{player.jerseyNumber}</td>
-                                <td className="player-name">
-                                    {player.firstName} {player.lastName}
-                                </td>
-                                <td>{getTeamName(player.teamId)}</td>
-                                <td>{player.position}</td>
-                                <td>{player.shoots}</td>
-                                <td>{player.skillRating}</td>
-                                <td>
-                                    <span className={`status-badge ${player.isActive ? 'active' : 'inactive'}`}>
-                                        {player.isActive ? 'Active' : 'Inactive'}
-                                    </span>
-                                </td>
-                                <td className="actions">
-                                    <button onClick={() => handleEdit(player)} className="btn-edit-small">
-                                        Edit
-                                    </button>
-                                    <button onClick={() => handleDelete(player.id)} className="btn-delete-small">
-                                        Delete
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
+                        {sortedPlayers.map(player => {
+                            const team = teams.find(t => t.id === player.teamId);
+                            const bg = team ? getValidColor(team.teamColor) : null;
+                            const textColor = team ? getTextColor(bg) : 'inherit';
+
+                            return (
+                                <tr key={player.id}>
+                                    <td className="jersey-number">{player.jerseyNumber}</td>
+                                    <td className="player-name">
+                                        {player.firstName} {player.lastName}
+                                    </td>
+                                    <td>
+                                        {team ? (
+                                            <span style={{
+                                                backgroundColor: bg,
+                                                color: textColor,
+                                                padding: '4px 8px',
+                                                borderRadius: '4px',
+                                                display: 'inline-block',
+                                                fontWeight: '600',
+                                                textAlign: 'center'
+                                            }}>
+                                                {team.name}
+                                            </span>
+                                        ) : 'N/A'}
+                                    </td>
+                                    <td>{player.position}</td>
+                                    <td>{player.skillRating}</td>
+                                    <td>
+                                        <span className={`status-badge ${player.isActive ? 'active' : 'inactive'}`}>
+                                            {player.isActive ? 'Active' : 'Inactive'}
+                                        </span>
+                                    </td>
+                                    <td className="actions">
+                                        <button onClick={() => handleEdit(player)} className="btn-edit-small">
+                                            Edit
+                                        </button>
+                                        <button onClick={() => handleDelete(player.id)} className="btn-delete-small">
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
@@ -368,17 +424,6 @@ function PlayerManagement() {
                                         <option value="F">Forward</option>
                                         <option value="D">Defense</option>
                                         <option value="G">Goalie</option>
-                                    </select>
-                                </div>
-                                <div className="form-group">
-                                    <label>Shoots</label>
-                                    <select
-                                        value={formData.shoots}
-                                        onChange={(e) => setFormData({ ...formData, shoots: e.target.value })}
-                                        required
-                                    >
-                                        <option value="L">Left</option>
-                                        <option value="R">Right</option>
                                     </select>
                                 </div>
                             </div>

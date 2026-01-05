@@ -72,6 +72,41 @@ function StandingsPage() {
         return team.goalsFor - team.goalsAgainst;
     };
 
+    // Helper to get valid CSS color
+    const getValidColor = (color) => {
+        if (!color) return '#95a5a6';
+
+        // Map truncated DB values to valid CSS colors
+        const colorMap = {
+            'Lt. Blu': '#87CEEB', // SkyBlue
+            'Dk. Gre': '#006400', // DarkGreen
+            'White': '#FFFFFF',
+            'Yellow': '#FFD700',
+            'Gold': '#FFD700'
+        };
+
+        return colorMap[color] || color;
+    };
+
+    // Helper to determine text color based on background
+    const getTextColor = (bgColor) => {
+        if (!bgColor) return 'white';
+
+        const lightColors = [
+            'White', '#FFFFFF',
+            'Yellow', '#FFD700',
+            'Gold',
+            'Lt. Blu', '#87CEEB', 'LightBlue'
+        ];
+
+        // Check if color is in light list (case insensitive)
+        const isLight = lightColors.some(c =>
+            c.toLowerCase() === bgColor.toLowerCase()
+        );
+
+        return isLight ? '#2c3e50' : 'white';
+    };
+
     if (loading) return <div className="loading">Loading standings...</div>;
     if (error) return <div className="error">Error: {error}</div>;
 
@@ -119,32 +154,37 @@ function StandingsPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {teams.map((team, index) => (
-                                <tr
-                                    key={team.id}
-                                    className={index < 4 ? 'playoff-spot' : ''}
-                                >
-                                    <td
-                                        className="rank"
-                                        style={{ backgroundColor: team.teamColor || '#ccc', color: 'white' }}
+                            {teams.map((team, index) => {
+                                const bg = getValidColor(team.teamColor);
+                                const textColor = getTextColor(bg);
+
+                                return (
+                                    <tr
+                                        key={team.id}
+                                        className={index < 4 ? 'playoff-spot' : ''}
                                     >
-                                        {index + 1}
-                                    </td>
-                                    <td
-                                        className="team-name"
-                                        style={{ backgroundColor: team.teamColor || '#ccc', color: 'white' }}
-                                    >
-                                        <strong>{team.name}</strong>
-                                    </td>
-                                    <td>{team.wins}</td>
-                                    <td>{team.losses}</td>
-                                    <td>{team.ties}</td>
-                                    <td>{team.overtimeLosses}</td>
-                                    <td>{team.goalsFor}</td>
-                                    <td>{team.goalsAgainst}</td>
-                                    <td className="points"><strong>{team.points}</strong></td>
-                                </tr>
-                            ))}
+                                        <td
+                                            className="rank"
+                                            style={{ backgroundColor: bg, color: textColor }}
+                                        >
+                                            {index + 1}
+                                        </td>
+                                        <td
+                                            className="team-name"
+                                            style={{ backgroundColor: bg, color: textColor }}
+                                        >
+                                            <strong>{team.name}</strong>
+                                        </td>
+                                        <td>{team.wins}</td>
+                                        <td>{team.losses}</td>
+                                        <td>{team.ties}</td>
+                                        <td>{team.overtimeLosses}</td>
+                                        <td>{team.goalsFor}</td>
+                                        <td>{team.goalsAgainst}</td>
+                                        <td className="points"><strong>{team.points}</strong></td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>

@@ -118,6 +118,40 @@ function TeamManagement() {
         return <div className="loading">Loading teams...</div>;
     }
 
+    const getValidColor = (color) => {
+        if (!color) return '#95a5a6';
+
+        // Map truncated DB values to valid CSS colors
+        const colorMap = {
+            'Lt. Blu': '#87CEEB', // SkyBlue
+            'Dk. Gre': '#006400', // DarkGreen
+            'White': '#FFFFFF',
+            'Yellow': '#FFD700',
+            'Gold': '#FFD700'
+        };
+
+        return colorMap[color] || color;
+    };
+
+    // Helper to determine text color based on background
+    const getTextColor = (bgColor) => {
+        if (!bgColor) return 'white';
+
+        const lightColors = [
+            'White', '#FFFFFF',
+            'Yellow', '#FFD700',
+            'Gold',
+            'Lt. Blu', '#87CEEB', 'LightBlue'
+        ];
+
+        // Check if color is in light list (case insensitive)
+        const isLight = lightColors.some(c =>
+            c.toLowerCase() === bgColor.toLowerCase()
+        );
+
+        return isLight ? '#2c3e50' : 'white';
+    };
+
     // Render Team Details View
     if (selectedTeam) {
         return (
@@ -125,7 +159,7 @@ function TeamManagement() {
                 team={selectedTeam}
                 onBack={() => {
                     setSelectedTeam(null);
-                    loadData(); // Refresh data when returning
+                    loadTeams(); // Refresh data when returning (renamed from loadData which was undefined)
                 }}
             />
         );
@@ -155,46 +189,54 @@ function TeamManagement() {
             </div>
 
             <div className="teams-grid">
-                {filteredTeams.map(team => (
-                    <div key={team.id} className="team-card">
-                        <div
-                            className="team-card-header"
-                            style={{ backgroundColor: team.teamColor || '#003E7E', cursor: 'pointer' }}
-                            onClick={() => setSelectedTeam(team)}
-                            title="Click to view details"
-                        >
-                            <h3>{team.abbreviation}</h3>
-                        </div>
-                        <div className="team-card-body">
-                            <h4>{team.name}</h4>
-                            <div className="team-stats">
-                                <div className="stat">
-                                    <span className="stat-label">W-L-T</span>
-                                    <span className="stat-value">
-                                        {team.wins}-{team.losses}-{team.ties}
+                {filteredTeams.map(team => {
+                    const bg = getValidColor(team.teamColor);
+                    const textColor = getTextColor(bg);
+
+                    return (
+                        <div key={team.id} className="team-card">
+                            <div
+                                className="team-card-header"
+                                style={{
+                                    backgroundColor: bg,
+                                    color: textColor,
+                                    cursor: 'pointer'
+                                }}
+                                onClick={() => setSelectedTeam(team)}
+                                title="Click to view details"
+                            >
+                                <h3>{team.name}</h3>
+                            </div>
+                            <div className="team-card-body">
+                                <div className="team-stats">
+                                    <div className="stat">
+                                        <span className="stat-label">W-L-T</span>
+                                        <span className="stat-value">
+                                            {team.wins}-{team.losses}-{team.ties}
+                                        </span>
+                                    </div>
+                                    <div className="stat">
+                                        <span className="stat-label">Points</span>
+                                        <span className="stat-value">{team.points}</span>
+                                    </div>
+                                </div>
+                                <div className="team-status">
+                                    <span className={`status-badge ${team.active ? 'active' : 'inactive'}`}>
+                                        {team.active ? 'Active' : 'Inactive'}
                                     </span>
                                 </div>
-                                <div className="stat">
-                                    <span className="stat-label">Points</span>
-                                    <span className="stat-value">{team.points}</span>
-                                </div>
                             </div>
-                            <div className="team-status">
-                                <span className={`status-badge ${team.active ? 'active' : 'inactive'}`}>
-                                    {team.active ? 'Active' : 'Inactive'}
-                                </span>
+                            <div className="team-card-actions">
+                                <button onClick={() => handleEdit(team)} className="btn-edit">
+                                    Edit
+                                </button>
+                                <button onClick={() => handleDelete(team.id)} className="btn-delete">
+                                    Delete
+                                </button>
                             </div>
                         </div>
-                        <div className="team-card-actions">
-                            <button onClick={() => handleEdit(team)} className="btn-edit">
-                                Edit
-                            </button>
-                            <button onClick={() => handleDelete(team.id)} className="btn-delete">
-                                Delete
-                            </button>
-                        </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
 
             {showModal && (

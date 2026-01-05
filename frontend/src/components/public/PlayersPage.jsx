@@ -83,6 +83,41 @@ function PlayersPage() {
         return team ? team.name : 'Free Agent';
     };
 
+    // Helper to get valid CSS color
+    const getValidColor = (color) => {
+        if (!color) return '#95a5a6'; // Default grey for Free Agent or missing color
+
+        // Map truncated DB values to valid CSS colors
+        const colorMap = {
+            'Lt. Blu': '#87CEEB', // SkyBlue
+            'Dk. Gre': '#006400', // DarkGreen
+            'White': '#FFFFFF',
+            'Yellow': '#FFD700',
+            'Gold': '#FFD700'
+        };
+
+        return colorMap[color] || color;
+    };
+
+    // Helper to determine text color based on background
+    const getTextColor = (bgColor) => {
+        if (!bgColor) return 'white';
+
+        const lightColors = [
+            'White', '#FFFFFF',
+            'Yellow', '#FFD700',
+            'Gold',
+            'Lt. Blu', '#87CEEB', 'LightBlue'
+        ];
+
+        // Check if color is in light list (case insensitive)
+        const isLight = lightColors.some(c =>
+            c.toLowerCase() === bgColor.toLowerCase()
+        );
+
+        return isLight ? '#2c3e50' : 'white';
+    };
+
     const isGM = (player) => {
         const team = teams.find(t => t.id === player.teamId);
         return team && team.gmId === player.id;
@@ -203,17 +238,40 @@ function PlayersPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {sortedPlayers.map(player => (
-                                <tr key={player.id}>
-                                    <td>
-                                        {player.firstName}
-                                        {isGM(player) && <span className="gm-badge">GM</span>}
-                                    </td>
-                                    <td>{player.lastName}</td>
-                                    <td>{player.position || 'N/A'}</td>
-                                    <td>{getTeamName(player.teamId)}</td>
-                                </tr>
-                            ))}
+                            {sortedPlayers.map(player => {
+                                const team = teams.find(t => t.id === player.teamId);
+                                const bg = team ? getValidColor(team.teamColor) : null;
+                                const textColor = team ? getTextColor(bg) : 'inherit';
+
+                                return (
+                                    <tr key={player.id}>
+                                        <td>
+                                            {player.firstName}
+                                            {isGM(player) && <span className="gm-badge">GM</span>}
+                                        </td>
+                                        <td>{player.lastName}</td>
+                                        <td>{player.position || 'N/A'}</td>
+                                        <td>
+                                            {team ? (
+                                                <span
+                                                    style={{
+                                                        backgroundColor: bg,
+                                                        color: textColor,
+                                                        padding: '4px 8px',
+                                                        borderRadius: '4px',
+                                                        display: 'inline-block',
+                                                        fontWeight: '600',
+                                                        minWidth: '100px',
+                                                        textAlign: 'center'
+                                                    }}
+                                                >
+                                                    {team.name}
+                                                </span>
+                                            ) : 'Free Agent'}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>
