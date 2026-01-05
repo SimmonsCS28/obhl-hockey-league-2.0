@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import './AdminDashboard.css';
 import DraftDashboard from './DraftDashboard';
 import PlayerManagement from './PlayerManagement';
+import ScorekeeperContent from './ScorekeeperContent';
 import SeasonManagement from './SeasonManagement';
 import TeamManagement from './TeamManagement';
 
@@ -24,6 +25,12 @@ function AdminDashboard() {
                     <h1>OBHL Admin</h1>
                     <div className="admin-user-info">
                         <span className="user-email">{user?.email}</span>
+                        <button
+                            onClick={() => navigate('/')}
+                            className="public-site-btn"
+                        >
+                            Public Site
+                        </button>
                         <button onClick={handleLogout} className="logout-btn">
                             Logout
                         </button>
@@ -55,6 +62,12 @@ function AdminDashboard() {
                         Draft Tool
                     </button>
                     <button
+                        className={`nav-tab ${activeTab === 'scoring' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('scoring')}
+                    >
+                        Scoring
+                    </button>
+                    <button
                         className="nav-tab"
                         onClick={() => navigate('/admin/schedule')}
                     >
@@ -68,6 +81,7 @@ function AdminDashboard() {
                 {activeTab === 'players' && <PlayerManagement />}
                 {activeTab === 'seasons' && <SeasonManagement />}
                 {activeTab === 'draft' && <DraftDashboard />}
+                {activeTab === 'scoring' && <ScorekeeperContent />}
             </main>
         </div>
     );

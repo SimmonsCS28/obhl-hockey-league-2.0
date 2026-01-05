@@ -36,7 +36,7 @@ public class User {
     private String passwordHash;
 
     @Column(nullable = false, length = 20)
-    private String role = "USER"; // ADMIN, GM, USER
+    private String role = "USER"; // ADMIN, GM, SCOREKEEPER, REF, COORDINATOR, USER
 
     @Column(name = "team_id")
     private Long teamId; // For GM role
