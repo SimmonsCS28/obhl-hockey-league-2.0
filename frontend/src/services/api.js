@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:8000/api/v1';
+const API_BASE_URL = 'http://44.193.17.173:8000/api/v1';
 
 // Helper to get auth token
 const getAuthToken = () => localStorage.getItem('token');

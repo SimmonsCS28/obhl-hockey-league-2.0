@@ -118,6 +118,15 @@ function SeasonManagement() {
         return <div className="loading">Loading seasons...</div>;
     }
 
+    // Helper function to format date without timezone conversion
+    const formatDateWithoutTimezone = (dateString) => {
+        if (!dateString) return '';
+        // Parse the date as local time to avoid timezone shift
+        const [year, month, day] = dateString.split('-');
+        const date = new Date(year, month - 1, day);
+        return date.toLocaleDateString();
+    };
+
     return (
         <div className="season-management">
             <div className="management-header">
@@ -138,11 +147,11 @@ function SeasonManagement() {
                             <div className="season-dates">
                                 <div className="date-item">
                                     <span className="date-label">Start Date</span>
-                                    <span className="date-value">{new Date(season.startDate).toLocaleDateString()}</span>
+                                    <span className="date-value">{formatDateWithoutTimezone(season.startDate)}</span>
                                 </div>
                                 <div className="date-item">
                                     <span className="date-label">End Date</span>
-                                    <span className="date-value">{new Date(season.endDate).toLocaleDateString()}</span>
+                                    <span className="date-value">{formatDateWithoutTimezone(season.endDate)}</span>
                                 </div>
                             </div>
                             <div className="season-status">

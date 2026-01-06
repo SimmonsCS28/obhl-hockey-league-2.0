@@ -69,7 +69,7 @@ function TeamManagement() {
         setFormData({
             name: team.name,
             abbreviation: team.abbreviation,
-            teamColor: team.teamColor || '#003E7E',
+            teamColor: getValidColor(team.teamColor) || '#003E7E',
             seasonId: team.seasonId || '',
             active: team.active
         });
@@ -121,13 +121,41 @@ function TeamManagement() {
     const getValidColor = (color) => {
         if (!color) return '#95a5a6';
 
-        // Map truncated DB values to valid CSS colors
+        // If already a hex color, return it
+        if (color.startsWith('#')) return color;
+
+        // Comprehensive color name to hex mapping
         const colorMap = {
-            'Lt. Blu': '#87CEEB', // SkyBlue
-            'Dk. Gre': '#006400', // DarkGreen
+            // Truncated DB values
+            'Lt. Blu': '#87CEEB',
+            'Lt. Blue': '#87CEEB',
+            'Dk. Gre': '#006400',
+            // Common colors
             'White': '#FFFFFF',
-            'Yellow': '#FFD700',
-            'Gold': '#FFD700'
+            'Red': '#FF0000',
+            'Blue': '#0000FF',
+            'Green': '#008000',
+            'Yellow': '#FFFF00',
+            'Orange': '#FFA500',
+            'Purple': '#800080',
+            'Pink': '#FFC0CB',
+            'Black': '#000000',
+            'Gray': '#808080',
+            'Grey': '#808080',
+            'Brown': '#A52A2A',
+            'Maroon': '#800000',
+            'Navy': '#000080',
+            'Teal': '#008080',
+            'Lime': '#00FF00',
+            'Cyan': '#00FFFF',
+            'Magenta': '#FF00FF',
+            'Silver': '#C0C0C0',
+            'Gold': '#FFD700',
+            'Tan': '#D2B48C',
+            'Beige': '#F5F5DC',
+            'Olive': '#808000',
+            'Indigo': '#4B0082',
+            'Violet': '#EE82EE'
         };
 
         return colorMap[color] || color;

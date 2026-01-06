@@ -30,8 +30,11 @@ public class CorsConfig {
 
         if ("*".equals(allowedOrigins)) {
             config.addAllowedOriginPattern("*");
+            // Cannot use credentials with wildcard origin
+            config.setAllowCredentials(false);
         } else {
             Arrays.stream(allowedOrigins.split(",")).forEach(config::addAllowedOrigin);
+            config.setAllowCredentials(allowCredentials);
         }
 
         if ("*".equals(allowedMethods)) {
@@ -45,8 +48,6 @@ public class CorsConfig {
         } else {
             Arrays.stream(allowedHeaders.split(",")).forEach(config::addAllowedHeader);
         }
-
-        config.setAllowCredentials(allowCredentials);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

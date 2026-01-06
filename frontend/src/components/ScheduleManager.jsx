@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import GameEditModal from './GameEditModal';
 import './ScheduleManager.css';
 
-const API_BASE_URL = 'http://localhost:8002/api/v1';
+const API_BASE_URL = 'http://44.193.17.173:8000/api/v1';
 
 const ScheduleManager = () => {
     const [seasons, setSeasons] = useState([]);
@@ -48,7 +48,7 @@ const ScheduleManager = () => {
 
     const fetchSeasons = async () => {
         try {
-            const response = await axios.get('http://localhost:8001/api/v1/seasons');
+            const response = await axios.get(`${API_BASE_URL}/seasons`);
             setSeasons(response.data);
             // Auto-select active season
             const activeSeason = response.data.find(s => s.isActive);

@@ -606,6 +606,45 @@ const DraftDashboard = () => {
         }
     };
 
+    // Export draft to CSV
+    const handleExportCSV = () => {
+        // Headers
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Team Name,Team Abbr,Is GM,First Name,Last Name,Position,Skill Rating,Status,Email,Buddy\n";
+
+        // Rows
+        teams.forEach(team => {
+            team.players.forEach(player => {
+                const row = [
+                    `"${team.name}"`, // Quote to handle commas in names
+                    team.abbreviation || generateAbbreviation(team.name),
+                    player.isGm ? "Yes" : "No",
+                    `"${player.firstName}"`,
+                    `"${player.lastName}"`,
+                    player.position,
+                    player.skillRating,
+                    player.status || (player.isVeteran ? "Veteran" : "Rookie"),
+                    player.email,
+                    player.buddyPick || ""
+                ];
+                csvContent += row.join(",") + "\n";
+            });
+        });
+
+        // Download trigger
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `OBHL_Draft_${seasonName}_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const generateAbbreviation = (name) => {
+        return name ? name.substring(0, 3).toUpperCase() : "";
+    };
+
     // Handler for canceling finalize draft from modal
     const cancelFinalizeDraft = () => {
         setShowFinalizeDraftConfirm(false);
@@ -1657,6 +1696,15 @@ const DraftDashboard = () => {
                                 }}
                             >
                                 Undo {history.length > 0 && `(${history.length})`}
+                            </button>
+                            {/* Export Button */}
+                            <button
+                                className="btn-draft"
+                                onClick={handleExportCSV}
+                                style={{ backgroundColor: '#10b981', color: 'white', marginLeft: '10px' }}
+                                title="Download draft as CSV"
+                            >
+                                💾 Export CSV
                             </button>
                             <button className="btn-draft btn-save" onClick={handleSaveDraft}>Save Draft</button>
                             <button className="btn-draft btn-finalize" onClick={handleFinalizeDraft}>Finalize Draft</button>
