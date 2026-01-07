@@ -41,8 +41,8 @@ function Home() {
                     <h2>Current Season: {activeSeason.name}</h2>
                     <div className="season-info">
                         <p><strong>Status:</strong> {activeSeason.status}</p>
-                        <p><strong>Start Date:</strong> {new Date(activeSeason.startDate).toLocaleDateString()}</p>
-                        <p><strong>End Date:</strong> {new Date(activeSeason.endDate).toLocaleDateString()}</p>
+                        <p><strong>Start Date:</strong> {activeSeason.startDate}</p>
+                        <p><strong>End Date:</strong> {activeSeason.endDate}</p>
                     </div>
 
                     <div className="quick-links">

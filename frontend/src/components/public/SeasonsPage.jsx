@@ -35,6 +35,18 @@ function SeasonsPage() {
         setSelectedSeason(season);
     };
 
+    // Format date string (YYYY-MM-DD) without timezone conversion
+    const formatDate = (dateString) => {
+        if (!dateString) return 'N/A';
+        const [year, month, day] = dateString.split('-');
+        const date = new Date(year, month - 1, day); // month is 0-indexed
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
+
     if (loading) return <div className="loading">Loading seasons...</div>;
     if (error) return <div className="error">Error: {error}</div>;
     if (seasons.length === 0) return <div className="no-data">No seasons available.</div>;
@@ -81,20 +93,12 @@ function SeasonsPage() {
 
                         <div className="info-card">
                             <h3>Start Date</h3>
-                            <p>{new Date(selectedSeason.startDate).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                            })}</p>
+                            <p>{formatDate(selectedSeason.startDate)}</p>
                         </div>
 
                         <div className="info-card">
                             <h3>End Date</h3>
-                            <p>{new Date(selectedSeason.endDate).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric'
-                            })}</p>
+                            <p>{formatDate(selectedSeason.endDate)}</p>
                         </div>
 
                         <div className="info-card">
