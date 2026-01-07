@@ -20,7 +20,7 @@ function StandingsPage() {
 
     const fetchSeasons = async () => {
         try {
-            const response = await fetch('http://44.193.17.173:8000/api/v1/seasons');
+            const response = await fetch('/api/v1/seasons');
             if (!response.ok) throw new Error('Failed to fetch seasons');
 
             const data = await response.json();
@@ -38,7 +38,7 @@ function StandingsPage() {
     const fetchTeams = async (seasonId) => {
         try {
             setLoading(true);
-            const response = await fetch(`http://44.193.17.173:8000/api/v1/teams?seasonId=${seasonId}`);
+            const response = await fetch(`/api/v1/teams?seasonId=${seasonId}`);
             if (!response.ok) throw new Error('Failed to fetch teams');
 
             const data = await response.json();
