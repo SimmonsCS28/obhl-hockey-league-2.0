@@ -1,7 +1,6 @@
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import './App.css';
 import AdminDashboard from './components/AdminDashboard';
-import Login from './components/Login';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicLayout from './components/PublicLayout';
 import ScheduleManager from './components/ScheduleManager';
@@ -28,9 +27,6 @@ function App() {
             <Route path="schedule" element={<SchedulePage />} />
             {/* Other public pages will be added here */}
           </Route>
-
-          {/* Auth Routes */}
-          <Route path="/login" element={<Login />} />
 
           {/* Protected Admin Routes */}
           <Route

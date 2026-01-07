@@ -10,6 +10,8 @@ function TeamDetails({ team, onBack }) {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [playerToRemove, setPlayerToRemove] = useState(null);
     const [selectedPlayerId, setSelectedPlayerId] = useState('');
+    const [editingPlayerId, setEditingPlayerId] = useState(null);
+    const [editedJerseyNumber, setEditedJerseyNumber] = useState('');
 
     useEffect(() => {
         loadData();
@@ -82,6 +84,39 @@ function TeamDetails({ team, onBack }) {
             console.error('Error adding player:', error);
             alert('Failed to add player');
         }
+    };
+
+    const handleEditJersey = (player) => {
+        setEditingPlayerId(player.id);
+        setEditedJerseyNumber(player.jerseyNumber || '');
+    };
+
+    const handleSaveJersey = async (player) => {
+        const jerseyNum = editedJerseyNumber === '' ? null : parseInt(editedJerseyNumber);
+
+        // Validate jersey number
+        if (jerseyNum !== null && (jerseyNum < 1 || jerseyNum > 99 || isNaN(jerseyNum))) {
+            alert('Jersey number must be between 1 and 99');
+            return;
+        }
+
+        try {
+            await api.updatePlayer(player.id, {
+                ...player,
+                jerseyNumber: jerseyNum
+            });
+            setEditingPlayerId(null);
+            setEditedJerseyNumber('');
+            loadData();
+        } catch (error) {
+            console.error('Error updating jersey number:', error);
+            alert('Failed to update jersey number');
+        }
+    };
+
+    const handleCancelJersey = () => {
+        setEditingPlayerId(null);
+        setEditedJerseyNumber('');
     };
 
     if (loading) {
@@ -163,22 +198,56 @@ function TeamDetails({ team, onBack }) {
                             <th>#</th>
                             <th>Name</th>
                             <th>Position</th>
-                            <th>Shoots</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {roster.length === 0 ? (
                             <tr>
-                                <td colSpan="5" className="empty-roster">No players on roster</td>
+                                <td colSpan="4" className="empty-roster">No players on roster</td>
                             </tr>
                         ) : (
                             roster.map(player => (
                                 <tr key={player.id}>
-                                    <td>{player.jerseyNumber}</td>
+                                    <td>
+                                        {editingPlayerId === player.id ? (
+                                            <div className="jersey-edit">
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    max="99"
+                                                    value={editedJerseyNumber}
+                                                    onChange={(e) => setEditedJerseyNumber(e.target.value)}
+                                                    className="jersey-input"
+                                                    autoFocus
+                                                />
+                                                <button
+                                                    onClick={() => handleSaveJersey(player)}
+                                                    className="btn-save-jersey"
+                                                    title="Save"
+                                                >
+                                                    ✓
+                                                </button>
+                                                <button
+                                                    onClick={handleCancelJersey}
+                                                    className="btn-cancel-jersey"
+                                                    title="Cancel"
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div
+                                                className="jersey-display"
+                                                onClick={() => handleEditJersey(player)}
+                                                title="Click to edit"
+                                            >
+                                                {player.jerseyNumber || '-'}
+                                            </div>
+                                        )}
+                                    </td>
                                     <td>{player.firstName} {player.lastName}</td>
                                     <td>{player.position}</td>
-                                    <td>{player.shoots}</td>
                                     <td>
                                         <button
                                             onClick={() => initiateRemovePlayer(player)}

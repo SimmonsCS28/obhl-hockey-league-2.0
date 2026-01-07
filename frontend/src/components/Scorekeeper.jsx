@@ -8,7 +8,7 @@ function Scorekeeper() {
 
     const handleLogout = () => {
         logout();
-        navigate('/login');
+        navigate('/');
     };
 
     return (
