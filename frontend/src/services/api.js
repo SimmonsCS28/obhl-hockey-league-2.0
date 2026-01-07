@@ -67,7 +67,7 @@ const api = {
     // GAMES API (Game Service on port 8002)
     // ============================================
     async getGames(seasonId = null) {
-        const GAME_SERVICE_URL = 'http://localhost:8002/api/v1';
+        const GAME_SERVICE_URL = 'http://44.193.17.173:8002/api/v1';
         let url = `${GAME_SERVICE_URL}/games`;
         if (seasonId) {
             url += `?seasonId=${seasonId}`;
