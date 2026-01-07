@@ -46,7 +46,7 @@ public class DraftService {
             }
 
             DraftSave draft = draftOpt.get();
-            if ("completed".equals(draft.getStatus())) {
+            if ("complete".equals(draft.getStatus())) {
                 throw new IllegalStateException("Draft already finalized");
             }
 
@@ -157,16 +157,12 @@ public class DraftService {
                         // Any other error will be caught by the outer try-catch
                     }
 
-                    Map<String, Object> playerData = new HashMap<>();
-                    playerData.put("email", draftPlayer.getEmail());
-                    playerData.put("firstName", draftPlayer.getFirstName());
-                    playerData.put("lastName", draftPlayer.getLastName());
-                    playerData.put("position", draftPlayer.getPosition());
-                    playerData.put("skillRating", draftPlayer.getSkillRating());
-                    playerData.put("isVeteran", "Veteran".equals(draftPlayer.getStatus()));
-                    playerData.put("teamId", teamId);
-                    playerData.put("seasonId", season.getId());
-                    playerData.put("isActive", true);
+                    // Use helper method that handles position normalization
+                    Map<String, Object> playerData = mapPlayer(draftPlayer, season.getId(), teamId);
+
+                    // Explicitly put the isVeteran flag based on status check if needed,
+                    // or rely on mapPlayer which uses dto.isVeteran().
+                    // Since frontend sends both, mapPlayer is sufficient.
 
                     Map<String, Object> savedPlayer;
                     if (existingPlayerData == null) {
@@ -199,7 +195,7 @@ public class DraftService {
             }
 
             // 7. Mark draft as completed
-            draft.setStatus("completed");
+            draft.setStatus("complete");
             draftSaveRepository.save(draft);
 
             System.out.println("Draft finalization completed successfully! Season ID: " + season.getId());
@@ -304,13 +300,26 @@ public class DraftService {
         map.put("firstName", dto.getFirstName());
         map.put("lastName", dto.getLastName());
         map.put("email", dto.getEmail());
-        map.put("position", dto.getPosition());
+        map.put("position", normalizePosition(dto.getPosition()));
         map.put("skillRating", dto.getSkillRating());
         map.put("isVeteran", dto.isVeteran());
         map.put("seasonId", seasonId);
         map.put("teamId", teamId);
         map.put("isActive", true);
         return map;
+    }
+
+    private String normalizePosition(String position) {
+        if (position == null)
+            return "F";
+        String p = position.trim().toUpperCase();
+        if (p.startsWith("F") || p.contains("FORWARD"))
+            return "F";
+        if (p.startsWith("D") || p.contains("DEFENSE"))
+            return "D";
+        if (p.startsWith("G") || p.contains("GOALIE"))
+            return "G";
+        return "F"; // Default fallback
     }
 
     // ===== Draft Save/Load Methods =====

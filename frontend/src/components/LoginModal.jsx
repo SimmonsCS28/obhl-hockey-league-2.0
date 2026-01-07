@@ -1,15 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import './Login.css';
+import './LoginModal.css';
 
-const Login = () => {
+function LoginModal({ isOpen, onClose }) {
     const [usernameOrEmail, setUsernameOrEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const { login } = useAuth();
+
+    if (!isOpen) return null;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -19,10 +21,18 @@ const Login = () => {
         const result = await login(usernameOrEmail, password);
 
         if (result.success) {
+            onClose();
+            setUsernameOrEmail('');
+            setPassword('');
+
+            // Role-based redirect
             if (result.user?.role === 'SCOREKEEPER') {
                 navigate('/scorekeeper');
-            } else {
+            } else if (result.user?.role === 'ADMIN') {
                 navigate('/admin');
+            } else {
+                // For other roles, stay on public site or go to a generic dashboard
+                navigate('/');
             }
         } else {
             setError(result.error || 'Login failed. Please check your credentials.');
@@ -31,15 +41,23 @@ const Login = () => {
         setLoading(false);
     };
 
+    const handleOverlayClick = (e) => {
+        if (e.target === e.currentTarget) {
+            onClose();
+        }
+    };
+
     return (
-        <div className="login-container">
-            <div className="login-card">
-                <div className="login-header">
-                    <h1>OBHL Admin</h1>
+        <div className="login-modal-overlay" onClick={handleOverlayClick}>
+            <div className="login-modal">
+                <button className="modal-close" onClick={onClose}>&times;</button>
+
+                <div className="modal-header">
+                    <h2>Login</h2>
                     <p>Sign in to continue</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="login-form">
+                <form onSubmit={handleSubmit} className="modal-form">
                     {error && (
                         <div className="error-message">
                             {error}
@@ -47,9 +65,9 @@ const Login = () => {
                     )}
 
                     <div className="form-group">
-                        <label htmlFor="usernameOrEmail">Email or Username</label>
+                        <label htmlFor="modal-email">Email or Username</label>
                         <input
-                            id="usernameOrEmail"
+                            id="modal-email"
                             type="text"
                             value={usernameOrEmail}
                             onChange={(e) => setUsernameOrEmail(e.target.value)}
@@ -60,9 +78,9 @@ const Login = () => {
                     </div>
 
                     <div className="form-group">
-                        <label htmlFor="password">Password</label>
+                        <label htmlFor="modal-password">Password</label>
                         <input
-                            id="password"
+                            id="modal-password"
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
@@ -79,18 +97,9 @@ const Login = () => {
                         {loading ? 'Signing in...' : 'Sign In'}
                     </button>
                 </form>
-
-                <div className="login-footer">
-                    <p className="temp-password-note">
-                        <strong>Temporary Password:</strong> admin123
-                    </p>
-                    <p className="help-text">
-                        You can change your password after logging in
-                    </p>
-                </div>
             </div>
         </div>
     );
-};
+}
 
-export default Login;
+export default LoginModal;

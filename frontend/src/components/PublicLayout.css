@@ -66,19 +66,57 @@
     background-color: rgba(255, 255, 255, 0.1);
 }
 
-.admin-link {
+.auth-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-greeting {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.9rem;
+}
+
+.login-btn,
+.dashboard-link,
+.logout-btn {
     color: white;
     text-decoration: none;
-    padding: 0.5rem 1.5rem;
+    padding: 0.5rem 1.25rem;
     border: 2px solid white;
     border-radius: 6px;
     font-weight: 500;
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.9rem;
     transition: background-color 0.2s, color 0.2s;
 }
 
-.admin-link:hover {
+.login-btn:hover,
+.dashboard-link:hover,
+.logout-btn:hover {
     background-color: white;
-    color: #667eea;
+    color: #4a5568;
+}
+
+.dashboard-link {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: transparent;
+}
+
+.dashboard-link:hover {
+    background-color: white;
+    color: #4a5568;
+}
+
+.logout-btn {
+    border-color: #f87171;
+    color: #fecaca;
+}
+
+.logout-btn:hover {
+    background-color: #f87171;
+    color: white;
 }
 
 .public-main {

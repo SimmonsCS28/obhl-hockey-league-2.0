@@ -22,7 +22,7 @@ function TeamsPage() {
 
     const fetchSeasons = async () => {
         try {
-            const response = await fetch('http://localhost:8000/api/v1/seasons');
+            const response = await fetch('http://44.193.17.173:8000/api/v1/seasons');
             if (!response.ok) throw new Error('Failed to fetch seasons');
 
             const data = await response.json();
@@ -40,7 +40,7 @@ function TeamsPage() {
     const fetchTeams = async (seasonId) => {
         try {
             setLoading(true);
-            const response = await fetch(`http://localhost:8000/api/v1/teams?seasonId=${seasonId}`);
+            const response = await fetch(`http://44.193.17.173:8000/api/v1/teams?seasonId=${seasonId}`);
             if (!response.ok) throw new Error('Failed to fetch teams');
 
             const data = await response.json();
@@ -54,7 +54,7 @@ function TeamsPage() {
 
     const fetchPlayers = async (seasonId) => {
         try {
-            const response = await fetch(`http://localhost:8003/api/v1/players?seasonId=${seasonId}`);
+            const response = await fetch(`http://44.193.17.173:8003/api/v1/players?seasonId=${seasonId}`);
             if (!response.ok) throw new Error('Failed to fetch players');
 
             const data = await response.json();

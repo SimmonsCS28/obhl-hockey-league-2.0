@@ -3,7 +3,9 @@ import { useEffect, useRef, useState } from 'react';
 import GameEditModal from './GameEditModal';
 import './ScheduleManager.css';
 
-const API_BASE_URL = 'http://localhost:8002/api/v1';
+const API_BASE_URL = 'http://44.193.17.173:8000/api/v1';
+// TODO: Fix API Gateway multipart proxy and use API_BASE_URL for all requests
+const GAME_SERVICE_URL = 'http://44.193.17.173:8002/api/v1'; // Direct access for file uploads
 
 const ScheduleManager = () => {
     const [seasons, setSeasons] = useState([]);
@@ -48,7 +50,7 @@ const ScheduleManager = () => {
 
     const fetchSeasons = async () => {
         try {
-            const response = await axios.get('http://localhost:8001/api/v1/seasons');
+            const response = await axios.get(`${API_BASE_URL}/seasons`);
             setSeasons(response.data);
             // Auto-select active season
             const activeSeason = response.data.find(s => s.isActive);
@@ -62,7 +64,7 @@ const ScheduleManager = () => {
 
     const fetchTeams = async (seasonId) => {
         try {
-            const response = await axios.get(`http://localhost:8000/api/v1/teams?seasonId=${seasonId}`);
+            const response = await axios.get(`${API_BASE_URL}/teams?seasonId=${seasonId}`);
             setTeams(response.data);
         } catch (error) {
             showMessage('error', 'Failed to load teams');
@@ -100,7 +102,8 @@ const ScheduleManager = () => {
         formData.append('file', file);
 
         try {
-            const response = await axios.post(`${API_BASE_URL}/games/upload-slots`, formData, {
+            // Use GAME_SERVICE_URL directly to bypass API Gateway for file uploads
+            const response = await axios.post(`${GAME_SERVICE_URL}/games/upload-slots`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             setParsedSlots(response.data);

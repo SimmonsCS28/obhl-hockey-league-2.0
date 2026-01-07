@@ -26,55 +26,61 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GameProxyController {
 
-    private final RestTemplate restTemplate = new RestTemplate();
+        private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${game.service.url:http://localhost:8002}")
-    private String gameServiceUrl;
+        @Value("${game.service.url:http://localhost:8002}")
+        private String gameServiceUrl;
 
-    @Value("${api.v1.prefix}")
-    private String apiV1Prefix;
+        @Value("${api.v1.prefix}")
+        private String apiV1Prefix;
 
-    /**
-     * Proxy all /games requests to the Game Service
-     */
-    @RequestMapping(value = "/**", method = { RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT,
-            RequestMethod.PATCH, RequestMethod.DELETE })
-    public ResponseEntity<?> proxyGameRequests(
-            HttpServletRequest request,
-            @RequestBody(required = false) String body,
-            @RequestHeader HttpHeaders headers) {
+        /**
+         * Proxy all /games requests to the Game Service
+         */
+        @RequestMapping(value = "/**", method = { RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT,
+                        RequestMethod.PATCH, RequestMethod.DELETE })
+        public ResponseEntity<?> proxyGameRequests(
+                        HttpServletRequest request,
+                        @RequestBody(required = false) String body,
+                        @RequestHeader HttpHeaders headers) {
 
-        try {
-            // Build the target URL
-            String path = request.getRequestURI().replace(apiV1Prefix + "/games", "/api/v1/games");
-            String queryString = request.getQueryString();
-            String targetUrl = gameServiceUrl + path + (queryString != null ? "?" + queryString : "");
+                try {
+                        // Build the target URL
+                        String path = request.getRequestURI().replace(apiV1Prefix + "/games", "/api/v1/games");
+                        String queryString = request.getQueryString();
+                        String targetUrl = gameServiceUrl + path + (queryString != null ? "?" + queryString : "");
 
-            // Create HTTP entity with headers and body
-            HttpHeaders proxyHeaders = new HttpHeaders();
-            proxyHeaders.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<String> entity = new HttpEntity<>(body, proxyHeaders);
+                        // Create HTTP entity with headers and body
+                        HttpHeaders proxyHeaders = new HttpHeaders();
+                        // Preserve the original Content-Type (important for multipart file uploads)
+                        if (headers.getContentType() != null) {
+                                proxyHeaders.setContentType(headers.getContentType());
+                        } else {
+                                proxyHeaders.setContentType(MediaType.APPLICATION_JSON);
+                        }
+                        HttpEntity<String> entity = new HttpEntity<>(body, proxyHeaders);
 
-            // Forward the request
-            ResponseEntity<String> response = restTemplate.exchange(
-                    targetUrl,
-                    HttpMethod.valueOf(request.getMethod()),
-                    entity,
-                    String.class);
+                        // Forward the request
+                        ResponseEntity<String> response = restTemplate.exchange(
+                                        targetUrl,
+                                        HttpMethod.valueOf(request.getMethod()),
+                                        entity,
+                                        String.class);
 
-            return ResponseEntity
-                    .status(response.getStatusCode())
-                    .headers(response.getHeaders())
-                    .body(response.getBody());
+                        return ResponseEntity
+                                        .status(response.getStatusCode())
+                                        .headers(response.getHeaders())
+                                        .body(response.getBody());
 
-        } catch (HttpClientErrorException | HttpServerErrorException e) {
-            return ResponseEntity
-                    .status(e.getStatusCode())
-                    .body(Map.of("error", e.getMessage()));
-        } catch (Exception e) {
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "Failed to proxy request to Game Service", "message", e.getMessage()));
+                } catch (HttpClientErrorException | HttpServerErrorException e) {
+                        return ResponseEntity
+                                        .status(e.getStatusCode())
+                                        .body(Map.of("error", e.getMessage()));
+                } catch (Exception e) {
+                        return ResponseEntity
+                                        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                                        .body(Map.of("error", "Failed to proxy request to Game Service", "message",
+                                                        e.getMessage()));
+                }
         }
-    }
 }
