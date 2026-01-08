@@ -28,49 +28,38 @@ server {
     }
 
     location /api/ {
-        # Direct pass to avoid header parsing issues
+        # Use simple HTTP/1.0 connection
         proxy_pass http://127.0.0.1:8000/api/;
+        proxy_http_version 1.0;
         
-        # Use HTTP/1.1 with proper connection handling
-        proxy_http_version 1.1;
-        proxy_set_header Connection "";
-        
-        # Essential headers
+        # Essential headers only
         proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
         
-        # Buffer the entire response to handle chunked encoding issues
-        proxy_buffering on;
-        proxy_buffer_size 16k;
-        proxy_buffers 8 16k;
-        proxy_busy_buffers_size 32k;
+        # Don't buffer - stream directly
+        proxy_buffering off;
+        proxy_request_buffering off;
         
-        # Ignore certain headers that might be duplicated
-        proxy_hide_header Transfer-Encoding;
+        # Ignore problematic cache/vary headers
+        proxy_ignore_headers Cache-Control Expires Set-Cookie Vary;
         
-        # Read full response before sending
-        proxy_read_timeout 60s;
+        # Force close connection after each request
+        proxy_set_header Connection close;
     }
 
     location /games-api/ {
         proxy_pass http://localhost:8002/api/v1/;
-        proxy_http_version 1.1;
-        proxy_set_header Connection "";
+        proxy_http_version 1.0;
         proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection close;
+        proxy_buffering off;
     }
 
     location /stats-api/ {
         proxy_pass http://localhost:8003/api/v1/;
-        proxy_http_version 1.1;
-        proxy_set_header Connection "";
+        proxy_http_version 1.0;
         proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Connection close;
+        proxy_buffering off;
     }
 }
