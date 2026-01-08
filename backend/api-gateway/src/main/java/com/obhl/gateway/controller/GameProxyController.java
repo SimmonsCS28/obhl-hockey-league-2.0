@@ -26,7 +26,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class GameProxyController {
 
-        private final RestTemplate restTemplate = new RestTemplate();
+        private final RestTemplate restTemplate;
 
         @Value("${game.service.url:http://localhost:8002}")
         private String gameServiceUrl;
