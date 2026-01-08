@@ -2,6 +2,8 @@ package com.obhl.game.service;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -153,9 +155,12 @@ public class ScheduleGeneratorService {
         game.setHomeTeamId(matchup.homeTeamId);
         game.setAwayTeamId(matchup.awayTeamId);
 
-        // Combine date and time
-        LocalDateTime gameDateTime = LocalDateTime.of(slot.getDate(), slot.getTime());
-        game.setGameDate(gameDateTime);
+        // Combine date and time, treating CSV times as America/Chicago timezone
+        LocalDateTime localDateTime = LocalDateTime.of(slot.getDate(), slot.getTime());
+        ZonedDateTime zonedDateTime = localDateTime.atZone(ZoneId.of("America/Chicago"));
+        // Convert to UTC for storage
+        LocalDateTime utcDateTime = zonedDateTime.withZoneSameInstant(ZoneId.of("UTC")).toLocalDateTime();
+        game.setGameDate(utcDateTime);
 
         game.setWeek(slot.getWeek());
         game.setRink(slot.getRink());
