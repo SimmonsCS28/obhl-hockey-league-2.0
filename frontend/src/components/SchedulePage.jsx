@@ -26,7 +26,7 @@ const SchedulePage = () => {
 
     const fetchSeasons = async () => {
         try {
-            const response = await axios.get('/api/v1/seasons');
+            const response = await axios.get('http://44.193.17.173:8000/api/v1/seasons');
             setSeasons(response.data);
             // Default to active season
             const activeSeason = response.data.find(s => s.isActive);
@@ -40,7 +40,7 @@ const SchedulePage = () => {
 
     const fetchTeams = async (seasonId) => {
         try {
-            const response = await axios.get(`/api/v1/teams?seasonId=${seasonId}`);
+            const response = await axios.get(`http://44.193.17.173:8000/api/v1/teams?seasonId=${seasonId}`);
             setTeams(response.data);
         } catch (error) {
             console.error('Failed to load teams:', error);
@@ -50,7 +50,7 @@ const SchedulePage = () => {
     const fetchGames = async (seasonId) => {
         setLoading(true);
         try {
-            const response = await axios.get(`/games-api/games?seasonId=${seasonId}`);
+            const response = await axios.get(`http://44.193.17.173:8002/api/v1/games?seasonId=${seasonId}`);
             setGames(response.data);
         } catch (error) {
             console.error('Failed to load games:', error);
