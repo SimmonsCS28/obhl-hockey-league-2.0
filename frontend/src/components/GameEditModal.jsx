@@ -2,10 +2,23 @@ import { useState } from 'react';
 import './GameEditModal.css';
 
 const GameEditModal = ({ game, teams, onClose, onSave, onDelete }) => {
+    // Helper function to convert UTC date to local datetime-local format
+    const toLocalDateTimeString = (utcDateString) => {
+        if (!utcDateString) return '';
+        const date = new Date(utcDateString);
+        // Get local date/time components
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    };
+
     const [formData, setFormData] = useState({
         homeTeamId: game?.homeTeamId || '',
         awayTeamId: game?.awayTeamId || '',
-        gameDate: game?.gameDate ? new Date(game.gameDate).toISOString().slice(0, 16) : '',
+        gameDate: toLocalDateTimeString(game?.gameDate),
         rink: game?.rink || 'Tubbs',
         week: game?.week || 1
     });
