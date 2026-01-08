@@ -640,7 +640,7 @@ const ScheduleManager = () => {
                                     {gamesByWeek[week].map(game => {
                                         const homeTeam = getTeamById(game.homeTeamId);
                                         const awayTeam = getTeamById(game.awayTeamId);
-                                        const gameDate = new Date(game.gameDate);
+                                        const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
                                         const dayOfWeek = gameDate.getDay(); // 0=Sunday, 5=Friday
                                         const isNotFriday = dayOfWeek !== 5;
                                         const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
