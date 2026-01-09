@@ -242,6 +242,51 @@ const ScheduleManager = () => {
         });
     };
 
+    const handleDownloadSchedule = () => {
+        if (!games.length) {
+            showMessage('error', 'No games to download');
+            return;
+        }
+
+        // Create CSV content
+        const headers = ['Week', 'Date', 'Time', 'Home Team', 'Away Team', 'Rink'];
+        const csvRows = [headers.join(',')];
+
+        // Sort games by date and week
+        const sortedGames = [...games].sort((a, b) => {
+            if (a.week !== b.week) return a.week - b.week;
+            return new Date(a.gameDate).getTime() - new Date(b.gameDate).getTime();
+        });
+
+        sortedGames.forEach(game => {
+            const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
+            const date = gameDate.toLocaleDateString();
+            const time = gameDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const homeTeam = teams.find(t => t.id === game.homeTeamId)?.name || 'Unknown';
+            const awayTeam = teams.find(t => t.id === game.awayTeamId)?.name || 'Unknown';
+
+            csvRows.push([game.week, date, time, homeTeam, awayTeam, game.rink].join(','));
+        });
+
+        // Create blob and download
+        const csvContent = csvRows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+
+        const seasonName = seasons.find(s => s.id === selectedSeason)?.name || 'schedule';
+        a.download = `${seasonName.replace(/\s+/g, '_')}_schedule.csv`;
+
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        showMessage('success', 'Schedule downloaded successfully!');
+    };
+
     const handleAddWeek = async () => {
         if (!selectedSeason || !teams.length) return;
 
@@ -629,6 +674,18 @@ const ScheduleManager = () => {
                             style={{ marginLeft: scheduleMode === 'draft' ? '10px' : '0', marginBottom: '20px' }}
                         >
                             💾 Save Schedule
+                        </button>
+                    )}
+
+                    {/* Download Schedule button - always show when games exist */}
+                    {games.length > 0 && (
+                        <button
+                            onClick={handleDownloadSchedule}
+                            disabled={loading}
+                            className="btn-secondary"
+                            style={{ marginLeft: '10px', marginBottom: '20px' }}
+                        >
+                            ⬇️ Download Schedule
                         </button>
                     )}
 
