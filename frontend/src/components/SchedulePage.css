@@ -45,6 +45,7 @@
     border-radius: 4px;
     font-size: 16px;
     background: white;
+    color: #2c3e50 !important;
     cursor: pointer;
     transition: border-color 0.2s;
 }
