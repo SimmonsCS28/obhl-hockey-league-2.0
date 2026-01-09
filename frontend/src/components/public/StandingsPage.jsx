@@ -169,10 +169,7 @@ function StandingsPage() {
                                         >
                                             {index + 1}
                                         </td>
-                                        <td
-                                            className="team-name"
-                                            style={{ backgroundColor: bg, color: textColor }}
-                                        >
+                                        <td className="team-name">
                                             <strong>{team.name}</strong>
                                         </td>
                                         <td>{team.wins}</td>
