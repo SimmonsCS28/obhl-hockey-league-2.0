@@ -76,6 +76,7 @@ services:
       SPRING_DATASOURCE_USERNAME: obhl_admin
       SPRING_DATASOURCE_PASSWORD: changeme
       ENVIRONMENT: docker
+      APPLICATION_CONFIG_API_GATEWAY_URL: http://api-gateway:8000
     ports:
       - "8002:8002"
     depends_on:

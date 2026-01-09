@@ -48,8 +48,8 @@ function GMTeam() {
             }
 
             showMessage('success', 'Jersey numbers updated successfully!');
-            setEditedPlayers({});
-            await fetchRoster();
+            await fetchRoster(); // Fetch first to ensure data is fresh
+            setEditedPlayers({}); // Then clear local edits
         } catch (error) {
             showMessage('error', 'Failed to update jersey numbers');
         } finally {

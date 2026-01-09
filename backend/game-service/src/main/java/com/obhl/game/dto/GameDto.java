@@ -2,10 +2,7 @@ package com.obhl.game.dto;
 
 import java.time.LocalDateTime;
 
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -18,50 +15,34 @@ public class GameDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Create {
-        @NotNull(message = "Season ID is required")
+        @NotNull
         @Positive
         private Long seasonId;
 
-        @Positive
         private Long leagueId;
 
-        @NotNull(message = "Home team ID is required")
+        @NotNull
         @Positive
         private Long homeTeamId;
 
-        @NotNull(message = "Away team ID is required")
+        @NotNull
         @Positive
         private Long awayTeamId;
 
-        @NotNull(message = "Game date is required")
+        @NotNull
         private LocalDateTime gameDate;
 
         @Size(max = 200)
         private String venue;
 
-        @Pattern(regexp = "^(scheduled|in_progress|completed|postponed|cancelled)$")
-        private String status = "scheduled";
-
-        @Min(0)
-        private Integer homeScore = 0;
-
-        @Min(0)
-        private Integer awayScore = 0;
-
-        private Boolean overtime = false;
-
-        private Boolean shootout = false;
-
-        @Min(1)
-        @Max(5)
-        private Integer period = 1;
-
-        @Min(1)
+        private String status;
+        private Integer homeScore;
+        private Integer awayScore;
+        private Boolean overtime;
+        private Boolean shootout;
+        private Integer period;
         private Integer week;
-
-        @Size(max = 20)
         private String rink;
-
         private String gameNotes;
     }
 
@@ -69,47 +50,48 @@ public class GameDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Update {
-        @Positive
         private Long seasonId;
-
-        @Positive
         private Long leagueId;
-
-        @Positive
         private Long homeTeamId;
-
-        @Positive
         private Long awayTeamId;
-
         private LocalDateTime gameDate;
-
-        @Size(max = 200)
         private String venue;
-
-        @Pattern(regexp = "^(scheduled|in_progress|completed|postponed|cancelled)$")
         private String status;
-
-        @Min(0)
         private Integer homeScore;
-
-        @Min(0)
         private Integer awayScore;
-
         private Boolean overtime;
-
         private Boolean shootout;
-
-        @Min(1)
-        @Max(5)
         private Integer period;
-
-        @Min(1)
         private Integer week;
-
-        @Size(max = 20)
         private String rink;
-
         private String gameNotes;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ScoreUpdate {
+        private Integer homeScore;
+        private Integer awayScore;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class FinalizeRequest {
+        @NotNull
+        private Integer homeScore;
+        @NotNull
+        private Integer awayScore;
+        private Boolean endedInOT;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PenaltyValidationRequest {
+        @NotNull
+        private Long playerId;
     }
 
     @Data
@@ -120,7 +102,11 @@ public class GameDto {
         private Long seasonId;
         private Long leagueId;
         private Long homeTeamId;
+        private String homeTeamName; // Added for UI
+        private String homeTeamColor; // Added for UI
         private Long awayTeamId;
+        private String awayTeamName; // Added for UI
+        private String awayTeamColor; // Added for UI
         private LocalDateTime gameDate;
         private String venue;
         private String status;
@@ -135,44 +121,8 @@ public class GameDto {
         private Integer week;
         private String rink;
         private String gameNotes;
+        private String gameType;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class ScoreUpdate {
-        @NotNull
-        @Min(0)
-        private Integer homeScore;
-
-        @NotNull
-        @Min(0)
-        private Integer awayScore;
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class FinalizeRequest {
-        @NotNull
-        @Min(0)
-        private Integer homeScore;
-
-        @NotNull
-        @Min(0)
-        private Integer awayScore;
-
-        private Boolean endedInOT = false;
-    }
-
-    @Data
-    @NoArgsConstructor
-    @AllArgsConstructor
-    public static class PenaltyValidationRequest {
-        @NotNull
-        @Positive
-        private Long playerId;
     }
 }

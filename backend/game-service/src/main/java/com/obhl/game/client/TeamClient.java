@@ -12,4 +12,8 @@ public interface TeamClient {
 
     @PatchMapping("/api/v1/teams/{teamId}/stats")
     void updateTeamStats(@PathVariable("teamId") Long teamId, @RequestBody Map<String, Integer> statsUpdate);
+
+    @org.springframework.web.bind.annotation.GetMapping("/api/v1/teams")
+    java.util.List<com.obhl.game.dto.TeamResponse> getTeams(
+            @org.springframework.web.bind.annotation.RequestParam("seasonId") Long seasonId);
 }

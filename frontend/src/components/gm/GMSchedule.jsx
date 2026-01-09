@@ -75,39 +75,60 @@ function GMSchedule() {
                 )}
             </div>
 
-            <div className="games-list">
+            <div className="games-list-container">
                 {filteredGames.length > 0 ? (
-                    filteredGames.map(game => {
-                        const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
-                        const isHomeGame = game.homeTeamId === user.teamId;
+                    <table className="gm-schedule-table">
+                        <thead>
+                            <tr>
+                                <th>Week</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Opponent</th>
+                                <th>Location</th>
+                                <th>Result</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredGames.map(game => {
+                                const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
+                                const isHomeGame = game.homeTeamId === user.teamId;
+                                const opponentName = isHomeGame ? game.awayTeamName : game.homeTeamName;
+                                const locationContext = isHomeGame ? '(Home)' : '(Away)';
 
-                        return (
-                            <div key={game.id} className="game-card">
-                                <div className="game-week">Week {game.week}</div>
-                                <div className="game-date-time">
-                                    <div className="game-date">{gameDate.toLocaleDateString()}</div>
-                                    <div className="game-time">{gameDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                                </div>
-                                <div className="game-matchup">
-                                    <div className={isHomeGame ? 'team-us' : 'team-opponent'}>
-                                        {isHomeGame ? 'Us (Home)' : game.homeTeamName}
-                                    </div>
-                                    <div className="vs">vs</div>
-                                    <div className={!isHomeGame ? 'team-us' : 'team-opponent'}>
-                                        {!isHomeGame ? 'Us (Away)' : game.awayTeamName}
-                                    </div>
-                                </div>
-                                <div className="game-location">
-                                    📍 {game.rink}
-                                </div>
-                                {game.homeScore !== null && game.awayScore !== null && (
-                                    <div className="game-result">
-                                        Result: {game.homeScore} - {game.awayScore}
-                                    </div>
-                                )}
-                            </div>
-                        );
-                    })
+                                return (
+                                    <tr key={game.id}>
+                                        <td className="week-col">Week {game.week}</td>
+                                        <td>{gameDate.toLocaleDateString()}</td>
+                                        <td>{gameDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                                        <td
+                                            className="opponent-cell"
+                                            style={{
+                                                backgroundColor: (isHomeGame ? game.awayTeamColor : game.homeTeamColor) || '',
+                                                color: (() => {
+                                                    const bgColor = isHomeGame ? game.awayTeamColor : game.homeTeamColor;
+                                                    if (!bgColor) return 'inherit';
+                                                    return bgColor.toLowerCase() === 'white' || bgColor.toLowerCase() === '#ffffff' ? '#2d3748' : '#fff';
+                                                })()
+                                            }}
+                                        >
+                                            <span className="opponent-name">{opponentName}</span>
+                                            <span className="game-context"> {locationContext}</span>
+                                        </td>
+                                        <td>{game.rink}</td>
+                                        <td>
+                                            {game.homeScore !== null && game.awayScore !== null ? (
+                                                <span className="game-score">
+                                                    {game.homeScore} - {game.awayScore}
+                                                </span>
+                                            ) : (
+                                                <span className="upcoming-badge">Upcoming</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
                 ) : (
                     <p className="no-data">No games scheduled</p>
                 )}

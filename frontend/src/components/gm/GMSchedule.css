@@ -1,5 +1,7 @@
 .gm-schedule {
-    padding: 0;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
 }
 
 .schedule-header {
@@ -10,15 +12,14 @@
 }
 
 .schedule-header h1 {
-    color: #2d3748;
-    font-size: 2rem;
+    color: #2c3e50;
     margin: 0;
 }
 
 .week-filter {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
 }
 
 .week-filter label {
@@ -28,142 +29,101 @@
 
 .week-select {
     padding: 0.5rem 1rem;
-    border: 2px solid #e2e8f0;
+    border: 1px solid #e2e8f0;
     border-radius: 6px;
     font-size: 1rem;
-    background: white;
+    color: #2d3748;
+    background-color: white;
     cursor: pointer;
-    transition: border-color 0.2s;
 }
 
-.week-select:hover {
-    border-color: #cbd5e0;
-}
-
-.week-select:focus {
-    outline: none;
-    border-color: #4299e1;
-}
-
-.games-list {
-    display: grid;
-    gap: 1.5rem;
-}
-
-.game-card {
+.games-list-container {
     background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 1.5rem;
-    align-items: center;
-    transition: box-shadow 0.2s;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    overflow-x: auto;
 }
 
-.game-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.gm-schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 800px;
 }
 
-.game-week {
-    background: #1e3a5f;
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-weight: 600;
-    font-size: 0.9rem;
-    text-align: center;
-}
-
-.game-date-time {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-}
-
-.game-date {
-    font-weight: 600;
-    color: #2d3748;
-}
-
-.game-time {
-    color: #718096;
-    font-size: 0.9rem;
-}
-
-.game-matchup {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    flex: 1;
-}
-
-.team-us {
-    font-weight: 700;
-    color: #1e3a5f;
-    font-size: 1.1rem;
-}
-
-.team-opponent {
-    font-weight: 500;
+.gm-schedule-table th {
+    background-color: #f7fafc;
     color: #4a5568;
-}
-
-.vs {
-    color: #a0aec0;
     font-weight: 600;
-    font-size: 0.9rem;
+    text-align: left;
+    padding: 1rem;
+    border-bottom: 2px solid #e2e8f0;
 }
 
-.game-location {
-    color: #718096;
-    font-size: 0.95rem;
-}
-
-.game-result {
-    background: #f7fafc;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    font-weight: 600;
+.gm-schedule-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #e2e8f0;
     color: #2d3748;
+    vertical-align: middle;
+}
+
+.gm-schedule-table tr:last-child td {
+    border-bottom: none;
+}
+
+.gm-schedule-table tr:hover td:not(.opponent-cell) {
+    background-color: #f8fafc;
+}
+
+.week-col {
+    font-weight: 600;
+    color: #aa9c00;
+}
+
+.opponent-cell {
+    font-weight: 600;
+    transition: opacity 0.2s;
+}
+
+/* When there's a background color, use white text for contrast */
+.opponent-cell[style*="background-color: #"],
+.opponent-cell[style*="background-color:#"] {
+    color: #fff !important;
+}
+
+.opponent-cell:hover {
+    opacity: 0.85;
+}
+
+.opponent-name {
+    font-weight: 600;
+}
+
+.game-context {
+    opacity: 0.9;
+    font-size: 0.9em;
+    margin-left: 0.5rem;
+}
+
+.game-score {
+    font-weight: bold;
+    color: #2d3748;
+}
+
+.upcoming-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background-color: #e2e8f0;
+    color: #4a5568;
+    border-radius: 9999px;
+    font-size: 0.85rem;
+    font-weight: 500;
 }
 
 .no-data {
     text-align: center;
-    color: #a0aec0;
     padding: 3rem;
-    font-style: italic;
+    color: #718096;
     background: white;
-    border-radius: 12px;
-}
-
-.loading {
-    text-align: center;
-    padding: 3rem;
-    font-size: 1.2rem;
-    color: #4a5568;
-}
-
-@media (max-width: 768px) {
-    .schedule-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 1rem;
-    }
-
-    .game-card {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-
-    .game-week {
-        width: fit-content;
-    }
-
-    .game-matchup {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 0.5rem;
-    }
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
