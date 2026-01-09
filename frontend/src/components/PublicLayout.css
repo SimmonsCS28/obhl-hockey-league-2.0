@@ -158,12 +158,12 @@
 
 @media (max-width: 768px) {
     .header-content {
-        padding: 1rem;
+        padding: 0.75rem 1rem;
         flex-wrap: wrap;
     }
 
     .logo-img {
-        height: 40px;
+        height: 35px;
     }
 
     /* Show hamburger button on mobile */
@@ -183,37 +183,57 @@
     .main-nav.mobile-open,
     .auth-section.mobile-open {
         display: flex;
+        animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 
     .main-nav.mobile-open {
         flex-direction: column;
-        gap: 0.5rem;
-        padding: 1rem 0;
+        gap: 0;
+        padding: 0.5rem 0;
         border-top: 1px solid rgba(255, 255, 255, 0.2);
+        align-items: center;
     }
 
     .main-nav a {
-        text-align: left;
-        padding: 0.75rem 1rem;
+        text-align: center;
+        padding: 0.65rem 1rem;
         width: 100%;
+        max-width: 300px;
+        border-radius: 6px;
     }
 
     .auth-section.mobile-open {
         flex-direction: column;
-        gap: 0.75rem;
-        padding: 1rem 0;
+        gap: 0.65rem;
+        padding: 0.75rem 0 1rem 0;
         border-top: 1px solid rgba(255, 255, 255, 0.2);
-        align-items: stretch;
+        align-items: center;
     }
 
     .user-greeting {
         text-align: center;
+        font-size: 0.95rem;
+        padding: 0.5rem;
     }
 
     .login-btn,
     .dashboard-link,
     .logout-btn {
         width: 100%;
+        max-width: 300px;
         text-align: center;
+        padding: 0.65rem 1.25rem;
     }
 }
