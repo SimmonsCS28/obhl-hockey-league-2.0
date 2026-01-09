@@ -147,7 +147,7 @@ public class GameController {
                     request.getGameSlots(),
                     request.getMaxWeeks());
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(games.size() + " games generated successfully");
+            return ResponseEntity.status(HttpStatus.CREATED).body(games);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
