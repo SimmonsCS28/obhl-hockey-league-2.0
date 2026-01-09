@@ -24,4 +24,8 @@ public interface GameRepository extends JpaRepository<Game, Long> {
     List<Game> findByHomeTeamIdAndAwayTeamId(Long homeTeamId, Long awayTeamId);
 
     boolean existsBySeasonId(Long seasonId);
+
+    @org.springframework.data.jpa.repository.Query("SELECT g FROM Game g WHERE g.seasonId = :seasonId AND (g.homeTeamId = :teamId OR g.awayTeamId = :teamId) ORDER BY g.gameDate")
+    List<Game> findBySeasonIdAndTeam(@org.springframework.data.repository.query.Param("seasonId") Long seasonId,
+            @org.springframework.data.repository.query.Param("teamId") Long teamId);
 }
