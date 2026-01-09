@@ -80,11 +80,41 @@ public class AuthService {
                 user.getRole(),
                 user.getTeamId());
 
-        return new AuthDto.LoginResponse(token, "Bearer", userInfo);
+        // Create login response with password change flag
+        AuthDto.LoginResponse response = new AuthDto.LoginResponse(token, "Bearer", userInfo,
+                user.getMustChangePassword());
+
+        return response;
     }
 
     public User getUserById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    public User getUserByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    public void changePassword(Long userId, AuthDto.ChangePasswordRequest request) {
+        User user = getUserById(userId);
+
+        // Verify old password
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPasswordHash())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+
+        // Validate new password
+        if (request.getNewPassword() == null || request.getNewPassword().length() < 8) {
+            throw new RuntimeException("New password must be at least 8 characters");
+        }
+
+        // Update password and clear must_change_password flag
+        user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        user.setMustChangePassword(false);
+        userRepository.save(user);
+
+        log.info("Password changed successfully for user: {}", user.getUsername());
     }
 }

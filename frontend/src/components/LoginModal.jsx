@@ -25,16 +25,21 @@ function LoginModal({ isOpen, onClose }) {
             setUsernameOrEmail('');
             setPassword('');
 
-            // Role-based redirect
-            if (result.user?.role === 'SCOREKEEPER') {
-                navigate('/scorekeeper');
-            } else if (result.user?.role === 'ADMIN') {
-                navigate('/admin');
-            } else if (result.user?.role === 'GM') {
-                navigate('/gm');
+            // Check if password change is required first
+            if (result.mustChangePassword) {
+                navigate('/change-password');
             } else {
-                // For other roles, stay on public site or go to a generic dashboard
-                navigate('/');
+                // Role-based redirect
+                if (result.user?.role === 'SCOREKEEPER') {
+                    navigate('/scorekeeper');
+                } else if (result.user?.role === 'ADMIN') {
+                    navigate('/admin');
+                } else if (result.user?.role === 'GM') {
+                    navigate('/gm');
+                } else {
+                    // For other roles, stay on public site or go to a generic dashboard
+                    navigate('/');
+                }
             }
         } else {
             setError(result.error || 'Login failed. Please check your credentials.');

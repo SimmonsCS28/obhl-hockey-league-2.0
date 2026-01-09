@@ -8,6 +8,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/
 function GMTeam() {
     const { user } = useAuth();
     const [roster, setRoster] = useState([]);
+    const [teamInfo, setTeamInfo] = useState(null);
     const [editedPlayers, setEditedPlayers] = useState({});
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -16,6 +17,7 @@ function GMTeam() {
     useEffect(() => {
         if (user?.teamId) {
             fetchRoster();
+            fetchTeamInfo();
         }
     }, [user]);
 
@@ -27,6 +29,15 @@ function GMTeam() {
             showMessage('error', 'Failed to load roster');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchTeamInfo = async () => {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/teams/${user.teamId}`);
+            setTeamInfo(response.data);
+        } catch (error) {
+            console.error('Failed to load team info:', error);
         }
     };
 
@@ -67,7 +78,7 @@ function GMTeam() {
     return (
         <div className="gm-team">
             <div className="team-header">
-                <h1>My Team</h1>
+                <h1>{teamInfo?.name || 'My Team'}</h1>
                 {Object.keys(editedPlayers).length > 0 && (
                     <button
                         onClick={handleSave}
@@ -93,6 +104,7 @@ function GMTeam() {
                                 <th>Jersey #</th>
                                 <th>Name</th>
                                 <th>Position</th>
+                                <th>Skill</th>
                                 <th>Email</th>
                             </tr>
                         </thead>
@@ -111,6 +123,7 @@ function GMTeam() {
                                     </td>
                                     <td className="player-name">{player.firstName} {player.lastName}</td>
                                     <td>{player.position || '-'}</td>
+                                    <td>{player.skillRating || '-'}</td>
                                     <td className="player-email">{player.email || '-'}</td>
                                 </tr>
                             ))}

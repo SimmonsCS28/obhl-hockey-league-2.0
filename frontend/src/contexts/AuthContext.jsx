@@ -29,14 +29,14 @@ export const AuthProvider = ({ children }) => {
     const login = async (usernameOrEmail, password) => {
         try {
             const response = await api.login(usernameOrEmail, password);
-            const { token, user: userData } = response;
+            const { token, user: userData, mustChangePassword } = response;
 
             // Store token and user info
             localStorage.setItem('token', token);
             localStorage.setItem('user', JSON.stringify(userData));
 
             setUser(userData);
-            return { success: true, user: userData };
+            return { success: true, user: userData, mustChangePassword };
         } catch (error) {
             console.error('Login error:', error);
             return {

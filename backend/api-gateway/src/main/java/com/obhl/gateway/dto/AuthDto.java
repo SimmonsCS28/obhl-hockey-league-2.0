@@ -21,6 +21,7 @@ public class AuthDto {
         private String token;
         private String tokenType = "Bearer";
         private UserInfo user;
+        private Boolean mustChangePassword;
     }
 
     @Data
@@ -32,5 +33,13 @@ public class AuthDto {
         private String email;
         private String role;
         private Long teamId;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ChangePasswordRequest {
+        private String oldPassword;
+        private String newPassword;
     }
 }

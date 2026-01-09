@@ -68,6 +68,7 @@ function GMDashboard() {
                                     <th>#</th>
                                     <th>Name</th>
                                     <th>Position</th>
+                                    <th>Skill</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -76,6 +77,7 @@ function GMDashboard() {
                                         <td>{player.jerseyNumber || '-'}</td>
                                         <td>{player.firstName} {player.lastName}</td>
                                         <td>{player.position || '-'}</td>
+                                        <td>{player.skillRating || '-'}</td>
                                     </tr>
                                 ))}
                             </tbody>

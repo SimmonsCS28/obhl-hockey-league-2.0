@@ -16,6 +16,7 @@ import SeasonsPage from './components/public/SeasonsPage';
 import StandingsPage from './components/public/StandingsPage';
 import TeamsPage from './components/public/TeamsPage';
 import { AuthProvider } from './contexts/AuthContext';
+import ChangePassword from './pages/ChangePassword';
 
 function App() {
   return (
@@ -68,6 +69,9 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Change Password Route - No auth required since user must be logged in to get here */}
+          <Route path="/change-password" element={<ChangePassword />} />
         </Routes>
       </Router>
     </AuthProvider>

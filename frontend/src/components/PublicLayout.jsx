@@ -55,6 +55,17 @@ function PublicLayout() {
                         {isAuthenticated ? (
                             <>
                                 <span className="user-greeting">Hi, {user?.username || user?.email}</span>
+                                {user?.role === 'GM' && (
+                                    <button
+                                        className="dashboard-link"
+                                        onClick={() => {
+                                            navigate('/gm');
+                                            closeMobileMenu();
+                                        }}
+                                    >
+                                        GM Dashboard
+                                    </button>
+                                )}
                                 {(user?.role === 'ADMIN' || user?.role === 'SCOREKEEPER') && (
                                     <button
                                         className="dashboard-link"
