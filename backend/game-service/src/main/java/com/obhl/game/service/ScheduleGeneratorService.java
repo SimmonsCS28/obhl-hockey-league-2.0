@@ -76,11 +76,11 @@ public class ScheduleGeneratorService {
         // Assign matchups to slots with time balancing
         List<Game> games = assignSlotsWithBalancing(seasonId, leagueId, teamIds, cycledMatchups, filteredSlots);
 
-        // Save all games
-        List<Game> savedGames = gameRepository.saveAll(games);
-        log.info("Successfully generated {} games", savedGames.size());
+        // Return games WITHOUT saving - this is a preview/draft
+        // Games will be saved when user explicitly clicks "Save Schedule"
+        log.info("Successfully generated {} draft games (not saved to database)", games.size());
 
-        return savedGames;
+        return games;
     }
 
     /**

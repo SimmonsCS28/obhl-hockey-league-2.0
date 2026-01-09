@@ -141,8 +141,8 @@ const ScheduleManager = () => {
 
             const response = await axios.post(`${API_BASE_URL}/games/generate`, request);
 
-            // Fetch generated games and set to draft mode
-            await fetchGames(selectedSeason);
+            // Use returned draft games (not saved to database yet)
+            setGames(response.data);
             setScheduleMode('draft');
             showMessage('success', 'Schedule generated! Review and click "Save Schedule" to finalize.');
             setParsedSlots([]);
