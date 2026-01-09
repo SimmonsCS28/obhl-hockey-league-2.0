@@ -30,6 +30,8 @@ function LoginModal({ isOpen, onClose }) {
                 navigate('/scorekeeper');
             } else if (result.user?.role === 'ADMIN') {
                 navigate('/admin');
+            } else if (result.user?.role === 'GM') {
+                navigate('/gm');
             } else {
                 // For other roles, stay on public site or go to a generic dashboard
                 navigate('/');

@@ -1,11 +1,15 @@
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import './App.css';
 import AdminDashboard from './components/AdminDashboard';
+import GMLayout from './components/GMLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicLayout from './components/PublicLayout';
 import ScheduleManager from './components/ScheduleManager';
 import SchedulePage from './components/SchedulePage';
 import Scorekeeper from './components/Scorekeeper';
+import GMDashboard from './components/gm/GMDashboard';
+import GMSchedule from './components/gm/GMSchedule';
+import GMTeam from './components/gm/GMTeam';
 import Home from './components/public/Home';
 import PlayersPage from './components/public/PlayersPage';
 import SeasonsPage from './components/public/SeasonsPage';
@@ -26,6 +30,17 @@ function App() {
             <Route path="standings" element={<StandingsPage />} />
             <Route path="schedule" element={<SchedulePage />} />
             {/* Other public pages will be added here */}
+          </Route>
+
+          {/* Protected GM Routes */}
+          <Route path="/gm" element={
+            <ProtectedRoute>
+              <GMLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<GMDashboard />} />
+            <Route path="team" element={<GMTeam />} />
+            <Route path="schedule" element={<GMSchedule />} />
           </Route>
 
           {/* Protected Admin Routes */}

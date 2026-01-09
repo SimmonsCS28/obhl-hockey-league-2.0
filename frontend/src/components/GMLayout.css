@@ -1,0 +1,141 @@
+.gm-layout {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #f5f7fa;
+}
+
+.gm-header {
+    background: linear-gradient(135deg, #1e3a5f 0%, #0f2e4a 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.gm-header-content {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2rem;
+}
+
+.gm-logo {
+    text-decoration: none;
+    color: white;
+    display: flex;
+    align-items: center;
+}
+
+.gm-logo-img {
+    height: 50px;
+    width: auto;
+}
+
+.gm-nav {
+    display: flex;
+    gap: 1.5rem;
+    flex: 1;
+    justify-content: center;
+}
+
+.gm-nav a {
+    color: white;
+    text-decoration: none;
+    font-size: 1.1rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.gm-nav a:hover,
+.gm-nav a.active {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.gm-user-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.gm-greeting {
+    color: rgba(255, 255, 255, 0.95);
+    font-weight: 500;
+}
+
+.btn-secondary {
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-logout {
+    padding: 0.5rem 1rem;
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.btn-logout:hover {
+    background: #c82333;
+}
+
+.gm-main {
+    flex: 1;
+    max-width: 1400px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.gm-footer {
+    background: #2d3748;
+    color: white;
+    text-align: center;
+    padding: 1.5rem;
+    margin-top: auto;
+}
+
+.gm-footer p {
+    margin: 0;
+    opacity: 0.8;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .gm-header-content {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .gm-nav {
+        flex-direction: column;
+        width: 100%;
+        gap: 0.5rem;
+    }
+
+    .gm-user-section {
+        flex-direction: column;
+        width: 100%;
+    }
+}

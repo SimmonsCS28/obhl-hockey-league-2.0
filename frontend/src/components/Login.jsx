@@ -21,6 +21,8 @@ const Login = () => {
         if (result.success) {
             if (result.user?.role === 'SCOREKEEPER') {
                 navigate('/scorekeeper');
+            } else if (result.user?.role === 'GM') {
+                navigate('/gm');
             } else {
                 navigate('/admin');
             }

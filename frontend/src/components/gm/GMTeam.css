@@ -1,0 +1,131 @@
+.gm-team {
+    padding: 0;
+}
+
+.team-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.team-header h1 {
+    color: #2d3748;
+    font-size: 2rem;
+    margin: 0;
+}
+
+.btn-save {
+    padding: 0.75rem 1.5rem;
+    background: #48bb78;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: background-color 0.2s;
+}
+
+.btn-save:hover:not(:disabled) {
+    background: #38a169;
+}
+
+.btn-save:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.message {
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1.5rem;
+    font-weight: 500;
+}
+
+.message-success {
+    background: #c6f6d5;
+    color: #22543d;
+    border: 1px solid #9ae6b4;
+}
+
+.message-error {
+    background: #fed7d7;
+    color: #742a2a;
+    border: 1px solid #fc8181;
+}
+
+.team-roster-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.team-roster-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.team-roster-table thead {
+    background: #f7fafc;
+}
+
+.team-roster-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #4a5568;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.team-roster-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    color: #2d3748;
+}
+
+.team-roster-table tbody tr:hover {
+    background-color: #f7fafc;
+}
+
+.jersey-input {
+    width: 60px;
+    padding: 0.5rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.jersey-input:focus {
+    outline: none;
+    border-color: #4299e1;
+}
+
+.jersey-input:hover {
+    border-color: #cbd5e0;
+}
+
+.player-name {
+    font-weight: 500;
+}
+
+.player-email {
+    color: #718096;
+    font-size: 0.9rem;
+}
+
+.no-data {
+    text-align: center;
+    color: #a0aec0;
+    padding: 3rem;
+    font-style: italic;
+}
+
+.loading {
+    text-align: center;
+    padding: 3rem;
+    font-size: 1.2rem;
+    color: #4a5568;
+}
