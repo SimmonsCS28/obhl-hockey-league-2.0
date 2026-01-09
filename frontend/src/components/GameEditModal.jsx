@@ -5,7 +5,9 @@ const GameEditModal = ({ game, teams, onClose, onSave, onDelete }) => {
     // Helper function to convert UTC date to local datetime-local format
     const toLocalDateTimeString = (utcDateString) => {
         if (!utcDateString) return '';
-        const date = new Date(utcDateString);
+        // Ensure the date string has 'Z' suffix to be treated as UTC
+        const dateStr = utcDateString.endsWith('Z') ? utcDateString : utcDateString + 'Z';
+        const date = new Date(dateStr);
         // Get local date/time components
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
