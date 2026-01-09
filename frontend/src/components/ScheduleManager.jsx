@@ -142,7 +142,19 @@ const ScheduleManager = () => {
             const response = await axios.post(`${API_BASE_URL}/games/generate`, request);
 
             // Use returned draft games (not saved to database yet)
-            setGames(response.data);
+            // Add temporary IDs so edit modal works correctly
+            const gamesWithTempIds = response.data.map((game, index) => ({
+                ...game,
+                id: `temp-${index}` // Temporary ID for UI purposes
+            }));
+
+            // Store them as "added games" so Save Schedule can create them
+            setGames(gamesWithTempIds);
+            setPendingChanges({
+                addedGames: gamesWithTempIds,
+                editedGames: {},
+                deletedGameIds: []
+            });
             setScheduleMode('draft');
             showMessage('success', 'Schedule generated! Review and click "Save Schedule" to finalize.');
             setParsedSlots([]);
