@@ -25,8 +25,8 @@ public class AuthService {
     public AuthDto.LoginResponse login(AuthDto.LoginRequest request) {
         log.info("Login attempt for: {}", request.getUsernameOrEmail());
 
-        // Find user by username or email
-        User user = userRepository.findByUsernameOrEmail(
+        // Find user by username or email (case-insensitive)
+        User user = userRepository.findByUsernameIgnoreCaseOrEmailIgnoreCase(
                 request.getUsernameOrEmail(),
                 request.getUsernameOrEmail())
                 .orElseThrow(() -> {
