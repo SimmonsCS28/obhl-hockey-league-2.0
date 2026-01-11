@@ -110,21 +110,18 @@ const api = {
     },
 
     async finalizeGame(gameId, homeScore, awayScore, endedInOT = false) {
-        // TODO: Implement real API call to Game Service
-        // const response = await fetch(`${API_BASE_URL}/games/${gameId}/finalize`, {
-        //     method: 'POST',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify({ homeScore, awayScore, endedInOT })
-        // });
-        // if (!response.ok) throw new Error('Failed to finalize game');
-        // return response.json();
-
-        console.warn('finalizeGame not yet connected to backend');
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve({ success: true, status: 'completed' });
-            }, 500);
+        const response = await fetch(`${API_BASE_URL}/games/${gameId}/finalize`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ homeScore, awayScore, endedInOT })
         });
+
+        if (!response.ok) {
+            const error = await response.text();
+            throw new Error(`Failed to finalize game: ${error}`);
+        }
+
+        return response.json();
     },
 
     // ============================================
