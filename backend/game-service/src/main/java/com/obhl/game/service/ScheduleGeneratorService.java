@@ -182,7 +182,7 @@ public class ScheduleGeneratorService {
      */
     @Transactional
     public void resetSchedule(Long seasonId) {
-        List<Game> games = gameRepository.findBySeasonIdOrderByGameDateDesc(seasonId);
+        List<Game> games = gameRepository.findBySeasonIdOrderByGameDate(seasonId);
         gameRepository.deleteAll(games);
         log.info("Deleted {} games for season {}", games.size(), seasonId);
     }

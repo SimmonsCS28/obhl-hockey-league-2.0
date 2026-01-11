@@ -13,7 +13,7 @@ public interface GameRepository extends JpaRepository<Game, Long> {
 
     List<Game> findBySeasonId(Long seasonId);
 
-    List<Game> findBySeasonIdOrderByGameDateDesc(Long seasonId);
+    List<Game> findBySeasonIdOrderByGameDate(Long seasonId);
 
     List<Game> findByStatus(String status);
 

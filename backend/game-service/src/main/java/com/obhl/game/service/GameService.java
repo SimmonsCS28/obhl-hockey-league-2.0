@@ -31,7 +31,7 @@ public class GameService {
 
     @Transactional(readOnly = true)
     public List<GameDto.Response> getGamesBySeason(Long seasonId) {
-        return gameRepository.findBySeasonIdOrderByGameDateDesc(seasonId)
+        return gameRepository.findBySeasonIdOrderByGameDate(seasonId)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
