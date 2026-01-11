@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx';
 import DraftService from '../services/DraftService';
 import './DraftDashboard.css';
 
+const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '/api') || '/api';
 const DraftDashboard = () => {
     // State
     const [seasonName, setSeasonName] = useState('');
@@ -149,7 +150,7 @@ const DraftDashboard = () => {
 
     const checkForSavedDraft = async () => {
         try {
-            const response = await fetch('http://localhost:8000/api/league/draft/latest');
+            const response = await fetch(`${API_BASE_URL}/league/draft/latest`);
             if (response.ok && response.status !== 204) {
                 const draft = await response.json();
                 if (draft && draft.status === 'saved') {
@@ -537,8 +538,8 @@ const DraftDashboard = () => {
 
             // Use PUT to update if we have an ID, POST to create new
             const url = currentDraftSaveId
-                ? `http://localhost:8000/api/league/draft/save/${currentDraftSaveId}`
-                : 'http://localhost:8000/api/league/draft/save';
+                ? `${API_BASE_URL}/league/draft/save/${currentDraftSaveId}`
+                : `${API_BASE_URL}/league/draft/save`;
             const method = currentDraftSaveId ? 'PUT' : 'POST';
 
             const response = await fetch(url, {
@@ -588,7 +589,7 @@ const DraftDashboard = () => {
 
         try {
             const response = await fetch(
-                `http://localhost:8000/api/league/draft/${currentDraftSaveId}/finalize`,
+                `${API_BASE_URL}/league/draft/${currentDraftSaveId}/finalize`,
                 { method: 'POST' }
             );
 

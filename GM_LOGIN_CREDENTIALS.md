@@ -1,6 +1,6 @@
 # GM Login Credentials - OBHL Season 12
 
-**Website:** https://topcheddar.hockey  
+**Website:** https://oldbuzzardhockey.com  
 **Temporary Password (ALL GMs):** `gmpassword`  
 **⚠️ IMPORTANT:** All GMs will be forced to change their password on first login
 
@@ -23,7 +23,7 @@
 
 ## Login Instructions for GMs:
 
-1. Go to https://topcheddar.hockey
+1. Go to https://oldbuzzardhockey.com
 2. Click "Login" in the top navigation
 3. Enter your email address (or username)
 4. Enter password: `gmpassword`

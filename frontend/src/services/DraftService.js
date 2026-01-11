@@ -1,10 +1,13 @@
-const DraftService = {
-    uploadRegistration: async (file) => {
+const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '/api') || '/api';
+
+export const DraftService = {
+    // Import player registration data
+    async importRegistration(file) {
         const formData = new FormData();
         formData.append('file', file);
 
         try {
-            const response = await fetch('http://localhost:8000/api/league/import/registration', {
+            const response = await fetch(`${API_BASE_URL}/league/import/registration`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -54,7 +57,7 @@ const DraftService = {
 
     finalizeDraft: async (draftState) => {
         try {
-            const response = await fetch('http://localhost:8000/api/league/draft/finalize', {
+            const response = await fetch(`${API_BASE_URL}/league/draft/finalize`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
