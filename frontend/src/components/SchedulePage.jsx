@@ -10,6 +10,7 @@ const SchedulePage = () => {
     const [selectedWeek, setSelectedWeek] = useState('all');
     const [selectedTeam, setSelectedTeam] = useState('all');
     const [loading, setLoading] = useState(false);
+    const [showCalendarModal, setShowCalendarModal] = useState(false);
 
     // Fetch seasons on mount
     useEffect(() => {
@@ -136,10 +137,84 @@ const SchedulePage = () => {
         return isLight ? '#2c3e50' : 'white';
     };
 
+    // Generate ICS calendar file for a specific team
+    const generateICS = (teamId) => {
+        const team = teams.find(t => t.id === teamId);
+        if (!team) return;
+
+        // Filter games for this team
+        const teamGames = games.filter(g => g.homeTeamId === teamId || g.awayTeamId === teamId);
+
+        // Start ICS file
+        let icsContent = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//OBHL//Hockey Schedule//EN',
+            'CALSCALE:GREGORIAN',
+            'METHOD:PUBLISH',
+            `X-WR-CALNAME:${team.name} - OBHL Schedule`,
+            'X-WR-TIMEZONE:America/Chicago',
+        ];
+
+        // Add each game as an event
+        teamGames.forEach((game, index) => {
+            const homeTeam = getTeamById(game.homeTeamId);
+            const awayTeam = getTeamById(game.awayTeamId);
+
+            // Parse game date (assuming it's in UTC)
+            const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
+
+            // Format datetime for ICS (YYYYMMDDTHHMMSSZ)
+            const formatICSDate = (date) => {
+                return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+            };
+
+            // Game duration: 1.5 hours
+            const endDate = new Date(gameDate.getTime() + (90 * 60 * 1000));
+
+            const summary = `${homeTeam?.name || 'TBD'} vs ${awayTeam?.name || 'TBD'}`;
+            const description = `Week ${game.week || 'TBD'} - ${homeTeam?.name || 'TBD'} vs ${awayTeam?.name || 'TBD'}`;
+
+            icsContent.push(
+                'BEGIN:VEVENT',
+                `UID:obhl-game-${game.id}@oldbuzzardhockey.com`,
+                `DTSTAMP:${formatICSDate(new Date())}`,
+                `DTSTART:${formatICSDate(gameDate)}`,
+                `DTEND:${formatICSDate(endDate)}`,
+                `SUMMARY:${summary}`,
+                `LOCATION:${game.rink || 'TBD'}`,
+                `DESCRIPTION:${description}`,
+                'STATUS:CONFIRMED',
+                'SEQUENCE:0',
+                'END:VEVENT'
+            );
+        });
+
+        icsContent.push('END:VCALENDAR');
+
+        // Create blob and trigger download
+        const blob = new Blob([icsContent.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = `${team.name.replace(/\s+/g, '_')}_Schedule.ics`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        setShowCalendarModal(false);
+    };
+
     return (
         <div className="schedule-page">
             <div className="schedule-header">
                 <h1>Game Schedule</h1>
+                <button
+                    className="download-calendar-btn"
+                    onClick={() => setShowCalendarModal(true)}
+                    title="Download team schedule as calendar file"
+                >
+                    📅 Download Calendar
+                </button>
             </div>
 
             <div className="filters">
@@ -263,6 +338,37 @@ const SchedulePage = () => {
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* Calendar Download Modal */}
+            {showCalendarModal && (
+                <div className="calendar-modal-overlay" onClick={() => setShowCalendarModal(false)}>
+                    <div className="calendar-modal" onClick={(e) => e.stopPropagation()}>
+                        <h2>Select Team</h2>
+                        <p>Choose a team to download their schedule:</p>
+                        <div className="team-selection">
+                            {teams.map(team => (
+                                <button
+                                    key={team.id}
+                                    className="team-select-btn"
+                                    onClick={() => generateICS(team.id)}
+                                    style={{
+                                        backgroundColor: getValidColor(team.teamColor),
+                                        color: getTextColor(team.teamColor)
+                                    }}
+                                >
+                                    {team.name}
+                                </button>
+                            ))}
+                        </div>
+                        <button
+                            className="modal-close-btn"
+                            onClick={() => setShowCalendarModal(false)}
+                        >
+                            Cancel
+                        </button>
+                    </div>
                 </div>
             )}
         </div>
