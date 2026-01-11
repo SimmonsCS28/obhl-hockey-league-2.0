@@ -486,7 +486,7 @@ function LiveScoreEntry(props) {
                             <option value="">Select player...</option>
                             {getTeamPlayers(goalTeam).map(player => (
                                 <option key={player.id} value={player.id}>
-                                    {player.name} (Skill: {player.skillRating}, Goals: {player.goalsInGame})
+                                    #{player.jerseyNumber || '??'} - {player.name} (Skill: {player.skillRating}, Goals: {player.goalsInGame})
                                 </option>
                             ))}
                         </select>
@@ -503,7 +503,7 @@ function LiveScoreEntry(props) {
                         <select value={goalAssist1} onChange={(e) => setGoalAssist1(e.target.value)}>
                             <option value="">None</option>
                             {getTeamPlayers(goalTeam).filter(p => p.id !== parseInt(goalScorer)).map(player => (
-                                <option key={player.id} value={player.id}>{player.name}</option>
+                                <option key={player.id} value={player.id}>#{player.jerseyNumber || '??'} - {player.name}</option>
                             ))}
                         </select>
                     </div>
@@ -515,7 +515,7 @@ function LiveScoreEntry(props) {
                             {getTeamPlayers(goalTeam)
                                 .filter(p => p.id !== parseInt(goalScorer) && p.id !== parseInt(goalAssist1))
                                 .map(player => (
-                                    <option key={player.id} value={player.id}>{player.name}</option>
+                                    <option key={player.id} value={player.id}>#{player.jerseyNumber || '??'} - {player.name}</option>
                                 ))}
                         </select>
                     </div>
@@ -586,7 +586,7 @@ function LiveScoreEntry(props) {
                         <select value={penaltyPlayer} onChange={(e) => setPenaltyPlayer(e.target.value)} required>
                             <option value="">Select player...</option>
                             {getTeamPlayers(penaltyTeam).map(player => (
-                                <option key={player.id} value={player.id}>{player.name}</option>
+                                <option key={player.id} value={player.id}>#{player.jerseyNumber || '??'} - {player.name}</option>
                             ))}
                         </select>
                     </div>
