@@ -4,10 +4,35 @@
     padding: 20px;
 }
 
-.schedule-manager h1 {
-    color: #2c3e50;
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 30px;
 }
+
+.schedule-manager h1 {
+    color: #2c3e50;
+    margin: 0;
+}
+
+.back-to-admin-btn {
+    padding: 10px 20px;
+    background: #6b7280;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.back-to-admin-btn:hover {
+    background: #4b5563;
+    transform: translateY(-1px);
+}
+
 
 .message {
     padding: 15px;

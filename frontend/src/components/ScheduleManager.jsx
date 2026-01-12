@@ -541,7 +541,15 @@ const ScheduleManager = () => {
 
     return (
         <div className="schedule-manager">
-            <h1>Schedule Manager</h1>
+            <div className="page-header">
+                <h1>Schedule Manager</h1>
+                <button
+                    className="back-to-admin-btn"
+                    onClick={() => window.location.href = '/admin'}
+                >
+                    ← Back to Admin
+                </button>
+            </div>
 
             {message.text && (
                 <div className={`message ${message.type}`}>
