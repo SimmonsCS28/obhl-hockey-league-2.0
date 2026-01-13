@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import logo from '../assets/images/obi-logo-nav.png';
 import { useAuth } from '../contexts/AuthContext';
+import DonateButton from './DonateButton';
 import LoginModal from './LoginModal';
 import './PublicLayout.css';
 

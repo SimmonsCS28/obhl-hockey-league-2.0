@@ -30,14 +30,13 @@ function DonateButton() {
                             </p>
                             <div className="donate-actions">
                                 <a
-                                    href="https://venmo.com/u/Cole-Simmons-6"
+                                    href="https://paypal.me/ColeSimmons202"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="btn-donate-venmo"
+                                    className="btn-donate-paypal"
                                 >
-                                    Donate via Venmo
+                                    Donate via PayPal
                                 </a>
-                                <p className="donate-note">@Cole-Simmons-6</p>
                             </div>
                             <p className="donate-thanks">
                                 Thank you for supporting your fellow players! 🏒
