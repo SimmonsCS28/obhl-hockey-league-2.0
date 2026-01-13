@@ -44,18 +44,73 @@ function PublicLayout() {
                         <span></span>
                     </button>
 
-                    <nav className={`main-nav ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
-                        <Link to="/" onClick={closeMobileMenu}>Home</Link>
-                        <Link to="/seasons" onClick={closeMobileMenu}>Seasons</Link>
-                        <Link to="/teams" onClick={closeMobileMenu}>Teams</Link>
-                        <Link to="/players" onClick={closeMobileMenu}>Players</Link>
-                        <Link to="/standings" onClick={closeMobileMenu}>Standings</Link>
-                        <Link to="/schedule" onClick={closeMobileMenu}>Schedule</Link>
+                    {/* Mobile menu container */}
+                    {isMobileMenuOpen && (
+                        <div className="mobile-menu-container">
+                            <nav className="main-nav mobile-open">
+                                <Link to="/" onClick={closeMobileMenu}>Home</Link>
+                                <Link to="/seasons" onClick={closeMobileMenu}>Seasons</Link>
+                                <Link to="/teams" onClick={closeMobileMenu}>Teams</Link>
+                                <Link to="/players" onClick={closeMobileMenu}>Players</Link>
+                                <Link to="/standings" onClick={closeMobileMenu}>Standings</Link>
+                                <Link to="/schedule" onClick={closeMobileMenu}>Schedule</Link>
+                            </nav>
+                            <div className="donate-section mobile-open">
+                                <DonateButton />
+                            </div>
+                            <div className="auth-section mobile-open">
+                                {isAuthenticated ? (
+                                    <>
+                                        <span className="user-greeting">Hi, {user?.username || user?.email}</span>
+                                        {user?.role === 'GM' && (
+                                            <button
+                                                className="dashboard-link"
+                                                onClick={() => {
+                                                    navigate('/gm');
+                                                    closeMobileMenu();
+                                                }}
+                                            >
+                                                GM Dashboard
+                                            </button>
+                                        )}
+                                        {(user?.role === 'ADMIN' || user?.role === 'SCOREKEEPER') && (
+                                            <button
+                                                className="dashboard-link"
+                                                onClick={() => {
+                                                    navigate(user?.role === 'SCOREKEEPER' ? '/scorekeeper' : '/admin');
+                                                    closeMobileMenu();
+                                                }}
+                                            >
+                                                Dashboard
+                                            </button>
+                                        )}
+                                        <button className="logout-btn" onClick={() => { handleLogout(); closeMobileMenu(); }}>Logout</button>
+                                    </>
+                                ) : (
+                                    <button
+                                        className="login-btn"
+                                        onClick={() => { setIsLoginModalOpen(true); closeMobileMenu(); }}
+                                    >
+                                        Login
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Desktop nav */}
+                    <nav className="main-nav">
+                        <Link to="/">Home</Link>
+                        <Link to="/seasons">Seasons</Link>
+                        <Link to="/teams">Teams</Link>
+                        <Link to="/players">Players</Link>
+                        <Link to="/standings">Standings</Link>
+                        <Link to="/schedule">Schedule</Link>
                     </nav>
-                    <div className={`donate-section ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+                    <div className="donate-section">
                         <DonateButton />
                     </div>
-                    <div className={`auth-section ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+                    <div className="auth-section">
                         {isAuthenticated ? (
                             <>
                                 <span className="user-greeting">Hi, {user?.username || user?.email}</span>

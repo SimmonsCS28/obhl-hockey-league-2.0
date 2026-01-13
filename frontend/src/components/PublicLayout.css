@@ -178,18 +178,19 @@
         margin-left: auto;
     }
 
-    /* Hide nav and auth by default on mobile */
+    /* Hide nav, donate, and auth on mobile by default */
     .main-nav,
     .donate-section,
     .auth-section {
         display: none;
     }
 
-    /* Overlay dropdown for mobile menu */
-    .main-nav.mobile-open,
-    .auth-section.mobile-open {
+    /* Mobile menu container - single dropdown */
+    .mobile-menu-container {
         display: flex;
+        flex-direction: column;
         position: absolute;
+        top: 100%;
         left: 0;
         right: 0;
         background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
@@ -211,12 +212,16 @@
     }
 
     .main-nav.mobile-open {
-        top: 100%;
+        display: flex;
         flex-direction: column;
         gap: 0;
         padding: 0.5rem 0;
         border-top: 1px solid rgba(255, 255, 255, 0.2);
         align-items: center;
+    }
+
+    .main-nav.mobile-open:first-child {
+        border-top: none;
     }
 
     .main-nav a {
@@ -229,22 +234,13 @@
 
     .donate-section.mobile-open {
         display: flex;
-        position: absolute;
-        left: 0;
-        right: 0;
-        top: calc(100% + 252px);
-        background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        animation: slideDown 0.3s ease;
-        z-index: 100;
         justify-content: center;
         padding: 1rem;
         border-top: 1px solid rgba(255, 255, 255, 0.2);
     }
 
     .auth-section.mobile-open {
-        top: calc(100% + 252px);
-        /* Position below nav menu */
+        display: flex;
         flex-direction: column;
         gap: 0.65rem;
         padding: 0.75rem 0 1rem 0;
