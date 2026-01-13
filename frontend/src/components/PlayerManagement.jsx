@@ -215,6 +215,30 @@ function PlayerManagement() {
         resetForm();
     };
 
+    const handleCopyEmails = async () => {
+        try {
+            // Filter players to get those who have email addresses
+            const emailAddresses = sortedPlayers
+                .filter(player => player.email && player.email.trim() !== '')
+                .map(player => player.email.trim());
+
+            if (emailAddresses.length === 0) {
+                alert('No email addresses found for current players.');
+                return;
+            }
+
+            // Create comma-delimited string
+            const emailString = emailAddresses.join(', ');
+
+            // Copy to clipboard
+            await navigator.clipboard.writeText(emailString);
+            alert(`Copied ${emailAddresses.length} email address(es) to clipboard!`);
+        } catch (error) {
+            console.error('Error copying emails:', error);
+            alert('Failed to copy emails to clipboard. Please try again.');
+        }
+    };
+
 
 
     if (loading) {
@@ -238,6 +262,9 @@ function PlayerManagement() {
                             </option>
                         ))}
                     </select>
+                    <button onClick={handleCopyEmails} className="btn-secondary">
+                        📧 Copy All Emails
+                    </button>
                     <button onClick={() => setShowModal(true)} className="btn-primary">
                         + Add Player
                     </button>
