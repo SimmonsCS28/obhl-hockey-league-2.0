@@ -51,6 +51,9 @@ function PublicLayout() {
                         <Link to="/standings" onClick={closeMobileMenu}>Standings</Link>
                         <Link to="/schedule" onClick={closeMobileMenu}>Schedule</Link>
                     </nav>
+                    <div className={`donate-section ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
+                        <DonateButton />
+                    </div>
                     <div className={`auth-section ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
                         {isAuthenticated ? (
                             <>

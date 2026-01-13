@@ -1,0 +1,111 @@
+.donate-button {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.donate-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+}
+
+.donate-button:active {
+    transform: translateY(0);
+}
+
+/* Modal Styles */
+.donate-modal {
+    max-width: 600px;
+    width: 90%;
+}
+
+.donate-modal .modal-body {
+    padding: 25px;
+}
+
+.donate-message {
+    margin-bottom: 20px;
+    line-height: 1.6;
+    color: #34495e;
+    font-size: 16px;
+}
+
+.donate-message strong {
+    color: #2c3e50;
+    font-weight: 700;
+}
+
+.donate-actions {
+    text-align: center;
+    margin: 30px 0;
+    padding: 25px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+}
+
+.btn-donate-venmo {
+    display: inline-block;
+    background: linear-gradient(135deg, #3D95CE 0%, #008CDD 100%);
+    color: white;
+    padding: 15px 40px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 18px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(61, 149, 206, 0.3);
+}
+
+.btn-donate-venmo:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(61, 149, 206, 0.4);
+    background: linear-gradient(135deg, #008CDD 0%, #0077B5 100%);
+}
+
+.donate-note {
+    margin-top: 12px;
+    font-size: 14px;
+    color: #7f8c8d;
+    font-style: italic;
+}
+
+.donate-thanks {
+    text-align: center;
+    margin-top: 20px;
+    margin-bottom: 0;
+    color: #27ae60;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .donate-button {
+        font-size: 14px;
+        padding: 8px 16px;
+    }
+
+    .donate-modal {
+        width: 95%;
+    }
+
+    .donate-modal .modal-body {
+        padding: 20px;
+    }
+
+    .btn-donate-venmo {
+        padding: 12px 30px;
+        font-size: 16px;
+    }
+}
