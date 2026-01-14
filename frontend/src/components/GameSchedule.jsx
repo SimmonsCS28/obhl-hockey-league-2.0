@@ -42,7 +42,9 @@ function GameSchedule({ games, onSelectGame }) {
         : games.filter(g => g.status === filter);
 
     const formatDate = (dateString) => {
-        const date = new Date(dateString);
+        // Normalize to UTC if needed
+        const normalizedDate = dateString.endsWith('Z') ? dateString : dateString + 'Z';
+        const date = new Date(normalizedDate);
         return date.toLocaleDateString('en-US', {
             weekday: 'short',
             month: 'short',

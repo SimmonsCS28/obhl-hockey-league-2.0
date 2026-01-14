@@ -30,9 +30,9 @@ We will use VS Code's "Remote - SSH" extension for the easiest experience.
 5.  Add this entry:
     ```
     Host obhl-aws
-        HostName <YOUR_EC2_PUBLIC_IP_ADDRESS>
+        HostName 44.193.17.173
         User ubuntu
-        IdentityFile "C:\path\to\your\obhl-key.pem"
+        IdentityFile "C:\Users\Simmo\obhl-key.pem"
     ```
 6.  Save, click the Remote button again > **Connect to Host** > Select `obhl-aws`.
 7.  Accept the fingerprint (Linux). You are now in!
