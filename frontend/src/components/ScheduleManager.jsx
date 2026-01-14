@@ -34,10 +34,22 @@ const ScheduleManager = () => {
         onConfirm: () => { }
     });
     const fileInputRef = useRef(null);
+    const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+    const [selectedWeek, setSelectedWeek] = useState('all');
 
     // Fetch seasons on mount
     useEffect(() => {
         fetchSeasons();
+    }, []);
+
+    // Responsive detection
+    useEffect(() => {
+        const handleResize = () => {
+            setIsDesktop(window.innerWidth >= 768);
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
     }, []);
 
     // Fetch teams when season is selected
@@ -536,6 +548,22 @@ const ScheduleManager = () => {
         return parseInt(a) - parseInt(b);
     });
 
+    // Sort and filter games for table view
+    const sortedAndFilteredGames = games
+        .filter(game => {
+            if (selectedWeek === 'all') return true;
+            return game.week === parseInt(selectedWeek);
+        })
+        .sort((a, b) => {
+            // Sort by week first, then by date
+            if (a.week !== b.week) {
+                return a.week - b.week;
+            }
+            const dateA = new Date(a.gameDate.endsWith('Z') ? a.gameDate : a.gameDate + 'Z');
+            const dateB = new Date(b.gameDate.endsWith('Z') ? b.gameDate : b.gameDate + 'Z');
+            return dateA - dateB;
+        });
+
     // Check if selected season is active
     const isActiveSeason = seasons.find(s => s.id === selectedSeason)?.isActive || false;
 
@@ -709,72 +737,184 @@ const ScheduleManager = () => {
                         </button>
                     )}
 
-                    <div className="schedule-grid">
-                        {weeks.map(week => (
-                            <div key={week} className="week-section">
-                                <h3>Week {week}</h3>
-                                <div className="games-list">
-                                    {gamesByWeek[week].map(game => {
+                    {/* Week Filter - only show for saved/editing schedules */}
+                    {(scheduleMode === 'saved' || scheduleMode === 'editing') && (
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ marginRight: '10px', fontWeight: '600', color: '#2c3e50' }}>
+                                Filter by Week:
+                            </label>
+                            <select
+                                value={selectedWeek}
+                                onChange={(e) => setSelectedWeek(e.target.value)}
+                                className="season-select"
+                                style={{ maxWidth: '200px', display: 'inline-block' }}
+                            >
+                                <option value="all">All Weeks</option>
+                                {weeks.filter(w => w !== 'Unassigned').map(week => (
+                                    <option key={week} value={week}>
+                                        Week {week}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
+                    {/* Responsive Schedule Display */}
+                    {isDesktop ? (
+                        // Desktop: Table View
+                        <div className="schedule-table-container">
+                            <table className="schedule-table">
+                                <thead>
+                                    <tr>
+                                        <th>Week</th>
+                                        <th>Date</th>
+                                        <th>Time</th>
+                                        <th>Home Team</th>
+                                        <th>Away Team</th>
+                                        <th>Location</th>
+                                        <th>Score/Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {sortedAndFilteredGames.map(game => {
                                         const homeTeam = getTeamById(game.homeTeamId);
                                         const awayTeam = getTeamById(game.awayTeamId);
                                         const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
-                                        const dayOfWeek = gameDate.getDay(); // 0=Sunday, 5=Friday
+                                        const dayOfWeek = gameDate.getDay();
                                         const isNotFriday = dayOfWeek !== 5;
                                         const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
+                                        const isCompleted = game.homeScore !== null && game.awayScore !== null && (game.homeScore > 0 || game.awayScore > 0);
 
                                         const homeBg = getValidColor(homeTeam?.teamColor);
                                         const awayBg = getValidColor(awayTeam?.teamColor);
 
                                         return (
-                                            <div
+                                            <tr
                                                 key={game.id}
-                                                className={`game-card clickable ${isNotFriday ? 'non-friday-game' : ''}`}
+                                                className={`clickable-row ${isNotFriday ? 'non-friday-row' : ''}`}
                                                 onClick={() => setEditingGame(game)}
+                                                style={{ cursor: 'pointer' }}
                                             >
-                                                {isNotFriday && (
-                                                    <div className="day-badge">
-                                                        ⚠️ {dayName.toUpperCase()}
-                                                    </div>
-                                                )}
-                                                <div className="game-time">
-                                                    {game.homeTeamId && game.awayTeamId ? (
-                                                        <>
-                                                            {gameDate.toLocaleDateString()} {' '}
-                                                            {gameDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        </>
+                                                <td className="week-col">
+                                                    Week {game.week}
+                                                </td>
+                                                <td className={isNotFriday ? 'date-col non-friday-date' : 'date-col'}>
+                                                    <span className="day-warning" title={isNotFriday ? `Game on ${dayName}` : ''}>
+                                                        {isNotFriday ? '⚠️' : ''}
+                                                    </span>
+                                                    {gameDate.toLocaleDateString('en-US', {
+                                                        weekday: 'short',
+                                                        month: 'short',
+                                                        day: 'numeric'
+                                                    })}
+                                                </td>
+                                                <td className="time-col">
+                                                    {gameDate.toLocaleTimeString('en-US', {
+                                                        hour: 'numeric',
+                                                        minute: '2-digit'
+                                                    })}
+                                                </td>
+                                                <td
+                                                    className="team-cell"
+                                                    style={{
+                                                        backgroundColor: homeBg,
+                                                        color: getTextColor(homeBg)
+                                                    }}
+                                                >
+                                                    {homeTeam?.name || `Team ${game.homeTeamId}`}
+                                                </td>
+                                                <td
+                                                    className="team-cell"
+                                                    style={{
+                                                        backgroundColor: awayBg,
+                                                        color: getTextColor(awayBg)
+                                                    }}
+                                                >
+                                                    {awayTeam?.name || `Team ${game.awayTeamId}`}
+                                                </td>
+                                                <td>{game.rink}</td>
+                                                <td>
+                                                    {isCompleted ? (
+                                                        <span className="score">{game.homeScore} - {game.awayScore}</span>
                                                     ) : (
-                                                        <span className="placeholder">Click to set date/time</span>
+                                                        <span className="upcoming-badge">Scheduled</span>
                                                     )}
-                                                </div>
-                                                <div className="game-teams">
-                                                    {game.homeTeamId && game.awayTeamId ? (
-                                                        <>
-                                                            <span className="team-badge" style={{
-                                                                backgroundColor: homeBg,
-                                                                color: getTextColor(homeBg)
-                                                            }}>
-                                                                {homeTeam?.name || `Team ${game.homeTeamId}`}
-                                                            </span>
-                                                            <span className="vs">vs</span>
-                                                            <span className="team-badge" style={{
-                                                                backgroundColor: awayBg,
-                                                                color: getTextColor(awayBg)
-                                                            }}>
-                                                                {awayTeam?.name || `Team ${game.awayTeamId}`}
-                                                            </span>
-                                                        </>
-                                                    ) : (
-                                                        <span className="placeholder">Click to select teams</span>
-                                                    )}
-                                                </div>
-                                                <div className="game-rink">{game.rink}</div>
-                                            </div>
+                                                </td>
+                                            </tr>
                                         );
                                     })}
+                                </tbody>
+                            </table>
+                        </div>
+                    ) : (
+                        // Mobile: Card View
+                        <div className="schedule-grid">
+                            {weeks.map(week => (
+                                <div key={week} className="week-section">
+                                    <h3>Week {week}</h3>
+                                    <div className="games-list">
+                                        {gamesByWeek[week].map(game => {
+                                            const homeTeam = getTeamById(game.homeTeamId);
+                                            const awayTeam = getTeamById(game.awayTeamId);
+                                            const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
+                                            const dayOfWeek = gameDate.getDay();
+                                            const isNotFriday = dayOfWeek !== 5;
+                                            const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
+
+                                            const homeBg = getValidColor(homeTeam?.teamColor);
+                                            const awayBg = getValidColor(awayTeam?.teamColor);
+
+                                            return (
+                                                <div
+                                                    key={game.id}
+                                                    className={`game-card clickable ${isNotFriday ? 'non-friday-game' : ''}`}
+                                                    onClick={() => setEditingGame(game)}
+                                                >
+                                                    {isNotFriday && (
+                                                        <div className="day-badge">
+                                                            ⚠️ {dayName.toUpperCase()}
+                                                        </div>
+                                                    )}
+                                                    <div className="game-time">
+                                                        {game.homeTeamId && game.awayTeamId ? (
+                                                            <>
+                                                                {gameDate.toLocaleDateString()} {' '}
+                                                                {gameDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </>
+                                                        ) : (
+                                                            <span className="placeholder">Click to set date/time</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="game-teams">
+                                                        {game.homeTeamId && game.awayTeamId ? (
+                                                            <>
+                                                                <span className="team-badge" style={{
+                                                                    backgroundColor: homeBg,
+                                                                    color: getTextColor(homeBg)
+                                                                }}>
+                                                                    {homeTeam?.name || `Team ${game.homeTeamId}`}
+                                                                </span>
+                                                                <span className="vs">vs</span>
+                                                                <span className="team-badge" style={{
+                                                                    backgroundColor: awayBg,
+                                                                    color: getTextColor(awayBg)
+                                                                }}>
+                                                                    {awayTeam?.name || `Team ${game.awayTeamId}`}
+                                                                </span>
+                                                            </>
+                                                        ) : (
+                                                            <span className="placeholder">Click to select teams</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="game-rink">{game.rink}</div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    )}
 
 
                     {/* Add Week Button */}

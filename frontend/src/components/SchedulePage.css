@@ -262,16 +262,20 @@
     color: #4a5568;
     font-weight: 600;
     text-align: left;
-    padding: 1rem;
+    padding: 0.5rem 1rem;
     border-bottom: 2px solid #e2e8f0;
     white-space: nowrap;
+    font-size: 0.875rem;
+    line-height: 1.2;
 }
 
 .schedule-table td {
-    padding: 0.875rem 1rem;
+    padding: 2px 1rem;
     border-bottom: 1px solid #e2e8f0;
     color: #2d3748;
     vertical-align: middle;
+    font-size: 0.875rem;
+    line-height: 1.3;
 }
 
 .schedule-table tr:last-child td {
@@ -306,26 +310,42 @@
 .schedule-table .score {
     font-weight: bold;
     color: #2d3748;
+    font-size: 0.875rem;
 }
 
 .schedule-table .upcoming-badge {
     display: inline-block;
-    padding: 0.25rem 0.75rem;
+    padding: 0.125rem 0.5rem;
     background-color: #e2e8f0;
     color: #4a5568;
     border-radius: 9999px;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     font-weight: 500;
+    line-height: 1.2;
 }
 
 .schedule-table .non-friday-row {
-    background-color: rgba(245, 158, 11, 0.05);
+    background-color: rgba(245, 158, 11, 0.15);
+}
+
+.schedule-table .date-col {
+    white-space: nowrap;
+}
+
+.schedule-table .non-friday-date {
+    font-weight: 700;
+    color: #c2410c;
 }
 
 .schedule-table .day-warning {
-    margin-left: 0.5rem;
-    font-size: 1.1em;
+    display: inline-block;
+    width: 1.2em;
+    margin-right: 0.25rem;
+    font-size: 0.875rem;
+    line-height: 1;
+    vertical-align: middle;
     cursor: help;
+    text-align: center;
 }
 
 

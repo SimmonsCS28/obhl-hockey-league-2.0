@@ -110,11 +110,24 @@ const SchedulePage = () => {
             game.homeTeamId === parseInt(selectedTeam) ||
             game.awayTeamId === parseInt(selectedTeam);
 
-        // Filter out completed games if showCompleted is false
-        const isCompleted = game.homeScore !== null && game.awayScore !== null;
-        const completedMatch = showCompleted || !isCompleted;
+
+        // Include completed games only if showCompleted is true
+        // A game is considered completed if its date has passed
+        const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
+        const now = new Date();
+        const isCompleted = gameDate < now;
+        const completedMatch = !isCompleted || showCompleted;
+
 
         return weekMatch && teamMatch && completedMatch;
+    }).sort((a, b) => {
+        // Sort by week first, then by date
+        if (a.week !== b.week) {
+            return a.week - b.week;
+        }
+        const dateA = new Date(a.gameDate.endsWith('Z') ? a.gameDate : a.gameDate + 'Z');
+        const dateB = new Date(b.gameDate.endsWith('Z') ? b.gameDate : b.gameDate + 'Z');
+        return dateA - dateB;
     });
 
     // Group games by week
@@ -356,13 +369,11 @@ const SchedulePage = () => {
                                     <tr key={game.id} className={isNotFriday ? 'non-friday-row' : ''}>
                                         <td className="week-col">
                                             Week {game.week}
-                                            {isNotFriday && (
-                                                <span className="day-warning" title={`Game on ${dayName}`}>
-                                                    ⚠️
-                                                </span>
-                                            )}
                                         </td>
-                                        <td>
+                                        <td className={isNotFriday ? 'date-col non-friday-date' : 'date-col'}>
+                                            <span className="day-warning" title={isNotFriday ? `Game on ${dayName}` : ''}>
+                                                {isNotFriday ? '⚠️' : ''}
+                                            </span>
                                             {gameDate.toLocaleDateString('en-US', {
                                                 weekday: 'short',
                                                 month: 'short',

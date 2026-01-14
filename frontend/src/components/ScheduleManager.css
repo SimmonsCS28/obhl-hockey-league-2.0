@@ -228,6 +228,112 @@
     cursor: not-allowed;
 }
 
+/* Desktop Table View */
+.schedule-table-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow-x: auto;
+    margin-bottom: 20px;
+}
+
+.schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+
+.schedule-table th {
+    background-color: #f7fafc;
+    color: #4a5568;
+    font-weight: 600;
+    text-align: left;
+    padding: 0.5rem 1rem;
+    border-bottom: 2px solid #e2e8f0;
+    white-space: nowrap;
+    font-size: 0.875rem;
+    line-height: 1.2;
+}
+
+.schedule-table td {
+    padding: 2px 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    color: #2d3748;
+    vertical-align: middle;
+    font-size: 0.875rem;
+    line-height: 1.3;
+}
+
+.schedule-table tr:last-child td {
+    border-bottom: none;
+}
+
+.schedule-table tr.clickable-row:hover td:not(.team-cell) {
+    background-color: #f8fafc;
+}
+
+.schedule-table .week-col {
+    font-weight: 600;
+    color: #aa9c00;
+    white-space: nowrap;
+}
+
+.schedule-table .time-col {
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.schedule-table .team-cell {
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    transition: opacity 0.2s;
+}
+
+.schedule-table .team-cell:hover {
+    opacity: 0.85;
+}
+
+.schedule-table .score {
+    font-weight: bold;
+    color: #2d3748;
+    font-size: 0.875rem;
+}
+
+.schedule-table .upcoming-badge {
+    display: inline-block;
+    padding: 0.125rem 0.5rem;
+    background-color: #e2e8f0;
+    color: #4a5568;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    line-height: 1.2;
+}
+
+.schedule-table .non-friday-row {
+    background-color: rgba(245, 158, 11, 0.15);
+}
+
+.schedule-table .date-col {
+    white-space: nowrap;
+}
+
+.schedule-table .non-friday-date {
+    font-weight: 700;
+    color: #c2410c;
+}
+
+.schedule-table .day-warning {
+    display: inline-block;
+    width: 1.2em;
+    margin-right: 0.25rem;
+    font-size: 0.875rem;
+    line-height: 1;
+    vertical-align: middle;
+    cursor: help;
+    text-align: center;
+}
+
 /* Schedule Grid */
 .schedule-grid {
     display: flex;
@@ -263,11 +369,50 @@
     border-radius: 6px;
     padding: 15px;
     transition: all 0.2s ease;
+    position: relative;
 }
 
 .game-card:hover {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     transform: translateY(-2px);
+}
+
+/* Non-Friday Game Styling for Cards */
+.game-card.non-friday-game {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+}
+
+.game-card.non-friday-game:hover {
+    border-color: #f59e0b;
+    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+}
+
+.day-badge {
+    position: absolute;
+    top: -12px;
+    right: 10px;
+    background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.75em;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
 }
 
 .game-time {
