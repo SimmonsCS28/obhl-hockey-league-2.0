@@ -30,6 +30,7 @@ dependencies {
 	
 	// Spring Cloud
 	implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:4.1.0'
+	implementation 'io.github.openfeign:feign-httpclient:13.1'
 	
 	// Database
 	runtimeOnly 'org.postgresql:postgresql'

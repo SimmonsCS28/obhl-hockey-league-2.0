@@ -253,11 +253,31 @@ function LiveScoreEntry(props) {
 
     const saveEventToBackend = async (event) => {
         try {
-            // TODO: Call backend API to save event
-            await api.saveGameEvent(game.id, event);
+            // Construct DTO matching backend GameEventDto.Create requirements
+            const [minutes, seconds] = event.time.split(':').map(Number);
+            const periodMap = { '1': 1, '2': 2, '3': 3, 'OT': 4 };
+
+            const eventDto = {
+                gameId: game.id,
+                teamId: event.team === 'home' ? game.homeTeamId : game.awayTeamId,
+                eventType: event.type,
+                period: periodMap[event.period] || 3, // Default to 3 if unknown, or handle error
+                timeMinutes: minutes,
+                timeSeconds: seconds,
+                description: event.description || null,
+                // Map fields based on event type
+                playerId: event.type === 'goal' ? event.scorerId : event.playerId,
+                assist1PlayerId: event.type === 'goal' ? event.assist1Id : null,
+                assist2PlayerId: event.type === 'goal' ? event.assist2Id : null,
+                penaltyMinutes: event.type === 'penalty' ? event.minutes : null
+            };
+
+            await api.saveGameEvent(game.id, eventDto);
         } catch (error) {
             console.error('Error saving event:', error);
-            alert('Failed to save event. Please try again.');
+            alert('Failed to save event to backend. It will remain locally until page refresh.');
+            // Note: We don't remove it from local state so user doesn't lose data
+            // In a real app we might mark it as "unsaved" in UI
         }
     };
 

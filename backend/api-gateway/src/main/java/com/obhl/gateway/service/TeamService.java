@@ -122,23 +122,32 @@ public class TeamService {
         Team team = teamRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Team not found"));
 
-        // Increment stats (not replace)
+        // Helper to safely get integer from map
+        java.util.function.Function<String, Integer> getStat = (key) -> {
+            Integer val = statsUpdate.get(key);
+            return val != null ? val : 0;
+        };
+
+        // Helper to safely get current team stat
+        java.util.function.Function<Integer, Integer> getCurrent = (val) -> val != null ? val : 0;
+
+        // Increment stats safely
         if (statsUpdate.containsKey("wins"))
-            team.setWins(team.getWins() + statsUpdate.get("wins"));
+            team.setWins(getCurrent.apply(team.getWins()) + getStat.apply("wins"));
         if (statsUpdate.containsKey("losses"))
-            team.setLosses(team.getLosses() + statsUpdate.get("losses"));
+            team.setLosses(getCurrent.apply(team.getLosses()) + getStat.apply("losses"));
         if (statsUpdate.containsKey("ties"))
-            team.setTies(team.getTies() + statsUpdate.get("ties"));
+            team.setTies(getCurrent.apply(team.getTies()) + getStat.apply("ties"));
         if (statsUpdate.containsKey("overtimeWins"))
-            team.setOvertimeWins(team.getOvertimeWins() + statsUpdate.get("overtimeWins"));
+            team.setOvertimeWins(getCurrent.apply(team.getOvertimeWins()) + getStat.apply("overtimeWins"));
         if (statsUpdate.containsKey("overtimeLosses"))
-            team.setOvertimeLosses(team.getOvertimeLosses() + statsUpdate.get("overtimeLosses"));
+            team.setOvertimeLosses(getCurrent.apply(team.getOvertimeLosses()) + getStat.apply("overtimeLosses"));
         if (statsUpdate.containsKey("goalsFor"))
-            team.setGoalsFor(team.getGoalsFor() + statsUpdate.get("goalsFor"));
+            team.setGoalsFor(getCurrent.apply(team.getGoalsFor()) + getStat.apply("goalsFor"));
         if (statsUpdate.containsKey("goalsAgainst"))
-            team.setGoalsAgainst(team.getGoalsAgainst() + statsUpdate.get("goalsAgainst"));
+            team.setGoalsAgainst(getCurrent.apply(team.getGoalsAgainst()) + getStat.apply("goalsAgainst"));
         if (statsUpdate.containsKey("points"))
-            team.setPoints(team.getPoints() + statsUpdate.get("points"));
+            team.setPoints(getCurrent.apply(team.getPoints()) + getStat.apply("points"));
 
         teamRepository.save(team);
     }

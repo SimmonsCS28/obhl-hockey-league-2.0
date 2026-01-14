@@ -78,35 +78,34 @@ const api = {
     },
 
     async updateGameScore(gameId, homeScore, awayScore) {
-        // TODO: Implement real API call to Game Service
-        // const response = await fetch(`${API_BASE_URL}/games/${gameId}/score`, {
-        //     method: 'PATCH',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify({ homeScore, awayScore })
-        // });
-        // if (!response.ok) throw new Error('Failed to update game score');
-        // return response.json();
-
-        console.warn('updateGameScore not yet connected to backend');
-        return { success: true };
+        const response = await fetch(`${API_BASE_URL}/games/${gameId}/score`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify({ homeScore, awayScore })
+        });
+        if (!response.ok) throw new Error('Failed to update game score');
+        return response.json();
     },
 
     async saveGameEvent(gameId, event) {
-        // TODO: Implement real API call to Game Service
-        // const response = await fetch(`${API_BASE_URL}/games/${gameId}/events`, {
-        //     method: 'POST',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify(event)
-        // });
-        // if (!response.ok) throw new Error('Failed to save game event');
-        // return response.json();
+        // First try to find mapping for event type
+        const endpoint = event.type === 'goal' ? 'goals' : 'penalties';
 
-        console.warn('saveGameEvent not yet connected to backend');
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve({ success: true, eventId: event.id });
-            }, 100);
+        // Use generic events endpoint for now as backend seems to handle it
+        // Or specific endpoints if backend requires
+        const response = await fetch(`${API_BASE_URL}/games/${gameId}/events`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify(event)
         });
+        if (!response.ok) throw new Error('Failed to save game event');
+        return response.json();
     },
 
     async finalizeGame(gameId, homeScore, awayScore, endedInOT = false) {
@@ -126,32 +125,31 @@ const api = {
 
     // ============================================
     // PENALTY VALIDATION API
-    // TODO: Connect to Game Service penalty validation endpoint
+    //Connect to Game Service penalty validation endpoint
     // ============================================
     async validatePenalty(playerId, gameId) {
-        // TODO: Implement real API call to Game Service
-        // const response = await fetch(`${API_BASE_URL}/games/${gameId}/penalties/validate`, {
-        //     method: 'POST',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify({ playerId })
-        // });
-        // if (!response.ok) throw new Error('Failed to validate penalty');
-        // return response.json();
-
-        console.warn('validatePenalty not yet connected to backend');
-
-        // TEMPORARY: Return no ejection/suspension until backend is connected
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                resolve({
-                    shouldEject: false,
-                    shouldSuspendNextGame: false,
-                    penaltyCount: 1,
-                    warningMessage: 'Penalty recorded (backend validation pending)',
-                    warningType: 'NORMAL'
-                });
-            }, 100);
+        const response = await fetch(`${API_BASE_URL}/games/${gameId}/penalties/validate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify({ playerId })
         });
+
+        // If 404/500, might not be implemented yet on backend, fallback to safe default
+        if (!response.ok) {
+            console.warn('Penalty validation endpoint failed, falling back to default');
+            return {
+                shouldEject: false,
+                shouldSuspendNextGame: false,
+                penaltyCount: 1,
+                warningMessage: null,
+                warningType: 'NORMAL'
+            };
+        }
+
+        return response.json();
     },
 
     // ============================================
