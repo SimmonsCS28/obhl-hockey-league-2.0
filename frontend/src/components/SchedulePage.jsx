@@ -11,6 +11,18 @@ const SchedulePage = () => {
     const [selectedTeam, setSelectedTeam] = useState('all');
     const [loading, setLoading] = useState(false);
     const [showCalendarModal, setShowCalendarModal] = useState(false);
+    const [showCompleted, setShowCompleted] = useState(false);
+    const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+
+    // Responsive detection
+    useEffect(() => {
+        const handleResize = () => {
+            setIsDesktop(window.innerWidth >= 768);
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     // Fetch seasons on mount
     useEffect(() => {
@@ -24,6 +36,33 @@ const SchedulePage = () => {
             fetchGames(selectedSeason);
         }
     }, [selectedSeason]);
+
+    // Set default to upcoming week when games load
+    useEffect(() => {
+        if (games.length > 0 && selectedWeek === 'all') {
+            const today = new Date();
+
+            // Find the next week with games after today
+            const upcomingGames = games.filter(g => {
+                const gameDate = new Date(g.gameDate.endsWith('Z') ? g.gameDate : g.gameDate + 'Z');
+                return gameDate >= today;
+            });
+
+            if (upcomingGames.length > 0) {
+                // Get the earliest upcoming game's week
+                const sortedUpcoming = upcomingGames.sort((a, b) => {
+                    const dateA = new Date(a.gameDate.endsWith('Z') ? a.gameDate : a.gameDate + 'Z');
+                    const dateB = new Date(b.gameDate.endsWith('Z') ? b.gameDate : b.gameDate + 'Z');
+                    return dateA - dateB;
+                });
+
+                const nextWeek = sortedUpcoming[0].week;
+                if (nextWeek) {
+                    setSelectedWeek(nextWeek.toString());
+                }
+            }
+        }
+    }, [games]);
 
     const fetchSeasons = async () => {
         try {
@@ -64,13 +103,18 @@ const SchedulePage = () => {
         return teams.find(t => t.id === teamId);
     };
 
-    // Filter games based on selected week and team
+    // Filter games based on selected week, team, and completion status
     const filteredGames = games.filter(game => {
         const weekMatch = selectedWeek === 'all' || game.week === parseInt(selectedWeek);
         const teamMatch = selectedTeam === 'all' ||
             game.homeTeamId === parseInt(selectedTeam) ||
             game.awayTeamId === parseInt(selectedTeam);
-        return weekMatch && teamMatch;
+
+        // Filter out completed games if showCompleted is false
+        const isCompleted = game.homeScore !== null && game.awayScore !== null;
+        const completedMatch = showCompleted || !isCompleted;
+
+        return weekMatch && teamMatch && completedMatch;
     });
 
     // Group games by week
@@ -260,6 +304,18 @@ const SchedulePage = () => {
                         ))}
                     </select>
                 </div>
+
+                <div className="filter-group checkbox-group">
+                    <label className="checkbox-label">
+                        <input
+                            type="checkbox"
+                            checked={showCompleted}
+                            onChange={(e) => setShowCompleted(e.target.checked)}
+                            className="checkbox-input"
+                        />
+                        <span>Show Completed Games</span>
+                    </label>
+                </div>
             </div>
 
             {loading ? (
@@ -268,7 +324,91 @@ const SchedulePage = () => {
                 <div className="empty-state">
                     <p>No games scheduled yet.</p>
                 </div>
+            ) : isDesktop ? (
+                // Desktop: Table View
+                <div className="schedule-table-container">
+                    <table className="schedule-table">
+                        <thead>
+                            <tr>
+                                <th>Week</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Home Team</th>
+                                <th>Away Team</th>
+                                <th>Location</th>
+                                <th>Score/Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredGames.map(game => {
+                                const homeTeam = getTeamById(game.homeTeamId);
+                                const awayTeam = getTeamById(game.awayTeamId);
+                                const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
+                                const dayOfWeek = gameDate.getDay();
+                                const isNotFriday = dayOfWeek !== 5;
+                                const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
+                                const isCompleted = game.homeScore !== null && game.awayScore !== null;
+
+                                const homeBg = getValidColor(homeTeam?.teamColor);
+                                const awayBg = getValidColor(awayTeam?.teamColor);
+
+                                return (
+                                    <tr key={game.id} className={isNotFriday ? 'non-friday-row' : ''}>
+                                        <td className="week-col">
+                                            Week {game.week}
+                                            {isNotFriday && (
+                                                <span className="day-warning" title={`Game on ${dayName}`}>
+                                                    ⚠️
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td>
+                                            {gameDate.toLocaleDateString('en-US', {
+                                                weekday: 'short',
+                                                month: 'short',
+                                                day: 'numeric'
+                                            })}
+                                        </td>
+                                        <td className="time-col">
+                                            {gameDate.toLocaleTimeString('en-US', {
+                                                hour: 'numeric',
+                                                minute: '2-digit'
+                                            })}
+                                        </td>
+                                        <td
+                                            className="team-cell"
+                                            style={{
+                                                backgroundColor: homeBg,
+                                                color: getTextColor(homeBg)
+                                            }}
+                                        >
+                                            {homeTeam?.name || `Team ${game.homeTeamId}`}
+                                        </td>
+                                        <td
+                                            className="team-cell"
+                                            style={{
+                                                backgroundColor: awayBg,
+                                                color: getTextColor(awayBg)
+                                            }}
+                                        >
+                                            {awayTeam?.name || `Team ${game.awayTeamId}`}
+                                        </td>
+                                        <td>{game.rink}</td>
+                                        <td>
+                                            {isCompleted ? (
+                                                <span className="score">{game.homeScore} - {game.awayScore}</span>
+                                            ) : (
+                                                <span className="upcoming-badge">Upcoming</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             ) : (
+                // Mobile: Compact Card View
                 <div className="schedule-grid">
                     {weeks.map(week => (
                         <div key={week} className="week-section">
@@ -278,9 +418,10 @@ const SchedulePage = () => {
                                     const homeTeam = getTeamById(game.homeTeamId);
                                     const awayTeam = getTeamById(game.awayTeamId);
                                     const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
-                                    const dayOfWeek = gameDate.getDay(); // 0=Sunday, 5=Friday
+                                    const dayOfWeek = gameDate.getDay();
                                     const isNotFriday = dayOfWeek !== 5;
                                     const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
+                                    const isCompleted = game.homeScore !== null && game.awayScore !== null;
 
                                     const homeBg = getValidColor(homeTeam?.teamColor);
                                     const awayBg = getValidColor(awayTeam?.teamColor);
@@ -332,6 +473,11 @@ const SchedulePage = () => {
                                             <div className="game-location">
                                                 📍 {game.rink}
                                             </div>
+                                            {isCompleted && (
+                                                <div className="game-score-mobile">
+                                                    Final: {game.homeScore} - {game.awayScore}
+                                                </div>
+                                            )}
                                         </div>
                                     );
                                 })}

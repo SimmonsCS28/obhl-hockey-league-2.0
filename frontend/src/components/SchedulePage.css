@@ -64,6 +64,31 @@
     border-color: #3498db;
 }
 
+/* Checkbox Filter */
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    min-width: auto;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 0.9em;
+    user-select: none;
+}
+
+.checkbox-input {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    accent-color: #3498db;
+}
+
 /* Loading and Empty States */
 .loading,
 .empty-state {
@@ -95,17 +120,12 @@
     font-size: 1.5em;
 }
 
-.games-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 20px;
-}
-
-/* Game Cards */
+/* Game Cards (Mobile View) */
 .game-card {
     background: #2c3e50;
     border-radius: 8px;
-    padding: 20px;
+    padding: 12px;
+    /* Reduced from 20px for compact look */
     transition: all 0.3s ease;
     border: 2px solid transparent;
     position: relative;
@@ -172,19 +192,26 @@
 .game-teams {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
+    gap: 8px;
+    /* Reduced from 10px */
+    margin-bottom: 12px;
+    /* Reduced from 15px */
+    flex-wrap: nowrap;
+    /* Prevent wrapping */
 }
 
 .team-badge {
     display: inline-block;
-    padding: 6px 14px;
-    border-radius: 16px;
+    padding: 5px 12px;
+    /* Reduced padding for compact look */
+    border-radius: 14px;
+    /* Slightly smaller radius */
     color: white;
     font-weight: 600;
-    font-size: 0.95em;
+    font-size: 0.9em;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    white-space: nowrap;
+    /* Prevent wrapping */
 }
 
 .vs {
@@ -200,6 +227,107 @@
     align-items: center;
     gap: 5px;
 }
+
+.games-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.game-score-mobile {
+    color: #10b981;
+    font-weight: 600;
+    font-size: 0.95em;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Desktop Table View */
+.schedule-table-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow-x: auto;
+}
+
+.schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+}
+
+.schedule-table th {
+    background-color: #f7fafc;
+    color: #4a5568;
+    font-weight: 600;
+    text-align: left;
+    padding: 1rem;
+    border-bottom: 2px solid #e2e8f0;
+    white-space: nowrap;
+}
+
+.schedule-table td {
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    color: #2d3748;
+    vertical-align: middle;
+}
+
+.schedule-table tr:last-child td {
+    border-bottom: none;
+}
+
+.schedule-table tr:hover td:not(.team-cell) {
+    background-color: #f8fafc;
+}
+
+.schedule-table .week-col {
+    font-weight: 600;
+    color: #aa9c00;
+    white-space: nowrap;
+}
+
+.schedule-table .time-col {
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.schedule-table .team-cell {
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    transition: opacity 0.2s;
+}
+
+.schedule-table .team-cell:hover {
+    opacity: 0.85;
+}
+
+.schedule-table .score {
+    font-weight: bold;
+    color: #2d3748;
+}
+
+.schedule-table .upcoming-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background-color: #e2e8f0;
+    color: #4a5568;
+    border-radius: 9999px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.schedule-table .non-friday-row {
+    background-color: rgba(245, 158, 11, 0.05);
+}
+
+.schedule-table .day-warning {
+    margin-left: 0.5rem;
+    font-size: 1.1em;
+    cursor: help;
+}
+
 
 /* Responsive Design */
 @media (max-width: 768px) {
@@ -217,6 +345,8 @@
 
     .games-list {
         grid-template-columns: 1fr;
+        gap: 12px;
+        /* Reduced from 20px */
     }
 
     .schedule-header h1 {
@@ -229,6 +359,11 @@
 
     .week-section h2 {
         font-size: 1.2em;
+    }
+
+    .game-card {
+        padding: 10px;
+        /* Even more compact on mobile */
     }
 }
 
