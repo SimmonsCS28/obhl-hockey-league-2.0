@@ -37,33 +37,6 @@ const SchedulePage = () => {
         }
     }, [selectedSeason]);
 
-    // Set default to upcoming week when games load
-    useEffect(() => {
-        if (games.length > 0 && selectedWeek === 'all') {
-            const today = new Date();
-
-            // Find the next week with games after today
-            const upcomingGames = games.filter(g => {
-                const gameDate = new Date(g.gameDate.endsWith('Z') ? g.gameDate : g.gameDate + 'Z');
-                return gameDate >= today;
-            });
-
-            if (upcomingGames.length > 0) {
-                // Get the earliest upcoming game's week
-                const sortedUpcoming = upcomingGames.sort((a, b) => {
-                    const dateA = new Date(a.gameDate.endsWith('Z') ? a.gameDate : a.gameDate + 'Z');
-                    const dateB = new Date(b.gameDate.endsWith('Z') ? b.gameDate : b.gameDate + 'Z');
-                    return dateA - dateB;
-                });
-
-                const nextWeek = sortedUpcoming[0].week;
-                if (nextWeek) {
-                    setSelectedWeek(nextWeek.toString());
-                }
-            }
-        }
-    }, [games]);
-
     const fetchSeasons = async () => {
         try {
             const response = await axios.get('/api/v1/seasons');
