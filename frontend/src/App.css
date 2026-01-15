@@ -70,3 +70,23 @@ body {
   margin: 0;
   padding: 0 0 40px;
 }
+
+/* Scorekeeper-specific styling */
+.app-main:has(.scorekeeper-dashboard) {
+  background: #f7fafc;
+  min-height: calc(100vh - 100px);
+}
+
+/* Override header for scorekeeper pages */
+body:has(.scorekeeper-dashboard) {
+  background: #f7fafc;
+}
+
+body:has(.scorekeeper-dashboard) .app-header {
+  background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+  border-bottom: none;
+}
+
+body:has(.scorekeeper-dashboard) .app-header h1 {
+  color: white;
+}
