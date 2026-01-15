@@ -1,9 +1,16 @@
 import { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import api from '../services/api';
 import './LiveScoreEntry.css';
 
 function LiveScoreEntry(props) {
-    const { game, onBack, onGameUpdated } = props;
+    const { game: propGame, onBack, onGameUpdated } = props;
+    const { gameId } = useParams();
+
+    // State for game data (loaded from prop or route param)
+    const [game, setGame] = useState(propGame || null);
+    const [loading, setLoading] = useState(!propGame);
+
     const [homeScore, setHomeScore] = useState(game?.homeScore || 0);
     const [awayScore, setAwayScore] = useState(game?.awayScore || 0);
     const [events, setEvents] = useState([]);
@@ -44,10 +51,33 @@ function LiveScoreEntry(props) {
     // OT tracking for tied games
     const [endedInOT, setEndedInOT] = useState(false);
 
+    // Load game from route parameter if not passed as prop
     useEffect(() => {
-        loadPlayers();
-        loadEvents();
-    }, []);
+        const loadGame = async () => {
+            if (!propGame && gameId) {
+                try {
+                    setLoading(true);
+                    const gameData = await api.getGame(gameId);
+                    setGame(gameData);
+                    setHomeScore(gameData.homeScore || 0);
+                    setAwayScore(gameData.awayScore || 0);
+                    setGameFinalized(gameData.status === 'completed');
+                } catch (error) {
+                    console.error('Error loading game:', error);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+        loadGame();
+    }, [propGame, gameId]);
+
+    useEffect(() => {
+        if (game) {
+            loadPlayers();
+            loadEvents();
+        }
+    }, [game]);
 
     const loadPlayers = async () => {
         try {
@@ -395,6 +425,14 @@ function LiveScoreEntry(props) {
         setPenaltyTimeSeconds('');
         setShowPenaltyForm(false);
     };
+
+    if (loading) {
+        return (
+            <div className="live-score-entry">
+                <div className="info-message">Loading game...</div>
+            </div>
+        );
+    }
 
     if (!game) {
         return (
