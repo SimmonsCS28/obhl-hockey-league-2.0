@@ -90,3 +90,22 @@ body:has(.scorekeeper-dashboard) .app-header {
 body:has(.scorekeeper-dashboard) .app-header h1 {
   color: white;
 }
+
+/* LiveScoreEntry styling */
+.app-main:has(.live-score-entry) {
+  background: #f7fafc;
+  min-height: calc(100vh - 100px);
+}
+
+body:has(.live-score-entry) {
+  background: #f7fafc;
+}
+
+body:has(.live-score-entry) .app-header {
+  background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+  border-bottom: none;
+}
+
+body:has(.live-score-entry) .app-header h1 {
+  color: white;
+}
