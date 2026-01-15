@@ -115,6 +115,7 @@
 
 .standings-table td.team-name {
     min-width: 200px;
+    border: none;
 }
 
 .standings-table td.team-name strong {
