@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import ScorekeeperContent from './ScorekeeperContent';
+import ScorekeeperDashboard from './ScorekeeperDashboard';
 
 function Scorekeeper() {
     const { user, logout } = useAuth();
@@ -29,7 +29,7 @@ function Scorekeeper() {
             </header>
 
             <main className="app-main">
-                <ScorekeeperContent />
+                <ScorekeeperDashboard />
             </main>
         </div>
     );

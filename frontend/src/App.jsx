@@ -2,6 +2,7 @@ import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import './App.css';
 import AdminDashboard from './components/AdminDashboard';
 import GMLayout from './components/GMLayout';
+import LiveScoreEntry from './components/LiveScoreEntry';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicLayout from './components/PublicLayout';
 import ScheduleManager from './components/ScheduleManager';
@@ -58,6 +59,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Scorekeeper />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/scorekeeper/game/:gameId"
+            element={
+              <ProtectedRoute>
+                <LiveScoreEntry />
               </ProtectedRoute>
             }
           />
