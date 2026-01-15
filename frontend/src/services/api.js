@@ -77,6 +77,13 @@ const api = {
         return response.json();
     },
 
+    async getGame(gameId) {
+        const GAME_SERVICE_URL = '/games-api';
+        const response = await fetch(`${GAME_SERVICE_URL}/games/${gameId}`);
+        if (!response.ok) throw new Error('Failed to fetch game');
+        return response.json();
+    },
+
     async updateGameScore(gameId, homeScore, awayScore) {
         const response = await fetch(`${API_BASE_URL}/games/${gameId}/score`, {
             method: 'PATCH',
@@ -321,6 +328,7 @@ export const {
     createTeam,
     deleteTeam,
     getGames,
+    getGame,
     updateGameScore,
     saveGameEvent,
     finalizeGame,
