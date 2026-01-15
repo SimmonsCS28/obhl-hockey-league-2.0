@@ -7,7 +7,7 @@ function PlayersPage() {
     const [players, setPlayers] = useState([]);
     const [teams, setTeams] = useState([]);
     const [selectedTeam, setSelectedTeam] = useState('all');
-    const [sortField, setSortField] = useState('firstName');
+    const [sortField, setSortField] = useState('lastName');
     const [sortDirection, setSortDirection] = useState('asc');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -144,13 +144,11 @@ function PlayersPage() {
         let aValue, bValue;
 
         switch (sortField) {
-            case 'firstName':
-                aValue = a.firstName?.toLowerCase() || '';
-                bValue = b.firstName?.toLowerCase() || '';
-                break;
+            case 'name':
             case 'lastName':
-                aValue = a.lastName?.toLowerCase() || '';
-                bValue = b.lastName?.toLowerCase() || '';
+                // Sort by last name, then first name
+                aValue = (a.lastName?.toLowerCase() || '') + (a.firstName?.toLowerCase() || '');
+                bValue = (b.lastName?.toLowerCase() || '') + (b.firstName?.toLowerCase() || '');
                 break;
             case 'position':
                 aValue = a.position?.toLowerCase() || '';
@@ -223,11 +221,8 @@ function PlayersPage() {
                     <table className="players-table">
                         <thead>
                             <tr>
-                                <th onClick={() => handleSort('firstName')} className="sortable">
-                                    First Name {sortField === 'firstName' && (sortDirection === 'asc' ? '▲' : '▼')}
-                                </th>
-                                <th onClick={() => handleSort('lastName')} className="sortable">
-                                    Last Name {sortField === 'lastName' && (sortDirection === 'asc' ? '▲' : '▼')}
+                                <th onClick={() => handleSort('name')} className="sortable">
+                                    Name {(sortField === 'name' || sortField === 'lastName') && (sortDirection === 'asc' ? '▲' : '▼')}
                                 </th>
                                 <th onClick={() => handleSort('position')} className="sortable">
                                     Position {sortField === 'position' && (sortDirection === 'asc' ? '▲' : '▼')}
@@ -246,10 +241,10 @@ function PlayersPage() {
                                 return (
                                     <tr key={player.id}>
                                         <td>
-                                            {player.firstName}
+                                            {player.firstName} {player.lastName}
                                             {isGM(player) && <span className="gm-badge">GM</span>}
+                                            {player.skillRating >= 9 && <span className="twogl-badge">2GL</span>}
                                         </td>
-                                        <td>{player.lastName}</td>
                                         <td>{player.position || 'N/A'}</td>
                                         <td>
                                             {team ? (

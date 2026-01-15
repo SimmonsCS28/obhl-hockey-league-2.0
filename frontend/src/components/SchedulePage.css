@@ -348,6 +348,12 @@
     text-align: center;
 }
 
+/* Week Separator */
+.schedule-table .week-separator td {
+    border-top: 2px solid #000 !important;
+    padding-top: 0.5rem !important;
+}
+
 
 /* Responsive Design */
 @media (max-width: 768px) {

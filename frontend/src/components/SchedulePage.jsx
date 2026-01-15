@@ -326,7 +326,7 @@ const SchedulePage = () => {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredGames.map(game => {
+                            {filteredGames.map((game, index) => {
                                 const homeTeam = getTeamById(game.homeTeamId);
                                 const awayTeam = getTeamById(game.awayTeamId);
                                 const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
@@ -338,8 +338,15 @@ const SchedulePage = () => {
                                 const homeBg = getValidColor(homeTeam?.teamColor);
                                 const awayBg = getValidColor(awayTeam?.teamColor);
 
+                                // Check if this is the first game of a new week
+                                const previousGame = index > 0 ? filteredGames[index - 1] : null;
+                                const isNewWeek = previousGame && previousGame.week !== game.week;
+
                                 return (
-                                    <tr key={game.id} className={isNotFriday ? 'non-friday-row' : ''}>
+                                    <tr
+                                        key={game.id}
+                                        className={`${isNotFriday ? 'non-friday-row' : ''} ${isNewWeek ? 'week-separator' : ''}`}
+                                    >
                                         <td className="week-col">
                                             Week {game.week}
                                         </td>

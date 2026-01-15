@@ -46,13 +46,9 @@ function Home() {
                     </div>
 
                     <div className="quick-links">
-                        <Link to="/standings" className="quick-link-card">
-                            <h3>Standings</h3>
-                            <p>View current team rankings</p>
-                        </Link>
-                        <Link to="/schedule" className="quick-link-card">
-                            <h3>Schedule</h3>
-                            <p>Check upcoming games</p>
+                        <Link to="/seasons" className="quick-link-card">
+                            <h3>Seasons</h3>
+                            <p>Browse past and current seasons</p>
                         </Link>
                         <Link to="/teams" className="quick-link-card">
                             <h3>Teams</h3>
@@ -61,6 +57,14 @@ function Home() {
                         <Link to="/players" className="quick-link-card">
                             <h3>Players</h3>
                             <p>View player stats</p>
+                        </Link>
+                        <Link to="/standings" className="quick-link-card">
+                            <h3>Standings</h3>
+                            <p>View current team rankings</p>
+                        </Link>
+                        <Link to="/schedule" className="quick-link-card">
+                            <h3>Schedule</h3>
+                            <p>Check upcoming games</p>
                         </Link>
                     </div>
                 </section>
