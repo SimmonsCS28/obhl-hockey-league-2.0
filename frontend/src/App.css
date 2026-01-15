@@ -73,13 +73,21 @@ body {
 
 /* Scorekeeper-specific styling */
 .app-main:has(.scorekeeper-dashboard) {
-  background: #f7fafc;
+  background-image: url('../assets/images/Hg5oI1.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   min-height: calc(100vh - 100px);
 }
 
 /* Override header for scorekeeper pages */
 body:has(.scorekeeper-dashboard) {
-  background: #f7fafc;
+  background-image: url('../assets/images/Hg5oI1.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 body:has(.scorekeeper-dashboard) .app-header {
@@ -93,12 +101,20 @@ body:has(.scorekeeper-dashboard) .app-header h1 {
 
 /* LiveScoreEntry styling */
 .app-main:has(.live-score-entry) {
-  background: #f7fafc;
+  background-image: url('../assets/images/Hg5oI1.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
   min-height: calc(100vh - 100px);
 }
 
 body:has(.live-score-entry) {
-  background: #f7fafc;
+  background-image: url('../assets/images/Hg5oI1.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
 }
 
 body:has(.live-score-entry) .app-header {
