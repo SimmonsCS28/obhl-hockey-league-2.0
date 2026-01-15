@@ -117,6 +117,10 @@
     min-width: 200px;
 }
 
+.standings-table td.team-name strong {
+    text-decoration: none;
+}
+
 .standings-table td.team-name .team-abbr {
     color: rgba(255, 255, 255, 0.8);
     font-size: 0.875rem;

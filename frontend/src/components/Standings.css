@@ -88,6 +88,10 @@
     font-weight: 600;
 }
 
+.team-name strong {
+    text-decoration: none;
+}
+
 .team-abbr {
     display: inline-block;
     margin-left: 8px;
