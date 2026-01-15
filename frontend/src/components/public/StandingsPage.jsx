@@ -43,15 +43,22 @@ function StandingsPage() {
 
             const data = await response.json();
 
-            // Sort teams by points (desc), then goal differential (desc)
+            // Sort teams by: 1) points (desc), 2) wins (desc), 3) goals against (asc), 4) goals for (desc)
             const sorted = data.sort((a, b) => {
+                // Primary: Points (highest first)
                 if (b.points !== a.points) {
                     return b.points - a.points;
                 }
-                // Tiebreaker: goal differential
-                const aDiff = a.goalsFor - a.goalsAgainst;
-                const bDiff = b.goalsFor - b.goalsAgainst;
-                return bDiff - aDiff;
+                // Tiebreaker 1: Wins (highest first)
+                if (b.wins !== a.wins) {
+                    return b.wins - a.wins;
+                }
+                // Tiebreaker 2: Goals Against (lowest first - fewer goals against is better)
+                if (a.goalsAgainst !== b.goalsAgainst) {
+                    return a.goalsAgainst - b.goalsAgainst;
+                }
+                // Tiebreaker 3: Goals For (highest first)
+                return b.goalsFor - a.goalsFor;
             });
 
             setTeams(sorted);
