@@ -149,3 +149,46 @@
     color: #94a3b8;
     font-size: 16px;
 }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .game-schedule {
+        padding: 12px;
+    }
+
+    .schedule-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .schedule-header h2 {
+        font-size: 20px;
+    }
+
+    .filters {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+
+    .filter-btn {
+        flex: 1 1 auto;
+        min-width: 80px;
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+
+    .game-card {
+        padding: 16px;
+    }
+
+    .team-name {
+        font-size: 14px;
+        padding: 6px 12px;
+    }
+
+    .team-score {
+        font-size: 24px;
+    }
+}

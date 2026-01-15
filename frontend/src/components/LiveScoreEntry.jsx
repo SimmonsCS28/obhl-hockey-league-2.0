@@ -168,6 +168,13 @@ function LiveScoreEntry(props) {
             // Update existing event
             const updatedEvents = events.map(e => e.id === editingEvent.id ? newEvent : e);
             setEvents(updatedEvents);
+
+            // Recalculate scores from all goal events
+            const homeGoals = updatedEvents.filter(e => e.type === 'goal' && e.team === 'home').length;
+            const awayGoals = updatedEvents.filter(e => e.type === 'goal' && e.team === 'away').length;
+            setHomeScore(homeGoals);
+            setAwayScore(awayGoals);
+
             setEditingEvent(null);
         } else {
             // Add new event
@@ -429,7 +436,7 @@ function LiveScoreEntry(props) {
             {!gameFinalized && (
                 <div className="action-buttons">
                     <button className="btn-action" onClick={() => setShowGoalForm(!showGoalForm)}>
-                        ⚽ Add Goal
+                        🏒 Add Goal
                     </button>
                     <button className="btn-action" onClick={() => setShowPenaltyForm(!showPenaltyForm)}>
                         🚫 Add Penalty
@@ -466,6 +473,7 @@ function LiveScoreEntry(props) {
                             <label>Time * (MM:SS)</label>
                             <div className="time-input">
                                 <input
+                                    list="minutes-list"
                                     type="number"
                                     min="0"
                                     max="20"
@@ -474,8 +482,14 @@ function LiveScoreEntry(props) {
                                     placeholder="MM"
                                     required
                                 />
+                                <datalist id="minutes-list">
+                                    {[...Array(21)].map((_, i) => (
+                                        <option key={i} value={i} />
+                                    ))}
+                                </datalist>
                                 <span>:</span>
                                 <input
+                                    list="seconds-list"
                                     type="number"
                                     min="0"
                                     max="59"
@@ -484,6 +498,11 @@ function LiveScoreEntry(props) {
                                     placeholder="SS"
                                     required
                                 />
+                                <datalist id="seconds-list">
+                                    {[...Array(60)].map((_, i) => (
+                                        <option key={i} value={i} />
+                                    ))}
+                                </datalist>
                             </div>
                         </div>
                     </div>
@@ -571,6 +590,7 @@ function LiveScoreEntry(props) {
                             <label>Time * (MM:SS)</label>
                             <div className="time-input">
                                 <input
+                                    list="penalty-minutes-list"
                                     type="number"
                                     min="0"
                                     max="20"
@@ -579,8 +599,14 @@ function LiveScoreEntry(props) {
                                     placeholder="MM"
                                     required
                                 />
+                                <datalist id="penalty-minutes-list">
+                                    {[...Array(21)].map((_, i) => (
+                                        <option key={i} value={i} />
+                                    ))}
+                                </datalist>
                                 <span>:</span>
                                 <input
+                                    list="penalty-seconds-list"
                                     type="number"
                                     min="0"
                                     max="59"
@@ -589,6 +615,11 @@ function LiveScoreEntry(props) {
                                     placeholder="SS"
                                     required
                                 />
+                                <datalist id="penalty-seconds-list">
+                                    {[...Array(60)].map((_, i) => (
+                                        <option key={i} value={i} />
+                                    ))}
+                                </datalist>
                             </div>
                         </div>
                     </div>
@@ -615,8 +646,9 @@ function LiveScoreEntry(props) {
                         <label>Penalty Minutes *</label>
                         <select value={penaltyMinutes} onChange={(e) => setPenaltyMinutes(parseInt(e.target.value))} required>
                             <option value={2}>2 minutes</option>
+                            <option value={3}>3 minutes</option>
                             <option value={4}>4 minutes</option>
-                            <option value={5}>5 minutes</option>
+                            <option value={6}>6 minutes</option>
                             <option value={10}>10 minutes</option>
                         </select>
                     </div>
@@ -642,43 +674,73 @@ function LiveScoreEntry(props) {
                 </form>
             )}
 
-            {/* Event Log */}
+            {/* Game Log */}
             <div className="event-log">
-                <h3>Event Log ({events.length} events)</h3>
+                <h3>Game Log ({events.length} events)</h3>
                 {events.length === 0 ? (
                     <div className="no-events">No events recorded yet</div>
                 ) : (
-                    <div className="events-list">
-                        {events.slice().reverse().map(event => (
-                            <div
-                                key={event.id}
-                                className={`event-item event-${event.type} ${!gameFinalized ? 'editable' : ''}`}
-                                onClick={() => !gameFinalized && handleEditEvent(event)}
-                            >
-                                <div className="event-header">
-                                    <span className="event-period">Period {event.period}</span>
-                                    <span className="event-time">{event.time}</span>
-                                </div>
-                                <div className="event-details">
-                                    {event.type === 'goal' ? (
-                                        <>
-                                            <strong>⚽ GOAL</strong> - {event.scorer}
-                                            {event.assists.length > 0 && (
-                                                <span className="assists"> (Assists: {event.assists.join(', ')})</span>
+                    <div className="events-table-container">
+                        <table className="events-table">
+                            <thead>
+                                <tr>
+                                    <th>Period</th>
+                                    <th>Time</th>
+                                    <th>Type</th>
+                                    <th>Details</th>
+                                    <th>Team</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {events.slice().sort((a, b) => {
+                                    // Sort by period (1, 2, 3, OT)
+                                    const periodOrder = { '1': 1, '2': 2, '3': 3, 'OT': 4 };
+                                    const periodA = periodOrder[a.period] || 999;
+                                    const periodB = periodOrder[b.period] || 999;
+                                    if (periodA !== periodB) return periodB - periodA;
+
+                                    // Then sort by time (ascending - lower time = more recent in hockey)
+                                    const [minA, secA] = a.time.split(':').map(Number);
+                                    const [minB, secB] = b.time.split(':').map(Number);
+                                    const timeA = minA * 60 + secA;
+                                    const timeB = minB * 60 + secB;
+                                    return timeA - timeB; // Lower time first (more recent)
+                                }).map(event => (
+                                    <tr
+                                        key={event.id}
+                                        className={`event-row event-${event.type} ${!gameFinalized ? 'editable' : ''}`}
+                                        onClick={() => !gameFinalized && handleEditEvent(event)}
+                                    >
+                                        <td className="period-col">{event.period}</td>
+                                        <td className="time-col">{event.time}</td>
+                                        <td className="type-col">
+                                            {event.type === 'goal' ? (
+                                                <span className="event-badge goal-badge">🏒 Goal</span>
+                                            ) : (
+                                                <span className="event-badge penalty-badge">🚫 Penalty</span>
                                             )}
-                                            <div className="event-team">{event.team === 'home' ? game.homeTeamName : game.awayTeamName}</div>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <strong>🚫 PENALTY</strong> - {event.player} ({event.minutes} min)
-                                            {event.description && <span> - {event.description}</span>}
-                                            <div className="event-team">{event.team === 'home' ? game.homeTeamName : game.awayTeamName}</div>
-                                        </>
-                                    )}
-                                </div>
-                                {!gameFinalized && <div className="edit-hint">Click to edit</div>}
-                            </div>
-                        ))}
+                                        </td>
+                                        <td className="details-col">
+                                            {event.type === 'goal' ? (
+                                                <>
+                                                    <strong>{event.scorer}</strong>
+                                                    {event.assists.length > 0 && (
+                                                        <span className="assists"> (A: {event.assists.join(', ')})</span>
+                                                    )}
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <strong>{event.player}</strong> ({event.minutes} min)
+                                                    {event.description && <span> - {event.description}</span>}
+                                                </>
+                                            )}
+                                        </td>
+                                        <td className="team-col">{event.team === 'home' ? game.homeTeamName : game.awayTeamName}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                        {!gameFinalized && <div className="edit-hint-table">Click any row to edit</div>}
                     </div>
                 )}
             </div>

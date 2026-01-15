@@ -74,3 +74,51 @@
     padding: 2rem;
     background-color: #f1f5f9;
 }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    .scorekeeper-nav {
+        padding: 0.75rem;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .nav-left {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .scorekeeper-nav .nav-btn {
+        flex: 1 1 auto;
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+        min-width: 120px;
+        text-align: center;
+    }
+
+    .nav-right {
+        width: 100%;
+        justify-content: center;
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid #e2e8f0;
+        flex-wrap: wrap;
+    }
+
+    .nav-right label {
+        font-size: 0.85rem;
+    }
+
+    .season-select,
+    .week-select {
+        flex: 1;
+        min-width: 100px;
+        font-size: 0.85rem;
+    }
+
+    .scorekeeper-body {
+        padding: 1rem 0.5rem;
+    }
+}
