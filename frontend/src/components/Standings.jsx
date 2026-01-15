@@ -24,7 +24,7 @@ function Standings() {
             const standings = teamsData.map(team => ({
                 id: team.id,
                 name: team.name,
-                abbreviation: team.abbreviation,
+                teamColor: team.teamColor,
                 gamesPlayed: 0,
                 wins: 0,
                 losses: 0,
@@ -91,15 +91,22 @@ function Standings() {
                 }
             });
 
-            // Sort by points (descending), then by goal differential
+            // Sort by: 1) points (desc), 2) wins (desc), 3) goals against (asc), 4) goals for (desc)
             const sorted = standings.sort((a, b) => {
+                // Primary: Points (highest first)
                 if (b.points !== a.points) {
                     return b.points - a.points;
                 }
-                // Tiebreaker: goal differential
-                const aDiff = a.goalsFor - a.goalsAgainst;
-                const bDiff = b.goalsFor - b.goalsAgainst;
-                return bDiff - aDiff;
+                // Tiebreaker 1: Wins (highest first)
+                if (b.wins !== a.wins) {
+                    return b.wins - a.wins;
+                }
+                // Tiebreaker 2: Goals Against (lowest first - fewer goals against is better)
+                if (a.goalsAgainst !== b.goalsAgainst) {
+                    return a.goalsAgainst - b.goalsAgainst;
+                }
+                // Tiebreaker 3: Goals For (highest first)
+                return b.goalsFor - a.goalsFor;
             });
 
             setTeams(sorted);
@@ -150,27 +157,52 @@ function Standings() {
                         </tr>
                     </thead>
                     <tbody>
-                        {teams.map((team, index) => (
-                            <tr key={team.id} className={index < 4 ? 'playoff-position' : ''}>
-                                <td className="rank">{index + 1}</td>
-                                <td className="team-name">
-                                    <strong>{team.name}</strong>
-                                    <span className="team-abbr">{team.abbreviation}</span>
-                                </td>
-                                <td>{team.gamesPlayed}</td>
-                                <td>{team.wins}</td>
-                                <td>{team.losses}</td>
-                                <td>{team.ties}</td>
-                                <td>{team.overtimeWins}</td>
-                                <td>{team.overtimeLosses}</td>
-                                <td className="points"><strong>{team.points}</strong></td>
-                                <td>{team.goalsFor}</td>
-                                <td>{team.goalsAgainst}</td>
-                                <td className={calculateGoalDiff(team) >= 0 ? 'positive' : 'negative'}>
-                                    {calculateGoalDiff(team) >= 0 ? '+' : ''}{calculateGoalDiff(team)}
-                                </td>
-                            </tr>
-                        ))}
+                        {teams.map((team, index) => {
+                            // Helper to get valid CSS color
+                            const getValidColor = (color) => {
+                                if (!color) return '#95a5a6';
+                                const colorMap = {
+                                    'Lt. Blu': '#87CEEB',
+                                    'Dk. Gre': '#006400',
+                                    'White': '#FFFFFF',
+                                    'Yellow': '#FFD700',
+                                    'Gold': '#FFD700'
+                                };
+                                return colorMap[color] || color;
+                            };
+
+                            // Helper to determine text color based on background
+                            const getTextColor = (bgColor) => {
+                                if (!bgColor) return 'white';
+                                const lightColors = ['White', '#FFFFFF', 'Yellow', '#FFD700', 'Gold', 'Lt. Blu', '#87CEEB', 'LightBlue'];
+                                const isLight = lightColors.some(c => c.toLowerCase() === bgColor.toLowerCase());
+                                return isLight ? '#2c3e50' : 'white';
+                            };
+
+                            const bg = getValidColor(team.teamColor);
+                            const textColor = getTextColor(bg);
+
+                            return (
+                                <tr key={team.id} className={index < 4 ? 'playoff-position' : ''}>
+                                    <td className="rank" style={{ backgroundColor: bg, color: textColor }}>{index + 1}</td>
+                                    <td className="team-name">
+                                        <strong>{team.name}</strong>
+                                    </td>
+                                    <td>{team.gamesPlayed}</td>
+                                    <td>{team.wins}</td>
+                                    <td>{team.losses}</td>
+                                    <td>{team.ties}</td>
+                                    <td>{team.overtimeWins}</td>
+                                    <td>{team.overtimeLosses}</td>
+                                    <td className="points"><strong>{team.points}</strong></td>
+                                    <td>{team.goalsFor}</td>
+                                    <td>{team.goalsAgainst}</td>
+                                    <td className={calculateGoalDiff(team) >= 0 ? 'positive' : 'negative'}>
+                                        {calculateGoalDiff(team) >= 0 ? '+' : ''}{calculateGoalDiff(team)}
+                                    </td>
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
