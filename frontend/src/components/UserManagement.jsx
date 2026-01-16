@@ -1,0 +1,168 @@
+import { useEffect, useState } from 'react';
+import api from '../services/api';
+import './UserManagement.css';
+import UserModal from './UserModal';
+
+const UserManagement = () => {
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [selectedUser, setSelectedUser] = useState(null);
+    const [showModal, setShowModal] = useState(false);
+    const [isCreating, setIsCreating] = useState(false);
+
+    useEffect(() => {
+        loadUsers();
+    }, []);
+
+    const loadUsers = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            const data = await api.getUsers();
+            setUsers(data);
+        } catch (err) {
+            setError(err.message || 'Failed to load users');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleCreateUser = () => {
+        setSelectedUser(null);
+        setIsCreating(true);
+        setShowModal(true);
+    };
+
+    const handleEditUser = (user) => {
+        setSelectedUser(user);
+        setIsCreating(false);
+        setShowModal(true);
+    };
+
+    const handleDeleteUser = async (user) => {
+        if (!window.confirm(`Are you sure you want to deactivate ${user.username}? This will mark them as inactive.`)) {
+            return;
+        }
+
+        try {
+            await api.deleteUser(user.id);
+            await loadUsers();
+        } catch (err) {
+            alert('Failed to deactivate user: ' + err.message);
+        }
+    };
+
+    const handleModalClose = (userSaved) => {
+        setShowModal(false);
+        setSelectedUser(null);
+        setIsCreating(false);
+        if (userSaved) {
+            loadUsers();
+        }
+    };
+
+    const getRoleBadgeClass = (role) => {
+        const roleClasses = {
+            'ADMIN': 'role-admin',
+            'SCOREKEEPER': 'role-scorekeeper',
+            'GM': 'role-gm',
+            'REF': 'role-ref',
+            'USER': 'role-user'
+        };
+        return roleClasses[role] || 'role-user';
+    };
+
+    if (loading) {
+        return <div className="user-management-loading">Loading users...</div>;
+    }
+
+    if (error) {
+        return <div className="user-management-error">Error: {error}</div>;
+    }
+
+    return (
+        <div className="user-management">
+            <div className="user-management-header">
+                <h2>User Management</h2>
+                <button className="btn-create-user" onClick={handleCreateUser}>
+                    + Add User
+                </button>
+            </div>
+
+            <div className="users-table-container">
+                <table className="users-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Password Change Required</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {users.length === 0 ? (
+                            <tr>
+                                <td colSpan="7" className="no-users">
+                                    No users found
+                                </td>
+                            </tr>
+                        ) : (
+                            users.map(user => (
+                                <tr key={user.id}>
+                                    <td className="username-col">{user.username}</td>
+                                    <td>{user.email}</td>
+                                    <td>
+                                        <span className={`role-badge ${getRoleBadgeClass(user.role)}`}>
+                                            {user.role}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span className={`status-badge ${user.isActive ? 'active' : 'inactive'}`}>
+                                            {user.isActive ? 'Active' : 'Inactive'}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {user.mustChangePassword ? (
+                                            <span className="password-warning">⚠️ Yes</span>
+                                        ) : (
+                                            <span className="password-ok">No</span>
+                                        )}
+                                    </td>
+                                    <td>{new Date(user.createdAt).toLocaleDateString()}</td>
+                                    <td className="actions-col">
+                                        <button
+                                            className="btn-edit"
+                                            onClick={() => handleEditUser(user)}
+                                        >
+                                            Edit
+                                        </button>
+                                        <button
+                                            className="btn-delete"
+                                            onClick={() => handleDeleteUser(user)}
+                                        >
+                                            Deactivate
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
+
+            {showModal && (
+                <UserModal
+                    user={selectedUser}
+                    isCreating={isCreating}
+                    onClose={handleModalClose}
+                />
+            )}
+        </div>
+    );
+};
+
+export default UserManagement;

@@ -7,6 +7,7 @@ import PlayerManagement from './PlayerManagement';
 import ScorekeeperContent from './ScorekeeperContent';
 import SeasonManagement from './SeasonManagement';
 import TeamManagement from './TeamManagement';
+import UserManagement from './UserManagement';
 
 function AdminDashboard() {
     const [activeTab, setActiveTab] = useState('teams');
@@ -93,6 +94,12 @@ function AdminDashboard() {
                     >
                         📅 Schedule Manager
                     </button>
+                    <button
+                        className={`nav-tab ${activeTab === 'users' ? 'active' : ''}`}
+                        onClick={() => handleTabClick('users')}
+                    >
+                        Users
+                    </button>
                 </div>
             </nav>
 
@@ -102,6 +109,7 @@ function AdminDashboard() {
                 {activeTab === 'seasons' && <SeasonManagement />}
                 {activeTab === 'draft' && <DraftDashboard />}
                 {activeTab === 'gameManagement' && <ScorekeeperContent />}
+                {activeTab === 'users' && <UserManagement />}
             </main>
         </div>
     );
