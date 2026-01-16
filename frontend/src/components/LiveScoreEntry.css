@@ -24,6 +24,10 @@
     margin: 0;
     grid-column: 2;
     text-align: center;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 12px 24px;
+    border-radius: 8px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
 }
 
 .entry-header .finalized-badge {
