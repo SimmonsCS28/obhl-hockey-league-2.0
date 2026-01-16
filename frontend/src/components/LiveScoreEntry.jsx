@@ -492,6 +492,7 @@ function LiveScoreEntry(props) {
                         backgroundColor: game.homeTeamColor,
                         color: getTextColor(game.homeTeamColor)
                     }}>
+                        <span className="home-away-label">HOME</span>
                         {game.homeTeamName}
                     </div>
                     <div className="score">{homeScore}</div>
@@ -502,6 +503,7 @@ function LiveScoreEntry(props) {
                         backgroundColor: game.awayTeamColor,
                         color: getTextColor(game.awayTeamColor)
                     }}>
+                        <span className="home-away-label">AWAY</span>
                         {game.awayTeamName}
                     </div>
                     <div className="score">{awayScore}</div>
