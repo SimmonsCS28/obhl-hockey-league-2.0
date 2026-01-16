@@ -10,6 +10,8 @@ const RoleManagement = () => {
     const [selectedRole, setSelectedRole] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+    const [roleToDelete, setRoleToDelete] = useState(null);
 
     useEffect(() => {
         loadRoles();
@@ -167,6 +169,31 @@ const RoleManagement = () => {
                     isCreating={isCreating}
                     onClose={handleModalClose}
                 />
+            )}
+
+            {showDeleteConfirm && (
+                <div className="modal-overlay" onClick={cancelDelete}>
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+                        <div className="modal-header">
+                            <h2>Confirm Delete</h2>
+                            <button className="modal-close" onClick={cancelDelete}>×</button>
+                        </div>
+                        <div className="user-form">
+                            <p>Are you sure you want to delete the role <strong>"{roleToDelete?.name}"</strong>?</p>
+                            <p style={{ color: '#6b7280', fontSize: '0.875rem', marginTop: '8px' }}>
+                                This action cannot be undone.
+                            </p>
+                            <div className="modal-actions">
+                                <button type="button" className="btn-cancel" onClick={cancelDelete}>
+                                    Cancel
+                                </button>
+                                <button type="button" className="btn-save" onClick={confirmDelete} style={{ background: '#ef4444' }}>
+                                    Delete Role
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </>
     );
