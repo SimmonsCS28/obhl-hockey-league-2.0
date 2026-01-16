@@ -58,11 +58,28 @@ function LiveScoreEntry(props) {
             if (!propGame && gameId) {
                 try {
                     setLoading(true);
-                    const gameData = await api.getGame(gameId);
-                    setGame(gameData);
-                    setHomeScore(gameData.homeScore || 0);
-                    setAwayScore(gameData.awayScore || 0);
-                    setGameFinalized(gameData.status === 'completed');
+                    // Load game and teams in parallel
+                    const [gameData, teamsData] = await Promise.all([
+                        api.getGame(gameId),
+                        api.getTeams()
+                    ]);
+
+                    // Enrich game with team names and colors
+                    const homeTeam = teamsData.find(t => t.id === gameData.homeTeamId);
+                    const awayTeam = teamsData.find(t => t.id === gameData.awayTeamId);
+
+                    const enrichedGame = {
+                        ...gameData,
+                        homeTeamName: homeTeam?.name || `Team ${gameData.homeTeamId}`,
+                        awayTeamName: awayTeam?.name || `Team ${gameData.awayTeamId}`,
+                        homeTeamColor: homeTeam?.teamColor || '#6b7280',
+                        awayTeamColor: awayTeam?.teamColor || '#6b7280'
+                    };
+
+                    setGame(enrichedGame);
+                    setHomeScore(enrichedGame.homeScore || 0);
+                    setAwayScore(enrichedGame.awayScore || 0);
+                    setGameFinalized(enrichedGame.status === 'completed');
                 } catch (error) {
                     console.error('Error loading game:', error);
                 } finally {
