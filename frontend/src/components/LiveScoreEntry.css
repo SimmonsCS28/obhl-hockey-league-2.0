@@ -106,6 +106,33 @@
     color: #1e40af;
 }
 
+.score-input {
+    width: 120px;
+    text-align: center;
+    border: 3px solid #3b82f6;
+    border-radius: 12px;
+    padding: 8px;
+    background: white;
+    transition: all 0.2s;
+}
+
+.score-input:hover:not(:disabled) {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.score-input:focus {
+    outline: none;
+    border-color: #1d4ed8;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+.score-input:disabled {
+    border-color: #94a3b8;
+    background: #f1f5f9;
+    cursor: not-allowed;
+}
+
 .vs {
     font-size: 20px;
     font-weight: 700;

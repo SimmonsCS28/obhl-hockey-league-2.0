@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import './LiveScoreEntry.css';
 
@@ -7,6 +8,10 @@ function LiveScoreEntry(props) {
     const { game: propGame, onBack, onGameUpdated } = props;
     const { gameId } = useParams();
     const navigate = useNavigate();
+    const { user } = useAuth();
+
+    // Check if user is admin for editable scores
+    const isAdmin = user?.role === 'ADMIN';
 
     // State for game data (loaded from prop or route param)
     const [game, setGame] = useState(propGame || null);
@@ -495,7 +500,18 @@ function LiveScoreEntry(props) {
                     }}>
                         {game.homeTeamName}
                     </div>
-                    <div className="score">{homeScore}</div>
+                    {isAdmin ? (
+                        <input
+                            type="number"
+                            min="0"
+                            className="score score-input"
+                            value={homeScore}
+                            onChange={(e) => setHomeScore(parseInt(e.target.value) || 0)}
+                            disabled={gameFinalized}
+                        />
+                    ) : (
+                        <div className="score">{homeScore}</div>
+                    )}
                 </div>
                 <div className="vs">VS</div>
                 <div className="team-score">
@@ -506,7 +522,18 @@ function LiveScoreEntry(props) {
                     }}>
                         {game.awayTeamName}
                     </div>
-                    <div className="score">{awayScore}</div>
+                    {isAdmin ? (
+                        <input
+                            type="number"
+                            min="0"
+                            className="score score-input"
+                            value={awayScore}
+                            onChange={(e) => setAwayScore(parseInt(e.target.value) || 0)}
+                            disabled={gameFinalized}
+                        />
+                    ) : (
+                        <div className="score">{awayScore}</div>
+                    )}
                 </div>
             </div>
 
