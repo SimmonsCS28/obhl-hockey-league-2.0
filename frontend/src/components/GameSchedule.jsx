@@ -103,7 +103,7 @@ function GameSchedule({ games, onSelectGame }) {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredGames.map(game => {
+                            {filteredGames.map((game, index) => {
                                 const homeColor = getValidColor(game.homeTeamColor);
                                 const awayColor = getValidColor(game.awayTeamColor);
                                 const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
@@ -112,10 +112,14 @@ function GameSchedule({ games, onSelectGame }) {
                                 const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
                                 const isCompleted = game.status === 'completed';
 
+                                // Check if this is the first game of a new week
+                                const previousGame = index > 0 ? filteredGames[index - 1] : null;
+                                const isNewWeek = previousGame && previousGame.week !== game.week;
+
                                 return (
                                     <tr
                                         key={game.id}
-                                        className={`clickable-row ${isNotFriday ? 'non-friday-row' : ''}`}
+                                        className={`clickable-row ${isNotFriday ? 'non-friday-row' : ''} ${isNewWeek ? 'week-separator' : ''}`}
                                         onClick={() => onSelectGame(game)}
                                     >
                                         <td className="week-col">

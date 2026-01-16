@@ -177,6 +177,12 @@
     text-align: center;
 }
 
+/* Week Separator */
+.schedule-table .week-separator td {
+    border-top: 2px solid #000 !important;
+    padding-top: 0.75rem !important;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
     .schedule-header {
