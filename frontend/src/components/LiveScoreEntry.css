@@ -794,24 +794,35 @@
     }
 
     .entry-header {
-        flex-direction: column;
-        align-items: flex-start;
+        grid-template-columns: 1fr;
         gap: 12px;
+        text-align: center;
+    }
+
+    .entry-header .btn-back {
+        justify-self: start;
     }
 
     .entry-header h2 {
         font-size: 20px;
+        justify-self: center;
+        width: 100%;
+    }
+
+    .entry-header .finalized-badge {
+        justify-self: center;
     }
 
     .btn-back {
-        width: 100%;
+        width: auto;
+        padding: 8px 16px;
     }
 
     /* Scoreboard - Scoped to Live Score Entry only */
     .live-score-entry .scoreboard {
-        padding: 4px 8px !important;
+        padding: 12px !important;
         flex-direction: column;
-        gap: 0 !important;
+        gap: 16px !important;
         margin-bottom: 12px !important;
     }
 
@@ -822,11 +833,11 @@
     }
 
     .live-score-entry .team-name {
-        font-size: 13px !important;
-        margin-bottom: 1px !important;
-        margin-top: 0 !important;
-        padding: 0 !important;
-        line-height: 1.2;
+        font-size: 16px !important;
+        margin-bottom: 8px !important;
+        padding: 8px 12px !important;
+        white-space: normal !important;
+        word-wrap: break-word !important;
     }
 
     .live-score-entry .score {
