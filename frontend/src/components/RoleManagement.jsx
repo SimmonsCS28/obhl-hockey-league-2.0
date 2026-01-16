@@ -41,6 +41,8 @@ const RoleManagement = () => {
     };
 
     const handleDeleteRole = async (role) => {
+        console.log('Delete clicked for role:', role);
+
         if (role.isSystemRole) {
             alert('Cannot delete system roles');
             return;
@@ -52,13 +54,17 @@ const RoleManagement = () => {
         }
 
         if (!window.confirm(`Are you sure you want to delete the role "${role.name}"?`)) {
+            console.log('User cancelled delete');
             return;
         }
 
+        console.log('Attempting to delete role ID:', role.id);
         try {
             await api.deleteRole(role.id);
+            console.log('Delete successful, reloading roles');
             await loadRoles();
         } catch (err) {
+            console.error('Delete failed:', err);
             alert('Failed to delete role: ' + err.message);
         }
     };
