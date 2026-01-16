@@ -96,6 +96,7 @@ const RoleManagement = () => {
                             <th>Description</th>
                             <th>Users</th>
                             <th>Type</th>
+                            <th>Created By</th>
                             <th>Created</th>
                             <th>Actions</th>
                         </tr>
@@ -103,7 +104,7 @@ const RoleManagement = () => {
                     <tbody>
                         {roles.length === 0 ? (
                             <tr>
-                                <td colSpan="6" className="no-users">
+                                <td colSpan="7" className="no-users">
                                     No roles found
                                 </td>
                             </tr>
@@ -127,6 +128,9 @@ const RoleManagement = () => {
                                                 Custom
                                             </span>
                                         )}
+                                    </td>
+                                    <td>
+                                        {role.createdBy || <span style={{ color: '#9ca3af' }}>N/A</span>}
                                     </td>
                                     <td>{new Date(role.createdAt).toLocaleDateString()}</td>
                                     <td className="actions-col">

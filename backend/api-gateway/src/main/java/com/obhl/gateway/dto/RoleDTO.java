@@ -14,6 +14,7 @@ public class RoleDTO {
     private String name;
     private String description;
     private Boolean isSystemRole;
+    private String createdBy;
     private Integer userCount; // Number of users with this role
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

@@ -35,6 +35,9 @@ public class Role {
     @Column(name = "is_system_role")
     private Boolean isSystemRole = false;
 
+    @Column(name = "created_by", length = 50)
+    private String createdBy;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

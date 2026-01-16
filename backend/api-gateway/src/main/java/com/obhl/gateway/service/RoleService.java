@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,6 +58,12 @@ public class RoleService {
         role.setName(request.getName());
         role.setDescription(request.getDescription());
         role.setIsSystemRole(false); // New roles are never system roles
+
+        // Set the current authenticated user as the creator
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()) {
+            role.setCreatedBy(authentication.getName());
+        }
 
         Role savedRole = roleRepository.save(role);
         return convertToDTO(savedRole);
@@ -143,6 +151,7 @@ public class RoleService {
         dto.setName(role.getName());
         dto.setDescription(role.getDescription());
         dto.setIsSystemRole(role.getIsSystemRole());
+        dto.setCreatedBy(role.getCreatedBy());
         dto.setCreatedAt(role.getCreatedAt());
         dto.setUpdatedAt(role.getUpdatedAt());
 
