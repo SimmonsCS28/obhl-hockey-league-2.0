@@ -488,22 +488,22 @@ function LiveScoreEntry(props) {
             {/* Scoreboard */}
             <div className="scoreboard">
                 <div className="team-score">
+                    <span className="home-away-label">HOME</span>
                     <div className="team-name" style={{
                         backgroundColor: game.homeTeamColor,
                         color: getTextColor(game.homeTeamColor)
                     }}>
-                        <span className="home-away-label">HOME</span>
                         {game.homeTeamName}
                     </div>
                     <div className="score">{homeScore}</div>
                 </div>
                 <div className="vs">VS</div>
                 <div className="team-score">
+                    <span className="home-away-label">AWAY</span>
                     <div className="team-name" style={{
                         backgroundColor: game.awayTeamColor,
                         color: getTextColor(game.awayTeamColor)
                     }}>
-                        <span className="home-away-label">AWAY</span>
                         {game.awayTeamName}
                     </div>
                     <div className="score">{awayScore}</div>
