@@ -97,6 +97,14 @@ function LiveScoreEntry(props) {
         }
     }, [game]);
 
+    const getTextColor = (bgColor) => {
+        if (!bgColor) return 'white';
+        // List of light colors that need dark text
+        const lightColors = ['White', '#FFFFFF', 'Yellow', '#FFD700', 'Gold', 'Lt. Blu', '#87CEEB', 'LightBlue', 'Lt Blu'];
+        const isLight = lightColors.some(c => bgColor.toLowerCase().includes(c.toLowerCase()));
+        return isLight ? '#2c3e50' : 'white';
+    };
+
     const loadPlayers = async () => {
         try {
             // Fetch players for both teams in the game
@@ -480,12 +488,22 @@ function LiveScoreEntry(props) {
             {/* Scoreboard */}
             <div className="scoreboard">
                 <div className="team-score">
-                    <div className="team-name">{game.homeTeamName}</div>
+                    <div className="team-name" style={{
+                        backgroundColor: game.homeTeamColor,
+                        color: getTextColor(game.homeTeamColor)
+                    }}>
+                        {game.homeTeamName}
+                    </div>
                     <div className="score">{homeScore}</div>
                 </div>
                 <div className="vs">VS</div>
                 <div className="team-score">
-                    <div className="team-name">{game.awayTeamName}</div>
+                    <div className="team-name" style={{
+                        backgroundColor: game.awayTeamColor,
+                        color: getTextColor(game.awayTeamColor)
+                    }}>
+                        {game.awayTeamName}
+                    </div>
                     <div className="score">{awayScore}</div>
                 </div>
             </div>
