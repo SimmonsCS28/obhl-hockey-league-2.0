@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import api from '../services/api';
 import './LiveScoreEntry.css';
 
 function LiveScoreEntry(props) {
     const { game: propGame, onBack, onGameUpdated } = props;
     const { gameId } = useParams();
+    const navigate = useNavigate();
 
     // State for game data (loaded from prop or route param)
     const [game, setGame] = useState(propGame || null);
@@ -426,6 +427,15 @@ function LiveScoreEntry(props) {
         setShowPenaltyForm(false);
     };
 
+    const handleBack = () => {
+        if (onBack) {
+            onBack();
+        } else {
+            // Navigate back to scorekeeper dashboard
+            navigate('/scorekeeper');
+        }
+    };
+
     if (loading) {
         return (
             <div className="live-score-entry">
@@ -445,7 +455,7 @@ function LiveScoreEntry(props) {
     return (
         <div className="live-score-entry">
             <div className="entry-header">
-                <button className="btn-back" onClick={onBack}>← Back to Schedule</button>
+                <button className="btn-back" onClick={handleBack}>← Back to Schedule</button>
                 <h2>Live Score Entry</h2>
                 {gameFinalized && <span className="finalized-badge">✓ Finalized</span>}
             </div>

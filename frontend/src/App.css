@@ -6,9 +6,13 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background: #000000;
   color: #ffffff;
   line-height: 1.6;
+}
+
+/* Default black background for admin pages */
+body:not(:has(.scorekeeper-dashboard)):not(:has(.live-score-entry)) {
+  background: #000000;
 }
 
 .app {
