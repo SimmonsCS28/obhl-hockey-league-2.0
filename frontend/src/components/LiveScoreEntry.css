@@ -66,7 +66,7 @@
 }
 
 /* Scoreboard */
-.scoreboard {
+.live-score-entry .scoreboard {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -78,7 +78,7 @@
     margin-bottom: 24px;
 }
 
-.team-score {
+.live-score-entry .team-score {
     text-align: center;
     display: flex;
     flex-direction: column;
@@ -86,7 +86,7 @@
     gap: 12px;
 }
 
-.team-name {
+.live-score-entry .team-name {
     font-size: 18px;
     font-weight: 600;
     color: #1e293b;
