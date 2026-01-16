@@ -1,5 +1,6 @@
 package com.obhl.gateway.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,6 +23,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmailIgnoreCase(String email);
 
     Optional<User> findByUsernameIgnoreCaseOrEmailIgnoreCase(String username, String email);
+
+    List<User> findByIsActive(Boolean isActive);
 
     Boolean existsByUsername(String username);
 
