@@ -1,3 +1,4 @@
+/* Game Schedule - Table Layout */
 .game-schedule {
     padding: 20px;
 }
@@ -7,188 +8,202 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
 }
 
 .schedule-header h2 {
-    font-size: 24px;
-    color: #1e293b;
     margin: 0;
+    color: #2d3748;
 }
 
 .filters {
     display: flex;
     gap: 8px;
+    flex-wrap: wrap;
 }
 
 .filter-btn {
     padding: 8px 16px;
     border: 2px solid #e2e8f0;
     background: white;
-    color: #64748b;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 14px;
+    color: #4a5568;
+    border-radius: 6px;
     font-weight: 500;
+    cursor: pointer;
     transition: all 0.2s;
 }
 
 .filter-btn:hover {
+    border-color: #cbd5e1;
     background: #f8fafc;
-    border-color: #1e40af;
 }
 
 .filter-btn.active {
-    background: #1e40af;
+    background: #3b82f6;
     color: white;
-    border-color: #1e40af;
+    border-color: #3b82f6;
 }
 
-.games-list {
-    display: grid;
-    gap: 16px;
+.no-games {
+    text-align: center;
+    padding: 40px 20px;
+    color: #94a3b8;
+    font-size: 16px;
 }
 
-.game-card {
+/* Table Styles */
+.schedule-table-container {
     background: white;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
-    cursor: pointer;
-    transition: all 0.2s;
-    border: 2px solid transparent;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow-x: auto;
 }
 
-.game-card:hover {
-    box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-    border-color: #1e40af;
-    transform: translateY(-2px);
+.schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
 }
 
-.game-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-}
-
-.game-date {
-    font-size: 14px;
-    color: #64748b;
-    font-weight: 500;
-}
-
-.game-status {
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 12px;
+.schedule-table th {
+    background-color: #f7fafc;
+    color: #4a5568;
     font-weight: 600;
-    text-transform: uppercase;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    border-bottom: 2px solid #e2e8f0;
+    white-space: nowrap;
+    font-size: 0.875rem;
 }
 
-.game-status.scheduled {
-    background: #dbeafe;
+.schedule-table td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    color: #2d3748;
+    vertical-align: middle;
+    font-size: 0.875rem;
+}
+
+.schedule-table tr:last-child td {
+    border-bottom: none;
+}
+
+.clickable-row {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.clickable-row:hover td:not(.team-cell) {
+    background-color: #f8fafc;
+}
+
+.schedule-table .week-col {
+    font-weight: 600;
+    color: #d97706;
+    white-space: nowrap;
+}
+
+.schedule-table .time-col {
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.schedule-table .team-cell {
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    transition: opacity 0.2s;
+}
+
+.schedule-table .team-cell:hover {
+    opacity: 0.9;
+}
+
+.schedule-table .score {
+    font-weight: bold;
+    color: #2d3748;
+}
+
+.schedule-table .ot-badge {
+    margin-left: 6px;
+    font-size: 0.7rem;
+    background: #fbbf24;
+    color: #78350f;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+}
+
+.schedule-table .upcoming-badge,
+.schedule-table .in-progress-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.schedule-table .upcoming-badge {
+    background-color: #e2e8f0;
+    color: #4a5568;
+}
+
+.schedule-table .in-progress-badge {
+    background-color: #dbeafe;
     color: #1e40af;
 }
 
-.game-status.in_progress {
-    background: #fef3c7;
-    color: #92400e;
+.schedule-table .non-friday-row {
+    background-color: rgba(245, 158, 11, 0.1);
 }
 
-.game-status.completed {
-    background: #d1fae5;
-    color: #065f46;
+.schedule-table .date-col {
+    white-space: nowrap;
 }
 
-.game-matchup {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 20px;
-}
-
-.team {
-    flex: 1;
-    text-align: center;
-}
-
-.team-name {
-    font-size: 16px;
-    font-weight: 600;
-    margin-bottom: 8px;
-    padding: 8px 16px;
-    border-radius: 8px;
-    display: inline-block;
-}
-
-.team-score {
-    font-size: 32px;
+.schedule-table .non-friday-date {
     font-weight: 700;
-    color: white;
+    color: #c2410c;
 }
 
-.vs {
-    font-size: 14px;
-    color: #94a3b8;
-    font-weight: 600;
-}
-
-.game-venue {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid #e2e8f0;
-    font-size: 14px;
-    color: #64748b;
+.schedule-table .day-warning {
+    display: inline-block;
+    width: 1.2em;
+    margin-right: 0.25rem;
+    font-size: 0.875rem;
+    vertical-align: middle;
+    cursor: help;
     text-align: center;
-}
-
-.loading,
-.no-games {
-    text-align: center;
-    padding: 60px 20px;
-    color: #94a3b8;
-    font-size: 16px;
 }
 
 /* Mobile Responsive */
 @media (max-width: 768px) {
-    .game-schedule {
-        padding: 12px;
-    }
-
     .schedule-header {
         flex-direction: column;
         align-items: flex-start;
-        gap: 12px;
-    }
-
-    .schedule-header h2 {
-        font-size: 20px;
     }
 
     .filters {
         width: 100%;
-        justify-content: center;
-        flex-wrap: wrap;
     }
 
     .filter-btn {
-        flex: 1 1 auto;
-        min-width: 80px;
-        padding: 10px 12px;
-        font-size: 13px;
+        flex: 1;
+        min-width: calc(50% - 4px);
     }
 
-    .game-card {
-        padding: 16px;
+    .schedule-table-container {
+        border-radius: 0;
+        margin: 0 -20px;
     }
 
-    .team-name {
-        font-size: 14px;
-        padding: 6px 12px;
+    .schedule-table {
+        font-size: 0.75rem;
     }
 
-    .team-score {
-        font-size: 24px;
+    .schedule-table th,
+    .schedule-table td {
+        padding: 0.5rem;
     }
 }

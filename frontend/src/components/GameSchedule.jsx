@@ -86,68 +86,93 @@ function GameSchedule({ games, onSelectGame }) {
                 </div>
             </div>
 
-            <div className="games-list">
+            <div className="schedule-table-container">
                 {filteredGames.length === 0 ? (
                     <div className="no-games">No games found</div>
                 ) : (
-                    filteredGames.map(game => {
-                        const homeColor = getValidColor(game.homeTeamColor);
-                        const awayColor = getValidColor(game.awayTeamColor);
+                    <table className="schedule-table">
+                        <thead>
+                            <tr>
+                                <th>Week</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th>Home Team</th>
+                                <th>Away Team</th>
+                                <th>Location</th>
+                                <th>Score/Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredGames.map(game => {
+                                const homeColor = getValidColor(game.homeTeamColor);
+                                const awayColor = getValidColor(game.awayTeamColor);
+                                const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
+                                const dayOfWeek = gameDate.getDay();
+                                const isNotFriday = dayOfWeek !== 5;
+                                const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
+                                const isCompleted = game.status === 'completed';
 
-                        return (
-                            <div
-                                key={game.id}
-                                className="game-card"
-                                onClick={() => onSelectGame(game)}
-                            >
-                                <div className="game-header">
-                                    <span className="game-date">{formatDate(game.gameDate)}</span>
-                                    <span className={`game-status ${game.status}`}>
-                                        {game.status.replace('_', ' ')}
-                                    </span>
-                                </div>
-                                <div className="game-matchup">
-                                    <div className="team">
-                                        <div
-                                            className="team-name"
+                                return (
+                                    <tr
+                                        key={game.id}
+                                        className={`clickable-row ${isNotFriday ? 'non-friday-row' : ''}`}
+                                        onClick={() => onSelectGame(game)}
+                                    >
+                                        <td className="week-col">
+                                            Week {game.week}
+                                        </td>
+                                        <td className={isNotFriday ? 'date-col non-friday-date' : 'date-col'}>
+                                            <span className="day-warning" title={isNotFriday ? `Game on ${dayName}` : ''}>
+                                                {isNotFriday ? '⚠️' : ''}
+                                            </span>
+                                            {gameDate.toLocaleDateString('en-US', {
+                                                weekday: 'short',
+                                                month: 'short',
+                                                day: 'numeric'
+                                            })}
+                                        </td>
+                                        <td className="time-col">
+                                            {gameDate.toLocaleTimeString('en-US', {
+                                                hour: 'numeric',
+                                                minute: '2-digit'
+                                            })}
+                                        </td>
+                                        <td
+                                            className="team-cell"
                                             style={{
                                                 backgroundColor: homeColor,
                                                 color: getTextColor(homeColor)
                                             }}
                                         >
                                             {game.homeTeamName}
-                                        </div>
-                                        {game.status !== 'scheduled' && (
-                                            <div className="team-score">
-                                                {game.homeScore}
-                                                {game.endedInOT && game.status === 'completed' && (
-                                                    <span className="ot-badge">OT</span>
-                                                )}
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="vs">VS</div>
-                                    <div className="team">
-                                        <div
-                                            className="team-name"
+                                        </td>
+                                        <td
+                                            className="team-cell"
                                             style={{
                                                 backgroundColor: awayColor,
                                                 color: getTextColor(awayColor)
                                             }}
                                         >
                                             {game.awayTeamName}
-                                        </div>
-                                        {game.status !== 'scheduled' && (
-                                            <div className="team-score">{game.awayScore}</div>
-                                        )}
-                                    </div>
-                                </div>
-                                {game.venue && (
-                                    <div className="game-venue">📍 {game.venue}</div>
-                                )}
-                            </div>
-                        );
-                    })
+                                        </td>
+                                        <td>{game.rink || game.venue || 'TBD'}</td>
+                                        <td>
+                                            {isCompleted ? (
+                                                <span className="score">
+                                                    {game.homeScore} - {game.awayScore}
+                                                    {game.endedInOT && <span className="ot-badge">OT</span>}
+                                                </span>
+                                            ) : game.status === 'in_progress' ? (
+                                                <span className="in-progress-badge">In Progress</span>
+                                            ) : (
+                                                <span className="upcoming-badge">Scheduled</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
                 )}
             </div>
         </div>
