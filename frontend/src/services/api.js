@@ -375,6 +375,58 @@ const api = {
             const error = await response.json().catch(() => ({}));
             throw new Error(error.message || 'Failed to delete user');
         }
+    },
+
+    // Role Management
+    async getRoles() {
+        const response = await fetch(`${API_BASE_URL}/roles`, {
+            headers: { ...getAuthHeaders() }
+        });
+        if (!response.ok) throw new Error('Failed to fetch roles');
+        return response.json();
+    },
+
+    async createRole(roleData) {
+        const response = await fetch(`${API_BASE_URL}/roles`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify(roleData)
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to create role');
+        }
+        return response.json();
+    },
+
+    async updateRole(id, roleData) {
+        const response = await fetch(`${API_BASE_URL}/roles/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify(roleData)
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to update role');
+        }
+        return response.json();
+    },
+
+    async deleteRole(id) {
+        const response = await fetch(`${API_BASE_URL}/roles/${id}`, {
+            method: 'DELETE',
+            headers: { ...getAuthHeaders() }
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to delete role');
+        }
     }
 };
 

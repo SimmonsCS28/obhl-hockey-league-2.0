@@ -4,6 +4,7 @@ import './UserManagement.css';
 import UserModal from './UserModal';
 
 const UserManagement = () => {
+    const [activeTab, setActiveTab] = useState('users');
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -85,82 +86,106 @@ const UserManagement = () => {
         <div className="user-management">
             <div className="user-management-header">
                 <h2>User Management</h2>
-                <button className="btn-create-user" onClick={handleCreateUser}>
-                    + Add User
+            </div>
+
+            <div className="user-management-tabs">
+                <button
+                    className={`tab-button ${activeTab === 'users' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('users')}
+                >
+                    Users
+                </button>
+                <button
+                    className={`tab-button ${activeTab === 'roles' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('roles')}
+                >
+                    Roles
                 </button>
             </div>
 
-            <div className="users-table-container">
-                <table className="users-table">
-                    <thead>
-                        <tr>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Status</th>
-                            <th>Password Change Required</th>
-                            <th>Created</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {users.length === 0 ? (
-                            <tr>
-                                <td colSpan="7" className="no-users">
-                                    No users found
-                                </td>
-                            </tr>
-                        ) : (
-                            users.map(user => (
-                                <tr key={user.id}>
-                                    <td className="username-col">{user.username}</td>
-                                    <td>{user.email}</td>
-                                    <td>
-                                        <span className={`role-badge ${getRoleBadgeClass(user.role)}`}>
-                                            {user.role}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <span className={`status-badge ${user.isActive ? 'active' : 'inactive'}`}>
-                                            {user.isActive ? 'Active' : 'Inactive'}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {user.mustChangePassword ? (
-                                            <span className="password-warning">⚠️ Yes</span>
-                                        ) : (
-                                            <span className="password-ok">No</span>
-                                        )}
-                                    </td>
-                                    <td>{new Date(user.createdAt).toLocaleDateString()}</td>
-                                    <td className="actions-col">
-                                        <button
-                                            className="btn-edit"
-                                            onClick={() => handleEditUser(user)}
-                                        >
-                                            Edit
-                                        </button>
-                                        <button
-                                            className="btn-delete"
-                                            onClick={() => handleDeleteUser(user)}
-                                        >
-                                            Deactivate
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
-            </div>
+            {activeTab === 'users' && (
+                <>
+                    <div className="tab-header">
+                        <button className="btn-create-user" onClick={handleCreateUser}>
+                            + Add User
+                        </button>
+                    </div>
 
-            {showModal && (
-                <UserModal
-                    user={selectedUser}
-                    isCreating={isCreating}
-                    onClose={handleModalClose}
-                />
+                    <div className="users-table-container">
+                        <table className="users-table">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Password Change Required</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {users.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="7" className="no-users">
+                                            No users found
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    users.map(user => (
+                                        <tr key={user.id}>
+                                            <td className="username-col">{user.username}</td>
+                                            <td>{user.email}</td>
+                                            <td>
+                                                <span className={`role-badge ${getRoleBadgeClass(user.role)}`}>
+                                                    {user.role}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span className={`status-badge ${user.isActive ? 'active' : 'inactive'}`}>
+                                                    {user.isActive ? 'Active' : 'Inactive'}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {user.mustChangePassword ? (
+                                                    <span className="password-warning">⚠️ Yes</span>
+                                                ) : (
+                                                    <span className="password-ok">No</span>
+                                                )}
+                                            </td>
+                                            <td>{new Date(user.createdAt).toLocaleDateString()}</td>
+                                            <td className="actions-col">
+                                                <button
+                                                    className="btn-edit"
+                                                    onClick={() => handleEditUser(user)}
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    className="btn-delete"
+                                                    onClick={() => handleDeleteUser(user)}
+                                                >
+                                                    Deactivate
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {showModal && (
+                        <UserModal
+                            user={selectedUser}
+                            isCreating={isCreating}
+                            onClose={handleModalClose}
+                        />
+                    )}
+                </>
             )}
+
+            {activeTab === 'roles' && <RoleManagement />}
         </div>
     );
 };

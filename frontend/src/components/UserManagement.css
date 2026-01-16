@@ -400,6 +400,141 @@
     margin: 20px;
 }
 
+/* Tabs */
+.user-management-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.tab-button {
+    background: none;
+    border: none;
+    padding: 12px 24px;
+    font-size: 0.938rem;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+}
+
+.tab-button:hover {
+    color: #374151;
+}
+
+.tab-button.active {
+    color: #3b82f6;
+}
+
+.tab-button.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #3b82f6;
+}
+
+.tab-header {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+}
+
+/* Role Management Specific */
+.role-system {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.role-custom {
+    background-color: #e0e7ff;
+    color: #3730a3;
+}
+
+.user-count-badge {
+    display: inline-block;
+    background: #e5e7eb;
+    color: #4b5563;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.813rem;
+    font-weight: 600;
+}
+
+.btn-delete:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.btn-delete:disabled:hover {
+    background: #9ca3af;
+}
+
+/* System Role Warning */
+.system-role-warning {
+    background: #fef3c7;
+    border: 2px solid #f59e0b;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.system-role-warning strong {
+    color: #92400e;
+    font-size: 1rem;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.system-role-warning p {
+    margin: 0 0 12px 0;
+    color: #78350f;
+    line-height: 1.5;
+}
+
+.warning-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    color: #78350f;
+    font-size: 0.875rem;
+}
+
+.warning-checkbox input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.form-group textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    resize: vertical;
+    transition: border-color 0.2s;
+}
+
+.form-group textarea:focus {
+    outline: none;
+    border-color: #3b82f6;
+}
+
+.field-hint {
+    display: block;
+    margin-top: 4px;
+    color: #6b7280;
+    font-size: 0.75rem;
+}
+
 /* Mobile Responsive */
 @media (max-width: 768px) {
     .user-management {
