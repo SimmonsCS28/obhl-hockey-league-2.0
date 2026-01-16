@@ -55,10 +55,15 @@ const RoleManagement = () => {
             return;
         }
 
-        if (!window.confirm(`Are you sure you want to delete the role "${role.name}"?`)) {
-            console.log('User cancelled delete');
-            return;
-        }
+        // Show custom confirmation modal instead of window.confirm
+        setRoleToDelete(role);
+        setShowDeleteConfirm(true);
+    };
+
+    const confirmDelete = async () => {
+        const role = roleToDelete;
+        setShowDeleteConfirm(false);
+        setRoleToDelete(null);
 
         console.log('Attempting to delete role ID:', role.id);
         try {
@@ -69,6 +74,12 @@ const RoleManagement = () => {
             console.error('Delete failed:', err);
             alert('Failed to delete role: ' + err.message);
         }
+    };
+
+    const cancelDelete = () => {
+        console.log('User cancelled delete');
+        setShowDeleteConfirm(false);
+        setRoleToDelete(null);
     };
 
     const handleModalClose = (roleSaved) => {
