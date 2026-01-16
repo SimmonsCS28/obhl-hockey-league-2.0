@@ -61,7 +61,8 @@ public class RoleService {
 
         // Set the current authenticated user as the creator
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()) {
+        if (authentication != null && authentication.isAuthenticated()
+                && !"anonymousUser".equals(authentication.getName())) {
             role.setCreatedBy(authentication.getName());
         }
 
