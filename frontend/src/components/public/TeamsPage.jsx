@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import './TeamsPage.css';
 
 function TeamsPage() {
@@ -21,6 +22,16 @@ function TeamsPage() {
             fetchPlayers(selectedSeason.id);
         }
     }, [selectedSeason]);
+
+    // Reset selected team when navigating back via nav link
+    const location = useLocation();
+    useEffect(() => {
+        // If we're on /teams (no hash/param), clear the selected team
+        if (location.pathname === '/teams' && !location.search && !location.hash) {
+            setSelectedTeam(null);
+            setTeamRoster([]);
+        }
+    }, [location]);
 
     const fetchSeasons = async () => {
         try {
@@ -75,8 +86,16 @@ function TeamsPage() {
 
     const handleTeamClick = async (team) => {
         setSelectedTeam(team);
-        // Fetch roster for selected team
-        const roster = players.filter(p => p.teamId === team.id);
+        // Fetch roster for selected team and sort with GM first, then by jersey number
+        const roster = players
+            .filter(p => p.teamId === team.id)
+            .sort((a, b) => {
+                // GM always first
+                if (a.id === team.gmId) return -1;
+                if (b.id === team.gmId) return 1;
+                // Then sort by jersey number
+                return (a.jerseyNumber || 999) - (b.jerseyNumber || 999);
+            });
         setTeamRoster(roster);
     };
 
@@ -166,13 +185,22 @@ function TeamsPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {teamRoster.map(player => (
-                                        <tr key={player.id}>
-                                            <td>{player.jerseyNumber || '-'}</td>
-                                            <td>{player.firstName} {player.lastName}</td>
-                                            <td>{player.position}</td>
-                                        </tr>
-                                    ))}
+                                    {teamRoster.map(player => {
+                                        const isGM = selectedTeam.gmId === player.id;
+                                        const isTwoGoalLimit = player.twoGoalLimit;
+
+                                        return (
+                                            <tr key={player.id}>
+                                                <td>{player.jerseyNumber || '-'}</td>
+                                                <td>
+                                                    {player.firstName} {player.lastName}
+                                                    {isGM && <span className="player-badge gm-badge">GM</span>}
+                                                    {isTwoGoalLimit && <span className="player-badge goal-limit-badge">2G</span>}
+                                                </td>
+                                                <td>{player.position}</td>
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         )}

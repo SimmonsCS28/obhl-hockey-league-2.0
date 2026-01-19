@@ -427,6 +427,27 @@ const api = {
             const error = await response.json().catch(() => ({}));
             throw new Error(error.message || 'Failed to delete role');
         }
+    },
+
+    // ============================================
+    // PLAYER STATS API
+    // ============================================
+    async getPlayerStats(seasonId, teamId = null) {
+        const queryString = new URLSearchParams({ seasonId, ...(teamId && { teamId }) }).toString();
+        const response = await fetch(`${API_BASE_URL}/stats/players?${queryString}`, {
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to fetch player stats');
+        return response.json();
+    },
+
+    async getPlayerStatsBulk(seasonId) {
+        // Fetch all player stats for a season
+        const response = await fetch(`${API_BASE_URL}/stats/players?seasonId=${seasonId}`, {
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to fetch player stats');
+        return response.json();
     }
 };
 
@@ -454,7 +475,9 @@ export const {
     getSeasons,
     createSeason,
     updateSeason,
-    deleteSeason
+    deleteSeason,
+    getPlayerStats,
+    getPlayerStatsBulk
 } = api;
 
 export default api;

@@ -44,6 +44,9 @@ public class GameDto {
         private Integer week;
         private String rink;
         private String gameNotes;
+        private Long goalieId;
+        private Long refereeId;
+        private Long scorekeeperId;
     }
 
     @Data
@@ -65,6 +68,9 @@ public class GameDto {
         private Integer week;
         private String rink;
         private String gameNotes;
+        private Long goalieId;
+        private Long refereeId;
+        private Long scorekeeperId;
     }
 
     @Data
@@ -124,5 +130,8 @@ public class GameDto {
         private String gameType;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
+        private Long goalieId;
+        private Long refereeId;
+        private Long scorekeeperId;
     }
 }

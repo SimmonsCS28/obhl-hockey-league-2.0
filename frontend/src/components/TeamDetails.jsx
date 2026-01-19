@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import * as api from '../services/api';
+import { getPlayerStats } from '../services/api';
 import './TeamDetails.css';
 
 function TeamDetails({ team, onBack }) {
     const [roster, setRoster] = useState([]);
     const [freeAgents, setFreeAgents] = useState([]);
+    const [playerStats, setPlayerStats] = useState({});  // Map of playerId -> stats
     const [loading, setLoading] = useState(true);
     const [showAddPlayer, setShowAddPlayer] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -12,9 +14,11 @@ function TeamDetails({ team, onBack }) {
     const [selectedPlayerId, setSelectedPlayerId] = useState('');
     const [editingPlayerId, setEditingPlayerId] = useState(null);
     const [editedJerseyNumber, setEditedJerseyNumber] = useState('');
+    const [sortConfig, setSortConfig] = useState({ key: 'jersey Number', direction: 'ascending' });
 
     useEffect(() => {
         loadData();
+        fetchPlayerStats();
     }, [team.id]);
 
     const loadData = async () => {
@@ -31,6 +35,21 @@ function TeamDetails({ team, onBack }) {
             alert('Failed to load team details');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchPlayerStats = async () => {
+        try {
+            if (!team.seasonId) return;
+            const stats = await getPlayerStats(team.seasonId, team.id);
+            // Create a map of playerId -> stats for easy lookup
+            const statsMap = {};
+            stats.forEach(stat => {
+                statsMap[stat.playerId] = stat;
+            });
+            setPlayerStats(statsMap);
+        } catch (error) {
+            console.error('Failed to load player stats:', error);
         }
     };
 
@@ -114,6 +133,44 @@ function TeamDetails({ team, onBack }) {
         }
     };
 
+    const requestSort = (key) => {
+        let direction = 'ascending';
+        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
+            direction = 'descending';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const getSortedRoster = () => {
+        return [...roster].sort((a, b) => {
+            let aValue, bValue;
+
+            // Handle stats fields
+            if (['goals', 'assists', 'points', 'penaltyMinutes'].includes(sortConfig.key)) {
+                const aStats = playerStats[a.id] || {};
+                const bStats = playerStats[b.id] || {};
+                aValue = aStats[sortConfig.key] || 0;
+                bValue = bStats[sortConfig.key] || 0;
+            } else {
+                aValue = a[sortConfig.key];
+                bValue = b[sortConfig.key];
+            }
+
+            if (aValue < bValue) {
+                return sortConfig.direction === 'ascending' ? -1 : 1;
+            }
+            if (aValue > bValue) {
+                return sortConfig.direction === 'ascending' ? 1 : -1;
+            }
+            return 0;
+        });
+    };
+
+    const getSortIcon = (columnKey) => {
+        if (sortConfig.key !== columnKey) return null;
+        return sortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
+    };
+
     const handleCancelJersey = () => {
         setEditingPlayerId(null);
         setEditedJerseyNumber('');
@@ -195,69 +252,80 @@ function TeamDetails({ team, onBack }) {
                 <table className="roster-table">
                     <thead>
                         <tr>
-                            <th>#</th>
-                            <th>Name</th>
-                            <th>Position</th>
+                            <th onClick={() => requestSort('jerseyNumber')} style={{ cursor: 'pointer' }}># {getSortIcon('jerseyNumber')}</th>
+                            <th onClick={() => requestSort('lastName')} style={{ cursor: 'pointer' }}>Name{getSortIcon('lastName')}</th>
+                            <th onClick={() => requestSort('position')} style={{ cursor: 'pointer' }}>Position{getSortIcon('position')}</th>
+                            <th onClick={() => requestSort('goals')} style={{ cursor: 'pointer' }}>G{getSortIcon('goals')}</th>
+                            <th onClick={() => requestSort('assists')} style={{ cursor: 'pointer' }}>A{getSortIcon('assists')}</th>
+                            <th onClick={() => requestSort('points')} style={{ cursor: 'pointer' }}>P{getSortIcon('points')}</th>
+                            <th onClick={() => requestSort('penaltyMinutes')} style={{ cursor: 'pointer' }}>PM{getSortIcon('penaltyMinutes')}</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {roster.length === 0 ? (
                             <tr>
-                                <td colSpan="4" className="empty-roster">No players on roster</td>
+                                <td colSpan="8" className="empty-roster">No players on roster</td>
                             </tr>
                         ) : (
-                            roster.map(player => (
-                                <tr key={player.id}>
-                                    <td>
-                                        {editingPlayerId === player.id ? (
-                                            <div className="jersey-edit">
-                                                <input
-                                                    type="number"
-                                                    min="1"
-                                                    max="99"
-                                                    value={editedJerseyNumber}
-                                                    onChange={(e) => setEditedJerseyNumber(e.target.value)}
-                                                    className="jersey-input"
-                                                    autoFocus
-                                                />
-                                                <button
-                                                    onClick={() => handleSaveJersey(player)}
-                                                    className="btn-save-jersey"
-                                                    title="Save"
+                            getSortedRoster().map(player => {
+                                const stats = playerStats[player.id] || {};
+                                return (
+                                    <tr key={player.id}>
+                                        <td>
+                                            {editingPlayerId === player.id ? (
+                                                <div className="jersey-edit">
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        max="99"
+                                                        value={editedJerseyNumber}
+                                                        onChange={(e) => setEditedJerseyNumber(e.target.value)}
+                                                        className="jersey-input"
+                                                        autoFocus
+                                                    />
+                                                    <button
+                                                        onClick={() => handleSaveJersey(player)}
+                                                        className="btn-save-jersey"
+                                                        title="Save"
+                                                    >
+                                                        ✓
+                                                    </button>
+                                                    <button
+                                                        onClick={handleCancelJersey}
+                                                        className="btn-cancel-jersey"
+                                                        title="Cancel"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div
+                                                    className="jersey-display"
+                                                    onClick={() => handleEditJersey(player)}
+                                                    title="Click to edit"
                                                 >
-                                                    ✓
-                                                </button>
-                                                <button
-                                                    onClick={handleCancelJersey}
-                                                    className="btn-cancel-jersey"
-                                                    title="Cancel"
-                                                >
-                                                    ✕
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <div
-                                                className="jersey-display"
-                                                onClick={() => handleEditJersey(player)}
-                                                title="Click to edit"
+                                                    {player.jerseyNumber || '-'}
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td>{player.firstName} {player.lastName}</td>
+                                        <td>{player.position}</td>
+                                        <td>{stats.goals || 0}</td>
+                                        <td>{stats.assists || 0}</td>
+                                        <td>{stats.points || 0}</td>
+                                        <td>{stats.penaltyMinutes || 0}</td>
+                                        <td>
+                                            <button
+                                                onClick={() => initiateRemovePlayer(player)}
+                                                className="btn-remove"
                                             >
-                                                {player.jerseyNumber || '-'}
-                                            </div>
-                                        )}
-                                    </td>
-                                    <td>{player.firstName} {player.lastName}</td>
-                                    <td>{player.position}</td>
-                                    <td>
-                                        <button
-                                            onClick={() => initiateRemovePlayer(player)}
-                                            className="btn-remove"
-                                        >
-                                            Remove
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))
+                                                Remove
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })
                         )}
                     </tbody>
                 </table>

@@ -83,6 +83,15 @@ public class Game {
     @Column(name = "game_notes", columnDefinition = "TEXT")
     private String gameNotes;
 
+    @Column(name = "goalie_id")
+    private Long goalieId;
+
+    @Column(name = "referee_id")
+    private Long refereeId;
+
+    @Column(name = "scorekeeper_id")
+    private Long scorekeeperId;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

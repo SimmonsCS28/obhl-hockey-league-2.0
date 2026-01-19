@@ -139,7 +139,14 @@ function LiveScoreEntry(props) {
 
     const getTeamPlayers = (team) => {
         const teamId = team === 'home' ? game.homeTeamId : game.awayTeamId;
-        return players.filter(p => Number(p.teamId) === Number(teamId));
+        const teamPlayers = players.filter(p => Number(p.teamId) === Number(teamId));
+
+        // Sort by jersey number (ascending)
+        return teamPlayers.sort((a, b) => {
+            const numA = parseInt(a.jerseyNumber) || 999;
+            const numB = parseInt(b.jerseyNumber) || 999;
+            return numA - numB;
+        });
     };
 
     const checkGoalLimit = (playerId) => {
@@ -587,6 +594,8 @@ function LiveScoreEntry(props) {
                                 <input
                                     list="minutes-list"
                                     type="number"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
                                     min="0"
                                     max="20"
                                     value={goalMinutes}
@@ -603,6 +612,8 @@ function LiveScoreEntry(props) {
                                 <input
                                     list="seconds-list"
                                     type="number"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
                                     min="0"
                                     max="59"
                                     value={goalSeconds}
@@ -704,6 +715,8 @@ function LiveScoreEntry(props) {
                                 <input
                                     list="penalty-minutes-list"
                                     type="number"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
                                     min="0"
                                     max="20"
                                     value={penaltyTimeMinutes}
@@ -720,6 +733,8 @@ function LiveScoreEntry(props) {
                                 <input
                                     list="penalty-seconds-list"
                                     type="number"
+                                    inputMode="numeric"
+                                    pattern="[0-9]*"
                                     min="0"
                                     max="59"
                                     value={penaltyTimeSeconds}

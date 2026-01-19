@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import * as api from '../services/api';
+import { getPlayerStatsBulk } from '../services/api';
 import './PlayerManagement.css';
 
 function PlayerManagement() {
@@ -7,6 +8,7 @@ function PlayerManagement() {
     const [teams, setTeams] = useState([]);
     const [seasons, setSeasons] = useState([]);
     const [selectedSeason, setSelectedSeason] = useState('all');
+    const [playerStats, setPlayerStats] = useState({});  // Map of playerId -> stats
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -45,11 +47,34 @@ function PlayerManagement() {
             setPlayers(playersData);
             setTeams(teamsData);
             setSeasons(seasonsData);
+
+            // Fetch stats for selected season
+            if (selectedSeason && selectedSeason !== 'all') {
+                await fetchPlayerStats(selectedSeason);
+            } else if (seasonsData.length > 0) {
+                // If 'all', fetch stats for most recent season as default
+                const mostRecentSeason = seasonsData[0];
+                await fetchPlayerStats(mostRecentSeason.id);
+            }
         } catch (error) {
             console.error('Error loading data:', error);
             alert('Failed to load data');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchPlayerStats = async (seasonId) => {
+        try {
+            const stats = await getPlayerStatsBulk(seasonId);
+            // Create a map of playerId -> stats for easy lookup
+            const statsMap = {};
+            stats.forEach(stat => {
+                statsMap[stat.playerId] = stat;
+            });
+            setPlayerStats(statsMap);
+        } catch (error) {
+            console.error('Failed to load player stats:', error);
         }
     };
 
@@ -80,6 +105,14 @@ function PlayerManagement() {
             bValue = getTeamName(b.teamId);
         }
 
+        // Handle stats fields
+        if (['goals', 'assists', 'points', 'penaltyMinutes'].includes(sortConfig.key)) {
+            const aStats = playerStats[a.id] || {};
+            const bStats = playerStats[b.id] || {};
+            aValue = aStats[sortConfig.key] || 0;
+            bValue = bStats[sortConfig.key] || 0;
+        }
+
         if (aValue < bValue) {
             return sortConfig.direction === 'ascending' ? -1 : 1;
         }
@@ -88,6 +121,11 @@ function PlayerManagement() {
         }
         return 0;
     });
+
+    const getSortIcon = (columnKey) => {
+        if (sortConfig.key !== columnKey) return null;
+        return sortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
+    };
 
     const requestSort = (key) => {
         let direction = 'ascending';
@@ -275,12 +313,16 @@ function PlayerManagement() {
                 <table className="players-table">
                     <thead>
                         <tr>
-                            <th onClick={() => requestSort('jerseyNumber')} className="sortable">#</th>
-                            <th onClick={() => requestSort('lastName')} className="sortable">Name</th>
-                            <th onClick={() => requestSort('teamId')} className="sortable">Team</th>
-                            <th onClick={() => requestSort('position')} className="sortable">Position</th>
-                            <th onClick={() => requestSort('skillRating')} className="sortable">Skill</th>
-                            <th onClick={() => requestSort('isActive')} className="sortable">Status</th>
+                            <th onClick={() => requestSort('jerseyNumber')} className="sortable">#{getSortIcon('jerseyNumber')}</th>
+                            <th onClick={() => requestSort('lastName')} className="sortable">Name{getSortIcon('lastName')}</th>
+                            <th onClick={() => requestSort('teamId')} className="sortable">Team{getSortIcon('teamId')}</th>
+                            <th onClick={() => requestSort('position')} className="sortable">Position{getSortIcon('position')}</th>
+                            <th onClick={() => requestSort('skillRating')} className="sortable">Skill{getSortIcon('skillRating')}</th>
+                            <th onClick={() => requestSort('goals')} className="sortable">G{getSortIcon('goals')}</th>
+                            <th onClick={() => requestSort('assists')} className="sortable">A{getSortIcon('assists')}</th>
+                            <th onClick={() => requestSort('points')} className="sortable">P{getSortIcon('points')}</th>
+                            <th onClick={() => requestSort('penaltyMinutes')} className="sortable">PM{getSortIcon('penaltyMinutes')}</th>
+                            <th onClick={() => requestSort('isActive')} className="sortable">Status{getSortIcon('isActive')}</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -289,6 +331,7 @@ function PlayerManagement() {
                             const team = teams.find(t => t.id === player.teamId);
                             const bg = team ? getValidColor(team.teamColor) : null;
                             const textColor = team ? getTextColor(bg) : 'inherit';
+                            const stats = playerStats[player.id] || {};
 
                             return (
                                 <tr key={player.id}>
@@ -313,6 +356,10 @@ function PlayerManagement() {
                                     </td>
                                     <td>{player.position}</td>
                                     <td>{player.skillRating}</td>
+                                    <td>{stats.goals || 0}</td>
+                                    <td>{stats.assists || 0}</td>
+                                    <td>{stats.points || 0}</td>
+                                    <td>{stats.penaltyMinutes || 0}</td>
                                     <td>
                                         <span className={`status-badge ${player.isActive ? 'active' : 'inactive'}`}>
                                             {player.isActive ? 'Active' : 'Inactive'}

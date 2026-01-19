@@ -244,3 +244,24 @@
     padding: 3rem;
     font-style: italic;
 }
+
+/* Player Badges */
+.player-badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 4px;
+    vertical-align: middle;
+}
+
+.gm-badge {
+    background: #ffd700;
+    color: #2d3748;
+}
+
+.goal-limit-badge {
+    background: #e53e3e;
+    color: white;
+}

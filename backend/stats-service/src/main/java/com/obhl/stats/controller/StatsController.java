@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.obhl.stats.dto.PlayerStatsIncrementDto;
 import com.obhl.stats.model.GoalieStats;
 import com.obhl.stats.model.PlayerStats;
 import com.obhl.stats.repository.GoalieStatsRepository;
@@ -80,5 +81,36 @@ public class StatsController {
     public ResponseEntity<GoalieStats> createGoalieStats(@RequestBody GoalieStats stats) {
         GoalieStats created = goalieStatsRepository.save(stats);
         return ResponseEntity.ok(created);
+    }
+
+    @PostMapping("/players/increment")
+    public ResponseEntity<PlayerStats> incrementPlayerStats(@RequestBody PlayerStatsIncrementDto dto) {
+        // Find existing stats or create new
+        PlayerStats stats = playerStatsRepository
+                .findByPlayerIdAndSeasonId(dto.getPlayerId(), dto.getSeasonId())
+                .orElseGet(() -> {
+                    PlayerStats newStats = new PlayerStats();
+                    newStats.setPlayerId(dto.getPlayerId());
+                    newStats.setSeasonId(dto.getSeasonId());
+                    newStats.setTeamId(dto.getTeamId());
+                    newStats.setGamesPlayed(0);
+                    newStats.setGoals(0);
+                    newStats.setAssists(0);
+                    newStats.setPoints(0);
+                    newStats.setPenaltyMinutes(0);
+                    return newStats;
+                });
+
+        // Increment stats
+        stats.setGoals(stats.getGoals() + dto.getGoals());
+        stats.setAssists(stats.getAssists() + dto.getAssists());
+        stats.setPoints(stats.getPoints() + dto.getPoints());
+        stats.setPenaltyMinutes(stats.getPenaltyMinutes() + dto.getPenaltyMinutes());
+
+        // Increment games played (once per game finalization)
+        stats.setGamesPlayed(stats.getGamesPlayed() + 1);
+
+        PlayerStats saved = playerStatsRepository.save(stats);
+        return ResponseEntity.ok(saved);
     }
 }

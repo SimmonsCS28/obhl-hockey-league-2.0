@@ -20,6 +20,7 @@ public class GameService {
     private final GameRepository gameRepository;
     private final PointsCalculator pointsCalculator;
     private final TeamStatsUpdater teamStatsUpdater;
+    private final PlayerStatsAggregator playerStatsAggregator;
 
     @Transactional(readOnly = true)
     public List<GameDto.Response> getAllGames() {
@@ -76,6 +77,9 @@ public class GameService {
         game.setWeek(dto.getWeek());
         game.setRink(dto.getRink());
         game.setGameNotes(dto.getGameNotes());
+        game.setGoalieId(dto.getGoalieId());
+        game.setRefereeId(dto.getRefereeId());
+        game.setScorekeeperId(dto.getScorekeeperId());
 
         return toResponse(gameRepository.save(game));
     }
@@ -115,6 +119,12 @@ public class GameService {
             game.setRink(dto.getRink());
         if (dto.getGameNotes() != null)
             game.setGameNotes(dto.getGameNotes());
+        if (dto.getGoalieId() != null)
+            game.setGoalieId(dto.getGoalieId());
+        if (dto.getRefereeId() != null)
+            game.setRefereeId(dto.getRefereeId());
+        if (dto.getScorekeeperId() != null)
+            game.setScorekeeperId(dto.getScorekeeperId());
 
         return toResponse(gameRepository.save(game));
     }
@@ -155,6 +165,9 @@ public class GameService {
         // Update team standings
         teamStatsUpdater.updateTeamStats(savedGame);
 
+        // Aggregate and update player stats
+        playerStatsAggregator.aggregateAndUpdateStats(savedGame);
+
         return toResponse(savedGame);
     }
 
@@ -179,6 +192,9 @@ public class GameService {
         dto.setWeek(game.getWeek());
         dto.setRink(game.getRink());
         dto.setGameNotes(game.getGameNotes());
+        dto.setGoalieId(game.getGoalieId());
+        dto.setRefereeId(game.getRefereeId());
+        dto.setScorekeeperId(game.getScorekeeperId());
         dto.setCreatedAt(game.getCreatedAt());
         dto.setUpdatedAt(game.getUpdatedAt());
         return dto;
