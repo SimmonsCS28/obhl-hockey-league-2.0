@@ -8,6 +8,9 @@ import ScorekeeperContent from './ScorekeeperContent';
 import SeasonManagement from './SeasonManagement';
 import TeamManagement from './TeamManagement';
 import UserManagement from './UserManagement';
+import GoalieSchedule from './admin/GoalieSchedule';
+import RefereeSchedule from './admin/RefereeSchedule';
+import ScorekeeperSchedule from './admin/ScorekeeperSchedule';
 
 function AdminDashboard() {
     const [activeTab, setActiveTab] = useState('teams');
@@ -100,18 +103,39 @@ function AdminDashboard() {
                     >
                         Users
                     </button>
-                </div>
-            </nav>
-
-            <main className="admin-content">
-                {activeTab === 'teams' && <TeamManagement />}
-                {activeTab === 'players' && <PlayerManagement />}
-                {activeTab === 'seasons' && <SeasonManagement />}
-                {activeTab === 'draft' && <DraftDashboard />}
-                {activeTab === 'gameManagement' && <ScorekeeperContent />}
-                {activeTab === 'users' && <UserManagement />}
-            </main>
+                    <button
+                        className={`nav-tab ${activeTab === 'goalies' ? 'active' : ''}`}
+                        onClick={() => handleTabClick('goalies')}
+                    >
+                        🥅 Goalie Schedule
+                    </button>
+                    <button
+                        className={`nav-tab ${activeTab === 'referees' ? 'active' : ''}`}
+                        onClick={() => handleTabClick('referees')}
+                    >
+                        👔 Referee Schedule
+                    </button>
+                    <button
+                        className={`nav-tab ${activeTab === 'scorekeepers' ? 'active' : ''}`}
+                        onClick(() => handleTabClick('scorekeepers')}
+                    >
+                    📋 Scorekeeper Schedule
+                </button>
         </div>
+            </nav >
+
+        <main className="admin-content">
+            {activeTab === 'teams' && <TeamManagement />}
+            {activeTab === 'players' && <PlayerManagement />}
+            {activeTab === 'seasons' && <SeasonManagement />}
+            {activeTab === 'draft' && <DraftDashboard />}
+            {activeTab === 'gameManagement' && <ScorekeeperContent />}
+            {activeTab === 'users' && <UserManagement />}
+            {activeTab === 'goalies' && <GoalieSchedule />}
+            {activeTab === 'referees' && <RefereeSchedule />}
+            {activeTab === 'scorekeepers' && <ScorekeeperSchedule />}
+        </main>
+        </div >
     );
 }
 
