@@ -119,10 +119,10 @@ function AdminDashboard() {
                         className={`nav-tab ${activeTab === 'scorekeepers' ? 'active' : ''}`}
                         onClick(() => handleTabClick('scorekeepers')}
                     >
-                    📋 Scorekeeper Schedule
-                </button>
-        </div>
-            </nav >
+                         Scorekeeper Schedule
+                    </button>
+                </div>
+            </nav>
 
         <main className="admin-content">
             {activeTab === 'teams' && <TeamManagement />}
