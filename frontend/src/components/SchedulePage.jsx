@@ -335,6 +335,10 @@ const SchedulePage = () => {
                                 const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
                                 const isCompleted = game.homeScore !== null && game.awayScore !== null;
 
+                                // Determine winner
+                                const homeWin = isCompleted && game.homeScore > game.awayScore;
+                                const awayWin = isCompleted && game.awayScore > game.homeScore;
+
                                 const homeBg = getValidColor(homeTeam?.teamColor);
                                 const awayBg = getValidColor(awayTeam?.teamColor);
 
@@ -367,27 +371,33 @@ const SchedulePage = () => {
                                             })}
                                         </td>
                                         <td
-                                            className="team-cell"
+                                            className={`team-cell ${homeWin ? 'winning-team' : ''}`}
                                             style={{
                                                 backgroundColor: homeBg,
                                                 color: getTextColor(homeBg)
                                             }}
                                         >
                                             {homeTeam?.name || `Team ${game.homeTeamId}`}
+                                            {homeWin && <span className="win-icon" title="Winner">★</span>}
                                         </td>
                                         <td
-                                            className="team-cell"
+                                            className={`team-cell ${awayWin ? 'winning-team' : ''}`}
                                             style={{
                                                 backgroundColor: awayBg,
                                                 color: getTextColor(awayBg)
                                             }}
                                         >
                                             {awayTeam?.name || `Team ${game.awayTeamId}`}
+                                            {awayWin && <span className="win-icon" title="Winner">★</span>}
                                         </td>
                                         <td>{game.rink}</td>
                                         <td>
                                             {isCompleted ? (
-                                                <span className="score">{game.homeScore} - {game.awayScore}</span>
+                                                <span className="score">
+                                                    <span className={homeWin ? 'winning-score' : ''}>{game.homeScore}</span>
+                                                    {' - '}
+                                                    <span className={awayWin ? 'winning-score' : ''}>{game.awayScore}</span>
+                                                </span>
                                             ) : (
                                                 <span className="upcoming-badge">Upcoming</span>
                                             )}
@@ -413,6 +423,10 @@ const SchedulePage = () => {
                                     const isNotFriday = dayOfWeek !== 5;
                                     const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
                                     const isCompleted = game.homeScore !== null && game.awayScore !== null;
+
+                                    // Determine winner
+                                    const homeWin = isCompleted && game.homeScore > game.awayScore;
+                                    const awayWin = isCompleted && game.awayScore > game.homeScore;
 
                                     const homeBg = getValidColor(homeTeam?.teamColor);
                                     const awayBg = getValidColor(awayTeam?.teamColor);
@@ -442,23 +456,25 @@ const SchedulePage = () => {
                                             </div>
                                             <div className="game-teams">
                                                 <span
-                                                    className="team-badge"
+                                                    className={`team-badge ${homeWin ? 'winning-team' : ''}`}
                                                     style={{
                                                         backgroundColor: homeBg,
                                                         color: getTextColor(homeBg)
                                                     }}
                                                 >
                                                     {homeTeam?.name || `Team ${game.homeTeamId}`}
+                                                    {homeWin && <span className="win-icon">★</span>}
                                                 </span>
                                                 <span className="vs">vs</span>
                                                 <span
-                                                    className="team-badge"
+                                                    className={`team-badge ${awayWin ? 'winning-team' : ''}`}
                                                     style={{
                                                         backgroundColor: awayBg,
                                                         color: getTextColor(awayBg)
                                                     }}
                                                 >
                                                     {awayTeam?.name || `Team ${game.awayTeamId}`}
+                                                    {awayWin && <span className="win-icon">★</span>}
                                                 </span>
                                             </div>
                                             <div className="game-location">
@@ -466,7 +482,7 @@ const SchedulePage = () => {
                                             </div>
                                             {isCompleted && (
                                                 <div className="game-score-mobile">
-                                                    Final: {game.homeScore} - {game.awayScore}
+                                                    Final: <span className={homeWin ? 'winning-score' : ''}>{game.homeScore}</span> - <span className={awayWin ? 'winning-score' : ''}>{game.awayScore}</span>
                                                 </div>
                                             )}
                                         </div>
