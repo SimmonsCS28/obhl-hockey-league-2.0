@@ -83,11 +83,17 @@ public class Game {
     @Column(name = "game_notes", columnDefinition = "TEXT")
     private String gameNotes;
 
-    @Column(name = "goalie_id")
-    private Long goalieId;
+    @Column(name = "goalie1_id")
+    private Long goalie1Id;
 
-    @Column(name = "referee_id")
-    private Long refereeId;
+    @Column(name = "goalie2_id")
+    private Long goalie2Id;
+
+    @Column(name = "referee1_id")
+    private Long referee1Id;
+
+    @Column(name = "referee2_id")
+    private Long referee2Id;
 
     @Column(name = "scorekeeper_id")
     private Long scorekeeperId;

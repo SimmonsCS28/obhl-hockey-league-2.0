@@ -44,8 +44,10 @@ public class GameDto {
         private Integer week;
         private String rink;
         private String gameNotes;
-        private Long goalieId;
-        private Long refereeId;
+        private Long goalie1Id;
+        private Long goalie2Id;
+        private Long referee1Id;
+        private Long referee2Id;
         private Long scorekeeperId;
     }
 
@@ -68,8 +70,10 @@ public class GameDto {
         private Integer week;
         private String rink;
         private String gameNotes;
-        private Long goalieId;
-        private Long refereeId;
+        private Long goalie1Id;
+        private Long goalie2Id;
+        private Long referee1Id;
+        private Long referee2Id;
         private Long scorekeeperId;
     }
 
@@ -130,8 +134,10 @@ public class GameDto {
         private String gameType;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
-        private Long goalieId;
-        private Long refereeId;
+        private Long goalie1Id;
+        private Long goalie2Id;
+        private Long referee1Id;
+        private Long referee2Id;
         private Long scorekeeperId;
     }
 }

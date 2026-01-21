@@ -117,24 +117,24 @@ function AdminDashboard() {
                     </button>
                     <button
                         className={`nav-tab ${activeTab === 'scorekeepers' ? 'active' : ''}`}
-                        onClick(() => handleTabClick('scorekeepers')}
+                        onClick={() => handleTabClick('scorekeepers')}
                     >
-                    📋 Scorekeeper Schedule
-                </button>
-        </div>
+                        📋 Scorekeeper Schedule
+                    </button>
+                </div>
             </nav >
 
-        <main className="admin-content">
-            {activeTab === 'teams' && <TeamManagement />}
-            {activeTab === 'players' && <PlayerManagement />}
-            {activeTab === 'seasons' && <SeasonManagement />}
-            {activeTab === 'draft' && <DraftDashboard />}
-            {activeTab === 'gameManagement' && <ScorekeeperContent />}
-            {activeTab === 'users' && <UserManagement />}
-            {activeTab === 'goalies' && <GoalieSchedule />}
-            {activeTab === 'referees' && <RefereeSchedule />}
-            {activeTab === 'scorekeepers' && <ScorekeeperSchedule />}
-        </main>
+            <main className="admin-content">
+                {activeTab === 'teams' && <TeamManagement />}
+                {activeTab === 'players' && <PlayerManagement />}
+                {activeTab === 'seasons' && <SeasonManagement />}
+                {activeTab === 'draft' && <DraftDashboard />}
+                {activeTab === 'gameManagement' && <ScorekeeperContent />}
+                {activeTab === 'users' && <UserManagement />}
+                {activeTab === 'goalies' && <GoalieSchedule />}
+                {activeTab === 'referees' && <RefereeSchedule />}
+                {activeTab === 'scorekeepers' && <ScorekeeperSchedule />}
+            </main>
         </div >
     );
 }

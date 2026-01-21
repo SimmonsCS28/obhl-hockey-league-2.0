@@ -77,8 +77,10 @@ public class GameService {
         game.setWeek(dto.getWeek());
         game.setRink(dto.getRink());
         game.setGameNotes(dto.getGameNotes());
-        game.setGoalieId(dto.getGoalieId());
-        game.setRefereeId(dto.getRefereeId());
+        game.setGoalie1Id(dto.getGoalie1Id());
+        game.setGoalie2Id(dto.getGoalie2Id());
+        game.setReferee1Id(dto.getReferee1Id());
+        game.setReferee2Id(dto.getReferee2Id());
         game.setScorekeeperId(dto.getScorekeeperId());
 
         return toResponse(gameRepository.save(game));
@@ -119,10 +121,14 @@ public class GameService {
             game.setRink(dto.getRink());
         if (dto.getGameNotes() != null)
             game.setGameNotes(dto.getGameNotes());
-        if (dto.getGoalieId() != null)
-            game.setGoalieId(dto.getGoalieId());
-        if (dto.getRefereeId() != null)
-            game.setRefereeId(dto.getRefereeId());
+        if (dto.getGoalie1Id() != null)
+            game.setGoalie1Id(dto.getGoalie1Id());
+        if (dto.getGoalie2Id() != null)
+            game.setGoalie2Id(dto.getGoalie2Id());
+        if (dto.getReferee1Id() != null)
+            game.setReferee1Id(dto.getReferee1Id());
+        if (dto.getReferee2Id() != null)
+            game.setReferee2Id(dto.getReferee2Id());
         if (dto.getScorekeeperId() != null)
             game.setScorekeeperId(dto.getScorekeeperId());
 
@@ -192,8 +198,10 @@ public class GameService {
         dto.setWeek(game.getWeek());
         dto.setRink(game.getRink());
         dto.setGameNotes(game.getGameNotes());
-        dto.setGoalieId(game.getGoalieId());
-        dto.setRefereeId(game.getRefereeId());
+        dto.setGoalie1Id(game.getGoalie1Id());
+        dto.setGoalie2Id(game.getGoalie2Id());
+        dto.setReferee1Id(game.getReferee1Id());
+        dto.setReferee2Id(game.getReferee2Id());
         dto.setScorekeeperId(game.getScorekeeperId());
         dto.setCreatedAt(game.getCreatedAt());
         dto.setUpdatedAt(game.getUpdatedAt());

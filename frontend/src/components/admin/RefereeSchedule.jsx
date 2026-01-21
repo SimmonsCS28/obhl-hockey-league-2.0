@@ -10,6 +10,7 @@ function RefereeSchedule() {
     const [teams, setTeams] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all');
+    const [weekFilter, setWeekFilter] = useState('all'); // all or specific week number
 
     useEffect(() => {
         loadInitialData();
@@ -56,9 +57,13 @@ function RefereeSchedule() {
         }
     };
 
-    const handleAssignReferee = async (gameId, playerId) => {
+    const handleAssignReferee = async (gameId, slot, playerId) => {
         try {
-            await api.updateGame(gameId, { refereeId: playerId || null });
+            const updateData = {};
+            if (slot === 1) updateData.referee1Id = playerId || null;
+            if (slot === 2) updateData.referee2Id = playerId || null;
+
+            await api.updateGame(gameId, updateData);
             const gamesData = await api.getGames(selectedSeason);
             setGames(gamesData);
         } catch (error) {
@@ -73,10 +78,21 @@ function RefereeSchedule() {
     };
 
     const filteredGames = games.filter(game => {
-        if (filter === 'assigned') return game.refereeId != null;
-        if (filter === 'unassigned') return game.refereeId == null;
+        const isAssigned = game.referee1Id != null && game.referee2Id != null;
+        const isPartiallyAssigned = game.referee1Id != null || game.referee2Id != null;
+
+        // Apply assignment filter
+        if (filter === 'assigned' && !isPartiallyAssigned) return false;
+        if (filter === 'unassigned' && isAssigned) return false;
+
+        // Apply week filter
+        if (weekFilter !== 'all' && game.week !== parseInt(weekFilter)) return false;
+
         return true;
     });
+
+    // Get unique weeks for the filter dropdown
+    const availableWeeks = [...new Set(games.map(g => g.week).filter(w => w != null))].sort((a, b) => a - b);
 
     if (loading) {
         return <div className="loading">Loading...</div>;
@@ -114,6 +130,22 @@ function RefereeSchedule() {
                             <option value="unassigned">Unassigned</option>
                         </select>
                     </div>
+
+                    <div className="filter-group">
+                        <label>Week:</label>
+                        <select
+                            value={weekFilter}
+                            onChange={(e) => setWeekFilter(e.target.value)}
+                            className="filter-select"
+                        >
+                            <option value="all">All Weeks</option>
+                            {availableWeeks.map(week => (
+                                <option key={week} value={week}>
+                                    Week {week}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -123,12 +155,16 @@ function RefereeSchedule() {
                     <div className="stat-label">Total Games</div>
                 </div>
                 <div className="stat-card">
-                    <div className="stat-value">{games.filter(g => g.refereeId).length}</div>
-                    <div className="stat-label">Assigned</div>
+                    <div className="stat-value">
+                        {games.reduce((acc, g) => acc + (g.referee1Id ? 1 : 0) + (g.referee2Id ? 1 : 0), 0)} / {games.length * 2}
+                    </div>
+                    <div className="stat-label">Slots Assigned</div>
                 </div>
                 <div className="stat-card">
-                    <div className="stat-value">{games.filter(g => !g.refereeId).length}</div>
-                    <div className="stat-label">Unassigned</div>
+                    <div className="stat-value">
+                        {games.reduce((acc, g) => acc + (!g.referee1Id ? 1 : 0) + (!g.referee2Id ? 1 : 0), 0)}
+                    </div>
+                    <div className="stat-label">Slots Open</div>
                 </div>
             </div>
 
@@ -144,7 +180,8 @@ function RefereeSchedule() {
                                 <th>Home Team</th>
                                 <th>Away Team</th>
                                 <th>Location</th>
-                                <th>Assigned Referee</th>
+                                <th>Referee 1</th>
+                                <th>Referee 2</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -162,11 +199,25 @@ function RefereeSchedule() {
                                         <td>{game.rink || 'TBD'}</td>
                                         <td>
                                             <select
-                                                value={game.refereeId || ''}
-                                                onChange={(e) => handleAssignReferee(game.id, e.target.value ? parseInt(e.target.value) : null)}
+                                                value={game.referee1Id || ''}
+                                                onChange={(e) => handleAssignReferee(game.id, 1, e.target.value ? parseInt(e.target.value) : null)}
                                                 className="referee-select"
                                             >
-                                                <option value="">-- Select Referee --</option>
+                                                <option value="">-- Select Referee 1 --</option>
+                                                {players.map(player => (
+                                                    <option key={player.id} value={player.id}>
+                                                        #{player.jerseyNumber} {player.firstName} {player.lastName}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select
+                                                value={game.referee2Id || ''}
+                                                onChange={(e) => handleAssignReferee(game.id, 2, e.target.value ? parseInt(e.target.value) : null)}
+                                                className="referee-select"
+                                            >
+                                                <option value="">-- Select Referee 2 --</option>
                                                 {players.map(player => (
                                                     <option key={player.id} value={player.id}>
                                                         #{player.jerseyNumber} {player.firstName} {player.lastName}

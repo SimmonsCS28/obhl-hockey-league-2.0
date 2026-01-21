@@ -10,6 +10,7 @@ function GoalieSchedule() {
     const [teams, setTeams] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all'); // all, assigned, unassigned
+    const [weekFilter, setWeekFilter] = useState('all'); // all or specific week number
 
     useEffect(() => {
         loadInitialData();
@@ -56,9 +57,13 @@ function GoalieSchedule() {
         }
     };
 
-    const handleAssignGoalie = async (gameId, playerId) => {
+    const handleAssignGoalie = async (gameId, slot, playerId) => {
         try {
-            await api.updateGame(gameId, { goalieId: playerId || null });
+            const updateData = {};
+            if (slot === 1) updateData.goalie1Id = playerId || null;
+            if (slot === 2) updateData.goalie2Id = playerId || null;
+
+            await api.updateGame(gameId, updateData);
             // Refresh games
             const gamesData = await api.getGames(selectedSeason);
             setGames(gamesData);
@@ -74,10 +79,21 @@ function GoalieSchedule() {
     };
 
     const filteredGames = games.filter(game => {
-        if (filter === 'assigned') return game.goalieId != null;
-        if (filter === 'unassigned') return game.goalieId == null;
+        const isAssigned = game.goalie1Id != null && game.goalie2Id != null;
+        const isPartiallyAssigned = game.goalie1Id != null || game.goalie2Id != null;
+
+        // Apply assignment filter
+        if (filter === 'assigned' && !isPartiallyAssigned) return false;
+        if (filter === 'unassigned' && isAssigned) return false;
+
+        // Apply week filter
+        if (weekFilter !== 'all' && game.week !== parseInt(weekFilter)) return false;
+
         return true;
     });
+
+    // Get unique weeks for the filter dropdown
+    const availableWeeks = [...new Set(games.map(g => g.week).filter(w => w != null))].sort((a, b) => a - b);
 
     if (loading) {
         return <div className="loading">Loading...</div>;
@@ -115,6 +131,22 @@ function GoalieSchedule() {
                             <option value="unassigned">Unassigned</option>
                         </select>
                     </div>
+
+                    <div className="filter-group">
+                        <label>Week:</label>
+                        <select
+                            value={weekFilter}
+                            onChange={(e) => setWeekFilter(e.target.value)}
+                            className="filter-select"
+                        >
+                            <option value="all">All Weeks</option>
+                            {availableWeeks.map(week => (
+                                <option key={week} value={week}>
+                                    Week {week}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
             </div>
 
@@ -124,12 +156,16 @@ function GoalieSchedule() {
                     <div className="stat-label">Total Games</div>
                 </div>
                 <div className="stat-card">
-                    <div className="stat-value">{games.filter(g => g.goalieId).length}</div>
-                    <div className="stat-label">Assigned</div>
+                    <div className="stat-value">
+                        {games.reduce((acc, g) => acc + (g.goalie1Id ? 1 : 0) + (g.goalie2Id ? 1 : 0), 0)} / {games.length * 2}
+                    </div>
+                    <div className="stat-label">Slots Assigned</div>
                 </div>
                 <div className="stat-card">
-                    <div className="stat-value">{games.filter(g => !g.goalieId).length}</div>
-                    <div className="stat-label">Unassigned</div>
+                    <div className="stat-value">
+                        {games.reduce((acc, g) => acc + (!g.goalie1Id ? 1 : 0) + (!g.goalie2Id ? 1 : 0), 0)}
+                    </div>
+                    <div className="stat-label">Slots Open</div>
                 </div>
             </div>
 
@@ -145,7 +181,8 @@ function GoalieSchedule() {
                                 <th>Home Team</th>
                                 <th>Away Team</th>
                                 <th>Location</th>
-                                <th>Assigned Goalie</th>
+                                <th>Goalie 1</th>
+                                <th>Goalie 2</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -163,11 +200,25 @@ function GoalieSchedule() {
                                         <td>{game.rink || 'TBD'}</td>
                                         <td>
                                             <select
-                                                value={game.goalieId || ''}
-                                                onChange={(e) => handleAssignGoalie(game.id, e.target.value ? parseInt(e.target.value) : null)}
+                                                value={game.goalie1Id || ''}
+                                                onChange={(e) => handleAssignGoalie(game.id, 1, e.target.value ? parseInt(e.target.value) : null)}
                                                 className="goalie-select"
                                             >
-                                                <option value="">-- Select Goalie --</option>
+                                                <option value="">-- Select Goalie 1 --</option>
+                                                {players.map(player => (
+                                                    <option key={player.id} value={player.id}>
+                                                        #{player.jerseyNumber} {player.firstName} {player.lastName}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </td>
+                                        <td>
+                                            <select
+                                                value={game.goalie2Id || ''}
+                                                onChange={(e) => handleAssignGoalie(game.id, 2, e.target.value ? parseInt(e.target.value) : null)}
+                                                className="goalie-select"
+                                            >
+                                                <option value="">-- Select Goalie 2 --</option>
                                                 {players.map(player => (
                                                     <option key={player.id} value={player.id}>
                                                         #{player.jerseyNumber} {player.firstName} {player.lastName}
