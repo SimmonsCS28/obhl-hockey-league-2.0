@@ -139,7 +139,14 @@ function LiveScoreEntry(props) {
 
     const getTeamPlayers = (team) => {
         const teamId = team === 'home' ? game.homeTeamId : game.awayTeamId;
-        return players.filter(p => Number(p.teamId) === Number(teamId));
+        return players
+            .filter(p => Number(p.teamId) === Number(teamId))
+            .sort((a, b) => {
+                // Sort numerically by jersey number
+                const jerseyA = parseInt(a.jerseyNumber) || 999;
+                const jerseyB = parseInt(b.jerseyNumber) || 999;
+                return jerseyA - jerseyB;
+            });
     };
 
     const checkGoalLimit = (playerId) => {
