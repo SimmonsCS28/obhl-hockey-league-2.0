@@ -7,6 +7,8 @@ import UserModal from './UserModal';
 const UserManagement = () => {
     const [activeTab, setActiveTab] = useState('users');
     const [users, setUsers] = useState([]);
+    const [roles, setRoles] = useState([]);
+    const [selectedRole, setSelectedRole] = useState('all');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedUser, setSelectedUser] = useState(null);
@@ -15,6 +17,7 @@ const UserManagement = () => {
 
     useEffect(() => {
         loadUsers();
+        loadRoles();
     }, []);
 
     const loadUsers = async () => {
@@ -27,6 +30,15 @@ const UserManagement = () => {
             setError(err.message || 'Failed to load users');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadRoles = async () => {
+        try {
+            const data = await api.getRoles();
+            setRoles(data);
+        } catch (err) {
+            console.error('Failed to load roles:', err);
         }
     };
 
@@ -107,6 +119,22 @@ const UserManagement = () => {
             {activeTab === 'users' && (
                 <>
                     <div className="tab-header">
+                        <div className="filter-group">
+                            <label htmlFor="role-filter">Filter by Role:</label>
+                            <select
+                                id="role-filter"
+                                value={selectedRole}
+                                onChange={(e) => setSelectedRole(e.target.value)}
+                                className="role-filter-select"
+                            >
+                                <option value="all">All Roles</option>
+                                {roles.map(role => (
+                                    <option key={role.id} value={role.name}>
+                                        {role.name}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                         <button className="btn-create-user" onClick={handleCreateUser}>
                             + Add User
                         </button>
@@ -126,14 +154,14 @@ const UserManagement = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {users.length === 0 ? (
+                                {users.filter(user => selectedRole === 'all' || user.role === selectedRole).length === 0 ? (
                                     <tr>
                                         <td colSpan="7" className="no-users">
                                             No users found
                                         </td>
                                     </tr>
                                 ) : (
-                                    users.map(user => (
+                                    users.filter(user => selectedRole === 'all' || user.role === selectedRole).map(user => (
                                         <tr key={user.id}>
                                             <td className="username-col">{user.username}</td>
                                             <td>{user.email}</td>
