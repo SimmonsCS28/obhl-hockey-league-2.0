@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './TeamsPage.css';
 
 function TeamsPage() {
+    const navigate = useNavigate();
     const [seasons, setSeasons] = useState([]);
     const [selectedSeason, setSelectedSeason] = useState(null);
     const [teams, setTeams] = useState([]);
     const [players, setPlayers] = useState([]);
-    const [selectedTeam, setSelectedTeam] = useState(null);
-    const [teamRoster, setTeamRoster] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -70,19 +70,6 @@ function TeamsPage() {
         const seasonId = parseInt(event.target.value);
         const season = seasons.find(s => s.id === seasonId);
         setSelectedSeason(season);
-        setSelectedTeam(null); // Close any open team when changing seasons
-    };
-
-    const handleTeamClick = async (team) => {
-        setSelectedTeam(team);
-        // Fetch roster for selected team
-        const roster = players.filter(p => p.teamId === team.id);
-        setTeamRoster(roster);
-    };
-
-    const handleCloseRoster = () => {
-        setSelectedTeam(null);
-        setTeamRoster([]);
     };
 
     // Helper to get valid CSS color
@@ -129,63 +116,6 @@ function TeamsPage() {
     if (loading) return <div className="loading">Loading teams...</div>;
     if (error) return <div className="error">Error: {error}</div>;
 
-    // If a team is selected, show its roster
-    if (selectedTeam) {
-        const bg = getValidColor(selectedTeam.teamColor);
-        const textColor = getTextColor(bg);
-
-        return (
-            <div className="teams-page">
-                <button onClick={handleCloseRoster} className="btn-back">
-                    ← Back to Teams
-                </button>
-
-                <div className="team-roster-view">
-                    <div
-                        className="roster-header"
-                        style={{
-                            backgroundColor: bg,
-                            color: textColor
-                        }}
-                    >
-                        <h1>{selectedTeam.name}</h1>
-                        <p className="gm-info">GM: {getGMName(selectedTeam.gmId)}</p>
-                    </div>
-
-                    <div className="roster-content">
-                        <h2>Current Roster</h2>
-                        {teamRoster.length === 0 ? (
-                            <p className="no-roster">No players on roster</p>
-                        ) : (
-                            <table className="roster-table">
-                                <thead>
-                                    <tr>
-                                        <th>Jersey #</th>
-                                        <th>Name</th>
-                                        <th>Position</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {teamRoster.map(player => (
-                                        <tr key={player.id}>
-                                            <td>{player.jerseyNumber || '-'}</td>
-                                            <td>
-                                                {player.firstName} {player.lastName}
-                                                {selectedTeam.gmId === player.id && <span className="gm-badge">GM</span>}
-                                                {player.skillRating >= 9 && <span className="twogl-badge">2GL</span>}
-                                            </td>
-                                            <td>{player.position}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        )}
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div className="teams-page">
             <h1>Teams</h1>
@@ -223,7 +153,7 @@ function TeamsPage() {
                             <div
                                 key={team.id}
                                 className="team-card clickable"
-                                onClick={() => handleTeamClick(team)}
+                                onClick={() => navigate(`/teams/${team.id}`)}
                             >
                                 <div
                                     className="team-header"
