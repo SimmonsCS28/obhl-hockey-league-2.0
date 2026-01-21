@@ -246,7 +246,11 @@ function TeamDetails({ team, onBack }) {
                                             </div>
                                         )}
                                     </td>
-                                    <td>{player.firstName} {player.lastName}</td>
+                                    <td>
+                                        {player.firstName} {player.lastName}
+                                        {team.gmId === player.id && <span className="gm-badge">GM</span>}
+                                        {player.skillRating >= 9 && <span className="twogl-badge">2GL</span>}
+                                    </td>
                                     <td>{player.position}</td>
                                     <td>
                                         <button
