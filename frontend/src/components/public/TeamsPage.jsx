@@ -169,7 +169,11 @@ function TeamsPage() {
                                     {teamRoster.map(player => (
                                         <tr key={player.id}>
                                             <td>{player.jerseyNumber || '-'}</td>
-                                            <td>{player.firstName} {player.lastName}</td>
+                                            <td>
+                                                {player.firstName} {player.lastName}
+                                                {selectedTeam.gmId === player.id && <span className="gm-badge">GM</span>}
+                                                {player.skillRating >= 9 && <span className="twogl-badge">2GL</span>}
+                                            </td>
                                             <td>{player.position}</td>
                                         </tr>
                                     ))}

@@ -295,6 +295,8 @@ function PlayerManagement() {
                                     <td className="jersey-number">{player.jerseyNumber}</td>
                                     <td className="player-name">
                                         {player.firstName} {player.lastName}
+                                        {team && team.gmId === player.id && <span className="gm-badge">GM</span>}
+                                        {player.skillRating >= 9 && <span className="twogl-badge">2GL</span>}
                                     </td>
                                     <td>
                                         {team ? (
