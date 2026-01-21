@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import * as api from '../services/api';
 import './TeamDetails.css';
 
-function TeamDetails({ team, onBack }) {
+function TeamDetails({ team: propTeam, onBack }) {
+    const { teamId } = useParams();
+    const navigate = useNavigate();
+    const [team, setTeam] = useState(propTeam);
     const [roster, setRoster] = useState([]);
     const [freeAgents, setFreeAgents] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -14,25 +18,60 @@ function TeamDetails({ team, onBack }) {
     const [editedJerseyNumber, setEditedJerseyNumber] = useState('');
 
     useEffect(() => {
-        loadData();
-    }, [team.id]);
+        const fetchTeamData = async () => {
+            // If we have a prop team but it doesn't match the URL ID (if present), or no prop team
+            const targetId = teamId ? parseInt(teamId) : (propTeam?.id);
 
-    const loadData = async () => {
-        try {
+            if (!targetId) return;
+
             setLoading(true);
-            const [teamPlayers, unassignedPlayers] = await Promise.all([
-                api.getPlayers({ teamId: team.id, active: true }),
-                api.getPlayers({ unassigned: true })
-            ]);
-            setRoster(teamPlayers);
-            setFreeAgents(unassignedPlayers);
-        } catch (error) {
-            console.error('Error loading team details:', error);
-            alert('Failed to load team details');
-        } finally {
-            setLoading(false);
+            try {
+                // If we don't have the team data or the ID changed, fetch it
+                let currentTeam = propTeam;
+                if (!currentTeam || (teamId && currentTeam.id !== parseInt(teamId))) {
+                    const teamResponse = await api.getTeam(targetId);
+                    currentTeam = teamResponse;
+                    setTeam(currentTeam);
+                }
+
+                const [teamPlayers, unassignedPlayers] = await Promise.all([
+                    api.getPlayers({ teamId: targetId, active: true }),
+                    api.getPlayers({ unassigned: true })
+                ]);
+
+                setRoster(teamPlayers.sort((a, b) => {
+                    const jerseyA = parseInt(a.jerseyNumber) || 999;
+                    const jerseyB = parseInt(b.jerseyNumber) || 999;
+                    return jerseyA - jerseyB;
+                }));
+                setFreeAgents(unassignedPlayers);
+            } catch (error) {
+                console.error('Error loading team details:', error);
+                // Only alert if we're not just switching views
+                if (teamId) alert('Failed to load team details');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchTeamData();
+    }, [teamId, propTeam]);
+
+    // Handle back navigation
+    const handleBack = () => {
+        if (onBack) {
+            onBack();
+        } else {
+            navigate(-1);
         }
     };
+
+    // If loading and we don't have basic team info yet
+    if (loading && !team) {
+        return <div className="loading">Loading team details...</div>;
+    }
+
+    if (!team && !loading) return <div className="error">Team not found</div>;
 
     const initiateRemovePlayer = (player) => {
         setPlayerToRemove(player);
@@ -51,7 +90,7 @@ function TeamDetails({ team, onBack }) {
 
             setShowConfirmModal(false);
             setPlayerToRemove(null);
-            loadData();
+            window.location.reload();
         } catch (error) {
             console.error('Error removing player:', error);
             alert('Failed to remove player');
@@ -79,7 +118,7 @@ function TeamDetails({ team, onBack }) {
 
             setShowAddPlayer(false);
             setSelectedPlayerId('');
-            loadData();
+            window.location.reload();
         } catch (error) {
             console.error('Error adding player:', error);
             alert('Failed to add player');
@@ -107,7 +146,7 @@ function TeamDetails({ team, onBack }) {
             });
             setEditingPlayerId(null);
             setEditedJerseyNumber('');
-            loadData();
+            window.location.reload();
         } catch (error) {
             console.error('Error updating jersey number:', error);
             alert('Failed to update jersey number');
@@ -123,30 +162,69 @@ function TeamDetails({ team, onBack }) {
         return <div className="loading">Loading team details...</div>;
     }
 
+    // Helper functions for color handling
+    const getValidColor = (color) => {
+        if (!color) return '#95a5a6';
+        const colorMap = {
+            'Lt. Blu': '#87CEEB',
+            'Dk. Gre': '#006400',
+            'White': '#FFFFFF',
+            'Yellow': '#FFD700',
+            'Gold': '#FFD700'
+        };
+        return colorMap[color] || color;
+    };
+
+    const getTextColor = (bgColor) => {
+        if (!bgColor) return 'white';
+        const lightColors = ['White', '#FFFFFF', 'Yellow', '#FFD700', 'Gold', 'Lt. Blu', '#87CEEB', 'LightBlue'];
+        const isLight = lightColors.some(c => c.toLowerCase() === bgColor.toLowerCase());
+        return isLight ? '#2c3e50' : 'white';
+    };
+
+    const bg = getValidColor(team.teamColor);
+    const textColor = getTextColor(bg);
+
     return (
         <div className="team-details">
-            <div className="details-header">
-                <button onClick={onBack} className="btn-back">
-                    ← Back to Teams
-                </button>
-                <div className="team-info-header">
-                    <div className="team-title">
-                        <h2 style={{ color: team.teamColor }}>{team.name}</h2>
-                        <span className="team-abbr">{team.abbreviation}</span>
+            <button onClick={handleBack} className="btn-back">
+                ← Back
+            </button>
+
+            <div className="team-header-colored" style={{ backgroundColor: bg, color: textColor }}>
+                <h1>{team.name}</h1>
+                <div className="team-stats-display">
+                    <div className="stat-item">
+                        <span className="stat-label">W</span>
+                        <span className="stat-value">{team.wins}</span>
                     </div>
-                    <div className="team-stats-summary">
-                        <div className="stat-item">
-                            <span className="label">Wins</span>
-                            <span className="value">{team.wins}</span>
-                        </div>
-                        <div className="stat-item">
-                            <span className="label">Losses</span>
-                            <span className="value">{team.losses}</span>
-                        </div>
-                        <div className="stat-item">
-                            <span className="label">Points</span>
-                            <span className="value">{team.points}</span>
-                        </div>
+                    <div className="stat-item">
+                        <span className="stat-label">L</span>
+                        <span className="stat-value">{team.losses}</span>
+                    </div>
+                    <div className="stat-item">
+                        <span className="stat-label">T</span>
+                        <span className="stat-value">{team.ties || 0}</span>
+                    </div>
+                    <div className="stat-item">
+                        <span className="stat-label">OTL</span>
+                        <span className="stat-value">{team.overtimeLosses || 0}</span>
+                    </div>
+                    <div className="stat-item">
+                        <span className="stat-label">GF</span>
+                        <span className="stat-value">{team.goalsFor || 0}</span>
+                    </div>
+                    <div className="stat-item">
+                        <span className="stat-label">GA</span>
+                        <span className="stat-value">{team.goalsAgainst || 0}</span>
+                    </div>
+                    <div className="stat-item">
+                        <span className="stat-label">DIFF</span>
+                        <span className="stat-value">{(team.goalsFor || 0) - (team.goalsAgainst || 0)}</span>
+                    </div>
+                    <div className="stat-item">
+                        <span className="stat-label">PTS</span>
+                        <span className="stat-value">{team.points}</span>
                     </div>
                 </div>
             </div>

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import './Standings.css';
 
 function Standings() {
+    const navigate = useNavigate();
     const [teams, setTeams] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -183,7 +185,12 @@ function Standings() {
                             const textColor = getTextColor(bg);
 
                             return (
-                                <tr key={team.id} className={index < 4 ? 'playoff-position' : ''}>
+                                <tr
+                                    key={team.id}
+                                    className="clickable-row"
+                                    onClick={() => navigate(`/admin/teams/${team.id}`)}
+                                    style={{ cursor: 'pointer' }}
+                                >
                                     <td className="rank" style={{ backgroundColor: bg, color: textColor }}>{index + 1}</td>
                                     <td className="team-name">
                                         <strong>{team.name}</strong>

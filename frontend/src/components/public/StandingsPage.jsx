@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import './StandingsPage.css';
 
 function StandingsPage() {
+    const navigate = useNavigate();
     const [seasons, setSeasons] = useState([]);
     const [selectedSeason, setSelectedSeason] = useState(null);
     const [teams, setTeams] = useState([]);
@@ -168,7 +170,9 @@ function StandingsPage() {
                                 return (
                                     <tr
                                         key={team.id}
-                                        className={index < 4 ? 'playoff-spot' : ''}
+                                        className="clickable-row"
+                                        onClick={() => navigate(`/teams/${team.id}`)}
+                                        title="Click to view team roster"
                                     >
                                         <td
                                             className="rank"

@@ -93,12 +93,12 @@
     border-bottom: none;
 }
 
-.standings-table tbody tr.playoff-spot {
-    background-color: #f0fdf4;
+.standings-table tbody tr.clickable-row {
+    cursor: pointer;
 }
 
-.standings-table tbody tr.playoff-spot:hover {
-    background-color: #dcfce7;
+.standings-table tbody tr.clickable-row:hover {
+    background-color: #f7fafc;
 }
 
 .standings-table td {

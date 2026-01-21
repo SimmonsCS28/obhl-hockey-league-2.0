@@ -27,51 +27,53 @@
     color: #e2e8f0;
 }
 
-.team-info-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    flex-wrap: wrap;
-    gap: 2rem;
-}
-
-.team-title h2 {
-    margin: 0;
-    font-size: 3rem;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-}
-
-.team-abbr {
-    font-size: 1.5rem;
-    color: #a0aec0;
-    font-weight: 600;
-}
-
-.team-stats-summary {
-    display: flex;
-    gap: 2rem;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 1rem 2rem;
+.team-header-colored {
+    background: white;
     border-radius: 12px;
-    backdrop-filter: blur(5px);
+    padding: 3rem 2rem;
+    margin: 0 auto 2rem auto;
+    max-width: 1200px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.stat-item {
+.team-header-colored h1 {
+    margin: 0 0 2rem 0;
+    font-size: 3rem;
+    color: inherit;
+}
+
+.team-stats-display {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    background: #2d3748;
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    max-width: fit-content;
+    margin: 0 auto;
+}
+
+.team-stats-display .stat-item {
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
-.stat-item .label {
-    font-size: 0.875rem;
-    color: #cbd5e0;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.stat-item .value {
+.team-stats-display .stat-value {
     font-size: 2rem;
     font-weight: 700;
+    line-height: 1;
+    color: white;
+}
+
+.team-stats-display .stat-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.9;
+    margin-bottom: 0.25rem;
     color: white;
 }
 
