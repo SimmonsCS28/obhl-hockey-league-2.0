@@ -135,10 +135,21 @@ function PlayerManagement() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            // Prepare data with proper type conversions
+            const playerData = {
+                ...formData,
+                jerseyNumber: formData.jerseyNumber ? parseInt(formData.jerseyNumber) : null,
+                skillRating: formData.skillRating ? parseInt(formData.skillRating) : 5,
+                teamId: formData.teamId ? parseInt(formData.teamId) : null,
+                seasonId: formData.seasonId ? parseInt(formData.seasonId) : null,
+                birthDate: formData.birthDate || null,
+                hometown: formData.hometown || null
+            };
+
             if (editingPlayer) {
-                await api.updatePlayer(editingPlayer.id, formData);
+                await api.updatePlayer(editingPlayer.id, playerData);
             } else {
-                await api.createPlayer(formData);
+                await api.createPlayer(playerData);
             }
             setShowModal(false);
             resetForm();
