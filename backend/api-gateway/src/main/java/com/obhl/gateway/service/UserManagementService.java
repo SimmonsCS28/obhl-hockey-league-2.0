@@ -175,6 +175,33 @@ public class UserManagementService {
     }
 
     /**
+     * Update user roles
+     */
+    @Transactional
+    public UserDTO updateUserRoles(Long id, List<String> roleNames) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+        if (roleNames == null || roleNames.isEmpty()) {
+            throw new RuntimeException("At least one role must be specified");
+        }
+
+        Set<Role> roles = new HashSet<>();
+        for (String roleName : roleNames) {
+            Role role = roleRepository.findByName(roleName)
+                    .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+            roles.add(role);
+        }
+
+        user.setRoles(roles);
+        // BACKWARD COMPATIBILITY: Set the first role in the deprecated field
+        user.setRole(roleNames.get(0));
+
+        User updatedUser = userRepository.save(user);
+        return convertToDTO(updatedUser);
+    }
+
+    /**
      * Convert User entity to UserDTO (without password)
      */
     private UserDTO convertToDTO(User user) {

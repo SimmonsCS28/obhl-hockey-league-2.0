@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.obhl.gateway.dto.CreateUserRequest;
 import com.obhl.gateway.dto.UpdateUserRequest;
+import com.obhl.gateway.dto.UpdateUserRolesRequest;
 import com.obhl.gateway.dto.UserDTO;
 import com.obhl.gateway.service.UserManagementService;
 
@@ -77,5 +78,16 @@ public class UserController {
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userManagementService.deleteUser(id);
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Update user roles
+     */
+    @PutMapping("/{id}/roles")
+    public ResponseEntity<UserDTO> updateUserRoles(
+            @PathVariable Long id,
+            @RequestBody UpdateUserRolesRequest request) {
+        UserDTO updatedUser = userManagementService.updateUserRoles(id, request.getRoles());
+        return ResponseEntity.ok(updatedUser);
     }
 }
