@@ -1,0 +1,66 @@
+.referee-layout,
+.scorekeeper-layout,
+.goalie-layout {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.referee-nav,
+.scorekeeper-nav,
+.goalie-nav {
+    background-color: #1a202c;
+    color: white;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nav-brand {
+    font-size: 1.25rem;
+    font-weight: bold;
+    color: #e2e8f0;
+}
+
+.nav-links a {
+    color: #cbd5e0;
+    text-decoration: none;
+    margin-right: 1.5rem;
+    font-weight: 500;
+    transition: color 0.2s;
+}
+
+.nav-links a:hover {
+    color: white;
+}
+
+.nav-user {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.logout-btn {
+    background-color: #e53e3e;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: background-color 0.2s;
+}
+
+.logout-btn:hover {
+    background-color: #c53030;
+}
+
+.referee-content,
+.scorekeeper-content,
+.goalie-content {
+    flex: 1;
+    padding: 2rem;
+    background-color: #f7fafc;
+}

@@ -67,7 +67,7 @@
 }
 
 .stat-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #2d3748;
     padding: 1.5rem;
     border-radius: 12px;
     text-align: center;
@@ -79,14 +79,29 @@
     font-size: 2.5rem;
     font-weight: bold;
     margin-bottom: 0.5rem;
+    color: #ffffff;
 }
 
 .stat-label {
     font-size: 0.875rem;
-    opacity: 0.9;
+    opacity: 1.0;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    color: #ffffff;
 }
+
+.team-badge {
+    display: inline-block;
+    padding: 2.5px 5px !important;
+    border-radius: 0 !important;
+    color: white;
+    font-weight: 600;
+    font-size: 0.75em;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    white-space: nowrap;
+    line-height: 1.1 !important;
+}
+
 
 .games-table-container {
     background: white;
@@ -125,8 +140,9 @@
 }
 
 .games-table td {
-    padding: 1rem;
+    padding: 0.25rem 0.5rem !important;
     color: #4a5568;
+    vertical-align: middle;
 }
 
 .games-table td .time {
@@ -139,11 +155,11 @@
 .referee-select,
 .scorekeeper-select {
     width: 100%;
-    padding: 0.5rem;
+    padding: 0.25rem 0.5rem !important;
     border: 2px solid #e2e8f0;
     border-radius: 6px;
     background: white;
-    font-size: 0.875rem;
+    font-size: 0.8rem;
     cursor: pointer;
     transition: all 0.2s;
 }
@@ -167,6 +183,12 @@
 .scorekeeper-select:not([value=""]) {
     border-color: #48bb78;
     background-color: #f0fff4;
+}
+
+/* Week Separator */
+.games-table .week-separator td {
+    border-top: 2px solid #000 !important;
+    padding-top: 0.5rem !important;
 }
 
 .empty-state {

@@ -7,7 +7,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import PublicLayout from './components/PublicLayout';
 import ScheduleManager from './components/ScheduleManager';
 import SchedulePage from './components/SchedulePage';
-import Scorekeeper from './components/Scorekeeper';
 import GMDashboard from './components/gm/GMDashboard';
 import GMSchedule from './components/gm/GMSchedule';
 import GMTeam from './components/gm/GMTeam';
@@ -18,6 +17,16 @@ import StandingsPage from './components/public/StandingsPage';
 import TeamsPage from './components/public/TeamsPage';
 import { AuthProvider } from './contexts/AuthContext';
 import ChangePassword from './pages/ChangePassword';
+
+// New Staff Components
+import GoalieLayout from './components/GoalieLayout';
+import RefereeLayout from './components/RefereeLayout';
+import ScorekeeperLayout from './components/ScorekeeperLayout';
+import GoalieSchedulePage from './components/goalie/GoalieSchedulePage';
+import RefereeSchedulePage from './components/referee/RefereeSchedulePage';
+import RefereeSignup from './components/referee/RefereeSignup';
+import ScorekeeperSchedulePage from './components/scorekeeper/ScorekeeperSchedulePage';
+import ScorekeeperSignup from './components/scorekeeper/ScorekeeperSignup';
 
 function App() {
   return (
@@ -31,12 +40,15 @@ function App() {
             <Route path="players" element={<PlayersPage />} />
             <Route path="standings" element={<StandingsPage />} />
             <Route path="schedule" element={<SchedulePage />} />
-            {/* Other public pages will be added here */}
+
+            {/* Public Staff Signups */}
+            <Route path="referee/signup" element={<RefereeSignup />} />
+            <Route path="scorekeeper/signup" element={<ScorekeeperSignup />} />
           </Route>
 
           {/* Protected GM Routes */}
           <Route path="/gm" element={
-            <ProtectedRoute>
+            <ProtectedRoute requiredRoles={['GM']}>
               <GMLayout />
             </ProtectedRoute>
           }>
@@ -45,35 +57,47 @@ function App() {
             <Route path="schedule" element={<GMSchedule />} />
           </Route>
 
+          {/* Protected Referee Routes */}
+          <Route path="/referee" element={
+            <ProtectedRoute requiredRoles={['REFEREE']}>
+              <RefereeLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<RefereeSchedulePage />} />
+          </Route>
+
+          {/* Protected Scorekeeper Routes */}
+          <Route path="/scorekeeper" element={
+            <ProtectedRoute requiredRoles={['SCOREKEEPER']}>
+              <ScorekeeperLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<ScorekeeperSchedulePage />} />
+            <Route path="game/:gameId" element={<LiveScoreEntry />} />
+          </Route>
+
+          {/* Protected Goalie Routes */}
+          <Route path="/goalie" element={
+            <ProtectedRoute requiredRoles={['GOALIE']}>
+              <GoalieLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<GoalieSchedulePage />} />
+          </Route>
+
           {/* Protected Admin Routes */}
           <Route
             path="/admin"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRoles={['ADMIN']}>
                 <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/scorekeeper"
-            element={
-              <ProtectedRoute>
-                <Scorekeeper />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/scorekeeper/game/:gameId"
-            element={
-              <ProtectedRoute>
-                <LiveScoreEntry />
               </ProtectedRoute>
             }
           />
           <Route
             path="/admin/schedule"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRoles={['ADMIN']}>
                 <ScheduleManager />
               </ProtectedRoute>
             }

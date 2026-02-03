@@ -14,6 +14,33 @@ const api = {
     // ============================================
     // AUTHENTICATION API
     // ============================================
+    // Staff Signup
+    async refereeSignup(data) {
+        const response = await fetch(`${API_BASE_URL}/staff/referee/signup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const error = await response.text();
+            throw new Error(error || 'Signup failed');
+        }
+        return response.json();
+    },
+
+    async scorekeeperSignup(data) {
+        const response = await fetch(`${API_BASE_URL}/staff/scorekeeper/signup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const error = await response.text();
+            throw new Error(error || 'Signup failed');
+        }
+        return response.json();
+    },
+
     async login(usernameOrEmail, password) {
         const response = await fetch(`${API_BASE_URL}/auth/login`, {
             method: 'POST',
@@ -331,7 +358,7 @@ const api = {
         return response.ok;
     },
 
-    // User Management http://localhost:5175/admin\r
+    // User Management http://localhost:5175/admin
     async getUsers() {
         const response = await fetch(`${API_BASE_URL}/users`, {
             headers: { ...getAuthHeaders() }
@@ -389,6 +416,28 @@ const api = {
             const error = await response.json().catch(() => ({}));
             throw new Error(error.message || 'Failed to delete user');
         }
+    },
+
+    // User Role Management
+    async getUserRoles(userId) {
+        const response = await fetch(`${API_BASE_URL}/users/${userId}/roles`, {
+            headers: { ...getAuthHeaders() }
+        });
+        if (!response.ok) throw new Error('Failed to fetch user roles');
+        return response.json();
+    },
+
+    async updateUserRoles(userId, roles) {
+        const response = await fetch(`${API_BASE_URL}/users/${userId}/roles`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify({ roles })
+        });
+        if (!response.ok) throw new Error('Failed to update user roles');
+        return response.json();
     },
 
     // Role Management
@@ -491,7 +540,12 @@ export const {
     updateSeason,
     deleteSeason,
     getPlayerStats,
-    getPlayerStatsBulk
+    getPlayerStatsBulk,
+    refereeSignup,
+    scorekeeperSignup,
+    getUserRoles,
+    updateUserRoles,
+    getUsers
 } = api;
 
 export default api;

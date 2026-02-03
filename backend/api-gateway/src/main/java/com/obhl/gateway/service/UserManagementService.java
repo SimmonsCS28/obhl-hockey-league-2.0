@@ -1,6 +1,9 @@
 package com.obhl.gateway.service;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 import com.obhl.gateway.dto.CreateUserRequest;
 import com.obhl.gateway.dto.UpdateUserRequest;
 import com.obhl.gateway.dto.UserDTO;
+import com.obhl.gateway.model.Role;
 import com.obhl.gateway.model.User;
+import com.obhl.gateway.repository.RoleRepository;
 import com.obhl.gateway.repository.UserRepository;
 
 @Service
@@ -19,6 +24,9 @@ public class UserManagementService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private RoleRepository roleRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -59,7 +67,29 @@ public class UserManagementService {
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        user.setRole(request.getRole());
+        if (request.getRoles() != null && !request.getRoles().isEmpty()) {
+            Set<Role> roles = new HashSet<>();
+            for (String roleName : request.getRoles()) {
+                Role role = roleRepository.findByName(roleName)
+                        .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+                roles.add(role);
+            }
+            user.setRoles(roles);
+            // BACKWARD COMPATIBILITY: Set the first role in the deprecated field
+            user.setRole(request.getRoles().iterator().next());
+        } else if (request.getRole() != null) {
+            // Fallback for requests using the old 'role' field
+            Role role = roleRepository.findByName(request.getRole())
+                    .orElseThrow(() -> new RuntimeException("Role not found: " + request.getRole()));
+            user.setRoles(Collections.singleton(role));
+            user.setRole(request.getRole());
+        } else {
+            // Default role
+            Role userRole = roleRepository.findByName("USER")
+                    .orElseThrow(() -> new RuntimeException("Default role 'USER' not found"));
+            user.setRoles(Collections.singleton(userRole));
+            user.setRole("USER");
+        }
         user.setTeamId(request.getTeamId());
         user.setIsActive(true);
         user.setMustChangePassword(true); // New users must change password on first login
@@ -99,7 +129,22 @@ public class UserManagementService {
             user.setEmail(request.getEmail());
         }
 
-        if (request.getRole() != null && !request.getRole().isBlank()) {
+        if (request.getRoles() != null) {
+            Set<Role> roles = new HashSet<>();
+            for (String roleName : request.getRoles()) {
+                Role role = roleRepository.findByName(roleName)
+                        .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+                roles.add(role);
+            }
+            user.setRoles(roles);
+            // BACKWARD COMPATIBILITY
+            if (!roles.isEmpty()) {
+                user.setRole(roles.iterator().next().getName());
+            }
+        } else if (request.getRole() != null && !request.getRole().isBlank()) {
+            Role role = roleRepository.findByName(request.getRole())
+                    .orElseThrow(() -> new RuntimeException("Role not found: " + request.getRole()));
+            user.setRoles(Collections.singleton(role));
             user.setRole(request.getRole());
         }
 
@@ -138,6 +183,7 @@ public class UserManagementService {
         dto.setUsername(user.getUsername());
         dto.setEmail(user.getEmail());
         dto.setRole(user.getRole());
+        dto.setRoles(user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()));
         dto.setTeamId(user.getTeamId());
         dto.setIsActive(user.getIsActive());
         dto.setMustChangePassword(user.getMustChangePassword());

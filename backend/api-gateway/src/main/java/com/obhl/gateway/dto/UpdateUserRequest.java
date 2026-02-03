@@ -15,7 +15,10 @@ public class UpdateUserRequest {
     @Pattern(regexp = "^(?=.*[A-Z])(?=.*[!@#$%^&*()\\-_=+\\[\\]{}|;:',.<>?/~`])(?=\\S+$).{8,}$", message = "Password must be at least 8 characters, contain 1 uppercase letter, 1 special character, and no spaces")
     private String newPassword; // Optional - only if changing password
 
-    private String role;
+    @Deprecated
+    private String role; // DEPRECATED: Use roles set instead
+
+    private java.util.Set<String> roles;
 
     private Long teamId;
 

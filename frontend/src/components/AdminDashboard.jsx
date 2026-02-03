@@ -7,10 +7,10 @@ import PlayerManagement from './PlayerManagement';
 import ScorekeeperContent from './ScorekeeperContent';
 import SeasonManagement from './SeasonManagement';
 import TeamManagement from './TeamManagement';
-import UserManagement from './UserManagement';
 import GoalieSchedule from './admin/GoalieSchedule';
 import RefereeSchedule from './admin/RefereeSchedule';
 import ScorekeeperSchedule from './admin/ScorekeeperSchedule';
+import UserRoleManagement from './admin/UserRoleManagement';
 
 function AdminDashboard() {
     const [activeTab, setActiveTab] = useState('teams');
@@ -130,7 +130,7 @@ function AdminDashboard() {
                 {activeTab === 'seasons' && <SeasonManagement />}
                 {activeTab === 'draft' && <DraftDashboard />}
                 {activeTab === 'gameManagement' && <ScorekeeperContent />}
-                {activeTab === 'users' && <UserManagement />}
+                {activeTab === 'users' && <UserRoleManagement />}
                 {activeTab === 'goalies' && <GoalieSchedule />}
                 {activeTab === 'referees' && <RefereeSchedule />}
                 {activeTab === 'scorekeepers' && <ScorekeeperSchedule />}

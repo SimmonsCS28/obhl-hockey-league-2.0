@@ -67,9 +67,39 @@ function ScorekeeperSchedule() {
         }
     };
 
-    const getTeamName = (teamId) => {
-        const team = teams.find(t => t.id === teamId);
-        return team?.name || `Team ${teamId}`;
+    const getTeamById = (teamId) => {
+        return teams.find(t => t.id === teamId);
+    };
+
+    const getValidColor = (color) => {
+        if (!color) return '#95a5a6';
+
+        const colorMap = {
+            'Lt. Blu': '#87CEEB',
+            'Dk. Gre': '#006400',
+            'White': '#FFFFFF',
+            'Yellow': '#FFD700',
+            'Gold': '#FFD700'
+        };
+
+        return colorMap[color] || color;
+    };
+
+    const getTextColor = (bgColor) => {
+        if (!bgColor) return 'white';
+
+        const lightColors = [
+            'White', '#FFFFFF',
+            'Yellow', '#FFD700',
+            'Gold',
+            'Lt. Blu', '#87CEEB', 'LightBlue'
+        ];
+
+        const isLight = lightColors.some(c =>
+            c.toLowerCase() === bgColor.toLowerCase()
+        );
+
+        return isLight ? '#2c3e50' : 'white';
     };
 
     const filteredGames = games.filter(game => {
@@ -148,17 +178,38 @@ function ScorekeeperSchedule() {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredGames.map(game => {
+                            {filteredGames.map((game, index) => {
                                 const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
+                                const previousGame = index > 0 ? filteredGames[index - 1] : null;
+                                const isNewWeek = previousGame && previousGame.week !== game.week;
                                 return (
-                                    <tr key={game.id}>
+                                    <tr key={game.id} className={isNewWeek ? 'week-separator' : ''}>
                                         <td>Week {game.week}</td>
                                         <td>
-                                            <div>{gameDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
-                                            <div className="time">{gameDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</div>
+                                            {gameDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} {gameDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
                                         </td>
-                                        <td>{getTeamName(game.homeTeamId)}</td>
-                                        <td>{getTeamName(game.awayTeamId)}</td>
+                                        <td>
+                                            <span
+                                                className="team-badge"
+                                                style={{
+                                                    backgroundColor: getValidColor(getTeamById(game.homeTeamId)?.teamColor),
+                                                    color: getTextColor(getTeamById(game.homeTeamId)?.teamColor)
+                                                }}
+                                            >
+                                                {getTeamById(game.homeTeamId)?.name || `Team ${game.homeTeamId}`}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span
+                                                className="team-badge"
+                                                style={{
+                                                    backgroundColor: getValidColor(getTeamById(game.awayTeamId)?.teamColor),
+                                                    color: getTextColor(getTeamById(game.awayTeamId)?.teamColor)
+                                                }}
+                                            >
+                                                {getTeamById(game.awayTeamId)?.name || `Team ${game.awayTeamId}`}
+                                            </span>
+                                        </td>
                                         <td>{game.rink || 'TBD'}</td>
                                         <td>
                                             <select

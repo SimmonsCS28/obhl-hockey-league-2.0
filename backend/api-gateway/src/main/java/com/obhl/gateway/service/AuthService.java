@@ -78,6 +78,8 @@ public class AuthService {
                 user.getUsername(),
                 user.getEmail(),
                 user.getRole(),
+                user.getRoles().stream().map(com.obhl.gateway.model.Role::getName)
+                        .collect(java.util.stream.Collectors.toSet()),
                 user.getTeamId());
 
         // Create login response with password change flag

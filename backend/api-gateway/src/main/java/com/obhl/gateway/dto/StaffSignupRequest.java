@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 @Data
-public class CreateUserRequest {
+public class StaffSignupRequest {
 
     @NotBlank(message = "Username is required")
     private String username;
@@ -18,12 +18,4 @@ public class CreateUserRequest {
     @NotBlank(message = "Password is required")
     @Pattern(regexp = "^(?=.*[A-Z])(?=.*[!@#$%^&*()\\-_=+\\[\\]{}|;:',.<>?/~`])(?=\\S+$).{8,}$", message = "Password must be at least 8 characters, contain 1 uppercase letter, 1 special character, and no spaces")
     private String password;
-
-    @NotBlank(message = "Role is required")
-    @Deprecated
-    private String role; // DEPRECATED: Use roles set instead
-
-    private java.util.Set<String> roles;
-
-    private Long teamId; // Optional, for GM role
 }

@@ -59,8 +59,16 @@ export const AuthProvider = ({ children }) => {
         logout,
         loading,
         isAuthenticated: !!user,
-        isAdmin: user?.role === 'ADMIN',
-        isGM: user?.role === 'GM',
+        // Helper functions for role checking
+        hasRole: (roleName) => user?.roles?.includes(roleName) || user?.role === roleName || false,
+        hasAnyRole: (...roleNames) => roleNames.some(role => user?.roles?.includes(role) || user?.role === role) || false,
+        hasAllRoles: (...roleNames) => roleNames.every(role => user?.roles?.includes(role) || user?.role === role) || false,
+
+        // Backward compatibility role checks
+        isAdmin: (user?.roles?.includes('ADMIN') || user?.role === 'ADMIN') || false,
+        isGM: (user?.roles?.includes('GM') || user?.role === 'GM') || false,
+        isReferee: (user?.roles?.includes('REFEREE') || user?.role === 'REFEREE') || false,
+        isScorekeeper: (user?.roles?.includes('SCOREKEEPER') || user?.role === 'SCOREKEEPER') || false,
     };
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
