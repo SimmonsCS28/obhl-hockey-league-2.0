@@ -114,6 +114,12 @@ const UserManagement = () => {
                 >
                     Roles
                 </button>
+                <button
+                    className={`tab-button ${activeTab === 'userRoles' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('userRoles')}
+                >
+                    User Roles
+                </button>
             </div>
 
             {activeTab === 'users' && (
@@ -215,6 +221,8 @@ const UserManagement = () => {
             )}
 
             {activeTab === 'roles' && <RoleManagement />}
+
+            {activeTab === 'userRoles' && <UserRoleManagement />}
         </div>
     );
 };
