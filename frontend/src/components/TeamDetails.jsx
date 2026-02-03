@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import * as api from '../services/api';
-import { getPlayerStats } from '../services/api';
 import './TeamDetails.css';
 
-function TeamDetails({ team, onBack }) {
+function TeamDetails({ team: propTeam, onBack }) {
+    const { teamId } = useParams();
+    const navigate = useNavigate();
+    const [team, setTeam] = useState(propTeam);
     const [roster, setRoster] = useState([]);
     const [freeAgents, setFreeAgents] = useState([]);
-    const [playerStats, setPlayerStats] = useState({});  // Map of playerId -> stats
     const [loading, setLoading] = useState(true);
     const [showAddPlayer, setShowAddPlayer] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -14,44 +16,62 @@ function TeamDetails({ team, onBack }) {
     const [selectedPlayerId, setSelectedPlayerId] = useState('');
     const [editingPlayerId, setEditingPlayerId] = useState(null);
     const [editedJerseyNumber, setEditedJerseyNumber] = useState('');
-    const [sortConfig, setSortConfig] = useState({ key: 'jersey Number', direction: 'ascending' });
 
     useEffect(() => {
-        loadData();
-        fetchPlayerStats();
-    }, [team.id]);
+        const fetchTeamData = async () => {
+            // If we have a prop team but it doesn't match the URL ID (if present), or no prop team
+            const targetId = teamId ? parseInt(teamId) : (propTeam?.id);
 
-    const loadData = async () => {
-        try {
+            if (!targetId) return;
+
             setLoading(true);
-            const [teamPlayers, unassignedPlayers] = await Promise.all([
-                api.getPlayers({ teamId: team.id, active: true }),
-                api.getPlayers({ unassigned: true })
-            ]);
-            setRoster(teamPlayers);
-            setFreeAgents(unassignedPlayers);
-        } catch (error) {
-            console.error('Error loading team details:', error);
-            alert('Failed to load team details');
-        } finally {
-            setLoading(false);
+            try {
+                // If we don't have the team data or the ID changed, fetch it
+                let currentTeam = propTeam;
+                if (!currentTeam || (teamId && currentTeam.id !== parseInt(teamId))) {
+                    const teamResponse = await api.getTeam(targetId);
+                    currentTeam = teamResponse;
+                    setTeam(currentTeam);
+                }
+
+                const [teamPlayers, unassignedPlayers] = await Promise.all([
+                    api.getPlayers({ teamId: targetId, active: true }),
+                    api.getPlayers({ unassigned: true })
+                ]);
+
+                setRoster(teamPlayers.sort((a, b) => {
+                    const jerseyA = parseInt(a.jerseyNumber) || 999;
+                    const jerseyB = parseInt(b.jerseyNumber) || 999;
+                    return jerseyA - jerseyB;
+                }));
+                setFreeAgents(unassignedPlayers);
+            } catch (error) {
+                console.error('Error loading team details:', error);
+                // Only alert if we're not just switching views
+                if (teamId) alert('Failed to load team details');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchTeamData();
+    }, [teamId, propTeam]);
+
+    // Handle back navigation
+    const handleBack = () => {
+        if (onBack) {
+            onBack();
+        } else {
+            navigate(-1);
         }
     };
 
-    const fetchPlayerStats = async () => {
-        try {
-            if (!team.seasonId) return;
-            const stats = await getPlayerStats(team.seasonId, team.id);
-            // Create a map of playerId -> stats for easy lookup
-            const statsMap = {};
-            stats.forEach(stat => {
-                statsMap[stat.playerId] = stat;
-            });
-            setPlayerStats(statsMap);
-        } catch (error) {
-            console.error('Failed to load player stats:', error);
-        }
-    };
+    // If loading and we don't have basic team info yet
+    if (loading && !team) {
+        return <div className="loading">Loading team details...</div>;
+    }
+
+    if (!team && !loading) return <div className="error">Team not found</div>;
 
     const initiateRemovePlayer = (player) => {
         setPlayerToRemove(player);
@@ -70,7 +90,7 @@ function TeamDetails({ team, onBack }) {
 
             setShowConfirmModal(false);
             setPlayerToRemove(null);
-            loadData();
+            window.location.reload();
         } catch (error) {
             console.error('Error removing player:', error);
             alert('Failed to remove player');
@@ -98,7 +118,7 @@ function TeamDetails({ team, onBack }) {
 
             setShowAddPlayer(false);
             setSelectedPlayerId('');
-            loadData();
+            window.location.reload();
         } catch (error) {
             console.error('Error adding player:', error);
             alert('Failed to add player');
@@ -126,49 +146,11 @@ function TeamDetails({ team, onBack }) {
             });
             setEditingPlayerId(null);
             setEditedJerseyNumber('');
-            loadData();
+            window.location.reload();
         } catch (error) {
             console.error('Error updating jersey number:', error);
             alert('Failed to update jersey number');
         }
-    };
-
-    const requestSort = (key) => {
-        let direction = 'ascending';
-        if (sortConfig.key === key && sortConfig.direction === 'ascending') {
-            direction = 'descending';
-        }
-        setSortConfig({ key, direction });
-    };
-
-    const getSortedRoster = () => {
-        return [...roster].sort((a, b) => {
-            let aValue, bValue;
-
-            // Handle stats fields
-            if (['goals', 'assists', 'points', 'penaltyMinutes'].includes(sortConfig.key)) {
-                const aStats = playerStats[a.id] || {};
-                const bStats = playerStats[b.id] || {};
-                aValue = aStats[sortConfig.key] || 0;
-                bValue = bStats[sortConfig.key] || 0;
-            } else {
-                aValue = a[sortConfig.key];
-                bValue = b[sortConfig.key];
-            }
-
-            if (aValue < bValue) {
-                return sortConfig.direction === 'ascending' ? -1 : 1;
-            }
-            if (aValue > bValue) {
-                return sortConfig.direction === 'ascending' ? 1 : -1;
-            }
-            return 0;
-        });
-    };
-
-    const getSortIcon = (columnKey) => {
-        if (sortConfig.key !== columnKey) return null;
-        return sortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
     };
 
     const handleCancelJersey = () => {
@@ -180,30 +162,69 @@ function TeamDetails({ team, onBack }) {
         return <div className="loading">Loading team details...</div>;
     }
 
+    // Helper functions for color handling
+    const getValidColor = (color) => {
+        if (!color) return '#95a5a6';
+        const colorMap = {
+            'Lt. Blu': '#87CEEB',
+            'Dk. Gre': '#006400',
+            'White': '#FFFFFF',
+            'Yellow': '#FFD700',
+            'Gold': '#FFD700'
+        };
+        return colorMap[color] || color;
+    };
+
+    const getTextColor = (bgColor) => {
+        if (!bgColor) return 'white';
+        const lightColors = ['White', '#FFFFFF', 'Yellow', '#FFD700', 'Gold', 'Lt. Blu', '#87CEEB', 'LightBlue'];
+        const isLight = lightColors.some(c => c.toLowerCase() === bgColor.toLowerCase());
+        return isLight ? '#2c3e50' : 'white';
+    };
+
+    const bg = getValidColor(team.teamColor);
+    const textColor = getTextColor(bg);
+
     return (
         <div className="team-details">
-            <div className="details-header">
-                <button onClick={onBack} className="btn-back">
-                    ← Back to Teams
-                </button>
-                <div className="team-info-header">
-                    <div className="team-title">
-                        <h2 style={{ color: team.teamColor }}>{team.name}</h2>
-                        <span className="team-abbr">{team.abbreviation}</span>
+            <button onClick={handleBack} className="btn-back">
+                ← Back
+            </button>
+
+            <div className="team-header-colored" style={{ backgroundColor: bg, color: textColor }}>
+                <h1>{team.name}</h1>
+                <div className="team-stats-display">
+                    <div className="stat-item">
+                        <span className="stat-label">W</span>
+                        <span className="stat-value">{team.wins}</span>
                     </div>
-                    <div className="team-stats-summary">
-                        <div className="stat-item">
-                            <span className="label">Wins</span>
-                            <span className="value">{team.wins}</span>
-                        </div>
-                        <div className="stat-item">
-                            <span className="label">Losses</span>
-                            <span className="value">{team.losses}</span>
-                        </div>
-                        <div className="stat-item">
-                            <span className="label">Points</span>
-                            <span className="value">{team.points}</span>
-                        </div>
+                    <div className="stat-item">
+                        <span className="stat-label">L</span>
+                        <span className="stat-value">{team.losses}</span>
+                    </div>
+                    <div className="stat-item">
+                        <span className="stat-label">T</span>
+                        <span className="stat-value">{team.ties || 0}</span>
+                    </div>
+                    <div className="stat-item">
+                        <span className="stat-label">OTL</span>
+                        <span className="stat-value">{team.overtimeLosses || 0}</span>
+                    </div>
+                    <div className="stat-item">
+                        <span className="stat-label">GF</span>
+                        <span className="stat-value">{team.goalsFor || 0}</span>
+                    </div>
+                    <div className="stat-item">
+                        <span className="stat-label">GA</span>
+                        <span className="stat-value">{team.goalsAgainst || 0}</span>
+                    </div>
+                    <div className="stat-item">
+                        <span className="stat-label">DIFF</span>
+                        <span className="stat-value">{(team.goalsFor || 0) - (team.goalsAgainst || 0)}</span>
+                    </div>
+                    <div className="stat-item">
+                        <span className="stat-label">PTS</span>
+                        <span className="stat-value">{team.points}</span>
                     </div>
                 </div>
             </div>
@@ -252,80 +273,73 @@ function TeamDetails({ team, onBack }) {
                 <table className="roster-table">
                     <thead>
                         <tr>
-                            <th onClick={() => requestSort('jerseyNumber')} style={{ cursor: 'pointer' }}># {getSortIcon('jerseyNumber')}</th>
-                            <th onClick={() => requestSort('lastName')} style={{ cursor: 'pointer' }}>Name{getSortIcon('lastName')}</th>
-                            <th onClick={() => requestSort('position')} style={{ cursor: 'pointer' }}>Position{getSortIcon('position')}</th>
-                            <th onClick={() => requestSort('goals')} style={{ cursor: 'pointer' }}>G{getSortIcon('goals')}</th>
-                            <th onClick={() => requestSort('assists')} style={{ cursor: 'pointer' }}>A{getSortIcon('assists')}</th>
-                            <th onClick={() => requestSort('points')} style={{ cursor: 'pointer' }}>P{getSortIcon('points')}</th>
-                            <th onClick={() => requestSort('penaltyMinutes')} style={{ cursor: 'pointer' }}>PM{getSortIcon('penaltyMinutes')}</th>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Position</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {roster.length === 0 ? (
                             <tr>
-                                <td colSpan="8" className="empty-roster">No players on roster</td>
+                                <td colSpan="4" className="empty-roster">No players on roster</td>
                             </tr>
                         ) : (
-                            getSortedRoster().map(player => {
-                                const stats = playerStats[player.id] || {};
-                                return (
-                                    <tr key={player.id}>
-                                        <td>
-                                            {editingPlayerId === player.id ? (
-                                                <div className="jersey-edit">
-                                                    <input
-                                                        type="number"
-                                                        min="1"
-                                                        max="99"
-                                                        value={editedJerseyNumber}
-                                                        onChange={(e) => setEditedJerseyNumber(e.target.value)}
-                                                        className="jersey-input"
-                                                        autoFocus
-                                                    />
-                                                    <button
-                                                        onClick={() => handleSaveJersey(player)}
-                                                        className="btn-save-jersey"
-                                                        title="Save"
-                                                    >
-                                                        ✓
-                                                    </button>
-                                                    <button
-                                                        onClick={handleCancelJersey}
-                                                        className="btn-cancel-jersey"
-                                                        title="Cancel"
-                                                    >
-                                                        ✕
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <div
-                                                    className="jersey-display"
-                                                    onClick={() => handleEditJersey(player)}
-                                                    title="Click to edit"
+                            roster.map(player => (
+                                <tr key={player.id}>
+                                    <td>
+                                        {editingPlayerId === player.id ? (
+                                            <div className="jersey-edit">
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    max="99"
+                                                    value={editedJerseyNumber}
+                                                    onChange={(e) => setEditedJerseyNumber(e.target.value)}
+                                                    className="jersey-input"
+                                                    autoFocus
+                                                />
+                                                <button
+                                                    onClick={() => handleSaveJersey(player)}
+                                                    className="btn-save-jersey"
+                                                    title="Save"
                                                 >
-                                                    {player.jerseyNumber || '-'}
-                                                </div>
-                                            )}
-                                        </td>
-                                        <td>{player.firstName} {player.lastName}</td>
-                                        <td>{player.position}</td>
-                                        <td>{stats.goals || 0}</td>
-                                        <td>{stats.assists || 0}</td>
-                                        <td>{stats.points || 0}</td>
-                                        <td>{stats.penaltyMinutes || 0}</td>
-                                        <td>
-                                            <button
-                                                onClick={() => initiateRemovePlayer(player)}
-                                                className="btn-remove"
+                                                    ✓
+                                                </button>
+                                                <button
+                                                    onClick={handleCancelJersey}
+                                                    className="btn-cancel-jersey"
+                                                    title="Cancel"
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <div
+                                                className="jersey-display"
+                                                onClick={() => handleEditJersey(player)}
+                                                title="Click to edit"
                                             >
-                                                Remove
-                                            </button>
-                                        </td>
-                                    </tr>
-                                );
-                            })
+                                                {player.jerseyNumber || '-'}
+                                            </div>
+                                        )}
+                                    </td>
+                                    <td>
+                                        {player.firstName} {player.lastName}
+                                        {team.gmId === player.id && <span className="gm-badge">GM</span>}
+                                        {player.skillRating >= 9 && <span className="twogl-badge">2GL</span>}
+                                    </td>
+                                    <td>{player.position}</td>
+                                    <td>
+                                        <button
+                                            onClick={() => initiateRemovePlayer(player)}
+                                            className="btn-remove"
+                                        >
+                                            Remove
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
                         )}
                     </tbody>
                 </table>

@@ -173,10 +173,21 @@ function PlayerManagement() {
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            // Prepare data with proper type conversions
+            const playerData = {
+                ...formData,
+                jerseyNumber: formData.jerseyNumber ? parseInt(formData.jerseyNumber) : null,
+                skillRating: formData.skillRating ? parseInt(formData.skillRating) : 5,
+                teamId: formData.teamId ? parseInt(formData.teamId) : null,
+                seasonId: formData.seasonId ? parseInt(formData.seasonId) : null,
+                birthDate: formData.birthDate || null,
+                hometown: formData.hometown || null
+            };
+
             if (editingPlayer) {
-                await api.updatePlayer(editingPlayer.id, formData);
+                await api.updatePlayer(editingPlayer.id, playerData);
             } else {
-                await api.createPlayer(formData);
+                await api.createPlayer(playerData);
             }
             setShowModal(false);
             resetForm();
@@ -338,6 +349,8 @@ function PlayerManagement() {
                                     <td className="jersey-number">{player.jerseyNumber}</td>
                                     <td className="player-name">
                                         {player.firstName} {player.lastName}
+                                        {team && team.gmId === player.id && <span className="gm-badge">GM</span>}
+                                        {player.skillRating >= 9 && <span className="twogl-badge">2GL</span>}
                                     </td>
                                     <td>
                                         {team ? (

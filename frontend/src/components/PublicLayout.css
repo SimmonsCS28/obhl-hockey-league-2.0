@@ -214,6 +214,14 @@
     .header-content {
         padding: 0.75rem 1rem;
         position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0;
+    }
+
+    .logo {
+        flex: 0 0 auto;
     }
 
     .logo-img {
@@ -224,12 +232,15 @@
     .mobile-menu-toggle {
         display: flex;
         margin-left: auto;
+        position: relative;
+        z-index: 102;
     }
 
     /* Hide nav, donate, and auth on mobile by default */
-    .main-nav,
-    .donate-section,
-    .auth-section {
+    .main-nav:not(.mobile-open),
+    .header-actions,
+    .donate-section:not(.mobile-open),
+    .auth-section:not(.mobile-open) {
         display: none;
     }
 
@@ -237,14 +248,14 @@
     .mobile-menu-container {
         display: flex;
         flex-direction: column;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
+        width: 100%;
+        flex-basis: 100%;
+        position: relative;
         background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         animation: slideDown 0.3s ease;
         z-index: 100;
+        margin-top: 0.5rem;
     }
 
     @keyframes slideDown {

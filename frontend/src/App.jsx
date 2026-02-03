@@ -1,12 +1,14 @@
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import './App.css';
 import AdminDashboard from './components/AdminDashboard';
+import AdminLayout from './components/AdminLayout';
 import GMLayout from './components/GMLayout';
 import LiveScoreEntry from './components/LiveScoreEntry';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicLayout from './components/PublicLayout';
 import ScheduleManager from './components/ScheduleManager';
 import SchedulePage from './components/SchedulePage';
+import TeamDetails from './components/TeamDetails';
 import GMDashboard from './components/gm/GMDashboard';
 import GMSchedule from './components/gm/GMSchedule';
 import GMTeam from './components/gm/GMTeam';
@@ -14,6 +16,7 @@ import Home from './components/public/Home';
 import PlayersPage from './components/public/PlayersPage';
 import SeasonsPage from './components/public/SeasonsPage';
 import StandingsPage from './components/public/StandingsPage';
+import TeamRosterPage from './components/public/TeamRosterPage';
 import TeamsPage from './components/public/TeamsPage';
 import { AuthProvider } from './contexts/AuthContext';
 import ChangePassword from './pages/ChangePassword';
@@ -37,6 +40,7 @@ function App() {
             <Route index element={<Home />} />
             <Route path="seasons" element={<SeasonsPage />} />
             <Route path="teams" element={<TeamsPage />} />
+            <Route path="teams/:teamId" element={<TeamRosterPage />} />
             <Route path="players" element={<PlayersPage />} />
             <Route path="standings" element={<StandingsPage />} />
             <Route path="schedule" element={<SchedulePage />} />
@@ -98,7 +102,19 @@ function App() {
             path="/admin/schedule"
             element={
               <ProtectedRoute requiredRoles={['ADMIN']}>
-                <ScheduleManager />
+                <AdminLayout>
+                  <ScheduleManager />
+                </AdminLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/teams/:teamId"
+            element={
+              <ProtectedRoute requiredRoles={['ADMIN']}>
+                <AdminLayout activeTab="teams">
+                  <TeamDetails onBack={() => window.history.back()} />
+                </AdminLayout>
               </ProtectedRoute>
             }
           />
