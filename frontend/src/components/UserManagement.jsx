@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
+import UserRoleManagement from './admin/UserRoleManagement';
 import RoleManagement from './RoleManagement';
 import './UserManagement.css';
 import UserModal from './UserModal';
