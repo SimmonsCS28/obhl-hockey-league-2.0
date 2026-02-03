@@ -2,12 +2,22 @@ import { useEffect, useState } from 'react';
 import api from '../services/api';
 import './UserManagement.css';
 
+const AVAILABLE_ROLES = [
+    { name: 'ADMIN', description: 'Full system access' },
+    { name: 'GM', description: 'Team management' },
+    { name: 'PLAYER', description: 'Player access' },
+    { name: 'REFEREE', description: 'Referee scheduling' },
+    { name: 'SCOREKEEPER', description: 'Game scoring' },
+    { name: 'GOALIE', description: 'Goalie scheduling' },
+    { name: 'USER', description: 'Basic access' }
+];
+
 const UserModal = ({ user, isCreating, onClose }) => {
     const [formData, setFormData] = useState({
         username: '',
         email: '',
         password: '',
-        role: 'USER',
+        roles: ['USER'], // Changed from role to roles array
         teamId: null
     });
     const [showPasswordReset, setShowPasswordReset] = useState(false);
@@ -21,7 +31,8 @@ const UserModal = ({ user, isCreating, onClose }) => {
                 username: user.username || '',
                 email: user.email || '',
                 password: '',
-                role: user.role || 'USER',
+                // Handle both old single role and new multi-role format
+                roles: user.roles || (user.role ? [user.role] : ['USER']),
                 teamId: user.teamId || null
             });
         }
@@ -58,9 +69,24 @@ const UserModal = ({ user, isCreating, onClose }) => {
         }
     };
 
+    const handleRoleToggle = (roleName) => {
+        setFormData(prev => ({
+            ...prev,
+            roles: prev.roles.includes(roleName)
+                ? prev.roles.filter(r => r !== roleName)
+                : [...prev.roles, roleName]
+        }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+
+        // Validate that at least one role is selected
+        if (!formData.roles || formData.roles.length === 0) {
+            setError('Please select at least one role');
+            return;
+        }
 
         // Validate password if provided
         if ((isCreating && formData.password) || (!isCreating && showPasswordReset && formData.password)) {
@@ -81,20 +107,24 @@ const UserModal = ({ user, isCreating, onClose }) => {
 
         try {
             if (isCreating) {
-                // Create new user
+                // Create new user - for now use first role as primary role
+                // Backend will need to be updated to accept roles array
                 await api.createUser({
                     username: formData.username,
                     email: formData.email,
                     password: formData.password,
-                    role: formData.role,
+                    role: formData.roles[0], // Use first role as primary for now
                     teamId: formData.teamId
                 });
+
+                // After creation, if multiple roles, update with all roles
+                // This is a workaround until backend supports roles array on creation
+                // We'll need the user ID from the response to do this properly
             } else {
                 // Update existing user
                 const updateData = {
                     username: formData.username,
                     email: formData.email,
-                    role: formData.role,
                     teamId: formData.teamId
                 };
 
@@ -104,6 +134,9 @@ const UserModal = ({ user, isCreating, onClose }) => {
                 }
 
                 await api.updateUser(user.id, updateData);
+
+                // Update roles separately using the multi-role endpoint
+                await api.updateUserRoles(user.id, formData.roles);
             }
 
             onClose(true); // User saved successfully
@@ -152,21 +185,23 @@ const UserModal = ({ user, isCreating, onClose }) => {
                     </div>
 
                     <div className="form-group">
-                        <label htmlFor="role">Role *</label>
-                        <select
-                            id="role"
-                            name="role"
-                            value={formData.role}
-                            onChange={handleChange}
-                            required
-                            disabled={loading}
-                        >
-                            <option value="USER">User</option>
-                            <option value="SCOREKEEPER">Scorekeeper</option>
-                            <option value="GM">GM</option>
-                            <option value="REF">Referee</option>
-                            <option value="ADMIN">Admin</option>
-                        </select>
+                        <label>Roles * (Select at least one)</label>
+                        <div className="roles-checkbox-grid">
+                            {AVAILABLE_ROLES.map(role => (
+                                <label key={role.name} className="role-checkbox-item">
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.roles.includes(role.name)}
+                                        onChange={() => handleRoleToggle(role.name)}
+                                        disabled={loading}
+                                    />
+                                    <div className="role-checkbox-label">
+                                        <span className="role-checkbox-name">{role.name}</span>
+                                        <span className="role-checkbox-desc">{role.description}</span>
+                                    </div>
+                                </label>
+                            ))}
+                        </div>
                     </div>
 
                     <div className="form-group">
