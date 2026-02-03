@@ -5,7 +5,6 @@ import './UserManagement.css';
 const AVAILABLE_ROLES = [
     { name: 'ADMIN', description: 'Full system access' },
     { name: 'GM', description: 'Team management' },
-    { name: 'PLAYER', description: 'Player access' },
     { name: 'REF', description: 'Referee scheduling' },
     { name: 'SCOREKEEPER', description: 'Game scoring' },
     { name: 'GOALIE', description: 'Goalie scheduling' },
