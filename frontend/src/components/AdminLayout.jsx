@@ -93,6 +93,24 @@ function AdminLayout({ children, activeTab }) {
                     >
                         Users
                     </button>
+                    <button
+                        className={`nav-tab ${activeTab === 'goalies' ? 'active' : ''}`}
+                        onClick={() => handleTabClick('goalies')}
+                    >
+                        🥅 Goalie Schedule
+                    </button>
+                    <button
+                        className={`nav-tab ${activeTab === 'referees' ? 'active' : ''}`}
+                        onClick={() => handleTabClick('referees')}
+                    >
+                        👔 Referee Schedule
+                    </button>
+                    <button
+                        className={`nav-tab ${activeTab === 'scorekeepers' ? 'active' : ''}`}
+                        onClick={() => handleTabClick('scorekeepers')}
+                    >
+                        📋 Scorekeeper Schedule
+                    </button>
                 </div>
             </nav>
 
