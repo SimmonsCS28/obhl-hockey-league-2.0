@@ -27,13 +27,30 @@ const UserModal = ({ user, isCreating, onClose }) => {
 
     useEffect(() => {
         if (user && !isCreating) {
+            console.log('User data:', user);
+            console.log('User roles:', user.roles);
+            console.log('User role (deprecated):', user.role);
+
+            // Handle migration from old single role to new multi-role system
+            let rolesArray;
+            if (user.roles && user.roles.length > 0) {
+                // New multi-role system
+                rolesArray = Array.isArray(user.roles) ? user.roles : Array.from(user.roles);
+            } else if (user.role) {
+                // Fallback to old single role field
+                rolesArray = [user.role];
+            } else {
+                // Default
+                rolesArray = ['USER'];
+            }
+
+            console.log('Final roles array:', rolesArray);
+
             setFormData({
                 username: user.username || '',
                 email: user.email || '',
                 password: '',
-                // Handle both old single role and new multi-role format
-                // Backend returns roles as a Set, convert to array
-                roles: user.roles ? Array.from(user.roles) : (user.role ? [user.role] : ['USER']),
+                roles: rolesArray,
                 teamId: user.teamId || null
             });
         }
