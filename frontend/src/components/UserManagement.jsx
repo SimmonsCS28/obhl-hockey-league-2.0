@@ -146,7 +146,7 @@ const UserManagement = () => {
                                 <tr>
                                     <th>Username</th>
                                     <th>Email</th>
-                                    <th>Role</th>
+                                    <th>Roles</th>
                                     <th>Status</th>
                                     <th>Password Change Required</th>
                                     <th>Created</th>
@@ -154,21 +154,36 @@ const UserManagement = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {users.filter(user => selectedRole === 'all' || user.role === selectedRole).length === 0 ? (
+                                {users.filter(user => {
+                                    if (selectedRole === 'all') return true;
+                                    // Check both new roles array and old role field for compatibility
+                                    return (user.roles && user.roles.includes(selectedRole)) || user.role === selectedRole;
+                                }).length === 0 ? (
                                     <tr>
                                         <td colSpan="7" className="no-users">
                                             No users found
                                         </td>
                                     </tr>
                                 ) : (
-                                    users.filter(user => selectedRole === 'all' || user.role === selectedRole).map(user => (
+                                    users.filter(user => {
+                                        if (selectedRole === 'all') return true;
+                                        return (user.roles && user.roles.includes(selectedRole)) || user.role === selectedRole;
+                                    }).map(user => (
                                         <tr key={user.id}>
                                             <td className="username-col">{user.username}</td>
                                             <td>{user.email}</td>
                                             <td>
-                                                <span className={`role-badge ${getRoleBadgeClass(user.role)}`}>
-                                                    {user.role}
-                                                </span>
+                                                {user.roles && user.roles.length > 0 ? (
+                                                    user.roles.map((roleName, index) => (
+                                                        <span key={index} className={`role-badge ${getRoleBadgeClass(roleName)}`} style={{ marginRight: '4px' }}>
+                                                            {roleName}
+                                                        </span>
+                                                    ))
+                                                ) : (
+                                                    <span className={`role-badge ${getRoleBadgeClass(user.role)}`}>
+                                                        {user.role}
+                                                    </span>
+                                                )}
                                             </td>
                                             <td>
                                                 <span className={`status-badge ${user.isActive ? 'active' : 'inactive'}`}>
