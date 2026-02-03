@@ -32,7 +32,8 @@ const UserModal = ({ user, isCreating, onClose }) => {
                 email: user.email || '',
                 password: '',
                 // Handle both old single role and new multi-role format
-                roles: user.roles || (user.role ? [user.role] : ['USER']),
+                // Backend returns roles as a Set, convert to array
+                roles: user.roles ? Array.from(user.roles) : (user.role ? [user.role] : ['USER']),
                 teamId: user.teamId || null
             });
         }
