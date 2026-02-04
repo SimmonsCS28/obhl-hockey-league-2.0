@@ -66,6 +66,68 @@ const api = {
     },
 
     // ============================================
+    // GENERIC HTTP METHODS
+    // ============================================
+    async get(url) {
+        const response = await fetch(`${API_BASE_URL}${url}`, {
+            headers: {
+                ...getAuthHeaders(),
+                'Content-Type': 'application/json'
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`GET ${url} failed with status ${response.status}`);
+        }
+        return response.json();
+    },
+
+    async post(url, data = null) {
+        const response = await fetch(`${API_BASE_URL}${url}`, {
+            method: 'POST',
+            headers: {
+                ...getAuthHeaders(),
+                'Content-Type': 'application/json'
+            },
+            body: data ? JSON.stringify(data) : null
+        });
+        if (!response.ok) {
+            throw new Error(`POST ${url} failed with status ${response.status}`);
+        }
+        return response.json();
+    },
+
+    async put(url, data) {
+        const response = await fetch(`${API_BASE_URL}${url}`, {
+            method: 'PUT',
+            headers: {
+                ...getAuthHeaders(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            throw new Error(`PUT ${url} failed with status ${response.status}`);
+        }
+        return response.json();
+    },
+
+    async delete(url) {
+        const response = await fetch(`${API_BASE_URL}${url}`, {
+            method: 'DELETE',
+            headers: {
+                ...getAuthHeaders(),
+                'Content-Type': 'application/json'
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`DELETE ${url} failed with status ${response.status}`);
+        }
+        // DELETE might return empty response
+        const text = await response.text();
+        return text ? JSON.parse(text) : {};
+    },
+
+    // ============================================
     // TEAMS API
     // ============================================
     async getTeams() {
