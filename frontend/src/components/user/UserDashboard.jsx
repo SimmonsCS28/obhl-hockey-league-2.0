@@ -19,7 +19,11 @@ const UserDashboard = () => {
             const response = await api.get('/shifts/my-shifts');
             setShifts(response.data);
         } catch (error) {
-            console.error('Error fetching shifts:', error);
+            // Silently handle errors for now - backend endpoints not yet implemented
+            // TODO: Remove this once shift management endpoints are implemented
+            if (!error.message?.includes('404')) {
+                console.error('Error fetching shifts:', error);
+            }
         } finally {
             setLoading(false);
         }
