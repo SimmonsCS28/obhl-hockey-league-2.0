@@ -10,13 +10,14 @@ public class PasswordHasher {
     public static void main(String[] args) {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
-        // Hash the password: Inn3Rd@yRu$Ted
-        String password = "Inn3Rd@yRu$Ted";
+        // Hash the password: Password!
+        String password = "Password!";
         String hash = encoder.encode(password);
 
         System.out.println("Password: " + password);
         System.out.println("BCrypt Hash: " + hash);
-        System.out.println("\nSQL to update user:");
-        System.out.println("UPDATE users SET password_hash = '" + hash + "' WHERE username = 'simmonscs28@gmail.com';");
+        System.out.println("\nSQL to update test users:");
+        System.out.println("UPDATE users SET password_hash = '" + hash
+                + "' WHERE username IN ('testRef', 'testScorekeeper', 'testGoalie');");
     }
 }
