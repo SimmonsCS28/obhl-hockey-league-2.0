@@ -32,11 +32,17 @@ public class GoalieProfile {
     @JoinColumn(name = "user_id", nullable = false, unique = true)
     private User user;
 
-    @Column(name = "skill_rating", length = 20)
-    private String skillRating;
+    @Column(name = "email", length = 255)
+    private String email;
+
+    @Column(name = "skill_rating")
+    private Integer skillRating;
 
     @Column(name = "is_veteran")
     private Boolean isVeteran = false;
+
+    @Column(name = "is_rookie")
+    private Boolean isRookie = false;
 
     @Column(name = "is_active")
     private Boolean isActive = true;
