@@ -189,6 +189,61 @@ public class GameController {
         return ResponseEntity.ok(response);
     }
 
+    // Shift Assignment Endpoints
+    @GetMapping("/season/{seasonId}/game-days")
+    public ResponseEntity<List<?>> getGameDays(@PathVariable Long seasonId) {
+        return ResponseEntity.ok(gameService.getGameDaysBySeason(seasonId));
+    }
+
+    @GetMapping("/goalie/{userId}/assignments")
+    public ResponseEntity<List<?>> getGoalieAssignments(@PathVariable Long userId) {
+        return ResponseEntity.ok(gameService.getGoalieAssignments(userId));
+    }
+
+    @GetMapping("/referee/{userId}/assignments")
+    public ResponseEntity<List<?>> getRefereeAssignments(@PathVariable Long userId) {
+        return ResponseEntity.ok(gameService.getRefereeAssignments(userId));
+    }
+
+    @GetMapping("/scorekeeper/{userId}/assignments")
+    public ResponseEntity<List<?>> getScorekeeperAssignments(@PathVariable Long userId) {
+        return ResponseEntity.ok(gameService.getScorekeeperAssignments(userId));
+    }
+
+    @GetMapping("/season/{seasonId}/referee/available")
+    public ResponseEntity<List<?>> getAvailableRefereeGames(@PathVariable Long seasonId) {
+        return ResponseEntity.ok(gameService.getAvailableRefereeGames(seasonId));
+    }
+
+    @GetMapping("/season/{seasonId}/scorekeeper/available")
+    public ResponseEntity<List<?>> getAvailableScorekeeperGames(@PathVariable Long seasonId) {
+        return ResponseEntity.ok(gameService.getAvailableScorekeeperGames(seasonId));
+    }
+
+    @PostMapping("/{gameId}/referee/{userId}")
+    public ResponseEntity<Void> assignReferee(@PathVariable Long gameId, @PathVariable Long userId) {
+        gameService.assignReferee(gameId, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{gameId}/referee/{userId}")
+    public ResponseEntity<Void> removeReferee(@PathVariable Long gameId, @PathVariable Long userId) {
+        gameService.removeReferee(gameId, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{gameId}/scorekeeper/{userId}")
+    public ResponseEntity<Void> assignScorekeeper(@PathVariable Long gameId, @PathVariable Long userId) {
+        gameService.assignScorekeeper(gameId, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{gameId}/scorekeeper/{userId}")
+    public ResponseEntity<Void> removeScorekeeper(@PathVariable Long gameId, @PathVariable Long userId) {
+        gameService.removeScorekeeper(gameId, userId);
+        return ResponseEntity.ok().build();
+    }
+
     // Players Endpoint (for future use)
     @GetMapping("/{gameId}/players")
     public ResponseEntity<List<?>> getGamePlayers(@PathVariable Long gameId) {

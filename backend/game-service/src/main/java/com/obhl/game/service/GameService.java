@@ -207,4 +207,111 @@ public class GameService {
         dto.setUpdatedAt(game.getUpdatedAt());
         return dto;
     }
+
+    // Shift Assignment Methods
+    @Transactional(readOnly = true)
+    public List<java.time.LocalDate> getGameDaysBySeason(Long seasonId) {
+        return gameRepository.findBySeasonIdOrderByGameDate(seasonId)
+                .stream()
+                .map(game -> game.getGameDate().toLocalDate())
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<GameDto.Response> getGoalieAssignments(Long userId) {
+        return gameRepository.findByGoalie1IdOrGoalie2Id(userId, userId)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<GameDto.Response> getRefereeAssignments(Long userId) {
+        return gameRepository.findByReferee1IdOrReferee2Id(userId, userId)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<GameDto.Response> getScorekeeperAssignments(Long userId) {
+        return gameRepository.findByScorekeeperId(userId)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<GameDto.Response> getAvailableRefereeGames(Long seasonId) {
+        return gameRepository.findBySeasonIdOrderByGameDate(seasonId)
+                .stream()
+                .filter(game -> game.getReferee1Id() == null || game.getReferee2Id() == null)
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<GameDto.Response> getAvailableScorekeeperGames(Long seasonId) {
+        return gameRepository.findBySeasonIdOrderByGameDate(seasonId)
+                .stream()
+                .filter(game -> game.getScorekeeperId() == null)
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void assignReferee(Long gameId, Long userId) {
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new RuntimeException("Game not found"));
+
+        if (game.getReferee1Id() == null) {
+            game.setReferee1Id(userId);
+        } else if (game.getReferee2Id() == null) {
+            game.setReferee2Id(userId);
+        } else {
+            throw new RuntimeException("Game already has two referees assigned");
+        }
+
+        gameRepository.save(game);
+    }
+
+    @Transactional
+    public void removeReferee(Long gameId, Long userId) {
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new RuntimeException("Game not found"));
+
+        if (userId.equals(game.getReferee1Id())) {
+            game.setReferee1Id(null);
+        } else if (userId.equals(game.getReferee2Id())) {
+            game.setReferee2Id(null);
+        }
+
+        gameRepository.save(game);
+    }
+
+    @Transactional
+    public void assignScorekeeper(Long gameId, Long userId) {
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new RuntimeException("Game not found"));
+
+        if (game.getScorekeeperId() != null) {
+            throw new RuntimeException("Game already has a scorekeeper assigned");
+        }
+
+        game.setScorekeeperId(userId);
+        gameRepository.save(game);
+    }
+
+    @Transactional
+    public void removeScorekeeper(Long gameId, Long userId) {
+        Game game = gameRepository.findById(gameId)
+                .orElseThrow(() -> new RuntimeException("Game not found"));
+
+        if (userId.equals(game.getScorekeeperId())) {
+            game.setScorekeeperId(null);
+        }
+
+        gameRepository.save(game);
+    }
 }

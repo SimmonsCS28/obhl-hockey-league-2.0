@@ -28,4 +28,11 @@ public interface GameRepository extends JpaRepository<Game, Long> {
     @org.springframework.data.jpa.repository.Query("SELECT g FROM Game g WHERE g.seasonId = :seasonId AND (g.homeTeamId = :teamId OR g.awayTeamId = :teamId) ORDER BY g.gameDate")
     List<Game> findBySeasonIdAndTeam(@org.springframework.data.repository.query.Param("seasonId") Long seasonId,
             @org.springframework.data.repository.query.Param("teamId") Long teamId);
+
+    // Shift assignment queries
+    List<Game> findByGoalie1IdOrGoalie2Id(Long goalie1Id, Long goalie2Id);
+
+    List<Game> findByReferee1IdOrReferee2Id(Long referee1Id, Long referee2Id);
+
+    List<Game> findByScorekeeperId(Long scorekeeperId);
 }
