@@ -101,6 +101,41 @@
     box-shadow: 0 0 0 3px rgba(0, 62, 126, 0.15);
 }
 
+.password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-wrapper input {
+    padding-right: 3rem;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 0.75rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    transition: color 0.2s;
+    border-radius: 4px;
+}
+
+.password-toggle:hover {
+    color: #003E7E;
+    background-color: #f1f5f9;
+}
+
+.password-toggle:focus {
+    outline: 2px solid #003E7E;
+    outline-offset: 2px;
+}
+
 .modal-form .error-message {
     background-color: #fef2f2;
     border: 1px solid #fecaca;
