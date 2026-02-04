@@ -73,15 +73,26 @@ function PublicLayout() {
                                                 GM Dashboard
                                             </button>
                                         )}
-                                        {(user?.roles?.includes('ADMIN') || user?.roles?.includes('SCOREKEEPER')) && (
+                                        {user?.roles?.includes('ADMIN') && (
                                             <button
                                                 className="dashboard-link"
                                                 onClick={() => {
-                                                    navigate(user?.roles?.includes('SCOREKEEPER') ? '/scorekeeper' : '/admin');
+                                                    navigate('/admin');
                                                     closeMobileMenu();
                                                 }}
                                             >
-                                                Dashboard
+                                                Admin Dashboard
+                                            </button>
+                                        )}
+                                        {(user?.roles?.includes('GOALIE') || user?.roles?.includes('REF') || user?.roles?.includes('SCOREKEEPER')) && !user?.roles?.includes('ADMIN') && (
+                                            <button
+                                                className="dashboard-link"
+                                                onClick={() => {
+                                                    navigate('/user');
+                                                    closeMobileMenu();
+                                                }}
+                                            >
+                                                My Dashboard
                                             </button>
                                         )}
                                         <button className="logout-btn" onClick={() => { handleLogout(); closeMobileMenu(); }}>Logout</button>
@@ -126,15 +137,26 @@ function PublicLayout() {
                                             GM Dashboard
                                         </button>
                                     )}
-                                    {(user?.roles?.includes('ADMIN') || user?.roles?.includes('SCOREKEEPER')) && (
+                                    {user?.roles?.includes('ADMIN') && (
                                         <button
                                             className="dashboard-link"
                                             onClick={() => {
-                                                navigate(user?.roles?.includes('SCOREKEEPER') ? '/scorekeeper' : '/admin');
+                                                navigate('/admin');
                                                 closeMobileMenu();
                                             }}
                                         >
-                                            Dashboard
+                                            Admin Dashboard
+                                        </button>
+                                    )}
+                                    {(user?.roles?.includes('GOALIE') || user?.roles?.includes('REF') || user?.roles?.includes('SCOREKEEPER')) && !user?.roles?.includes('ADMIN') && (
+                                        <button
+                                            className="dashboard-link"
+                                            onClick={() => {
+                                                navigate('/user');
+                                                closeMobileMenu();
+                                            }}
+                                        >
+                                            My Dashboard
                                         </button>
                                     )}
                                     <button className="logout-btn" onClick={() => { handleLogout(); closeMobileMenu(); }}>Logout</button>
