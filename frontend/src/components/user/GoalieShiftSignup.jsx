@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
-import './GoalieShiftSignup.css';
+import './ShiftSignup.css';
 
 const GoalieShiftSignup = () => {
+    const navigate = useNavigate();
     const [gameDays, setGameDays] = useState([]);
     const [unavailableDates, setUnavailableDates] = useState([]);
     const [assignments, setAssignments] = useState([]);
@@ -54,8 +56,16 @@ const GoalieShiftSignup = () => {
     if (loading) return <div>Loading...</div>;
 
     return (
-        <div className="goalie-shift-signup">
-            <h1>Goalie Availability</h1>
+        <div className="shift-signup">
+            <div className="shift-header">
+                <h1>Goalie Availability</h1>
+                <button
+                    className="back-button"
+                    onClick={() => navigate('/user')}
+                >
+                    ← Back to Dashboard
+                </button>
+            </div>
 
             {profile && (
                 <div className="goalie-stats">

@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import './ShiftSignup.css';
 
 const RefereeShiftSignup = () => {
+    const navigate = useNavigate();
     const [availableGames, setAvailableGames] = useState([]);
     const [myShifts, setMyShifts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -56,7 +58,15 @@ const RefereeShiftSignup = () => {
 
     return (
         <div className="shift-signup">
-            <h1>Referee Shift Signup</h1>
+            <div className="shift-header">
+                <h1>Referee Shift Signup</h1>
+                <button
+                    className="back-button"
+                    onClick={() => navigate('/user')}
+                >
+                    ← Back to Dashboard
+                </button>
+            </div>
 
             <div className="my-shifts-section">
                 <h2>My Assigned Shifts</h2>

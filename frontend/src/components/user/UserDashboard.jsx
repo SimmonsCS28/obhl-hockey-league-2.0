@@ -39,7 +39,15 @@ const UserDashboard = () => {
 
     return (
         <div className="user-dashboard">
-            <h1>My Shifts Dashboard</h1>
+            <div className="dashboard-header">
+                <h1>My Shifts Dashboard</h1>
+                <button
+                    className="home-button"
+                    onClick={() => navigate('/')}
+                >
+                    OBHL Home
+                </button>
+            </div>
 
             <div className="role-cards">
                 {hasRole('GOALIE') && (

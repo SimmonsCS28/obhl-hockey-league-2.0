@@ -2,11 +2,37 @@
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
+    min-height: 100vh;
 }
 
-.user-dashboard h1 {
-    color: #333;
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 30px;
+}
+
+.dashboard-header h1 {
+    color: #ffffff;
+    margin: 0;
+    font-size: 2rem;
+}
+
+.home-button {
+    background-color: #003E7E;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    text-decoration: none;
+    display: inline-block;
+    transition: background-color 0.2s;
+}
+
+.home-button:hover {
+    background-color: #002a5c;
 }
 
 .role-cards {
