@@ -1,60 +1,114 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import './ShiftSignup.css';
 
 const ScorekeeperShiftSignup = () => {
     const navigate = useNavigate();
-    const [availableGames, setAvailableGames] = useState([]);
-    const [myShifts, setMyShifts] = useState([]);
+    const { user } = useAuth();
+    const [seasons, setSeasons] = useState([]);
+    const [selectedSeason, setSelectedSeason] = useState(null);
+    const [games, setGames] = useState([]);
+    const [teams, setTeams] = useState([]);
+    const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [seasonId, setSeasonId] = useState(1); // TODO: Get current season
 
     useEffect(() => {
-        fetchData();
+        loadInitialData();
     }, []);
 
-    const fetchData = async () => {
-        try {
-            const [availableRes, shiftsRes] = await Promise.all([
-                api.get(`/shifts/scorekeeper/available?seasonId=${seasonId}`),
-                api.get('/shifts/scorekeeper/my-assignments')
-            ]);
+    useEffect(() => {
+        if (selectedSeason) {
+            loadSeasonData(selectedSeason);
+        }
+    }, [selectedSeason]);
 
-            setAvailableGames(availableRes.data);
-            setMyShifts(shiftsRes.data);
+    const loadInitialData = async () => {
+        try {
+            const seasonsData = await api.getSeasons();
+            setSeasons(seasonsData);
+
+            const activeSeason = seasonsData.find(s => s.isActive) || seasonsData[0];
+            if (activeSeason) {
+                setSelectedSeason(activeSeason.id);
+            }
         } catch (error) {
-            console.error('Error fetching scorekeeper data:', error);
+            console.error('Failed to load seasons:', error);
         } finally {
             setLoading(false);
         }
     };
 
-    const signUpForShift = async (gameId) => {
+    const loadSeasonData = async (seasonId) => {
+        setLoading(true);
         try {
-            await api.post(`/shifts/scorekeeper/${gameId}`);
-            alert('Successfully signed up for shift!');
-            fetchData();
+            const [gamesData, teamsData, usersData] = await Promise.all([
+                api.getGames(seasonId),
+                api.getTeams({ seasonId }),
+                api.getUsers()
+            ]);
+
+            setGames(gamesData);
+            setTeams(teamsData);
+            setUsers(usersData);
         } catch (error) {
-            console.error('Error signing up:', error);
-            alert('Failed to sign up for shift');
+            console.error('Failed to load season data:', error);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const cancelShift = async (gameId) => {
+    const handleTakeShift = async (gameId) => {
+        try {
+            await api.updateGame(gameId, { scorekeeperId: user.id });
+            await loadSeasonData(selectedSeason);
+        } catch (error) {
+            console.error('Failed to take shift:', error);
+            alert('Failed to take shift. Please try again.');
+        }
+    };
+
+    const handleCancelShift = async (gameId) => {
         if (!window.confirm('Are you sure you want to cancel this shift?')) return;
 
         try {
-            await api.delete(`/shifts/scorekeeper/${gameId}`);
-            alert('Shift cancelled successfully');
-            fetchData();
+            await api.updateGame(gameId, { scorekeeperId: null });
+            await loadSeasonData(selectedSeason);
         } catch (error) {
-            console.error('Error cancelling shift:', error);
-            alert('Failed to cancel shift');
+            console.error('Failed to cancel shift:', error);
+            alert('Failed to cancel shift. Please try again.');
         }
     };
 
-    if (loading) return <div>Loading...</div>;
+    const getUserById = (userId) => {
+        return users.find(u => u.id === userId);
+    };
+
+    const getTeamById = (teamId) => {
+        return teams.find(t => t.id === teamId);
+    };
+
+    const getValidColor = (color) => {
+        if (!color) return '#95a5a6';
+        const colorMap = {
+            'Lt. Blu': '#87CEEB',
+            'Dk. Gre': '#006400',
+            'White': '#FFFFFF',
+            'Yellow': '#FFD700',
+            'Gold': '#FFD700'
+        };
+        return colorMap[color] || color;
+    };
+
+    const getTextColor = (bgColor) => {
+        if (!bgColor) return 'white';
+        const lightColors = ['White', '#FFFFFF', 'Yellow', '#FFD700', 'Gold', 'Lt. Blu', '#87CEEB', 'LightBlue'];
+        const isLight = lightColors.some(c => c.toLowerCase() === bgColor.toLowerCase());
+        return isLight ? '#2c3e50' : 'white';
+    };
+
+    if (loading) return <div className="loading">Loading...</div>;
 
     return (
         <div className="shift-signup">
@@ -68,67 +122,96 @@ const ScorekeeperShiftSignup = () => {
                 </button>
             </div>
 
-            <div className="my-shifts-section">
-                <h2>My Assigned Shifts</h2>
-                {myShifts.length > 0 ? (
-                    <table className="shifts-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Time</th>
-                                <th>Matchup</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {myShifts.map(game => (
-                                <tr key={game.gameId}>
-                                    <td>{new Date(game.gameDate).toLocaleDateString()}</td>
-                                    <td>{game.gameTime}</td>
-                                    <td>{game.homeTeam} vs {game.awayTeam}</td>
-                                    <td>
-                                        <button onClick={() => cancelShift(game.gameId)} className="cancel-btn">
-                                            Cancel
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                ) : (
-                    <p>No shifts assigned yet</p>
-                )}
+            <div className="season-selector">
+                <label>Season:</label>
+                <select
+                    value={selectedSeason || ''}
+                    onChange={(e) => setSelectedSeason(parseInt(e.target.value))}
+                >
+                    {seasons.map(season => (
+                        <option key={season.id} value={season.id}>
+                            {season.name}
+                        </option>
+                    ))}
+                </select>
             </div>
 
-            <div className="available-shifts-section">
-                <h2>Available Shifts</h2>
-                {availableGames.length > 0 ? (
+            <div className="games-table-container">
+                {games.length === 0 ? (
+                    <p>No games scheduled for this season</p>
+                ) : (
                     <table className="shifts-table">
                         <thead>
                             <tr>
-                                <th>Date</th>
-                                <th>Time</th>
-                                <th>Matchup</th>
-                                <th>Action</th>
+                                <th>Week</th>
+                                <th>Date & Time</th>
+                                <th>Home Team</th>
+                                <th>Away Team</th>
+                                <th>Location</th>
+                                <th>Scorekeeper</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {availableGames.map(game => (
-                                <tr key={game.id}>
-                                    <td>{new Date(game.gameDate).toLocaleDateString()}</td>
-                                    <td>{new Date(game.gameDate).toLocaleTimeString()}</td>
-                                    <td>{game.homeTeam} vs {game.awayTeam}</td>
-                                    <td>
-                                        <button onClick={() => signUpForShift(game.id)} className="signup-btn">
-                                            Sign Up
-                                        </button>
-                                    </td>
-                                </tr>
-                            ))}
+                            {games.map(game => {
+                                const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
+                                const scorekeeper = getUserById(game.scorekeeperId);
+
+                                return (
+                                    <tr key={game.id}>
+                                        <td>Week {game.week}</td>
+                                        <td>
+                                            {gameDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} {gameDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                                        </td>
+                                        <td>
+                                            <span
+                                                className="team-badge"
+                                                style={{
+                                                    backgroundColor: getValidColor(getTeamById(game.homeTeamId)?.teamColor),
+                                                    color: getTextColor(getTeamById(game.homeTeamId)?.teamColor)
+                                                }}
+                                            >
+                                                {getTeamById(game.homeTeamId)?.name || `Team ${game.homeTeamId}`}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span
+                                                className="team-badge"
+                                                style={{
+                                                    backgroundColor: getValidColor(getTeamById(game.awayTeamId)?.teamColor),
+                                                    color: getTextColor(getTeamById(game.awayTeamId)?.teamColor)
+                                                }}
+                                            >
+                                                {getTeamById(game.awayTeamId)?.name || `Team ${game.awayTeamId}`}
+                                            </span>
+                                        </td>
+                                        <td>{game.rink || 'TBD'}</td>
+                                        <td>
+                                            {game.scorekeeperId ? (
+                                                <div className="assigned-shift">
+                                                    <span className="assigned-name">{scorekeeper?.username || 'Unknown'}</span>
+                                                    {game.scorekeeperId === user?.id && (
+                                                        <button
+                                                            onClick={() => handleCancelShift(game.id)}
+                                                            className="cancel-btn-small"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    onClick={() => handleTakeShift(game.id)}
+                                                    className="take-shift-btn"
+                                                >
+                                                    Take Shift
+                                                </button>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
-                ) : (
-                    <p>No available shifts at this time</p>
                 )}
             </div>
         </div>
