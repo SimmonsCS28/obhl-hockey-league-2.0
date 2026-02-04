@@ -31,6 +31,12 @@ import RefereeSignup from './components/referee/RefereeSignup';
 import ScorekeeperSchedulePage from './components/scorekeeper/ScorekeeperSchedulePage';
 import ScorekeeperSignup from './components/scorekeeper/ScorekeeperSignup';
 
+// User Shift Management Components
+import GoalieShiftSignup from './components/user/GoalieShiftSignup';
+import RefereeShiftSignup from './components/user/RefereeShiftSignup';
+import ScorekeeperShiftSignup from './components/user/ScorekeeperShiftSignup';
+import UserDashboard from './components/user/UserDashboard';
+
 function App() {
   return (
     <AuthProvider>
@@ -88,6 +94,28 @@ function App() {
           }>
             <Route index element={<GoalieSchedulePage />} />
           </Route>
+
+          {/* User Shift Management Routes */}
+          <Route path="/user" element={
+            <ProtectedRoute requiredRoles={['GOALIE', 'REF', 'SCOREKEEPER']}>
+              <UserDashboard />
+            </ProtectedRoute>
+          } />
+          <Route path="/user/goalie" element={
+            <ProtectedRoute requiredRoles={['GOALIE']}>
+              <GoalieShiftSignup />
+            </ProtectedRoute>
+          } />
+          <Route path="/user/referee" element={
+            <ProtectedRoute requiredRoles={['REF']}>
+              <RefereeShiftSignup />
+            </ProtectedRoute>
+          } />
+          <Route path="/user/scorekeeper" element={
+            <ProtectedRoute requiredRoles={['SCOREKEEPER']}>
+              <ScorekeeperShiftSignup />
+            </ProtectedRoute>
+          } />
 
           {/* Protected Admin Routes */}
           <Route

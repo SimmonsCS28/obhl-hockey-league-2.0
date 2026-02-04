@@ -1,0 +1,87 @@
+.goalie-shift-signup {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.goalie-stats {
+    background: #f7fafc;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.goalie-stats p {
+    margin: 0;
+    font-weight: bold;
+    color: #2c5282;
+}
+
+.availability-section {
+    margin-bottom: 40px;
+}
+
+.instructions {
+    color: #666;
+    font-style: italic;
+    margin-bottom: 15px;
+}
+
+.game-days-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.game-day {
+    padding: 15px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.game-day.available {
+    background: #c6f6d5;
+    border-color: #48bb78;
+}
+
+.game-day.available:hover {
+    background: #9ae6b4;
+}
+
+.game-day.unavailable {
+    background: #fed7d7;
+    border-color: #f56565;
+}
+
+.game-day.unavailable:hover {
+    background: #fc8181;
+}
+
+.assignments-section h2 {
+    margin-bottom: 15px;
+}
+
+.assignments-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+
+.assignments-table th,
+.assignments-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.assignments-table th {
+    background: #2c5282;
+    color: white;
+}
+
+.assignments-table tr:hover {
+    background: #f7fafc;
+}

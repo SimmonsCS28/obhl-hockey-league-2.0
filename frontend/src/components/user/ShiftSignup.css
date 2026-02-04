@@ -1,0 +1,73 @@
+.shift-signup {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.shift-signup h1 {
+    color: #333;
+    margin-bottom: 30px;
+}
+
+.my-shifts-section,
+.available-shifts-section {
+    margin-bottom: 40px;
+}
+
+.my-shifts-section h2,
+.available-shifts-section h2 {
+    color: #2c5282;
+    margin-bottom: 15px;
+}
+
+.shifts-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.shifts-table th,
+.shifts-table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.shifts-table th {
+    background: #2c5282;
+    color: white;
+    font-weight: bold;
+}
+
+.shifts-table tr:hover {
+    background: #f7fafc;
+}
+
+.signup-btn,
+.cancel-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s;
+}
+
+.signup-btn {
+    background-color: #48bb78;
+    color: white;
+}
+
+.signup-btn:hover {
+    background-color: #38a169;
+}
+
+.cancel-btn {
+    background-color: #f56565;
+    color: white;
+}
+
+.cancel-btn:hover {
+    background-color: #e53e3e;
+}
