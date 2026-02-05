@@ -1,33 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import api from '../../services/api';
 import './UserDashboard.css';
 
 const UserDashboard = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const [shifts, setShifts] = useState([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        fetchMyShifts();
-    }, []);
-
-    const fetchMyShifts = async () => {
-        try {
-            const response = await api.get('/shifts/my-shifts');
-            setShifts(response.data);
-        } catch (error) {
-            // Silently handle errors for now - backend endpoints not yet implemented
-            // TODO: Remove this once shift management endpoints are implemented
-            if (!error.message?.includes('404')) {
-                console.error('Error fetching shifts:', error);
-            }
-        } finally {
-            setLoading(false);
-        }
-    };
+    const [loading, setLoading] = useState(false);
 
     const hasRole = (roleName) => {
         return user?.roles?.includes(roleName);
