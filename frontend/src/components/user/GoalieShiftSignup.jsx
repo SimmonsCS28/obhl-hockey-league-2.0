@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
@@ -8,29 +8,43 @@ const GoalieShiftSignup = () => {
     const navigate = useNavigate();
     const { logout } = useAuth();
     const [gameDays, setGameDays] = useState([]);
-    const [unavailableDates, setUnavailableDates] = useState([]);
-    const [assignments, setAssignments] = useState([]);
-    const [profile, setProfile] = useState(null);
+    const [initialUnavailableDates, setInitialUnavailableDates] = useState([]);
+    const [currentUnavailableDates, setCurrentUnavailableDates] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const [saveSuccess, setSaveSuccess] = useState(false);
     const [seasonId, setSeasonId] = useState(1); // TODO: Get current season
+    const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+    const [pendingNavigation, setPendingNavigation] = useState(null);
 
     useEffect(() => {
         fetchData();
     }, []);
 
+    // Browser beforeunload warning
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (hasUnsavedChanges()) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [currentUnavailableDates, initialUnavailableDates]);
+
     const fetchData = async () => {
         try {
-            const [gameDaysRes, availabilityRes, assignmentsRes, profileRes] = await Promise.all([
+            const [gameDaysRes, availabilityRes] = await Promise.all([
                 api.get(`/shifts/goalie/game-days?seasonId=${seasonId}`),
-                api.get('/shifts/goalie/my-availability'),
-                api.get('/shifts/goalie/my-assignments'),
-                api.get('/shifts/goalie/my-profile')
+                api.get('/shifts/goalie/my-availability')
             ]);
 
             setGameDays(gameDaysRes.data);
-            setUnavailableDates(availabilityRes.data);
-            setAssignments(assignmentsRes.data);
-            setProfile(profileRes.data);
+            const unavailable = availabilityRes.data || [];
+            setInitialUnavailableDates(unavailable);
+            setCurrentUnavailableDates(unavailable);
         } catch (error) {
             console.error('Error fetching goalie data:', error);
         } finally {
@@ -38,24 +52,117 @@ const GoalieShiftSignup = () => {
         }
     };
 
-    const toggleDateAvailability = async (date) => {
-        try {
-            if (unavailableDates.includes(date)) {
-                // Remove from unavailable
-                await api.delete(`/shifts/goalie/unavailable/${date}`);
-                setUnavailableDates(prev => prev.filter(d => d !== date));
-            } else {
-                // Mark as unavailable
-                await api.post('/shifts/goalie/unavailable', { dates: [date] });
-                setUnavailableDates(prev => [...prev, date]);
+    const hasUnsavedChanges = useCallback(() => {
+        const initial = new Set(initialUnavailableDates);
+        const current = new Set(currentUnavailableDates);
+
+        if (initial.size !== current.size) return true;
+
+        for (const date of current) {
+            if (!initial.has(date)) return true;
+        }
+
+        return false;
+    }, [initialUnavailableDates, currentUnavailableDates]);
+
+    const getUnsavedChangesList = () => {
+        const initial = new Set(initialUnavailableDates);
+        const current = new Set(currentUnavailableDates);
+        const changes = [];
+
+        // Find newly checked (unavailable)
+        for (const date of current) {
+            if (!initial.has(date)) {
+                changes.push({
+                    date,
+                    action: 'marked unavailable'
+                });
             }
+        }
+
+        // Find newly unchecked (available)
+        for (const date of initial) {
+            if (!current.has(date)) {
+                changes.push({
+                    date,
+                    action: 'marked available'
+                });
+            }
+        }
+
+        return changes;
+    };
+
+    const handleCheckboxChange = (date) => {
+        setCurrentUnavailableDates(prev => {
+            if (prev.includes(date)) {
+                return prev.filter(d => d !== date);
+            } else {
+                return [...prev, date];
+            }
+        });
+        setSaveSuccess(false);
+    };
+
+    const handleSave = async () => {
+        setSaving(true);
+        setSaveSuccess(false);
+
+        try {
+            const initial = new Set(initialUnavailableDates);
+            const current = new Set(currentUnavailableDates);
+
+            // Dates to mark as unavailable (newly checked)
+            const toAdd = [...current].filter(date => !initial.has(date));
+
+            // Dates to mark as available (newly unchecked)
+            const toRemove = [...initial].filter(date => !current.has(date));
+
+            // Execute all changes
+            await Promise.all([
+                ...toAdd.map(date => api.post('/shifts/goalie/unavailable', { dates: [date] })),
+                ...toRemove.map(date => api.delete(`/shifts/goalie/unavailable/${date}`))
+            ]);
+
+            // Update initial state to match current
+            setInitialUnavailableDates([...currentUnavailableDates]);
+            setSaveSuccess(true);
+
+            // Hide success message after 3 seconds
+            setTimeout(() => setSaveSuccess(false), 3000);
         } catch (error) {
-            console.error('Error updating availability:', error);
-            alert('Failed to update availability');
+            console.error('Error saving availability:', error);
+            alert('Failed to save availability. Please try again.');
+        } finally {
+            setSaving(false);
         }
     };
 
-    if (loading) return <div>Loading...</div>;
+    const handleNavigationClick = (navigationFn) => {
+        if (hasUnsavedChanges()) {
+            setPendingNavigation(() => navigationFn);
+            setShowUnsavedModal(true);
+        } else {
+            navigationFn();
+        }
+    };
+
+    const handleSaveAndContinue = async () => {
+        await handleSave();
+        setShowUnsavedModal(false);
+        if (pendingNavigation) {
+            pendingNavigation();
+        }
+    };
+
+    const handleDiscardAndContinue = () => {
+        setShowUnsavedModal(false);
+        if (pendingNavigation) {
+            pendingNavigation();
+        }
+    };
+
+    if (loading) return <div className="loading">Loading...</div>;
 
     return (
         <div className="shift-signup">
@@ -64,72 +171,114 @@ const GoalieShiftSignup = () => {
                 <div className="header-buttons">
                     <button
                         className="back-button"
-                        onClick={() => navigate('/user')}
+                        onClick={() => handleNavigationClick(() => navigate('/user'))}
                     >
                         ← Back to Dashboard
                     </button>
                     <button
                         className="home-button"
-                        onClick={() => navigate('/')}
+                        onClick={() => handleNavigationClick(() => navigate('/'))}
                     >
                         OBHL Home
                     </button>
                     <button
                         className="logout-button"
-                        onClick={() => { logout(); navigate('/'); }}
+                        onClick={() => handleNavigationClick(() => { logout(); navigate('/'); })}
                     >
                         Logout
                     </button>
                 </div>
             </div>
 
-            {profile && (
-                <div className="goalie-stats">
-                    <p>Games Played This Season: {profile.gamesPlayedCurrentSeason || 0}</p>
+            <div className="availability-section">
+                <h2>Mark Your Unavailable Dates</h2>
+                <p className="instructions">Check the box next to any date you are NOT available to play</p>
+
+                <table className="availability-table">
+                    <thead>
+                        <tr>
+                            <th>Game Date</th>
+                            <th>Unavailable</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {gameDays.map(date => {
+                            const gameDate = new Date(date);
+                            const isUnavailable = currentUnavailableDates.includes(date);
+
+                            return (
+                                <tr key={date}>
+                                    <td>{gameDate.toLocaleDateString('en-US', {
+                                        weekday: 'short',
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric'
+                                    })}</td>
+                                    <td>
+                                        <input
+                                            type="checkbox"
+                                            checked={isUnavailable}
+                                            onChange={() => handleCheckboxChange(date)}
+                                            className="availability-checkbox"
+                                        />
+                                    </td>
+                                </tr>
+                            );
+                        })}
+                    </tbody>
+                </table>
+
+                <div className="save-section">
+                    <button
+                        className="save-button"
+                        onClick={handleSave}
+                        disabled={!hasUnsavedChanges() || saving}
+                    >
+                        {saving ? 'Saving...' : 'Save Availability'}
+                    </button>
+                    {saveSuccess && (
+                        <div className="save-success">
+                            ✓ Availability saved successfully!
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Unsaved Changes Modal */}
+            {showUnsavedModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content">
+                        <h3>Unsaved Changes</h3>
+                        <p>You have unsaved changes to your availability:</p>
+                        <ul className="changes-list">
+                            {getUnsavedChangesList().map((change, idx) => (
+                                <li key={idx}>
+                                    {new Date(change.date).toLocaleDateString('en-US', {
+                                        month: 'short',
+                                        day: 'numeric',
+                                        year: 'numeric'
+                                    })} - {change.action}
+                                </li>
+                            ))}
+                        </ul>
+                        <p>Would you like to save these changes?</p>
+                        <div className="modal-buttons">
+                            <button
+                                className="save-continue-button"
+                                onClick={handleSaveAndContinue}
+                            >
+                                Save & Continue
+                            </button>
+                            <button
+                                className="discard-continue-button"
+                                onClick={handleDiscardAndContinue}
+                            >
+                                Discard & Continue
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
-
-            <div className="availability-section">
-                <h2>Mark Unavailable Dates</h2>
-                <p className="instructions">Click on dates you are NOT available to play</p>
-                <div className="game-days-grid">
-                    {gameDays.map(date => (
-                        <div
-                            key={date}
-                            className={`game-day ${unavailableDates.includes(date) ? 'unavailable' : 'available'}`}
-                            onClick={() => toggleDateAvailability(date)}
-                        >
-                            {new Date(date).toLocaleDateString()}
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            <div className="assignments-section">
-                <h2>My Assigned Games</h2>
-                {assignments.length > 0 ? (
-                    <table className="assignments-table">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Time</th>
-                                <th>Matchup</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {assignments.map(game => (
-                                <tr key={game.gameId}>
-                                    <td>{new Date(game.gameDate).toLocaleDateString()}</td>
-                                    <td>{game.gameTime}</td>
-                                    <td>{game.homeTeam} vs {game.awayTeam}</td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                ) : (
-                    <p>No games assigned yet</p>
-                )}
-            </div>
         </div>
     );
 };
