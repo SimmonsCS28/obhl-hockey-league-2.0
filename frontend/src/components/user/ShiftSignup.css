@@ -161,3 +161,168 @@
     color: #ffffff;
     font-size: 18px;
 }
+/* Goalie Availability Styles */
+.availability-section {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.availability-section h2 {
+    margin-top: 0;
+    color: #2c3e50;
+}
+
+.instructions {
+    color: #666;
+    margin-bottom: 20px;
+}
+
+.availability-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+}
+
+.availability-table th {
+    background-color: #4a5f7f;
+    color: white;
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+}
+
+.availability-table td {
+    padding: 12px;
+    border-bottom: 1px solid #ddd;
+    color: #2c3e50;
+}
+
+.availability-table tr:hover {
+    background-color: #f5f5f5;
+}
+
+.availability-checkbox {
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+}
+
+.save-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px;
+}
+
+.save-button {
+    background-color: #48bb78;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.save-button:hover:not(:disabled) {
+    background-color: #38a169;
+}
+
+.save-button:disabled {
+    background-color: #a0aec0;
+    cursor: not-allowed;
+}
+
+.save-success {
+    color: #38a169;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Modal Styles */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.modal-content h3 {
+    margin-top: 0;
+    color: #2c3e50;
+}
+
+.modal-content p {
+    color: #4a5568;
+    margin: 15px 0;
+}
+
+.changes-list {
+    background-color: #f7fafc;
+    border-left: 4px solid #4299e1;
+    padding: 15px 15px 15px 30px;
+    margin: 15px 0;
+    list-style: none;
+}
+
+.changes-list li {
+    color: #2d3748;
+    margin: 8px 0;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.save-continue-button,
+.discard-continue-button {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.save-continue-button {
+    background-color: #48bb78;
+    color: white;
+}
+
+.save-continue-button:hover {
+    background-color: #38a169;
+}
+
+.discard-continue-button {
+    background-color: #718096;
+    color: white;
+}
+
+.discard-continue-button:hover {
+    background-color: #4a5568;
+}
