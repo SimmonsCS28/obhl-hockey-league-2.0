@@ -18,7 +18,13 @@
     font-size: 2rem;
 }
 
-.home-button {
+.header-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.home-button,
+.logout-button {
     background-color: #003E7E;
     color: white;
     border: none;
@@ -31,8 +37,17 @@
     transition: background-color 0.2s;
 }
 
-.home-button:hover {
+.home-button:hover,
+.logout-button:hover {
     background-color: #002a5c;
+}
+
+.logout-button {
+    background-color: #c53030;
+}
+
+.logout-button:hover {
+    background-color: #9b2c2c;
 }
 
 .role-cards {

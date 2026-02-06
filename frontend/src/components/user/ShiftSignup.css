@@ -18,7 +18,14 @@
     font-size: 2rem;
 }
 
-.back-button {
+.header-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.back-button,
+.home-button,
+.logout-button {
     background-color: #003E7E;
     color: white;
     border: none;
@@ -31,8 +38,18 @@
     transition: background-color 0.2s;
 }
 
-.back-button:hover {
+.back-button:hover,
+.home-button:hover,
+.logout-button:hover {
     background-color: #002a5c;
+}
+
+.logout-button {
+    background-color: #c53030;
+}
+
+.logout-button:hover {
+    background-color: #9b2c2c;
 }
 
 .season-selector {

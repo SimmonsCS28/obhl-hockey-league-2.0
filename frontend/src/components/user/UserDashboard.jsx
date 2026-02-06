@@ -3,23 +3,36 @@ import { useAuth } from '../../contexts/AuthContext';
 import './UserDashboard.css';
 
 const UserDashboard = () => {
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const navigate = useNavigate();
 
     const hasRole = (roleName) => {
         return user?.roles?.includes(roleName);
     };
 
+    const handleLogout = () => {
+        logout();
+        navigate('/');
+    };
+
     return (
         <div className="user-dashboard">
             <div className="dashboard-header">
                 <h1>My Shifts Dashboard</h1>
-                <button
-                    className="home-button"
-                    onClick={() => navigate('/')}
-                >
-                    OBHL Home
-                </button>
+                <div className="header-buttons">
+                    <button
+                        className="home-button"
+                        onClick={() => navigate('/')}
+                    >
+                        OBHL Home
+                    </button>
+                    <button
+                        className="logout-button"
+                        onClick={handleLogout}
+                    >
+                        Logout
+                    </button>
+                </div>
             </div>
 
             <div className="role-cards">

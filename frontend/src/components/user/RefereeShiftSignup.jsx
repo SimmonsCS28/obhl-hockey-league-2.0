@@ -6,7 +6,7 @@ import './ShiftSignup.css';
 
 const RefereeShiftSignup = () => {
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const [seasons, setSeasons] = useState([]);
     const [selectedSeason, setSelectedSeason] = useState(null);
     const [games, setGames] = useState([]);
