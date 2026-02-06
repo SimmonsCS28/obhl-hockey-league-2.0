@@ -122,12 +122,26 @@ const RefereeShiftSignup = () => {
         <div className="shift-signup">
             <div className="shift-header">
                 <h1>Referee Shift Signup</h1>
-                <button
-                    className="back-button"
-                    onClick={() => navigate('/user')}
-                >
-                    ← Back to Dashboard
-                </button>
+                <div className="header-buttons">
+                    <button
+                        className="back-button"
+                        onClick={() => navigate('/user')}
+                    >
+                        ← Back to Dashboard
+                    </button>
+                    <button
+                        className="home-button"
+                        onClick={() => navigate('/')}
+                    >
+                        OBHL Home
+                    </button>
+                    <button
+                        className="logout-button"
+                        onClick={() => { logout(); navigate('/'); }}
+                    >
+                        Logout
+                    </button>
+                </div>
             </div>
 
             <div className="season-selector">
