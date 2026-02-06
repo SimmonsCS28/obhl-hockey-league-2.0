@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import './ShiftSignup.css';
 
 const GoalieShiftSignup = () => {
     const navigate = useNavigate();
+    const { logout } = useAuth();
     const [gameDays, setGameDays] = useState([]);
     const [unavailableDates, setUnavailableDates] = useState([]);
     const [assignments, setAssignments] = useState([]);
@@ -59,12 +61,26 @@ const GoalieShiftSignup = () => {
         <div className="shift-signup">
             <div className="shift-header">
                 <h1>Goalie Availability</h1>
-                <button
-                    className="back-button"
-                    onClick={() => navigate('/user')}
-                >
-                    ← Back to Dashboard
-                </button>
+                <div className="header-buttons">
+                    <button
+                        className="back-button"
+                        onClick={() => navigate('/user')}
+                    >
+                        ← Back to Dashboard
+                    </button>
+                    <button
+                        className="home-button"
+                        onClick={() => navigate('/')}
+                    >
+                        OBHL Home
+                    </button>
+                    <button
+                        className="logout-button"
+                        onClick={() => { logout(); navigate('/'); }}
+                    >
+                        Logout
+                    </button>
+                </div>
             </div>
 
             {profile && (
