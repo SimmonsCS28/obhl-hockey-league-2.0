@@ -43,12 +43,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             if (jwtUtil.validateToken(token)) {
-                // Extract role from token
-                String role = jwtUtil.getRoleFromToken(token);
+                // Extract roles from token
+                java.util.List<String> roles = jwtUtil.getRolesFromToken(token);
+                System.out.println("DEBUG: Username: " + username);
+                System.out.println("DEBUG: Roles from token: " + roles);
 
-                // Create authentication with username as principal
                 var authorities = new ArrayList<SimpleGrantedAuthority>();
-                authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+
+                if (roles != null) {
+                    for (String role : roles) {
+                        System.out.println("DEBUG: Adding authority: ROLE_" + role);
+                        authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                    }
+                } else {
+                    // Fallback to legacy single role
+                    String role = jwtUtil.getRoleFromToken(token);
+                    System.out.println("DEBUG: Fallback legacy role: " + role);
+                    if (role != null) {
+                        authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                    }
+                }
+                System.out.println("DEBUG: Final Authorities: " + authorities);
 
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(username, null,
                         authorities);

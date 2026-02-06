@@ -13,7 +13,7 @@ const GoalieShiftSignup = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
-    const [seasonId, setSeasonId] = useState(1); // TODO: Get current season
+    const [seasonId, setSeasonId] = useState(null);
     const [showUnsavedModal, setShowUnsavedModal] = useState(false);
     const [pendingNavigation, setPendingNavigation] = useState(null);
 
@@ -36,13 +36,25 @@ const GoalieShiftSignup = () => {
 
     const fetchData = async () => {
         try {
+            // First get the active season
+            const seasons = await api.getSeasons();
+            const activeSeason = seasons.find(s => s.isActive) || seasons[0];
+
+            if (!activeSeason) {
+                console.error('No active season found');
+                setLoading(false);
+                return;
+            }
+
+            setSeasonId(activeSeason.id);
+
             const [gameDaysRes, availabilityRes] = await Promise.all([
-                api.get(`/shifts/goalie/game-days?seasonId=${seasonId}`),
+                api.get(`/shifts/goalie/game-days?seasonId=${activeSeason.id}`),
                 api.get('/shifts/goalie/my-availability')
             ]);
 
-            setGameDays(gameDaysRes.data);
-            const unavailable = availabilityRes.data || [];
+            setGameDays(gameDaysRes);
+            const unavailable = availabilityRes || [];
             setInitialUnavailableDates(unavailable);
             setCurrentUnavailableDates(unavailable);
         } catch (error) {
@@ -202,23 +214,27 @@ const GoalieShiftSignup = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {gameDays.map(date => {
-                            const gameDate = new Date(date);
-                            const isUnavailable = currentUnavailableDates.includes(date);
+                        {gameDays.map(day => {
+                            const dateStr = day.date;
+                            const gameDate = new Date(dateStr);
+                            const isUnavailable = currentUnavailableDates.includes(dateStr);
 
                             return (
-                                <tr key={date}>
-                                    <td>{gameDate.toLocaleDateString('en-US', {
-                                        weekday: 'short',
-                                        month: 'short',
-                                        day: 'numeric',
-                                        year: 'numeric'
-                                    })}</td>
+                                <tr key={dateStr}>
+                                    <td>
+                                        {gameDate.toLocaleDateString('en-US', {
+                                            weekday: 'short',
+                                            month: 'short',
+                                            day: 'numeric',
+                                            year: 'numeric'
+                                        })}
+                                        {day.gamesCount && <span className="game-count" style={{ marginLeft: '10px', fontSize: '0.8em', color: '#666' }}>({day.gamesCount} games)</span>}
+                                    </td>
                                     <td>
                                         <input
                                             type="checkbox"
                                             checked={isUnavailable}
-                                            onChange={() => handleCheckboxChange(date)}
+                                            onChange={() => handleCheckboxChange(dateStr)}
                                             className="availability-checkbox"
                                         />
                                     </td>
@@ -274,6 +290,12 @@ const GoalieShiftSignup = () => {
                                 onClick={handleDiscardAndContinue}
                             >
                                 Discard & Continue
+                            </button>
+                            <button
+                                className="cancel-modal-button"
+                                onClick={() => setShowUnsavedModal(false)}
+                            >
+                                Cancel
                             </button>
                         </div>
                     </div>

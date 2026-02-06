@@ -30,11 +30,15 @@ public class JwtUtil {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpiration);
 
+        System.out
+                .println("DEBUG: Generating token for user: " + user.getUsername() + " with roles: " + user.getRoles());
         return Jwts.builder()
                 .setSubject(Long.toString(user.getId()))
                 .claim("username", user.getUsername())
                 .claim("email", user.getEmail())
-                .claim("role", user.getRole())
+                .claim("roles", user.getRoles().stream()
+                        .map(role -> role.getName())
+                        .collect(java.util.stream.Collectors.toList()))
                 .claim("teamId", user.getTeamId())
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
@@ -42,14 +46,14 @@ public class JwtUtil {
                 .compact();
     }
 
-    public Long getUserIdFromToken(String token) {
+    public java.util.List<String> getRolesFromToken(String token) {
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
 
-        return Long.parseLong(claims.getSubject());
+        return claims.get("roles", java.util.List.class);
     }
 
     public String getRoleFromToken(String token) {
@@ -59,6 +63,11 @@ public class JwtUtil {
                 .parseClaimsJws(token)
                 .getBody();
 
+        // Fallback for older tokens or if roles is empty
+        java.util.List<String> roles = claims.get("roles", java.util.List.class);
+        if (roles != null && !roles.isEmpty()) {
+            return roles.get(0);
+        }
         return claims.get("role", String.class);
     }
 

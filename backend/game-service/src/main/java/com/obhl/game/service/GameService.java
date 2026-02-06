@@ -210,11 +210,16 @@ public class GameService {
 
     // Shift Assignment Methods
     @Transactional(readOnly = true)
-    public List<java.time.LocalDate> getGameDaysBySeason(Long seasonId) {
-        return gameRepository.findBySeasonIdOrderByGameDate(seasonId)
+    public List<com.obhl.game.dto.GameDayDTO> getGameDaysBySeason(Long seasonId) {
+        java.util.Map<java.time.LocalDate, Long> gamesPerDay = gameRepository.findBySeasonIdOrderByGameDate(seasonId)
                 .stream()
-                .map(game -> game.getGameDate().toLocalDate())
-                .distinct()
+                .collect(Collectors.groupingBy(
+                        game -> game.getGameDate().toLocalDate(),
+                        Collectors.counting()));
+
+        return gamesPerDay.entrySet().stream()
+                .map(entry -> new com.obhl.game.dto.GameDayDTO(entry.getKey(), entry.getValue().intValue()))
+                .sorted(java.util.Comparator.comparing(com.obhl.game.dto.GameDayDTO::getDate))
                 .collect(Collectors.toList());
     }
 

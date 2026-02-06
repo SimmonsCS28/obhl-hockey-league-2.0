@@ -34,6 +34,8 @@ public class AuthService {
                     return new RuntimeException("Invalid credentials");
                 });
 
+        System.out.println("DEBUG: AuthService.login called for user: " + user.getUsername());
+
         log.info("User found: id={}, username={}, email={}, role={}",
                 user.getId(), user.getUsername(), user.getEmail(), user.getRole());
 

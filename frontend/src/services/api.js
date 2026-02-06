@@ -93,7 +93,8 @@ const api = {
         if (!response.ok) {
             throw new Error(`POST ${url} failed with status ${response.status}`);
         }
-        return response.json();
+        const text = await response.text();
+        return text ? JSON.parse(text) : {};
     },
 
     async put(url, data) {
@@ -108,7 +109,8 @@ const api = {
         if (!response.ok) {
             throw new Error(`PUT ${url} failed with status ${response.status}`);
         }
-        return response.json();
+        const text = await response.text();
+        return text ? JSON.parse(text) : {};
     },
 
     async delete(url) {

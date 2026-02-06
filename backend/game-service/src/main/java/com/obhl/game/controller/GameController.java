@@ -191,7 +191,7 @@ public class GameController {
 
     // Shift Assignment Endpoints
     @GetMapping("/season/{seasonId}/game-days")
-    public ResponseEntity<List<?>> getGameDays(@PathVariable Long seasonId) {
+    public ResponseEntity<List<com.obhl.game.dto.GameDayDTO>> getGameDays(@PathVariable Long seasonId) {
         return ResponseEntity.ok(gameService.getGameDaysBySeason(seasonId));
     }
 
