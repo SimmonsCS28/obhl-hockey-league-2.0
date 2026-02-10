@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as api from '../../services/api';
 import SecurityQuestionInput from '../common/SecurityQuestionInput';
-import './Signup.css'; // Shared signup styles
+import '../referee/Signup.css'; // Shared signup styles
 
-const RefereeSignup = () => {
+const GoalieSignup = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         username: '',
@@ -45,18 +45,16 @@ const RefereeSignup = () => {
 
         setLoading(true);
         try {
-            await api.refereeSignup({
+            await api.goalieSignup({
                 username: formData.username,
                 email: formData.email,
                 password: formData.password,
                 securityQuestion: formData.securityQuestion,
                 securityAnswer: formData.securityAnswer
             });
-            // Redirect to login page with success message or auto-login
-            // For now, redirect to login
             navigate('/login', { state: { message: 'Account created successfully! Please log in.' } });
         } catch (err) {
-            setError(err.response?.data?.message || err.message || 'Failed to create account');
+            setError(err.message || 'Failed to create account');
         } finally {
             setLoading(false);
         }
@@ -65,7 +63,7 @@ const RefereeSignup = () => {
     return (
         <div className="signup-container">
             <div className="signup-card">
-                <h2>Referee Signup</h2>
+                <h2>Goalie Signup</h2>
                 {error && <div className="error-message">{error}</div>}
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
@@ -138,4 +136,4 @@ const RefereeSignup = () => {
     );
 };
 
-export default RefereeSignup;
+export default GoalieSignup;

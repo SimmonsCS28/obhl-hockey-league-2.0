@@ -18,4 +18,10 @@ public class StaffSignupRequest {
     @NotBlank(message = "Password is required")
     @Pattern(regexp = "^(?=.*[A-Z])(?=.*[!@#$%^&*()\\-_=+\\[\\]{}|;:',.<>?/~`])(?=\\S+$).{8,}$", message = "Password must be at least 8 characters, contain 1 uppercase letter, 1 special character, and no spaces")
     private String password;
+
+    @NotBlank(message = "Security Question is required")
+    private String securityQuestion;
+
+    @NotBlank(message = "Security Answer is required")
+    private String securityAnswer;
 }

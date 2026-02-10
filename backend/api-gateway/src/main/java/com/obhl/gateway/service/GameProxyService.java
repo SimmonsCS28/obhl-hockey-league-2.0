@@ -11,7 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import com.obhl.gateway.dto.GameDayDTO;
-import com.obhl.gateway.dto.ShiftAssignmentDTO;
+import com.obhl.gateway.dto.GameResponseDTO;
 
 @Service
 public class GameProxyService {
@@ -39,13 +39,13 @@ public class GameProxyService {
     /**
      * Get goalie assignments for a user
      */
-    public List<ShiftAssignmentDTO> getGoalieAssignments(Long userId) {
+    public List<GameResponseDTO> getGoalieAssignments(Long userId) {
         String url = gameServiceUrl + "/api/v1/games/goalie/" + userId + "/assignments";
-        ResponseEntity<List<ShiftAssignmentDTO>> response = restTemplate.exchange(
+        ResponseEntity<List<GameResponseDTO>> response = restTemplate.exchange(
                 url,
                 HttpMethod.GET,
                 null,
-                new ParameterizedTypeReference<List<ShiftAssignmentDTO>>() {
+                new ParameterizedTypeReference<List<GameResponseDTO>>() {
                 });
         return response.getBody();
     }
@@ -53,13 +53,13 @@ public class GameProxyService {
     /**
      * Get referee assignments for a user
      */
-    public List<ShiftAssignmentDTO> getRefereeAssignments(Long userId) {
+    public List<GameResponseDTO> getRefereeAssignments(Long userId) {
         String url = gameServiceUrl + "/api/v1/games/referee/" + userId + "/assignments";
-        ResponseEntity<List<ShiftAssignmentDTO>> response = restTemplate.exchange(
+        ResponseEntity<List<GameResponseDTO>> response = restTemplate.exchange(
                 url,
                 HttpMethod.GET,
                 null,
-                new ParameterizedTypeReference<List<ShiftAssignmentDTO>>() {
+                new ParameterizedTypeReference<List<GameResponseDTO>>() {
                 });
         return response.getBody();
     }
@@ -67,13 +67,13 @@ public class GameProxyService {
     /**
      * Get scorekeeper assignments for a user
      */
-    public List<ShiftAssignmentDTO> getScorekeeperAssignments(Long userId) {
+    public List<GameResponseDTO> getScorekeeperAssignments(Long userId) {
         String url = gameServiceUrl + "/api/v1/games/scorekeeper/" + userId + "/assignments";
-        ResponseEntity<List<ShiftAssignmentDTO>> response = restTemplate.exchange(
+        ResponseEntity<List<GameResponseDTO>> response = restTemplate.exchange(
                 url,
                 HttpMethod.GET,
                 null,
-                new ParameterizedTypeReference<List<ShiftAssignmentDTO>>() {
+                new ParameterizedTypeReference<List<GameResponseDTO>>() {
                 });
         return response.getBody();
     }
@@ -81,13 +81,13 @@ public class GameProxyService {
     /**
      * Get available games for referees
      */
-    public List<ShiftAssignmentDTO> getAvailableRefereeGames(Long seasonId) {
+    public List<GameResponseDTO> getAvailableRefereeGames(Long seasonId) {
         String url = gameServiceUrl + "/api/v1/games/season/" + seasonId + "/referee/available";
-        ResponseEntity<List<ShiftAssignmentDTO>> response = restTemplate.exchange(
+        ResponseEntity<List<GameResponseDTO>> response = restTemplate.exchange(
                 url,
                 HttpMethod.GET,
                 null,
-                new ParameterizedTypeReference<List<ShiftAssignmentDTO>>() {
+                new ParameterizedTypeReference<List<GameResponseDTO>>() {
                 });
         return response.getBody();
     }
@@ -95,13 +95,13 @@ public class GameProxyService {
     /**
      * Get available games for scorekeepers
      */
-    public List<ShiftAssignmentDTO> getAvailableScorekeeperGames(Long seasonId) {
+    public List<GameResponseDTO> getAvailableScorekeeperGames(Long seasonId) {
         String url = gameServiceUrl + "/api/v1/games/season/" + seasonId + "/scorekeeper/available";
-        ResponseEntity<List<ShiftAssignmentDTO>> response = restTemplate.exchange(
+        ResponseEntity<List<GameResponseDTO>> response = restTemplate.exchange(
                 url,
                 HttpMethod.GET,
                 null,
-                new ParameterizedTypeReference<List<ShiftAssignmentDTO>>() {
+                new ParameterizedTypeReference<List<GameResponseDTO>>() {
                 });
         return response.getBody();
     }

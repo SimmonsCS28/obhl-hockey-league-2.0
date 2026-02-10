@@ -6,8 +6,9 @@ function GoalieSchedule() {
     const [seasons, setSeasons] = useState([]);
     const [selectedSeason, setSelectedSeason] = useState(null);
     const [games, setGames] = useState([]);
-    const [players, setPlayers] = useState([]);
+    const [goalies, setGoalies] = useState([]);
     const [teams, setTeams] = useState([]);
+    const [unavailability, setUnavailability] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all'); // all, assigned, unassigned
     const [weekFilter, setWeekFilter] = useState('all'); // all or specific week number
@@ -41,15 +42,17 @@ function GoalieSchedule() {
     const loadSeasonData = async (seasonId) => {
         setLoading(true);
         try {
-            const [gamesData, playersData, teamsData] = await Promise.all([
+            const [gamesData, goaliesData, teamsData, unavailabilityData] = await Promise.all([
                 api.getGames(seasonId),
-                api.getPlayers({ seasonId, active: true }),
-                api.getTeams({ seasonId })
+                api.getUsers({ role: 'GOALIE' }),
+                api.getTeams({ seasonId }),
+                api.getAllGoalieUnavailability()
             ]);
 
             setGames(gamesData);
-            setPlayers(playersData);
+            setGoalies(goaliesData);
             setTeams(teamsData);
+            setUnavailability(unavailabilityData || []);
         } catch (error) {
             console.error('Failed to load season data:', error);
         } finally {
@@ -106,6 +109,21 @@ function GoalieSchedule() {
         );
 
         return isLight ? '#2c3e50' : 'white';
+    };
+
+    const isGoalieAvailable = (goalieId, gameDate, currentAssignedId) => {
+        // Always show if currently assigned to this slot
+        if (goalieId === currentAssignedId) return true;
+
+        // Check if marked as unavailable
+        // gameDate comes from game object, might be full ISO string
+        const dateStr = gameDate.split('T')[0];
+
+        const isUnavailable = unavailability.some(u =>
+            u.userId === goalieId && u.date === dateStr
+        );
+
+        return !isUnavailable;
     };
 
     const filteredGames = games.filter(game => {
@@ -252,29 +270,33 @@ function GoalieSchedule() {
                                         <td>
                                             <select
                                                 value={game.goalie1Id || ''}
-                                                onChange={(e) => handleAssignGoalie(game.id, 1, e.target.value ? parseInt(e.target.value) : null)}
+                                                onChange={(e) => handleAssignGoalie(game.id, 1, e.target.value ? parseInt(e.target.value) : -1)}
                                                 className="goalie-select"
                                             >
                                                 <option value="">-- Select Goalie 1 --</option>
-                                                {players.map(player => (
-                                                    <option key={player.id} value={player.id}>
-                                                        #{player.jerseyNumber} {player.firstName} {player.lastName}
-                                                    </option>
-                                                ))}
+                                                {goalies
+                                                    .filter(g => isGoalieAvailable(g.id, game.gameDate, game.goalie1Id))
+                                                    .map(goalie => (
+                                                        <option key={goalie.id} value={goalie.id}>
+                                                            {goalie.username} ({goalie.email})
+                                                        </option>
+                                                    ))}
                                             </select>
                                         </td>
                                         <td>
                                             <select
                                                 value={game.goalie2Id || ''}
-                                                onChange={(e) => handleAssignGoalie(game.id, 2, e.target.value ? parseInt(e.target.value) : null)}
+                                                onChange={(e) => handleAssignGoalie(game.id, 2, e.target.value ? parseInt(e.target.value) : -1)}
                                                 className="goalie-select"
                                             >
                                                 <option value="">-- Select Goalie 2 --</option>
-                                                {players.map(player => (
-                                                    <option key={player.id} value={player.id}>
-                                                        #{player.jerseyNumber} {player.firstName} {player.lastName}
-                                                    </option>
-                                                ))}
+                                                {goalies
+                                                    .filter(g => isGoalieAvailable(g.id, game.gameDate, game.goalie2Id))
+                                                    .map(goalie => (
+                                                        <option key={goalie.id} value={goalie.id}>
+                                                            {goalie.username} ({goalie.email})
+                                                        </option>
+                                                    ))}
                                             </select>
                                         </td>
                                     </tr>

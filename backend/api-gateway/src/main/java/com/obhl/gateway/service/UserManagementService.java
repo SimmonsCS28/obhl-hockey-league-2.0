@@ -42,6 +42,18 @@ public class UserManagementService {
     }
 
     /**
+     * Get users by role
+     */
+    @Transactional(readOnly = true)
+    public List<UserDTO> getUsersByRole(String roleName) {
+        return userRepository.findByRoles_Name(roleName)
+                .stream()
+                .filter(user -> user.getIsActive()) // Ensure we only get active users
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Get user by ID
      */
     public UserDTO getUserById(Long id) {
@@ -66,6 +78,8 @@ public class UserManagementService {
         User user = new User();
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         if (request.getRoles() != null && !request.getRoles().isEmpty()) {
             Set<Role> roles = new HashSet<>();
@@ -92,7 +106,11 @@ public class UserManagementService {
         }
         user.setTeamId(request.getTeamId());
         user.setIsActive(true);
-        user.setMustChangePassword(true); // New users must change password on first login
+        user.setMustChangePassword(false); // Self-signup users chose their own password
+
+        // set security question and hash answer
+        user.setSecurityQuestion(request.getSecurityQuestion());
+        user.setSecurityAnswerHash(passwordEncoder.encode(request.getSecurityAnswer()));
 
         User savedUser = userRepository.save(user);
         return convertToDTO(savedUser);
@@ -199,6 +217,42 @@ public class UserManagementService {
 
         User updatedUser = userRepository.save(user);
         return convertToDTO(updatedUser);
+    }
+
+    /**
+     * Get security question for a username
+     */
+    @Transactional(readOnly = true)
+    public String getSecurityQuestion(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+        if (user.getSecurityQuestion() == null || user.getSecurityQuestion().isBlank()) {
+            throw new RuntimeException("No security question set for this user. Please contact admin.");
+        }
+
+        return user.getSecurityQuestion();
+    }
+
+    /**
+     * Verify security answer and reset password
+     */
+    @Transactional
+    public void verifyAndResetPassword(String username, String answer, String newPassword) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+
+        if (user.getSecurityAnswerHash() == null) {
+            throw new RuntimeException("Security answer not set. Cannot reset password.");
+        }
+
+        if (!passwordEncoder.matches(answer, user.getSecurityAnswerHash())) {
+            throw new RuntimeException("Incorrect security answer.");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setMustChangePassword(false); // Reset successful, they know the password now
+        userRepository.save(user);
     }
 
     /**

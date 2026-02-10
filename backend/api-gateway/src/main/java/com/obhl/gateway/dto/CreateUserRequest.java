@@ -2,7 +2,6 @@ package com.obhl.gateway.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 @Data
@@ -15,15 +14,26 @@ public class CreateUserRequest {
     @Email(message = "Invalid email format")
     private String email;
 
-    @NotBlank(message = "Password is required")
-    @Pattern(regexp = "^(?=.*[A-Z])(?=.*[!@#$%^&*()\\-_=+\\[\\]{}|;:',.<>?/~`])(?=\\S+$).{8,}$", message = "Password must be at least 8 characters, contain 1 uppercase letter, 1 special character, and no spaces")
-    private String password;
+    @NotBlank(message = "First Name is required")
+    private String firstName;
 
-    @NotBlank(message = "Role is required")
+    @NotBlank(message = "Last Name is required")
+    private String lastName;
+
     @Deprecated
     private String role; // DEPRECATED: Use roles set instead
 
+    @jakarta.validation.constraints.NotEmpty(message = "At least one role is required")
     private java.util.Set<String> roles;
 
+    @NotBlank(message = "Password is required")
+    private String password;
+
     private Long teamId; // Optional, for GM role
+
+    @NotBlank(message = "Security Question is required")
+    private String securityQuestion;
+
+    @NotBlank(message = "Security Answer is required")
+    private String securityAnswer;
 }

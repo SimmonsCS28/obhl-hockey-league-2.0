@@ -124,6 +124,11 @@ function LoginModal({ isOpen, onClose }) {
                     >
                         {loading ? 'Signing in...' : 'Sign In'}
                     </button>
+
+                    <div className="modal-footer" style={{ marginTop: '1rem', textAlign: 'center' }}>
+                        <p>Don't have an account? <span onClick={() => { onClose(); navigate('/signup'); }} style={{ color: '#007bff', cursor: 'pointer', textDecoration: 'underline' }}>Create Account</span></p>
+                        <p style={{ marginTop: '0.5rem' }}><span onClick={() => { onClose(); navigate('/forgot-password'); }} style={{ color: '#6c757d', cursor: 'pointer', fontSize: '0.9rem' }}>Forgot Password?</span></p>
+                    </div>
                 </form>
             </div>
         </div>

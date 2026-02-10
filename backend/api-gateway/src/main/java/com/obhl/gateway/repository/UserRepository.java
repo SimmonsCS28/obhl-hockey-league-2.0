@@ -28,6 +28,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findByRole(String role);
 
+    // Proper JPA query for ManyToMany role relationship
+    List<User> findByRoles_Name(String roleName);
+
     Long countByRole(String role);
 
     Boolean existsByUsername(String username);

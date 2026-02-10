@@ -10,6 +10,7 @@ const GoalieShiftSignup = () => {
     const [gameDays, setGameDays] = useState([]);
     const [initialUnavailableDates, setInitialUnavailableDates] = useState([]);
     const [currentUnavailableDates, setCurrentUnavailableDates] = useState([]);
+    const [myAssignments, setMyAssignments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
@@ -48,15 +49,19 @@ const GoalieShiftSignup = () => {
 
             setSeasonId(activeSeason.id);
 
-            const [gameDaysRes, availabilityRes] = await Promise.all([
+            setSeasonId(activeSeason.id);
+
+            const [gameDaysRes, availabilityRes, assignmentsRes] = await Promise.all([
                 api.get(`/shifts/goalie/game-days?seasonId=${activeSeason.id}`),
-                api.get('/shifts/goalie/my-availability')
+                api.get('/shifts/goalie/my-availability'),
+                api.getMyAssignments()
             ]);
 
             setGameDays(gameDaysRes);
             const unavailable = availabilityRes || [];
             setInitialUnavailableDates(unavailable);
             setCurrentUnavailableDates(unavailable);
+            setMyAssignments(assignmentsRes || []);
         } catch (error) {
             console.error('Error fetching goalie data:', error);
         } finally {
@@ -243,6 +248,37 @@ const GoalieShiftSignup = () => {
                         })}
                     </tbody>
                 </table>
+
+                {/* My Assignments Section */}
+                {myAssignments.length > 0 && (
+                    <div className="assignments-section" style={{ marginTop: '30px' }}>
+                        <h2>My Upcoming Assignments</h2>
+                        <table className="availability-table assignments-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Game Time</th>
+                                    <th>Matchup</th>
+                                    <th>Role</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {myAssignments.map((assignment, idx) => (
+                                    <tr key={idx}>
+                                        <td>
+                                            {new Date(assignment.gameDate).toLocaleDateString('en-US', {
+                                                weekday: 'short', month: 'short', day: 'numeric'
+                                            })}
+                                        </td>
+                                        <td>{assignment.gameTime}</td>
+                                        <td>{assignment.homeTeam} vs {assignment.awayTeam}</td>
+                                        <td>{assignment.role}</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
 
                 <div className="save-section">
                     <button

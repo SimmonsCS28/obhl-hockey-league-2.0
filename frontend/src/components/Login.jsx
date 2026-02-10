@@ -19,12 +19,15 @@ const Login = () => {
         const result = await login(usernameOrEmail, password);
 
         if (result.success) {
-            if (result.user?.role === 'SCOREKEEPER') {
-                navigate('/scorekeeper');
-            } else if (result.user?.role === 'GM') {
-                navigate('/gm');
-            } else {
+            const role = result.user?.role;
+            if (role === 'ADMIN') {
                 navigate('/admin');
+            } else if (role === 'GM') {
+                navigate('/gm');
+            } else if (['SCOREKEEPER', 'REF', 'GOALIE'].includes(role)) {
+                navigate('/user');
+            } else {
+                navigate('/');
             }
         } else {
             setError(result.error || 'Login failed. Please check your credentials.');
@@ -83,6 +86,12 @@ const Login = () => {
                 </form>
 
                 <div className="login-footer">
+                    <div className="login-links">
+                        <a href="/signup">Create Account</a> | <a href="/forgot-password">Forgot Password?</a>
+                    </div>
+                </div>
+                {/* 
+                <div className="login-footer">
                     <p className="temp-password-note">
                         <strong>Temporary Password:</strong> admin123
                     </p>
@@ -90,6 +99,7 @@ const Login = () => {
                         You can change your password after logging in
                     </p>
                 </div>
+                */}
             </div>
         </div>
     );

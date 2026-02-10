@@ -211,15 +211,18 @@ const RefereeShiftSignup = () => {
                                         <td>{game.rink || 'TBD'}</td>
                                         <td>
                                             {game.referee1Id ? (
-                                                <div className="assigned-shift">
-                                                    <span className="assigned-name">{ref1?.username || 'Unknown'}</span>
+                                                <div className={`assigned-shift-container ${game.referee1Id === user?.id ? 'cancellable' : ''}`}>
+                                                    <div className="assigned-name-display">
+                                                        <span className="assigned-name">{ref1?.username || 'Unknown'}</span>
+                                                    </div>
                                                     {game.referee1Id === user?.id && (
-                                                        <button
+                                                        <div
+                                                            className="drop-shift-overlay"
                                                             onClick={() => handleCancelShift(game.id, 1)}
-                                                            className="cancel-btn-small"
+                                                            title="Click to drop this shift"
                                                         >
-                                                            Cancel
-                                                        </button>
+                                                            <span className="drop-shift-text">Drop Shift</span>
+                                                        </div>
                                                     )}
                                                 </div>
                                             ) : (
@@ -233,15 +236,18 @@ const RefereeShiftSignup = () => {
                                         </td>
                                         <td>
                                             {game.referee2Id ? (
-                                                <div className="assigned-shift">
-                                                    <span className="assigned-name">{ref2?.username || 'Unknown'}</span>
+                                                <div className={`assigned-shift-container ${game.referee2Id === user?.id ? 'cancellable' : ''}`}>
+                                                    <div className="assigned-name-display">
+                                                        <span className="assigned-name">{ref2?.username || 'Unknown'}</span>
+                                                    </div>
                                                     {game.referee2Id === user?.id && (
-                                                        <button
+                                                        <div
+                                                            className="drop-shift-overlay"
                                                             onClick={() => handleCancelShift(game.id, 2)}
-                                                            className="cancel-btn-small"
+                                                            title="Click to drop this shift"
                                                         >
-                                                            Cancel
-                                                        </button>
+                                                            <span className="drop-shift-text">Drop Shift</span>
+                                                        </div>
                                                     )}
                                                 </div>
                                             ) : (

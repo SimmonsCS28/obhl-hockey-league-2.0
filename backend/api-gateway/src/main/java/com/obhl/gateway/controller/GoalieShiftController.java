@@ -58,6 +58,15 @@ public class GoalieShiftController {
     }
 
     /**
+     * Get ALL unavailability (Admin only)
+     */
+    @GetMapping("/all-unavailability")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<com.obhl.gateway.dto.GoalieUnavailabilityDTO>> getAllUnavailability() {
+        return ResponseEntity.ok(goalieShiftService.getAllUnavailability());
+    }
+
+    /**
      * Mark dates as unavailable
      */
     @PostMapping("/unavailable")

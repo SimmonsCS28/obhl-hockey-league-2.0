@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.obhl.gateway.dto.CreateUserRequest;
-import com.obhl.gateway.dto.StaffSignupRequest;
 import com.obhl.gateway.dto.UserDTO;
 import com.obhl.gateway.service.UserManagementService;
 
@@ -18,45 +17,31 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("${api.v1.prefix}/staff")
+@RequestMapping("${api.v1.prefix}/users")
 @RequiredArgsConstructor
 public class StaffSignupController {
 
     private final UserManagementService userManagementService;
 
-    @PostMapping("/referee/signup")
-    public ResponseEntity<UserDTO> refereeSignup(@Valid @RequestBody StaffSignupRequest request) {
-        CreateUserRequest createUserRequest = new CreateUserRequest();
-        createUserRequest.setUsername(request.getUsername());
-        createUserRequest.setEmail(request.getEmail());
-        createUserRequest.setPassword(request.getPassword());
+    @PostMapping("/signup")
+    public ResponseEntity<UserDTO> signup(@Valid @RequestBody CreateUserRequest request) {
+        // Handle roles: prefer 'roles' set, fallback to 'role' string
+        if (request.getRoles() == null || request.getRoles().isEmpty()) {
+            Set<String> roles = new HashSet<>();
+            if (request.getRole() != null && !request.getRole().isBlank()) {
+                roles.add(request.getRole().toUpperCase());
+            }
+            request.setRoles(roles);
+        } else {
+            // Ensure all roles are uppercase
+            Set<String> upperRoles = new HashSet<>();
+            for (String r : request.getRoles()) {
+                upperRoles.add(r.toUpperCase());
+            }
+            request.setRoles(upperRoles);
+        }
 
-        Set<String> roles = new HashSet<>();
-        roles.add("REFEREE");
-        createUserRequest.setRoles(roles);
-
-        // Backward compatibility
-        createUserRequest.setRole("REFEREE");
-
-        UserDTO newUser = userManagementService.createUser(createUserRequest);
-        return ResponseEntity.ok(newUser);
-    }
-
-    @PostMapping("/scorekeeper/signup")
-    public ResponseEntity<UserDTO> scorekeeperSignup(@Valid @RequestBody StaffSignupRequest request) {
-        CreateUserRequest createUserRequest = new CreateUserRequest();
-        createUserRequest.setUsername(request.getUsername());
-        createUserRequest.setEmail(request.getEmail());
-        createUserRequest.setPassword(request.getPassword());
-
-        Set<String> roles = new HashSet<>();
-        roles.add("SCOREKEEPER");
-        createUserRequest.setRoles(roles);
-
-        // Backward compatibility
-        createUserRequest.setRole("SCOREKEEPER");
-
-        UserDTO newUser = userManagementService.createUser(createUserRequest);
+        UserDTO newUser = userManagementService.createUser(request);
         return ResponseEntity.ok(newUser);
     }
 }

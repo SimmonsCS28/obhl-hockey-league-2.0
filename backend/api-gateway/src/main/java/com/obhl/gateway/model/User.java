@@ -41,6 +41,12 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
+    @Column(name = "first_name", length = 100)
+    private String firstName;
+
+    @Column(name = "last_name", length = 100)
+    private String lastName;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
@@ -57,6 +63,12 @@ public class User {
 
     @Column(name = "must_change_password")
     private Boolean mustChangePassword = false;
+
+    @Column(name = "security_question")
+    private String securityQuestion;
+
+    @Column(name = "security_answer_hash")
+    private String securityAnswerHash;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

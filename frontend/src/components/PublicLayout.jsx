@@ -98,12 +98,22 @@ function PublicLayout() {
                                         <button className="logout-btn" onClick={() => { handleLogout(); closeMobileMenu(); }}>Logout</button>
                                     </>
                                 ) : (
-                                    <button
-                                        className="login-btn"
-                                        onClick={() => { setIsLoginModalOpen(true); closeMobileMenu(); }}
-                                    >
-                                        Login
-                                    </button>
+                                    <div className="auth-buttons">
+                                        <button
+                                            className="login-btn"
+                                            onClick={() => { setIsLoginModalOpen(true); closeMobileMenu(); }}
+                                        >
+                                            Login
+                                        </button>
+                                        <Link
+                                            to="/signup"
+                                            className="signup-link-btn"
+                                            onClick={closeMobileMenu}
+                                            style={{ marginLeft: '10px', textDecoration: 'none', color: 'white' }}
+                                        >
+                                            Create Account
+                                        </Link>
+                                    </div>
                                 )}
                             </div>
                         </div>
@@ -162,12 +172,21 @@ function PublicLayout() {
                                     <button className="logout-btn" onClick={() => { handleLogout(); closeMobileMenu(); }}>Logout</button>
                                 </>
                             ) : (
-                                <button
-                                    className="login-btn"
-                                    onClick={() => { setIsLoginModalOpen(true); closeMobileMenu(); }}
-                                >
-                                    Login
-                                </button>
+                                <div className="auth-buttons">
+                                    <button
+                                        className="login-btn"
+                                        onClick={() => { setIsLoginModalOpen(true); closeMobileMenu(); }}
+                                    >
+                                        Login
+                                    </button>
+                                    <Link
+                                        to="/signup"
+                                        className="signup-link-btn"
+                                        style={{ marginLeft: '10px', textDecoration: 'none', fontWeight: 'bold' }}
+                                    >
+                                        Create Account
+                                    </Link>
+                                </div>
                             )}
                         </div>
                     </div>

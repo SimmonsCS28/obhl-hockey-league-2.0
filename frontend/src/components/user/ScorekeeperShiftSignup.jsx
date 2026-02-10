@@ -73,7 +73,7 @@ const ScorekeeperShiftSignup = () => {
         if (!window.confirm('Are you sure you want to cancel this shift?')) return;
 
         try {
-            await api.updateGame(gameId, { scorekeeperId: null });
+            await api.updateGame(gameId, { scorekeeperId: -1 });
             await loadSeasonData(selectedSeason);
         } catch (error) {
             console.error('Failed to cancel shift:', error);
@@ -201,15 +201,18 @@ const ScorekeeperShiftSignup = () => {
                                         <td>{game.rink || 'TBD'}</td>
                                         <td>
                                             {game.scorekeeperId ? (
-                                                <div className="assigned-shift">
-                                                    <span className="assigned-name">{scorekeeper?.username || 'Unknown'}</span>
+                                                <div className={`assigned-shift-container ${game.scorekeeperId === user?.id ? 'cancellable' : ''}`}>
+                                                    <div className="assigned-name-display">
+                                                        <span className="assigned-name">{scorekeeper?.username || 'Unknown'}</span>
+                                                    </div>
                                                     {game.scorekeeperId === user?.id && (
-                                                        <button
+                                                        <div
+                                                            className="drop-shift-overlay"
                                                             onClick={() => handleCancelShift(game.id)}
-                                                            className="cancel-btn-small"
+                                                            title="Click to drop this shift"
                                                         >
-                                                            Cancel
-                                                        </button>
+                                                            <span className="drop-shift-text">Drop Shift</span>
+                                                        </div>
                                                     )}
                                                 </div>
                                             ) : (

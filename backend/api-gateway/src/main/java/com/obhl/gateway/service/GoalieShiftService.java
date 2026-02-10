@@ -33,6 +33,9 @@ public class GoalieShiftService {
     @Autowired
     private GameProxyService gameProxyService;
 
+    @Autowired
+    private TeamService teamService;
+
     /**
      * Get all game days for the current season
      */
@@ -47,6 +50,16 @@ public class GoalieShiftService {
         return unavailabilityRepository.findByUserId(userId)
                 .stream()
                 .map(GoalieUnavailability::getUnavailableDate)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Get ALL unavailability (for Admin)
+     */
+    public List<com.obhl.gateway.dto.GoalieUnavailabilityDTO> getAllUnavailability() {
+        return unavailabilityRepository.findAll()
+                .stream()
+                .map(u -> new com.obhl.gateway.dto.GoalieUnavailabilityDTO(u.getUser().getId(), u.getUnavailableDate()))
                 .collect(Collectors.toList());
     }
 
@@ -82,7 +95,29 @@ public class GoalieShiftService {
      * Get goalie's assigned games
      */
     public List<ShiftAssignmentDTO> getMyAssignments(Long userId) {
-        return gameProxyService.getGoalieAssignments(userId);
+        List<com.obhl.gateway.dto.GameResponseDTO> games = gameProxyService.getGoalieAssignments(userId);
+
+        return games.stream().map(game -> {
+            ShiftAssignmentDTO dto = new ShiftAssignmentDTO();
+            dto.setGameId(game.getId());
+            dto.setGameDate(game.getGameDate().toLocalDate());
+            dto.setGameTime(game.getGameDate().toLocalTime());
+
+            // Fetch team names
+            // Note: This could be optimized with caching or bulk fetch if needed
+            if (game.getHomeTeamId() != null) {
+                teamService.getTeamById(game.getHomeTeamId())
+                        .ifPresent(team -> dto.setHomeTeam(team.getName()));
+            }
+
+            if (game.getAwayTeamId() != null) {
+                teamService.getTeamById(game.getAwayTeamId())
+                        .ifPresent(team -> dto.setAwayTeam(team.getName()));
+            }
+
+            dto.setRole("GOALIE");
+            return dto;
+        }).collect(Collectors.toList());
     }
 
     /**

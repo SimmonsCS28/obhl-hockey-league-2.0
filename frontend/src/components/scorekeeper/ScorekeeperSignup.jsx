@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as api from '../../services/api';
+import SecurityQuestionInput from '../common/SecurityQuestionInput';
 import '../referee/Signup.css'; // Shared signup styles
 
 const ScorekeeperSignup = () => {
@@ -9,7 +10,9 @@ const ScorekeeperSignup = () => {
         username: '',
         email: '',
         password: '',
-        confirmPassword: ''
+        confirmPassword: '',
+        securityQuestion: '',
+        securityAnswer: ''
     });
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
@@ -21,6 +24,13 @@ const ScorekeeperSignup = () => {
         });
     };
 
+    const handleQuestionChange = (val) => {
+        setFormData({
+            ...formData,
+            securityQuestion: val
+        });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -29,16 +39,22 @@ const ScorekeeperSignup = () => {
             return setError('Passwords do not match');
         }
 
+        if (!formData.securityQuestion || !formData.securityAnswer) {
+            return setError('Please complete the security question section');
+        }
+
         setLoading(true);
         try {
             await api.scorekeeperSignup({
                 username: formData.username,
                 email: formData.email,
-                password: formData.password
+                password: formData.password,
+                securityQuestion: formData.securityQuestion,
+                securityAnswer: formData.securityAnswer
             });
             navigate('/login', { state: { message: 'Account created successfully! Please log in.' } });
         } catch (err) {
-            setError(err.response?.data?.message || 'Failed to create account');
+            setError(err.response?.data?.message || err.message || 'Failed to create account');
         } finally {
             setLoading(false);
         }
@@ -90,6 +106,24 @@ const ScorekeeperSignup = () => {
                             required
                         />
                     </div>
+
+                    <SecurityQuestionInput
+                        value={formData.securityQuestion}
+                        onChange={handleQuestionChange}
+                        disabled={loading}
+                    />
+
+                    <div className="form-group">
+                        <label>Security Answer</label>
+                        <input
+                            type="text"
+                            name="securityAnswer"
+                            value={formData.securityAnswer}
+                            onChange={handleChange}
+                            required
+                        />
+                    </div>
+
                     <button type="submit" disabled={loading} className="signup-btn">
                         {loading ? 'Creating Account...' : 'Sign Up'}
                     </button>

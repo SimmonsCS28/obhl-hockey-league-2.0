@@ -1,14 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import * as api from '../../services/api';
-import SecurityQuestionInput from '../common/SecurityQuestionInput';
-import './Signup.css'; // Shared signup styles
+import * as api from '../services/api';
+import SecurityQuestionInput from './common/SecurityQuestionInput';
+import './referee/Signup.css'; // Reuse existing styles
 
-const RefereeSignup = () => {
+const Signup = () => {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
         username: '',
+        firstName: '',
+        lastName: '',
         email: '',
+        roles: [],
         password: '',
         confirmPassword: '',
         securityQuestion: '',
@@ -21,6 +24,17 @@ const RefereeSignup = () => {
         setFormData({
             ...formData,
             [e.target.name]: e.target.value
+        });
+    };
+
+    const handleRoleChange = (e) => {
+        const { value, checked } = e.target;
+        setFormData(prev => {
+            if (checked) {
+                return { ...prev, roles: [...prev.roles, value] };
+            } else {
+                return { ...prev, roles: prev.roles.filter(r => r !== value) };
+            }
         });
     };
 
@@ -39,24 +53,36 @@ const RefereeSignup = () => {
             return setError('Passwords do not match');
         }
 
+        if (formData.roles.length === 0) {
+            return setError('Please select at least one role');
+        }
+
         if (!formData.securityQuestion || !formData.securityAnswer) {
             return setError('Please complete the security question section');
         }
 
         setLoading(true);
         try {
-            await api.refereeSignup({
+            await api.signup({
                 username: formData.username,
+                firstName: formData.firstName,
+                lastName: formData.lastName,
                 email: formData.email,
+                roles: formData.roles,
                 password: formData.password,
                 securityQuestion: formData.securityQuestion,
                 securityAnswer: formData.securityAnswer
             });
-            // Redirect to login page with success message or auto-login
-            // For now, redirect to login
-            navigate('/login', { state: { message: 'Account created successfully! Please log in.' } });
+            navigate('/', { state: { message: 'Account created successfully! Please log in.' } });
         } catch (err) {
-            setError(err.response?.data?.message || err.message || 'Failed to create account');
+            const errorMessage = err.message || 'Failed to create account';
+            // Extract meaningful message if it's a JSON string
+            try {
+                const parsed = JSON.parse(errorMessage);
+                setError(parsed.message || errorMessage);
+            } catch {
+                setError(errorMessage);
+            }
         } finally {
             setLoading(false);
         }
@@ -65,7 +91,7 @@ const RefereeSignup = () => {
     return (
         <div className="signup-container">
             <div className="signup-card">
-                <h2>Referee Signup</h2>
+                <h2>Create Account</h2>
                 {error && <div className="error-message">{error}</div>}
                 <form onSubmit={handleSubmit}>
                     <div className="form-group">
@@ -78,6 +104,30 @@ const RefereeSignup = () => {
                             required
                         />
                     </div>
+
+                    <div className="form-row" style={{ display: 'flex', gap: '1rem' }}>
+                        <div className="form-group" style={{ flex: 1 }}>
+                            <label>First Name</label>
+                            <input
+                                type="text"
+                                name="firstName"
+                                value={formData.firstName}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+                        <div className="form-group" style={{ flex: 1 }}>
+                            <label>Last Name</label>
+                            <input
+                                type="text"
+                                name="lastName"
+                                value={formData.lastName}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+                    </div>
+
                     <div className="form-group">
                         <label>Email</label>
                         <input
@@ -88,6 +138,40 @@ const RefereeSignup = () => {
                             required
                         />
                     </div>
+
+                    <div className="form-group">
+                        <label>I am a... (Select all that apply)</label>
+                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#4a5568' }}>
+                                <input
+                                    type="checkbox"
+                                    value="GOALIE"
+                                    checked={formData.roles.includes('GOALIE')}
+                                    onChange={handleRoleChange}
+                                />
+                                Goalie
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#4a5568' }}>
+                                <input
+                                    type="checkbox"
+                                    value="REF"
+                                    checked={formData.roles.includes('REF')}
+                                    onChange={handleRoleChange}
+                                />
+                                Referee
+                            </label>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#4a5568' }}>
+                                <input
+                                    type="checkbox"
+                                    value="SCOREKEEPER"
+                                    checked={formData.roles.includes('SCOREKEEPER')}
+                                    onChange={handleRoleChange}
+                                />
+                                Scorekeeper
+                            </label>
+                        </div>
+                    </div>
+
                     <div className="form-group">
                         <label>Password</label>
                         <input
@@ -138,4 +222,4 @@ const RefereeSignup = () => {
     );
 };
 
-export default RefereeSignup;
+export default Signup;

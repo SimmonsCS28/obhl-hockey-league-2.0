@@ -122,15 +122,15 @@ public class GameService {
         if (dto.getGameNotes() != null)
             game.setGameNotes(dto.getGameNotes());
         if (dto.getGoalie1Id() != null)
-            game.setGoalie1Id(dto.getGoalie1Id());
+            game.setGoalie1Id(dto.getGoalie1Id() == -1 ? null : dto.getGoalie1Id());
         if (dto.getGoalie2Id() != null)
-            game.setGoalie2Id(dto.getGoalie2Id());
+            game.setGoalie2Id(dto.getGoalie2Id() == -1 ? null : dto.getGoalie2Id());
         if (dto.getReferee1Id() != null)
-            game.setReferee1Id(dto.getReferee1Id());
+            game.setReferee1Id(dto.getReferee1Id() == -1 ? null : dto.getReferee1Id());
         if (dto.getReferee2Id() != null)
-            game.setReferee2Id(dto.getReferee2Id());
+            game.setReferee2Id(dto.getReferee2Id() == -1 ? null : dto.getReferee2Id());
         if (dto.getScorekeeperId() != null)
-            game.setScorekeeperId(dto.getScorekeeperId());
+            game.setScorekeeperId(dto.getScorekeeperId() == -1 ? null : dto.getScorekeeperId());
 
         return toResponse(gameRepository.save(game));
     }

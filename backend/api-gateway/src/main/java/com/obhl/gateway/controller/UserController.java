@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.obhl.gateway.dto.CreateUserRequest;
@@ -26,7 +27,6 @@ import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/users")
-@PreAuthorize("hasRole('ADMIN')")
 @CrossOrigin(origins = "*")
 public class UserController {
 
@@ -34,11 +34,17 @@ public class UserController {
     private UserManagementService userManagementService;
 
     /**
-     * Get all active users
+     * Get all active users, optionally filtered by role
      */
     @GetMapping
-    public ResponseEntity<List<UserDTO>> getAllUsers() {
-        List<UserDTO> users = userManagementService.getAllUsers();
+    @PreAuthorize("hasAnyRole('ADMIN', 'GM', 'REF', 'SCOREKEEPER', 'GOALIE')")
+    public ResponseEntity<List<UserDTO>> getAllUsers(@RequestParam(required = false) String role) {
+        List<UserDTO> users;
+        if (role != null && !role.isBlank()) {
+            users = userManagementService.getUsersByRole(role);
+        } else {
+            users = userManagementService.getAllUsers();
+        }
         return ResponseEntity.ok(users);
     }
 
@@ -46,6 +52,7 @@ public class UserController {
      * Get user by ID
      */
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'GM', 'REF', 'SCOREKEEPER', 'GOALIE')")
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
         UserDTO user = userManagementService.getUserById(id);
         return ResponseEntity.ok(user);
@@ -55,6 +62,7 @@ public class UserController {
      * Create new user
      */
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDTO> createUser(@Valid @RequestBody CreateUserRequest request) {
         UserDTO createdUser = userManagementService.createUser(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
@@ -64,6 +72,7 @@ public class UserController {
      * Update user
      */
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDTO> updateUser(
             @PathVariable Long id,
             @Valid @RequestBody UpdateUserRequest request) {
@@ -75,6 +84,7 @@ public class UserController {
      * Soft delete user (mark as inactive)
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userManagementService.deleteUser(id);
         return ResponseEntity.noContent().build();
@@ -84,6 +94,7 @@ public class UserController {
      * Update user roles
      */
     @PutMapping("/{id}/roles")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<UserDTO> updateUserRoles(
             @PathVariable Long id,
             @RequestBody UpdateUserRolesRequest request) {

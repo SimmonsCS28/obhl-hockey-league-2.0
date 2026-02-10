@@ -25,13 +25,13 @@ import ChangePassword from './pages/ChangePassword';
 import GoalieLayout from './components/GoalieLayout';
 import RefereeLayout from './components/RefereeLayout';
 import ScorekeeperLayout from './components/ScorekeeperLayout';
+import Signup from './components/Signup';
 import GoalieSchedulePage from './components/goalie/GoalieSchedulePage';
 import RefereeSchedulePage from './components/referee/RefereeSchedulePage';
-import RefereeSignup from './components/referee/RefereeSignup';
 import ScorekeeperSchedulePage from './components/scorekeeper/ScorekeeperSchedulePage';
-import ScorekeeperSignup from './components/scorekeeper/ScorekeeperSignup';
 
 // User Shift Management Components
+import ForgotPassword from './components/ForgotPassword';
 import GoalieShiftSignup from './components/user/GoalieShiftSignup';
 import RefereeShiftSignup from './components/user/RefereeShiftSignup';
 import ScorekeeperShiftSignup from './components/user/ScorekeeperShiftSignup';
@@ -52,8 +52,14 @@ function App() {
             <Route path="schedule" element={<SchedulePage />} />
 
             {/* Public Staff Signups */}
-            <Route path="referee/signup" element={<RefereeSignup />} />
-            <Route path="scorekeeper/signup" element={<ScorekeeperSignup />} />
+            {/* Unified Signup */}
+            <Route path="signup" element={<Signup />} />
+            <Route path="forgot-password" element={<ForgotPassword />} />
+
+            {/* Legacy Routes - Redirect to unified signup */}
+            <Route path="referee/signup" element={<Signup />} />
+            <Route path="scorekeeper/signup" element={<Signup />} />
+            <Route path="goalie/signup" element={<Signup />} />
           </Route>
 
           {/* Protected GM Routes */}

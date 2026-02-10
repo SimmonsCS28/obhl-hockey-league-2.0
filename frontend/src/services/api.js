@@ -15,8 +15,8 @@ const api = {
     // AUTHENTICATION API
     // ============================================
     // Staff Signup
-    async refereeSignup(data) {
-        const response = await fetch(`${API_BASE_URL}/staff/referee/signup`, {
+    async signup(data) {
+        const response = await fetch(`${API_BASE_URL}/users/signup`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
@@ -28,15 +28,25 @@ const api = {
         return response.json();
     },
 
-    async scorekeeperSignup(data) {
-        const response = await fetch(`${API_BASE_URL}/staff/scorekeeper/signup`, {
+    // Password Reset
+    async getSecurityQuestion(username) {
+        const response = await fetch(`${API_BASE_URL}/auth/security-question?username=${encodeURIComponent(username)}`);
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to fetch security question');
+        }
+        return response.json();
+    },
+
+    async resetPassword(data) {
+        const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
         if (!response.ok) {
-            const error = await response.text();
-            throw new Error(error || 'Signup failed');
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to reset password');
         }
         return response.json();
     },
@@ -159,11 +169,17 @@ const api = {
     // ============================================
     async getGames(seasonId = null) {
         const GAME_SERVICE_URL = '/games-api';
-        let url = `${GAME_SERVICE_URL}/games`;
+        let url = `${GAME_SERVICE_URL}/games?_t=${Date.now()}`;
         if (seasonId) {
-            url += `?seasonId=${seasonId}`;
+            url += `&seasonId=${seasonId}`;
         }
-        const response = await fetch(url);
+        const response = await fetch(url, {
+            headers: {
+                ...getAuthHeaders(),
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
+            }
+        });
         if (!response.ok) throw new Error('Failed to fetch games');
         return response.json();
     },
@@ -423,8 +439,10 @@ const api = {
     },
 
     // User Management http://localhost:5175/admin
-    async getUsers() {
-        const response = await fetch(`${API_BASE_URL}/users`, {
+    async getUsers(params = {}) {
+        const queryString = new URLSearchParams(params).toString();
+        const url = `${API_BASE_URL}/users${queryString ? `?${queryString}` : ''}`;
+        const response = await fetch(url, {
             headers: { ...getAuthHeaders() }
         });
         if (!response.ok) throw new Error('Failed to fetch users');
@@ -557,9 +575,82 @@ const api = {
     },
 
     // ============================================
+    // GOALIE SHIFTS API
+    // ============================================
+    async getAllGoalieUnavailability() {
+        const response = await fetch(`${API_BASE_URL}/shifts/goalie/all-unavailability`, {
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to fetch all unavailability');
+        return response.json();
+    },
+
+    async getMyAssignments() {
+        const response = await fetch(`${API_BASE_URL}/shifts/goalie/my-assignments`, {
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to fetch my assignments');
+        return response.json();
+    },
+
+    async getMyShifts() {
+        const response = await fetch(`${API_BASE_URL}/shifts/my-shifts`, {
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to fetch my shifts');
+        return response.json();
+    },
+
+    async goalieSignup(data) {
+        const response = await fetch(`${API_BASE_URL}/staff/goalie/signup`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const error = await response.text();
+            throw new Error(error || 'Signup failed');
+        }
+        return response.json();
+    },
+
+    // Password Reset
+    async getSecurityQuestion(username) {
+        const response = await fetch(`${API_BASE_URL}/auth/security-question?username=${encodeURIComponent(username)}`);
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to fetch security question');
+        }
+        return response.json();
+    },
+
+    async resetPassword(data) {
+        const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to reset password');
+        }
+        return response.json();
+    },
+
+    async removeGoalieUnavailability(date) {
+        const response = await fetch(`${API_BASE_URL}/shifts/goalie/unavailable/${date}`, {
+            method: 'DELETE',
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to remove unavailability');
+        return response.json(); // or response.ok
+    },
+
+    // ============================================
     // PLAYER STATS API
     // ============================================
     async getPlayerStats(seasonId, teamId = null) {
+
         const queryString = new URLSearchParams({ seasonId, ...(teamId && { teamId }) }).toString();
         const response = await fetch(`${API_BASE_URL}/stats/players?${queryString}`, {
             headers: getAuthHeaders()
@@ -609,7 +700,14 @@ export const {
     scorekeeperSignup,
     getUserRoles,
     updateUserRoles,
-    getUsers
+    getUsers,
+    getAllGoalieUnavailability,
+    getMyAssignments,
+    getMyShifts,
+    goalieSignup,
+    signup,
+    getSecurityQuestion,
+    resetPassword
 } = api;
 
 export default api;
