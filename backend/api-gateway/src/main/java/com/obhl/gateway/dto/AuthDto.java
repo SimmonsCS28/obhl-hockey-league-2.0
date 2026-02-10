@@ -1,5 +1,7 @@
 package com.obhl.gateway.dto;
 
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -32,6 +34,7 @@ public class AuthDto {
         private String username;
         private String email;
         private String role;
+        private List<String> roles;
         private Long teamId;
     }
 

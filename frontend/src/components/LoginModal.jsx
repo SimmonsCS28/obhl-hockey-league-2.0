@@ -29,12 +29,12 @@ function LoginModal({ isOpen, onClose }) {
             if (result.mustChangePassword) {
                 navigate('/change-password');
             } else {
-                // Role-based redirect
-                if (result.user?.role === 'SCOREKEEPER') {
-                    navigate('/scorekeeper');
-                } else if (result.user?.role === 'ADMIN') {
+                // Role-based redirect (priority: ADMIN > SCOREKEEPER > GM > default)
+                if (result.user?.roles?.includes('ADMIN')) {
                     navigate('/admin');
-                } else if (result.user?.role === 'GM') {
+                } else if (result.user?.roles?.includes('SCOREKEEPER')) {
+                    navigate('/scorekeeper');
+                } else if (result.user?.roles?.includes('GM')) {
                     navigate('/gm');
                 } else {
                     // For other roles, stay on public site or go to a generic dashboard

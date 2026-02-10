@@ -62,7 +62,7 @@ function PublicLayout() {
                                 {isAuthenticated ? (
                                     <>
                                         <span className="user-greeting">Hi, {user?.username || user?.email}</span>
-                                        {user?.role === 'GM' && (
+                                        {user?.roles?.includes('GM') && (
                                             <button
                                                 className="dashboard-link"
                                                 onClick={() => {
@@ -73,11 +73,11 @@ function PublicLayout() {
                                                 GM Dashboard
                                             </button>
                                         )}
-                                        {(user?.role === 'ADMIN' || user?.role === 'SCOREKEEPER') && (
+                                        {(user?.roles?.includes('ADMIN') || user?.roles?.includes('SCOREKEEPER')) && (
                                             <button
                                                 className="dashboard-link"
                                                 onClick={() => {
-                                                    navigate(user?.role === 'SCOREKEEPER' ? '/scorekeeper' : '/admin');
+                                                    navigate(user?.roles?.includes('ADMIN') ? '/admin' : '/scorekeeper');
                                                     closeMobileMenu();
                                                 }}
                                             >
@@ -115,7 +115,7 @@ function PublicLayout() {
                             {isAuthenticated ? (
                                 <>
                                     <span className="user-greeting">Hi, {user?.username || user?.email}</span>
-                                    {user?.role === 'GM' && (
+                                    {user?.roles?.includes('GM') && (
                                         <button
                                             className="dashboard-link"
                                             onClick={() => {
@@ -126,11 +126,11 @@ function PublicLayout() {
                                             GM Dashboard
                                         </button>
                                     )}
-                                    {(user?.role === 'ADMIN' || user?.role === 'SCOREKEEPER') && (
+                                    {(user?.roles?.includes('ADMIN') || user?.roles?.includes('SCOREKEEPER')) && (
                                         <button
                                             className="dashboard-link"
                                             onClick={() => {
-                                                navigate(user?.role === 'SCOREKEEPER' ? '/scorekeeper' : '/admin');
+                                                navigate(user?.roles?.includes('ADMIN') ? '/admin' : '/scorekeeper');
                                                 closeMobileMenu();
                                             }}
                                         >
