@@ -132,6 +132,11 @@ public class GameService {
         game.setHomeScore(scoreUpdate.getHomeScore());
         game.setAwayScore(scoreUpdate.getAwayScore());
 
+        // Auto-set status to in_progress when scores are updated (unless finalized)
+        if (!"completed".equals(game.getStatus())) {
+            game.setStatus("in_progress");
+        }
+
         return toResponse(gameRepository.save(game));
     }
 

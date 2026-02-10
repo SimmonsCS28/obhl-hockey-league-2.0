@@ -115,6 +115,14 @@ const api = {
         return response.json();
     },
 
+    async getGameEvents(gameId) {
+        const response = await fetch(`${API_BASE_URL}/games/${gameId}/events`, {
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to load game events');
+        return response.json();
+    },
+
     async finalizeGame(gameId, homeScore, awayScore, endedInOT = false) {
         const response = await fetch(`${API_BASE_URL}/games/${gameId}/finalize`, {
             method: 'POST',
@@ -454,7 +462,8 @@ export const {
     getSeasons,
     createSeason,
     updateSeason,
-    deleteSeason
+    deleteSeason,
+    getGameEvents
 } = api;
 
 export default api;
