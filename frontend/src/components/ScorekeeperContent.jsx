@@ -14,6 +14,8 @@ function ScorekeeperContent() {
     const [selectedSeasonId, setSelectedSeasonId] = useState(null);
     const [selectedWeek, setSelectedWeek] = useState('all');
     const [loading, setLoading] = useState(true);
+    const [isChildDirty, setIsChildDirty] = useState(false);
+    const [pendingAction, setPendingAction] = useState(null);
 
     useEffect(() => {
         loadInitialData();
@@ -127,6 +129,63 @@ function ScorekeeperContent() {
         }
     };
 
+
+
+    const executeAction = (action) => {
+        switch (action.type) {
+            case 'VIEW':
+                if (currentView === 'livescoreentry') setIsChildDirty(false);
+                setCurrentView(action.value);
+                break;
+            case 'SEASON':
+                if (currentView === 'livescoreentry') {
+                    setIsChildDirty(false);
+                    setCurrentView('schedule');
+                }
+                setSelectedSeasonId(action.value);
+                break;
+            case 'WEEK':
+                setSelectedWeek(action.value);
+                break;
+            default:
+                break;
+        }
+    };
+
+    const requestAction = (action) => {
+        // Optimization: if staying on same view, do nothing
+        if (action.type === 'VIEW' && action.value === currentView) return;
+
+        if (currentView === 'livescoreentry' && isChildDirty) {
+            setPendingAction(action);
+        } else {
+            executeAction(action);
+        }
+    };
+
+    const handleNavigationConfirmed = () => {
+        if (pendingAction) {
+            executeAction(pendingAction);
+            setPendingAction(null);
+        }
+    };
+
+    const handleNavigationCancelled = () => {
+        setPendingAction(null);
+    };
+
+    const handleViewChange = (view) => {
+        requestAction({ type: 'VIEW', value: view });
+    };
+
+    const handleSeasonChange = (seasonId) => {
+        requestAction({ type: 'SEASON', value: seasonId });
+    };
+
+    const handleWeekChange = (week) => {
+        requestAction({ type: 'WEEK', value: week });
+    };
+
     if (loading) {
         return <div className="loading">Loading...</div>;
     }
@@ -137,20 +196,20 @@ function ScorekeeperContent() {
                 <div className="nav-left">
                     <button
                         className={`nav-btn ${currentView === 'schedule' ? 'active' : ''}`}
-                        onClick={() => setCurrentView('schedule')}
+                        onClick={() => handleViewChange('schedule')}
                     >
                         Game Schedule
                     </button>
                     <button
                         className={`nav-btn ${currentView === 'livescoreentry' ? 'active' : ''}`}
-                        onClick={() => setCurrentView('livescoreentry')}
+                        onClick={() => handleViewChange('livescoreentry')}
                         disabled={!selectedGame}
                     >
                         Live Score Entry
                     </button>
                     <button
                         className={`nav-btn ${currentView === 'standings' ? 'active' : ''}`}
-                        onClick={() => setCurrentView('standings')}
+                        onClick={() => handleViewChange('standings')}
                     >
                         Standings
                     </button>
@@ -159,7 +218,7 @@ function ScorekeeperContent() {
                     <label>Season: </label>
                     <select
                         value={selectedSeasonId || ''}
-                        onChange={(e) => setSelectedSeasonId(Number(e.target.value))}
+                        onChange={(e) => handleSeasonChange(Number(e.target.value))}
                         className="season-select"
                     >
                         {seasons.map(season => (
@@ -196,6 +255,11 @@ function ScorekeeperContent() {
                         teams={teams}
                         onBack={handleBackToSchedule}
                         onGameUpdated={handleGameUpdated}
+
+                        onDirtyChange={setIsChildDirty}
+                        hasPendingNavigation={!!pendingAction}
+                        onNavigate={handleNavigationConfirmed}
+                        onNavigateCancel={handleNavigationCancelled}
                     />
                 )}
 

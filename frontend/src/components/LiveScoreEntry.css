@@ -44,6 +44,53 @@
     font-weight: 600;
 }
 
+@media (max-width: 768px) {
+    .live-score-entry {
+        padding: 10px;
+    }
+
+    .entry-header {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto;
+        gap: 12px;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .entry-header .btn-back {
+        grid-column: 1;
+        grid-row: 1;
+        justify-self: center;
+        width: 100%;
+        max-width: 100%;
+        margin-bottom: 4px;
+    }
+
+    .entry-header h2 {
+        grid-column: 1;
+        grid-row: 2;
+        font-size: 20px;
+        width: 100%;
+    }
+
+    /* Target the Save Changes button */
+    .entry-header .btn-action {
+        grid-column: 1;
+        grid-row: 3;
+        margin-left: 0 !important;
+        /* Override inline margin-left: auto */
+        justify-self: center;
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .entry-header .finalized-badge {
+        grid-column: 1;
+        grid-row: 3;
+        justify-self: center;
+    }
+}
+
 .btn-back {
     padding: 10px 20px !important;
     border: 2px solid #1f2937 !important;
@@ -990,4 +1037,29 @@
     .success-text p {
         font-size: 12px;
     }
+}
+
+/* Unsaved Changes Modal */
+.unsaved-modal h3 {
+    color: #d97706;
+}
+
+.unsaved-detail {
+    background: #f8fafc;
+    padding: 12px;
+    border-radius: 8px;
+    margin: 12px 0;
+    text-align: center;
+    font-size: 16px;
+}
+
+.unsaved-note {
+    color: #64748b;
+    font-size: 13px;
+    font-style: italic;
+}
+
+.btn-confirm:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
 }
