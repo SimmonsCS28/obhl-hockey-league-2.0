@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.obhl.gateway.dto.CreateUserRequest;
+import com.obhl.gateway.dto.PlayerDto;
 import com.obhl.gateway.dto.UpdateUserRequest;
 import com.obhl.gateway.dto.UserDTO;
 import com.obhl.gateway.model.Role;
@@ -267,7 +268,7 @@ public class UserManagementService {
      */
     @Transactional
     public List<UserDTO> generateUsersFromPlayers() {
-        List<PlayerDTO> players = playerService.getAllPlayers();
+        List<PlayerDto> players = playerService.getAllPlayers();
         List<UserDTO> createdUsers = new java.util.ArrayList<>();
 
         // Get default USER role
@@ -278,7 +279,7 @@ public class UserManagementService {
         // Default password
         String defaultPasswordHash = passwordEncoder.encode("Welcome1!");
 
-        for (PlayerDTO player : players) {
+        for (PlayerDto player : players) {
             if (player.getEmail() == null || player.getEmail().isBlank()) {
                 continue;
             }

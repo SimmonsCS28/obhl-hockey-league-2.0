@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.obhl.gateway.client.StatsClient;
+import com.obhl.gateway.dto.PlayerDto;
 import com.obhl.gateway.dto.TeamDto;
 import com.obhl.gateway.model.Team;
 import com.obhl.gateway.repository.TeamRepository;
@@ -164,7 +165,7 @@ public class TeamService {
         // Fetch GM name from stats-service if gmId is present
         if (team.getGmId() != null) {
             try {
-                PlayerDTO player = statsClient.getPlayer(team.getGmId());
+                PlayerDto player = statsClient.getPlayer(team.getGmId());
                 dto.setGmName(player.getFirstName() + " " + player.getLastName());
             } catch (Exception e) {
                 // If stats-service is down, set GM name to null

@@ -10,6 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import com.obhl.gateway.dto.PlayerDto;
+
 @Service
 public class PlayerService {
 
@@ -22,13 +24,13 @@ public class PlayerService {
     /**
      * Get all players from stats service
      */
-    public List<PlayerDTO> getAllPlayers() {
+    public List<PlayerDto> getAllPlayers() {
         String url = statsServiceUrl + "/api/v1/players";
-        ResponseEntity<List<PlayerDTO>> response = restTemplate.exchange(
+        ResponseEntity<List<PlayerDto>> response = restTemplate.exchange(
                 url,
                 HttpMethod.GET,
                 null,
-                new ParameterizedTypeReference<List<PlayerDTO>>() {
+                new ParameterizedTypeReference<List<PlayerDto>>() {
                 });
         return response.getBody();
     }
