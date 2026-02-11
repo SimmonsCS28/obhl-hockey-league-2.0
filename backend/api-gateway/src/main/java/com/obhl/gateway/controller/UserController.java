@@ -101,4 +101,14 @@ public class UserController {
         UserDTO updatedUser = userManagementService.updateUserRoles(id, request.getRoles());
         return ResponseEntity.ok(updatedUser);
     }
+
+    /**
+     * Generate users from players
+     */
+    @PostMapping("/generate")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<UserDTO>> generateUsers() {
+        List<UserDTO> newUsers = userManagementService.generateUsersFromPlayers();
+        return ResponseEntity.status(HttpStatus.CREATED).body(newUsers);
+    }
 }

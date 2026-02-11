@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.obhl.gateway.dto.CreateUserRequest;
+import com.obhl.gateway.dto.PlayerDTO;
 import com.obhl.gateway.dto.UpdateUserRequest;
 import com.obhl.gateway.dto.UserDTO;
 import com.obhl.gateway.model.Role;
@@ -257,6 +258,58 @@ public class UserManagementService {
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         user.setMustChangePassword(false); // Reset successful, they know the password now
         userRepository.save(user);
+    }
+
+    @Autowired
+    private PlayerService playerService;
+
+    /**
+     * Generate users from players who don't have an account
+     */
+    @Transactional
+    public List<UserDTO> generateUsersFromPlayers() {
+        List<PlayerDTO> players = playerService.getAllPlayers();
+        List<UserDTO> createdUsers = new java.util.ArrayList<>();
+
+        // Get default USER role
+        Role userRole = roleRepository.findByName("USER")
+                .orElseThrow(() -> new RuntimeException("Default role 'USER' not found"));
+        Set<Role> roles = Collections.singleton(userRole);
+
+        // Default password
+        String defaultPasswordHash = passwordEncoder.encode("Welcome1!");
+
+        for (PlayerDTO player : players) {
+            if (player.getEmail() == null || player.getEmail().isBlank()) {
+                continue;
+            }
+
+            // Check if user already exists
+            if (userRepository.findByEmail(player.getEmail()).isPresent() ||
+                    userRepository.findByUsername(player.getEmail()).isPresent()) {
+                continue;
+            }
+
+            // Create new user
+            User user = new User();
+            user.setUsername(player.getEmail()); // Username is email
+            user.setEmail(player.getEmail());
+            user.setFirstName(player.getFirstName());
+            user.setLastName(player.getLastName());
+            user.setPasswordHash(defaultPasswordHash);
+            user.setRoles(roles);
+            user.setRole("USER");
+            user.setIsActive(true);
+            user.setMustChangePassword(true); // Force password change
+
+            // Note: teamId is not set on the user account itself, as that's for GMs
+            // The player record links to the team
+
+            User savedUser = userRepository.save(user);
+            createdUsers.add(convertToDTO(savedUser));
+        }
+
+        return createdUsers;
     }
 
     /**

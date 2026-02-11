@@ -674,6 +674,18 @@ const api = {
         });
         if (!response.ok) throw new Error('Failed to fetch player stats');
         return response.json();
+    },
+
+    async generateUsers() {
+        const response = await fetch(`${API_BASE_URL}/users/generate`, {
+            method: 'POST',
+            headers: { ...getAuthHeaders() }
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to generate users');
+        }
+        return response.json();
     }
 };
 
@@ -709,6 +721,10 @@ export const {
     getUserRoles,
     updateUserRoles,
     getUsers,
+    createUser,
+    updateUser,
+    deleteUser,
+    generateUsers,
     getAllGoalieUnavailability,
     getMyAssignments,
     getMyShifts,
