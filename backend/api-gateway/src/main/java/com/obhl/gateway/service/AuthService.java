@@ -75,13 +75,17 @@ public class AuthService {
         String token = jwtUtil.generateToken(user);
 
         // Create user info
+        // Build roles list from multi-role set
+        java.util.List<String> roleNames = user.getRoles() != null
+                ? user.getRoles().stream().map(r -> r.getName()).collect(java.util.stream.Collectors.toList())
+                : java.util.Collections.emptyList();
+
         AuthDto.UserInfo userInfo = new AuthDto.UserInfo(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
                 user.getRole(),
-                user.getRoles().stream().map(com.obhl.gateway.model.Role::getName)
-                        .collect(java.util.stream.Collectors.toSet()),
+                roleNames,
                 user.getTeamId());
 
         // Create login response with password change flag

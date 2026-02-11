@@ -47,13 +47,13 @@ public class User {
     @Column(name = "last_name", length = 100)
     private String lastName;
 
+    @Column(nullable = true, length = 20)
+    @Deprecated
+    private String role = "USER"; // Legacy single role - use roles set instead
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles = new HashSet<>();
-
-    @Column(nullable = true, length = 20)
-    @Deprecated
-    private String role = "USER"; // DEPRECATED: Use roles set instead
 
     @Column(name = "team_id")
     private Long teamId; // For GM role

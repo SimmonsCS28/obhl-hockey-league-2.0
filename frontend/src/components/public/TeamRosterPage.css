@@ -79,6 +79,25 @@
     color: white;
 }
 
+/* Mobile: stack stats into two rows of 4 */
+@media (max-width: 480px) {
+    .team-stats-display {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.75rem;
+        max-width: 100%;
+        padding: 1rem;
+    }
+
+    .team-stats-display .stat-value {
+        font-size: 1.5rem;
+    }
+
+    .team-stats-display .stat-label {
+        font-size: 0.65rem;
+    }
+}
+
 .roster-content {
     background: white;
     padding: 2rem;

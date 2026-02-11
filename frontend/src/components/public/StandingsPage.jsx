@@ -183,7 +183,7 @@ function StandingsPage() {
                                         <td className="team-name">
                                             <strong>{team.name}</strong>
                                         </td>
-                                        <td>{team.wins}</td>
+                                        <td>{team.wins + (team.overtimeWins || 0)}</td>
                                         <td>{team.losses}</td>
                                         <td>{team.ties}</td>
                                         <td>{team.overtimeLosses}</td>

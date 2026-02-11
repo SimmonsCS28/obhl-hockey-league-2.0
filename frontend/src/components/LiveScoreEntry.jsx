@@ -1,17 +1,39 @@
-import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
+import { useBlocker, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import './LiveScoreEntry.css';
 
+const PENALTY_TYPES = [
+    "Boarding", "Body Check", "Broken Stick", "Butt-ending", "Charging",
+    "Check from Behind", "Cross-checking", "Delay of Game", "Elbowing",
+    "Equipment Violation", "Face-off Interference", "Fighting", "Game Misconduct",
+    "Goaltender Interference", "Grabbing Facemask", "Head Contact", "Head-butting",
+    "High-sticking", "Holding", "Hooking", "Illegal Stick", "Instigator",
+    "Interference", "Kicking", "Kneeing", "Leaving Bench", "Leaving Penalty Bench",
+    "Match Penalty", "Misconduct", "Roughing", "Slashing", "Slew Footing",
+    "Spearing", "Throwing Stick", "Tripping", "Unnecessary Roughness",
+    "Unsportsmanlike Conduct"
+];
+
 function LiveScoreEntry(props) {
-    const { game: propGame, onBack, onGameUpdated } = props;
+    const {
+        game: propGame,
+        onBack,
+        onGameUpdated,
+        onDirtyChange,
+        hasPendingNavigation,
+        onNavigate,
+        onNavigateCancel
+    } = props;
     const { gameId } = useParams();
     const navigate = useNavigate();
     const { user } = useAuth();
 
     // Check if user is admin for editable scores
-    const isAdmin = user?.role === 'ADMIN';
+    // Check if user is admin or scorekeeper for editable scores
+    const isAdmin = user?.role === 'ADMIN' ||
+        user?.roles?.some(r => ['admin', 'scorekeeper'].includes(r.toLowerCase()));
 
     // State for game data (loaded from prop or route param)
     const [game, setGame] = useState(propGame || null);
@@ -41,6 +63,7 @@ function LiveScoreEntry(props) {
     const [penaltyPlayer, setPenaltyPlayer] = useState('');
     const [penaltyMinutes, setPenaltyMinutes] = useState(2);
     const [penaltyDescription, setPenaltyDescription] = useState('');
+    const [penaltyOtherDescription, setPenaltyOtherDescription] = useState('');
     const [penaltyPeriod, setPenaltyPeriod] = useState('1');
     const [penaltyTimeMinutes, setPenaltyTimeMinutes] = useState('');
     const [penaltyTimeSeconds, setPenaltyTimeSeconds] = useState('');
@@ -56,6 +79,38 @@ function LiveScoreEntry(props) {
 
     // OT tracking for tied games
     const [endedInOT, setEndedInOT] = useState(false);
+
+    // Unsaved changes tracking
+    const [isDirty, setIsDirty] = useState(false);
+    const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+    const [savingDraft, setSavingDraft] = useState(false);
+    const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+
+    // Block navigation if dirty
+    const blocker = useBlocker(
+        ({ currentLocation, nextLocation }) =>
+            isDirty && !gameFinalized
+    );
+
+    useEffect(() => {
+        if (blocker.state === "blocked") {
+            setShowUnsavedModal(true);
+        }
+    }, [blocker.state]);
+
+    // Sync dirty state to parent
+    useEffect(() => {
+        if (onDirtyChange) {
+            onDirtyChange(isDirty && !gameFinalized);
+        }
+    }, [isDirty, gameFinalized, onDirtyChange]);
+
+    // React to parent navigation request
+    useEffect(() => {
+        if (hasPendingNavigation && isDirty) {
+            setShowUnsavedModal(true);
+        }
+    }, [hasPendingNavigation, isDirty]);
 
     // Load game from route parameter if not passed as prop
     useEffect(() => {
@@ -102,6 +157,71 @@ function LiveScoreEntry(props) {
         }
     }, [game]);
 
+    // Resolve player names in loaded events and update goal counts
+    useEffect(() => {
+        if (players.length > 0 && events.length > 0) {
+            // Check if any events need player name resolution (from backend load)
+            const needsResolution = events.some(e => e.backendId && !e.player);
+            if (needsResolution) {
+                const resolvedEvents = events.map(event => {
+                    if (!event.backendId || event.player) return event;
+
+                    const player = players.find(p => Number(p.id) === Number(event.playerId));
+                    const assist1 = event.assist1PlayerId
+                        ? players.find(p => Number(p.id) === Number(event.assist1PlayerId))
+                        : null;
+                    const assist2 = event.assist2PlayerId
+                        ? players.find(p => Number(p.id) === Number(event.assist2PlayerId))
+                        : null;
+
+                    const playerName = player ? `#${player.jerseyNumber} ${player.name}` : event.description || 'Unknown';
+                    const assist1Name = assist1 ? `#${assist1.jerseyNumber} ${assist1.name}` : '';
+                    const assist2Name = assist2 ? `#${assist2.jerseyNumber} ${assist2.name}` : '';
+
+                    const assists = [assist1Name, assist2Name].filter(Boolean);
+
+                    return {
+                        ...event,
+                        player: playerName,
+                        scorer: playerName,
+                        assists: assists,
+                        minutes: event.penaltyMinutes,
+                        assist1: assist1Name, // Keep backward compat if needed
+                        assist2: assist2Name
+                    };
+                });
+                setEvents(resolvedEvents);
+
+                // Update goalsInGame counts from loaded events
+                const goalCounts = {};
+                resolvedEvents.filter(e => e.type === 'goal').forEach(event => {
+                    if (event.playerId) {
+                        goalCounts[event.playerId] = (goalCounts[event.playerId] || 0) + 1;
+                    }
+                });
+
+                if (Object.keys(goalCounts).length > 0) {
+                    setPlayers(prevPlayers => prevPlayers.map(p => ({
+                        ...p,
+                        goalsInGame: goalCounts[p.id] || 0
+                    })));
+                }
+            }
+        }
+    }, [players.length, events.length]);
+
+    // Warn on browser close/refresh if there are unsaved changes
+    useEffect(() => {
+        const handleBeforeUnload = (e) => {
+            if (isDirty && !gameFinalized) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isDirty, gameFinalized]);
+
     const getTextColor = (bgColor) => {
         if (!bgColor) return 'white';
         // List of light colors that need dark text
@@ -133,8 +253,42 @@ function LiveScoreEntry(props) {
     };
 
     const loadEvents = async () => {
-        // TODO: Load events from backend
-        // For now, events are stored in state
+        try {
+            const backendEvents = await api.getGameEvents(game.id);
+            if (backendEvents && backendEvents.length > 0) {
+                // Map backend events back to the frontend format
+                const mappedEvents = backendEvents.map((be) => {
+                    const isHome = Number(be.teamId) === Number(game.homeTeamId);
+                    const teamSide = isHome ? 'home' : 'away';
+
+                    const periodMap = { 1: '1', 2: '2', 3: '3', 4: 'OT', 5: 'SO' };
+                    const timeStr = `${String(be.timeMinutes || 0).padStart(2, '0')}:${String(be.timeSeconds || 0).padStart(2, '0')}`;
+
+                    return {
+                        id: be.id,
+                        backendId: be.id,
+                        type: be.eventType,
+                        period: periodMap[be.period] || String(be.period),
+                        time: timeStr,
+                        team: teamSide,
+                        teamName: isHome ? game.homeTeamName : game.awayTeamName,
+                        playerId: be.playerId,
+                        player: '', // For penalty/goal (raw name if needed)
+                        scorer: '', // For goal
+                        assists: [], // For goal (Must be array)
+                        minutes: be.penaltyMinutes, // For penalty
+                        assist1PlayerId: be.assist1PlayerId,
+                        assist2PlayerId: be.assist2PlayerId,
+                        description: be.description,
+                        penaltyMinutes: be.penaltyMinutes
+                    };
+                });
+
+                setEvents(mappedEvents);
+            }
+        } catch (error) {
+            console.error('Error loading events:', error);
+        }
     };
 
     const getTeamPlayers = (team) => {
@@ -261,6 +415,9 @@ function LiveScoreEntry(props) {
             );
             setPlayers(updatedPlayers);
 
+            // Mark as dirty (score changed)
+            setIsDirty(true);
+
             // Auto-save event to backend
             await saveEventToBackend(newEvent);
         }
@@ -301,6 +458,8 @@ function LiveScoreEntry(props) {
             console.error('Error validating penalty:', error);
         }
 
+        const finalDescription = penaltyDescription === 'Other' ? penaltyOtherDescription : penaltyDescription;
+
         const newEvent = {
             id: editingEvent ? editingEvent.id : Date.now(),
             type: 'penalty',
@@ -310,7 +469,7 @@ function LiveScoreEntry(props) {
             player: player.name,
             playerId: player.id,
             minutes: penaltyMinutes,
-            description: penaltyDescription
+            description: finalDescription
         };
 
         if (editingEvent) {
@@ -319,6 +478,8 @@ function LiveScoreEntry(props) {
             setEditingEvent(null);
         } else {
             setEvents([...events, newEvent]);
+            // Mark as dirty (new event added)
+            setIsDirty(true);
             // Auto-save event to backend
             await saveEventToBackend(newEvent);
         }
@@ -389,7 +550,16 @@ function LiveScoreEntry(props) {
             // Restore player ID
             setPenaltyPlayer(event.playerId?.toString() || '');
             setPenaltyMinutes(event.minutes);
-            setPenaltyDescription(event.description || '');
+
+            // Check if description is in standard list
+            if (event.description && !PENALTY_TYPES.includes(event.description)) {
+                setPenaltyDescription('Other');
+                setPenaltyOtherDescription(event.description);
+            } else {
+                setPenaltyDescription(event.description || '');
+                setPenaltyOtherDescription('');
+            }
+
             setShowPenaltyForm(true);
         }
     };
@@ -416,6 +586,7 @@ function LiveScoreEntry(props) {
             // Save final score to backend with OT flag
             await api.finalizeGame(game.id, homeScore, awayScore, endedInOT);
             setGameFinalized(true);
+            setIsDirty(false); // No longer dirty after finalize
             setShowSuccessMessage(true);
 
             // Update parent component with finalized game data
@@ -458,18 +629,93 @@ function LiveScoreEntry(props) {
         setPenaltyPlayer('');
         setPenaltyMinutes(2);
         setPenaltyDescription('');
+        setPenaltyOtherDescription('');
         setPenaltyPeriod('1');
         setPenaltyTimeMinutes('');
         setPenaltyTimeSeconds('');
         setShowPenaltyForm(false);
     };
 
-    const handleBack = () => {
-        if (onBack) {
+    const performNavigation = useCallback((target) => {
+        if (onBack && target === 'back') {
             onBack();
         } else {
-            // Navigate back to scorekeeper dashboard
-            navigate('/scorekeeper');
+            navigate(target === 'back' ? '/scorekeeper' : target);
+        }
+    }, [onBack, navigate]);
+
+    const saveGame = async () => {
+        setSavingDraft(true);
+        try {
+            await api.updateGameScore(game.id, homeScore, awayScore);
+            setIsDirty(false);
+            // Sync with parent immediately
+            if (onDirtyChange) onDirtyChange(false);
+            return true;
+        } catch (error) {
+            console.error('Error saving game:', error);
+            alert('Failed to save. Please try again.');
+            return false;
+        } finally {
+            setSavingDraft(false);
+        }
+    };
+
+    const handleManualSave = async () => {
+        const success = await saveGame();
+        if (success) {
+            setShowSaveSuccess(true);
+            setTimeout(() => setShowSaveSuccess(false), 3000);
+        }
+    };
+
+    const handleSaveAndLeave = async () => {
+        const success = await saveGame();
+        if (!success) return;
+
+        setShowUnsavedModal(false);
+
+        // Navigate to the pending destination
+        if (blocker.state === "blocked") {
+            blocker.proceed();
+        } else if (hasPendingNavigation && onNavigate) {
+            onNavigate();
+        } else {
+            // Fallback for manual navigation
+            if (onBack) onBack(); else navigate(-1);
+        }
+    };
+
+    const handleDiscardChanges = () => {
+        setShowUnsavedModal(false);
+        if (blocker.state === "blocked") {
+            blocker.proceed();
+        } else if (hasPendingNavigation && onNavigate) {
+            onNavigate();
+        } else {
+            // Manual navigation fallback
+            if (onBack) onBack(); else navigate(-1);
+        }
+    };
+
+    const handleCancelUnsaved = () => {
+        setShowUnsavedModal(false);
+        if (blocker.state === "blocked") {
+            blocker.reset();
+        } else if (hasPendingNavigation && onNavigateCancel) {
+            onNavigateCancel();
+        }
+    };
+
+    const handleBack = () => {
+        if (isDirty && !gameFinalized) {
+            setShowUnsavedModal(true);
+        } else {
+            if (onBack) {
+                onBack();
+            } else {
+                navigate(-1);
+            }
         }
     };
 
@@ -494,6 +740,22 @@ function LiveScoreEntry(props) {
             <div className="entry-header">
                 <button className="btn-back" onClick={handleBack}>← Back to Schedule</button>
                 <h2>Live Score Entry</h2>
+                {!gameFinalized && (
+                    <button
+                        className="btn-action"
+                        onClick={handleManualSave}
+                        disabled={!isDirty || savingDraft}
+                        style={{
+                            marginLeft: 'auto',
+                            backgroundColor: isDirty ? '#2ecc71' : '#bdc3c7',
+                            color: 'white',
+                            opacity: isDirty ? 1 : 0.7,
+                            cursor: isDirty ? 'pointer' : 'default'
+                        }}
+                    >
+                        {savingDraft ? 'Saving...' : '💾 Save Changes'}
+                    </button>
+                )}
                 {gameFinalized && <span className="finalized-badge">✓ Finalized</span>}
             </div>
 
@@ -513,7 +775,7 @@ function LiveScoreEntry(props) {
                             min="0"
                             className="score score-input"
                             value={homeScore}
-                            onChange={(e) => setHomeScore(parseInt(e.target.value) || 0)}
+                            onChange={(e) => { setHomeScore(parseInt(e.target.value) || 0); setIsDirty(true); }}
                             disabled={gameFinalized}
                         />
                     ) : (
@@ -535,7 +797,7 @@ function LiveScoreEntry(props) {
                             min="0"
                             className="score score-input"
                             value={awayScore}
-                            onChange={(e) => setAwayScore(parseInt(e.target.value) || 0)}
+                            onChange={(e) => { setAwayScore(parseInt(e.target.value) || 0); setIsDirty(true); }}
                             disabled={gameFinalized}
                         />
                     ) : (
@@ -773,14 +1035,31 @@ function LiveScoreEntry(props) {
                     </div>
 
                     <div className="form-group">
-                        <label>Description (optional)</label>
-                        <input
-                            type="text"
+                        <label>Penalty Type (optional)</label>
+                        <select
                             value={penaltyDescription}
                             onChange={(e) => setPenaltyDescription(e.target.value)}
-                            placeholder="e.g., Tripping, High-sticking..."
-                        />
+                        >
+                            <option value="">Select penalty type...</option>
+                            {PENALTY_TYPES.map(type => (
+                                <option key={type} value={type}>{type}</option>
+                            ))}
+                            <option value="Other">Other</option>
+                        </select>
                     </div>
+
+                    {penaltyDescription === 'Other' && (
+                        <div className="form-group">
+                            <label>Other Description *</label>
+                            <input
+                                type="text"
+                                value={penaltyOtherDescription}
+                                onChange={(e) => setPenaltyOtherDescription(e.target.value)}
+                                placeholder="Enter penalty description"
+                                required
+                            />
+                        </div>
+                    )}
 
                     <div className="form-actions">
                         <button type="submit" className="btn-submit">
@@ -945,6 +1224,16 @@ function LiveScoreEntry(props) {
                 </div>
             )}
 
+            {showSaveSuccess && (
+                <div className="success-toast" style={{ backgroundColor: '#2ecc71' }}>
+                    <div className="success-icon">💾</div>
+                    <div className="success-text">
+                        <strong>Saved!</strong>
+                        <p>Game progress has been saved.</p>
+                    </div>
+                </div>
+            )}
+
             {/* Penalty Alert Modal */}
             {showPenaltyAlert && penaltyAlertData && (
                 <div className="modal-overlay" onClick={() => setShowPenaltyAlert(false)}>
@@ -963,6 +1252,31 @@ function LiveScoreEntry(props) {
                         <div className="modal-actions">
                             <button className="btn-confirm" onClick={() => setShowPenaltyAlert(false)}>
                                 Acknowledged
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Unsaved Changes Modal */}
+            {showUnsavedModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content unsaved-modal" onClick={(e) => e.stopPropagation()}>
+                        <h3>⚠️ Unsaved Changes</h3>
+                        <div className="modal-body">
+                            <p>You have unsaved changes to this game. Would you like to save your progress before leaving?</p>
+                            <p className="unsaved-detail">Current score: <strong>{game.homeTeamName} {homeScore} - {awayScore} {game.awayTeamName}</strong></p>
+                            <p className="unsaved-note">Saving will preserve the current score so you can return and continue scoring this game later.</p>
+                        </div>
+                        <div className="modal-actions">
+                            <button className="btn-confirm" onClick={handleSaveAndLeave} disabled={savingDraft}>
+                                {savingDraft ? 'Saving...' : '💾 Save & Leave'}
+                            </button>
+                            <button className="btn-cancel-modal" style={{ backgroundColor: '#e74c3c', color: 'white', marginRight: '10px' }} onClick={handleDiscardChanges}>
+                                🗑️ Discard Changes
+                            </button>
+                            <button className="btn-cancel-modal" onClick={handleCancelUnsaved}>
+                                Cancel
                             </button>
                         </div>
                     </div>

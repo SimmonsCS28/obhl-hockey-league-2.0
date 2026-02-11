@@ -7,16 +7,19 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import lombok.RequiredArgsConstructor;
 import com.obhl.game.dto.GameEventDto;
 import com.obhl.game.model.GameEvent;
 import com.obhl.game.repository.GameEventRepository;
+import com.obhl.game.repository.GameRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
 public class GameEventService {
 
     private final GameEventRepository gameEventRepository;
+    private final GameRepository gameRepository;
 
     @Transactional(readOnly = true)
     public List<GameEventDto.Response> getEventsByGame(Long gameId) {
@@ -53,6 +56,14 @@ public class GameEventService {
         event.setAssist1PlayerId(dto.getAssist1PlayerId());
         event.setAssist2PlayerId(dto.getAssist2PlayerId());
         event.setPenaltyMinutes(dto.getPenaltyMinutes());
+
+        // Auto-set game status to in_progress when events are added
+        gameRepository.findById(dto.getGameId()).ifPresent(game -> {
+            if (!"completed".equals(game.getStatus())) {
+                game.setStatus("in_progress");
+                gameRepository.save(game);
+            }
+        });
 
         return toResponse(gameEventRepository.save(event));
     }

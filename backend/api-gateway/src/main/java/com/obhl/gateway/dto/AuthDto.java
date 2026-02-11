@@ -1,5 +1,7 @@
 package com.obhl.gateway.dto;
 
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -33,7 +35,7 @@ public class AuthDto {
         private String email;
         @Deprecated
         private String role;
-        private java.util.Set<String> roles;
+        private List<String> roles;
         private Long teamId;
     }
 
