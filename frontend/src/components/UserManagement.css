@@ -446,20 +446,39 @@
     gap: 16px;
 }
 
-.filter-group {
+/* User Management Specific Filters to avoid conflicts */
+.user-management-filters-row {
     display: flex;
+    flex-direction: row;
     align-items: center;
-    gap: 10px;
+    gap: 16px;
+    flex-wrap: wrap;
+    /* Allow wrapping on very small screens, but row by default */
 }
 
-.filter-group label {
-    font-weight: 500;
-    color: #374151;
-    font-size: 0.875rem;
+.user-management-filter-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
     white-space: nowrap;
 }
 
-.role-filter-select {
+.user-management-filter-item label {
+    font-weight: 500;
+    color: #374151;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.user-count-wrapper {
+    margin-left: auto;
+    /* Push count to the right optionally, or keep inline */
+    padding-left: 8px;
+    border-left: 1px solid #e5e7eb;
+}
+
+.filter-select {
     padding: 8px 12px;
     border: 1px solid #d1d5db;
     border-radius: 6px;
@@ -468,10 +487,10 @@
     background: white;
     cursor: pointer;
     transition: border-color 0.2s;
-    min-width: 160px;
+    min-width: 140px;
 }
 
-.role-filter-select:focus {
+.filter-select:focus {
     outline: none;
     border-color: #3b82f6;
 }
