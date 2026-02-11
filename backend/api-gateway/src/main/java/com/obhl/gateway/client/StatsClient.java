@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-import com.obhl.gateway.dto.PlayerDTO;
+import com.obhl.gateway.dto.PlayerDto;
 
 @FeignClient(name = "stats-service", url = "${application.config.stats-service-url:http://localhost:8082}")
 public interface StatsClient {
@@ -18,5 +18,5 @@ public interface StatsClient {
     List<Map<String, Object>> createPlayers(@RequestBody List<Map<String, Object>> players);
 
     @GetMapping("/api/v1/players/{playerId}")
-    PlayerDTO getPlayer(@PathVariable("playerId") Long playerId);
+    PlayerDto getPlayer(@PathVariable("playerId") Long playerId);
 }

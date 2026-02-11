@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.obhl.gateway.client.StatsClient;
-import com.obhl.gateway.dto.PlayerDTO;
 import com.obhl.gateway.dto.TeamDto;
 import com.obhl.gateway.model.Team;
 import com.obhl.gateway.repository.TeamRepository;

@@ -12,7 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.obhl.gateway.dto.CreateUserRequest;
-import com.obhl.gateway.dto.PlayerDTO;
 import com.obhl.gateway.dto.UpdateUserRequest;
 import com.obhl.gateway.dto.UserDTO;
 import com.obhl.gateway.model.Role;
