@@ -9,18 +9,31 @@ const UserDashboard = () => {
     const navigate = useNavigate();
     const [shifts, setShifts] = useState([]);
     const [teams, setTeams] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [shiftsError, setShiftsError] = useState(null);
 
     const loadData = async () => {
+        setLoading(true);
+        setShiftsError(null);
+
+        // Fetch independently so one failure doesn't block the other
         try {
-            const [shiftsData, teamsData] = await Promise.all([
-                api.getMyShifts(),
-                api.getTeams()
-            ]);
-            setShifts(shiftsData);
+            const teamsData = await api.getTeams();
             setTeams(teamsData);
         } catch (error) {
-            console.error("Failed to fetch dashboard data:", error);
+            console.error("Failed to fetch teams:", error);
         }
+
+        try {
+            const shiftsData = await api.getMyShifts();
+            setShifts(shiftsData);
+        } catch (error) {
+            console.warn("Shifts endpoint not available yet:", error.message);
+            setShiftsError("Shift data is not available yet. The shifts feature may not be deployed to the server.");
+            setShifts([]);
+        }
+
+        setLoading(false);
     };
 
     useEffect(() => {
@@ -150,7 +163,20 @@ const UserDashboard = () => {
             <div className="dashboard-content">
                 <section className="upcoming-shifts-section">
                     <h2>My Upcoming Shifts</h2>
-                    {shifts.length > 0 ? (
+                    {loading ? (
+                        <p className="loading-message">Loading dashboard…</p>
+                    ) : shiftsError ? (
+                        <div className="shifts-info-banner" style={{
+                            padding: '12px 16px',
+                            backgroundColor: '#fff3cd',
+                            border: '1px solid #ffc107',
+                            borderRadius: '8px',
+                            color: '#856404',
+                            marginBottom: '16px'
+                        }}>
+                            ⚠️ {shiftsError}
+                        </div>
+                    ) : shifts.length > 0 ? (
                         <div className="shifts-table-container">
                             <table className="shifts-table">
                                 <thead>

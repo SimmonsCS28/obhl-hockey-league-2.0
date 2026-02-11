@@ -124,19 +124,13 @@ const UserModal = ({ user, isCreating, onClose }) => {
 
         try {
             if (isCreating) {
-                // Create new user - for now use first role as primary role
-                // Backend will need to be updated to accept roles array
                 await api.createUser({
                     username: formData.username,
                     email: formData.email,
                     password: formData.password,
-                    role: formData.roles[0], // Use first role as primary for now
+                    roles: formData.roles,
                     teamId: formData.teamId
                 });
-
-                // After creation, if multiple roles, update with all roles
-                // This is a workaround until backend supports roles array on creation
-                // We'll need the user ID from the response to do this properly
             } else {
                 // Update existing user
                 const updateData = {

@@ -14,10 +14,8 @@ public class CreateUserRequest {
     @Email(message = "Invalid email format")
     private String email;
 
-    @NotBlank(message = "First Name is required")
     private String firstName;
 
-    @NotBlank(message = "Last Name is required")
     private String lastName;
 
     @Deprecated
@@ -31,9 +29,7 @@ public class CreateUserRequest {
 
     private Long teamId; // Optional, for GM role
 
-    @NotBlank(message = "Security Question is required")
     private String securityQuestion;
 
-    @NotBlank(message = "Security Answer is required")
     private String securityAnswer;
 }

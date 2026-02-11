@@ -108,9 +108,13 @@ public class UserManagementService {
         user.setIsActive(true);
         user.setMustChangePassword(false); // Self-signup users chose their own password
 
-        // set security question and hash answer
-        user.setSecurityQuestion(request.getSecurityQuestion());
-        user.setSecurityAnswerHash(passwordEncoder.encode(request.getSecurityAnswer()));
+        // set security question and hash answer (optional for admin-created users)
+        if (request.getSecurityQuestion() != null) {
+            user.setSecurityQuestion(request.getSecurityQuestion());
+        }
+        if (request.getSecurityAnswer() != null) {
+            user.setSecurityAnswerHash(passwordEncoder.encode(request.getSecurityAnswer()));
+        }
 
         User savedUser = userRepository.save(user);
         return convertToDTO(savedUser);
