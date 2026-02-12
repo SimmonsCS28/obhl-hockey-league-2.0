@@ -62,8 +62,10 @@ const GameEditModal = ({ game, teams, onClose, onSave, onDelete }) => {
 
                 <form onSubmit={handleSubmit} className="game-form">
                     <div className="form-group">
-                        <label>Week</label>
+                        <label htmlFor="week">Week</label>
                         <input
+                            id="week"
+                            name="week"
                             type="number"
                             value={formData.week}
                             onChange={(e) => setFormData({ ...formData, week: e.target.value })}
@@ -73,8 +75,10 @@ const GameEditModal = ({ game, teams, onClose, onSave, onDelete }) => {
                     </div>
 
                     <div className="form-group">
-                        <label>Date & Time</label>
+                        <label htmlFor="gameDate">Date & Time</label>
                         <input
+                            id="gameDate"
+                            name="gameDate"
                             type="datetime-local"
                             value={formData.gameDate}
                             onChange={(e) => setFormData({ ...formData, gameDate: e.target.value })}
@@ -83,8 +87,10 @@ const GameEditModal = ({ game, teams, onClose, onSave, onDelete }) => {
                     </div>
 
                     <div className="form-group">
-                        <label>Home Team</label>
+                        <label htmlFor="homeTeamId">Home Team</label>
                         <select
+                            id="homeTeamId"
+                            name="homeTeamId"
                             value={formData.homeTeamId}
                             onChange={(e) => setFormData({ ...formData, homeTeamId: e.target.value })}
                             required
@@ -99,8 +105,10 @@ const GameEditModal = ({ game, teams, onClose, onSave, onDelete }) => {
                     </div>
 
                     <div className="form-group">
-                        <label>Away Team</label>
+                        <label htmlFor="awayTeamId">Away Team</label>
                         <select
+                            id="awayTeamId"
+                            name="awayTeamId"
                             value={formData.awayTeamId}
                             onChange={(e) => setFormData({ ...formData, awayTeamId: e.target.value })}
                             required
@@ -115,8 +123,10 @@ const GameEditModal = ({ game, teams, onClose, onSave, onDelete }) => {
                     </div>
 
                     <div className="form-group">
-                        <label>Rink</label>
+                        <label htmlFor="rink">Rink</label>
                         <select
+                            id="rink"
+                            name="rink"
                             value={formData.rink}
                             onChange={(e) => setFormData({ ...formData, rink: e.target.value })}
                             required

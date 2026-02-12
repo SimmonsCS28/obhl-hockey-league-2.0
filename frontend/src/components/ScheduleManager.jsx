@@ -589,6 +589,8 @@ const ScheduleManager = () => {
             <div className="section">
                 <h2>1. Select Season</h2>
                 <select
+                    id="seasonSelect"
+                    name="seasonSelect"
                     value={selectedSeason || ''}
                     onChange={(e) => setSelectedSeason(parseInt(e.target.value))}
                     className="season-select"
@@ -620,6 +622,8 @@ const ScheduleManager = () => {
                     </button>
                     <div className="upload-area">
                         <input
+                            id="csvUpload"
+                            name="csvUpload"
                             ref={fileInputRef}
                             type="file"
                             accept=".csv"
@@ -656,6 +660,8 @@ const ScheduleManager = () => {
                         <label>
                             Max Weeks (Regular Season):
                             <input
+                                id="maxWeeks"
+                                name="maxWeeks"
                                 type="number"
                                 value={maxWeeks}
                                 onChange={(e) => setMaxWeeks(parseInt(e.target.value))}
