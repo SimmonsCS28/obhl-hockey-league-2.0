@@ -9,7 +9,6 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 public class GameApplication {
 
     public static void main(String[] args) {
-        System.out.println("DEBUG: Starting GameApplication main method");
         SpringApplication.run(GameApplication.class, args);
     }
 }
