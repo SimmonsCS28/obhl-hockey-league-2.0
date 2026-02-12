@@ -41,14 +41,25 @@ function RefereeSchedule() {
     const loadSeasonData = async (seasonId) => {
         setLoading(true);
         try {
-            const [gamesData, refereesData, teamsData] = await Promise.all([
+            // Fetch all users and filter client-side to handle role naming variations (REF vs REFEREE)
+            const [gamesData, allUsers, teamsData] = await Promise.all([
                 api.getGames(seasonId),
-                api.getUsers({ role: 'REFEREE' }),
+                api.getUsers(),
                 api.getTeams({ seasonId })
             ]);
 
             setGames(gamesData);
-            setReferees(refereesData);
+
+            // Filter for referees (check for various common role names)
+            const refereeUsers = allUsers.filter(u =>
+                u.roles.includes('REF') ||
+                u.roles.includes('REFEREE') ||
+                u.roles.includes('Referee') ||
+                u.role === 'REF' || // Check legacy role field as fallback
+                u.role === 'REFEREE'
+            );
+            setReferees(refereeUsers);
+
             setTeams(teamsData);
         } catch (error) {
             console.error('Failed to load season data:', error);

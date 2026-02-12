@@ -40,14 +40,26 @@ function ScorekeeperSchedule() {
     const loadSeasonData = async (seasonId) => {
         setLoading(true);
         try {
-            const [gamesData, scorekeepersData, teamsData] = await Promise.all([
+            // Fetch all users and filter client-side to handle role naming variations
+            const [gamesData, allUsers, teamsData] = await Promise.all([
                 api.getGames(seasonId),
-                api.getUsers({ role: 'SCOREKEEPER' }),
+                api.getUsers(),
                 api.getTeams({ seasonId })
             ]);
 
             setGames(gamesData);
-            setScorekeepers(scorekeepersData);
+
+            // Filter for scorekeepers (check for various common role names)
+            const scorekeeperUsers = allUsers.filter(u =>
+                u.roles.includes('SCOREKEEPER') ||
+                u.roles.includes('Scorekeeper') ||
+                u.roles.includes('SK') ||
+                u.role === 'SCOREKEEPER' || // Check legacy role field as fallback
+                u.role === 'Scorekeeper' ||
+                u.role === 'SK'
+            );
+            setScorekeepers(scorekeeperUsers);
+
             setTeams(teamsData);
         } catch (error) {
             console.error('Failed to load season data:', error);
