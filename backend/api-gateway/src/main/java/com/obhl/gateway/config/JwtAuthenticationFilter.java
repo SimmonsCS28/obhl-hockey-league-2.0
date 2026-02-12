@@ -50,7 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 var authorities = new ArrayList<SimpleGrantedAuthority>();
 
-                if (roles != null) {
+                if (roles != null && !roles.isEmpty()) {
                     for (String role : roles) {
                         System.out.println("DEBUG: Adding authority: " + role);
                         // Check if role already starts with ROLE_
