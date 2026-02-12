@@ -6,7 +6,7 @@ function RefereeSchedule() {
     const [seasons, setSeasons] = useState([]);
     const [selectedSeason, setSelectedSeason] = useState(null);
     const [games, setGames] = useState([]);
-    const [players, setPlayers] = useState([]);
+    const [referees, setReferees] = useState([]);
     const [teams, setTeams] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all');
@@ -41,14 +41,14 @@ function RefereeSchedule() {
     const loadSeasonData = async (seasonId) => {
         setLoading(true);
         try {
-            const [gamesData, playersData, teamsData] = await Promise.all([
+            const [gamesData, refereesData, teamsData] = await Promise.all([
                 api.getGames(seasonId),
-                api.getPlayers({ seasonId, active: true }),
+                api.getUsers({ role: 'REFEREE' }),
                 api.getTeams({ seasonId })
             ]);
 
             setGames(gamesData);
-            setPlayers(playersData);
+            setReferees(refereesData);
             setTeams(teamsData);
         } catch (error) {
             console.error('Failed to load season data:', error);
@@ -263,9 +263,9 @@ function RefereeSchedule() {
                                                 className="referee-select"
                                             >
                                                 <option value="">-- Select Referee 1 --</option>
-                                                {players.map(player => (
-                                                    <option key={player.id} value={player.id}>
-                                                        #{player.jerseyNumber} {player.firstName} {player.lastName}
+                                                {referees.map(ref => (
+                                                    <option key={ref.id} value={ref.id}>
+                                                        {ref.firstName} {ref.lastName} ({ref.username})
                                                     </option>
                                                 ))}
                                             </select>
@@ -279,9 +279,9 @@ function RefereeSchedule() {
                                                 className="referee-select"
                                             >
                                                 <option value="">-- Select Referee 2 --</option>
-                                                {players.map(player => (
-                                                    <option key={player.id} value={player.id}>
-                                                        #{player.jerseyNumber} {player.firstName} {player.lastName}
+                                                {referees.map(ref => (
+                                                    <option key={ref.id} value={ref.id}>
+                                                        {ref.firstName} {ref.lastName} ({ref.username})
                                                     </option>
                                                 ))}
                                             </select>

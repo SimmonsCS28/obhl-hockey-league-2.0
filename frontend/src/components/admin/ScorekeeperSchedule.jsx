@@ -6,7 +6,7 @@ function ScorekeeperSchedule() {
     const [seasons, setSeasons] = useState([]);
     const [selectedSeason, setSelectedSeason] = useState(null);
     const [games, setGames] = useState([]);
-    const [players, setPlayers] = useState([]);
+    const [scorekeepers, setScorekeepers] = useState([]);
     const [teams, setTeams] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all');
@@ -40,14 +40,14 @@ function ScorekeeperSchedule() {
     const loadSeasonData = async (seasonId) => {
         setLoading(true);
         try {
-            const [gamesData, playersData, teamsData] = await Promise.all([
+            const [gamesData, scorekeepersData, teamsData] = await Promise.all([
                 api.getGames(seasonId),
-                api.getPlayers({ seasonId, active: true }),
+                api.getUsers({ role: 'SCOREKEEPER' }),
                 api.getTeams({ seasonId })
             ]);
 
             setGames(gamesData);
-            setPlayers(playersData);
+            setScorekeepers(scorekeepersData);
             setTeams(teamsData);
         } catch (error) {
             console.error('Failed to load season data:', error);
@@ -224,9 +224,9 @@ function ScorekeeperSchedule() {
                                                 className="scorekeeper-select"
                                             >
                                                 <option value="">-- Select Scorekeeper --</option>
-                                                {players.map(player => (
-                                                    <option key={player.id} value={player.id}>
-                                                        #{player.jerseyNumber} {player.firstName} {player.lastName}
+                                                {scorekeepers.map(sk => (
+                                                    <option key={sk.id} value={sk.id}>
+                                                        {sk.firstName} {sk.lastName} ({sk.username})
                                                     </option>
                                                 ))}
                                             </select>
