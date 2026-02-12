@@ -9,7 +9,7 @@ import './PublicLayout.css';
 function PublicLayout() {
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const { user, logout, isAuthenticated } = useAuth();
+    const { user, logout, isAuthenticated, isAdmin, isGM, hasAnyRole } = useAuth();
     const navigate = useNavigate();
 
     const handleLogout = () => {
@@ -62,7 +62,7 @@ function PublicLayout() {
                                 {isAuthenticated ? (
                                     <>
                                         <span className="user-greeting">Hi, {user?.username || user?.email}</span>
-                                        {user?.roles?.includes('GM') && (
+                                        {isGM && (
                                             <button
                                                 className="dashboard-link"
                                                 onClick={() => {
@@ -73,7 +73,7 @@ function PublicLayout() {
                                                 GM Dashboard
                                             </button>
                                         )}
-                                        {user?.roles?.includes('ADMIN') && (
+                                        {isAdmin && (
                                             <button
                                                 className="dashboard-link"
                                                 onClick={() => {
@@ -84,7 +84,7 @@ function PublicLayout() {
                                                 Admin Dashboard
                                             </button>
                                         )}
-                                        {(user?.roles?.includes('GOALIE') || user?.roles?.includes('REF') || user?.roles?.includes('SCOREKEEPER')) && !user?.roles?.includes('ADMIN') && (
+                                        {hasAnyRole('GOALIE', 'REF', 'SCOREKEEPER') && !isAdmin && (
                                             <button
                                                 className="dashboard-link"
                                                 onClick={() => {
@@ -136,7 +136,7 @@ function PublicLayout() {
                             {isAuthenticated ? (
                                 <>
                                     <span className="user-greeting">Hi, {user?.username || user?.email}</span>
-                                    {user?.roles?.includes('GM') && (
+                                    {isGM && (
                                         <button
                                             className="dashboard-link"
                                             onClick={() => {
@@ -147,7 +147,7 @@ function PublicLayout() {
                                             GM Dashboard
                                         </button>
                                     )}
-                                    {user?.roles?.includes('ADMIN') && (
+                                    {isAdmin && (
                                         <button
                                             className="dashboard-link"
                                             onClick={() => {
@@ -158,7 +158,7 @@ function PublicLayout() {
                                             Admin Dashboard
                                         </button>
                                     )}
-                                    {(user?.roles?.includes('GOALIE') || user?.roles?.includes('REF') || user?.roles?.includes('SCOREKEEPER')) && !user?.roles?.includes('ADMIN') && (
+                                    {hasAnyRole('GOALIE', 'REF', 'SCOREKEEPER') && !isAdmin && (
                                         <button
                                             className="dashboard-link"
                                             onClick={() => {

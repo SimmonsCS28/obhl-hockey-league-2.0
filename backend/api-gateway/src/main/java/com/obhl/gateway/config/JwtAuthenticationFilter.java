@@ -52,15 +52,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                 if (roles != null) {
                     for (String role : roles) {
-                        System.out.println("DEBUG: Adding authority: ROLE_" + role);
-                        authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                        System.out.println("DEBUG: Adding authority: " + role);
+                        // Check if role already starts with ROLE_
+                        String authority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+                        authorities.add(new SimpleGrantedAuthority(authority));
                     }
                 } else {
                     // Fallback to legacy single role
                     String role = jwtUtil.getRoleFromToken(token);
                     System.out.println("DEBUG: Fallback legacy role: " + role);
                     if (role != null) {
-                        authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                        String authority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
+                        authorities.add(new SimpleGrantedAuthority(authority));
                     }
                 }
                 System.out.println("DEBUG: Final Authorities: " + authorities);

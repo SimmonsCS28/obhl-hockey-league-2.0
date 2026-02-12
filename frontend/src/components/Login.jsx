@@ -19,12 +19,13 @@ const Login = () => {
         const result = await login(usernameOrEmail, password);
 
         if (result.success) {
-            const role = result.user?.role;
-            if (role === 'ADMIN') {
+            const roles = result.user?.roles || (result.user?.role ? [result.user.role] : []);
+
+            if (roles.includes('ADMIN')) {
                 navigate('/admin');
-            } else if (role === 'GM') {
+            } else if (roles.includes('GM')) {
                 navigate('/gm');
-            } else if (['SCOREKEEPER', 'REF', 'GOALIE'].includes(role)) {
+            } else if (roles.some(r => ['SCOREKEEPER', 'REF', 'GOALIE'].includes(r))) {
                 navigate('/user');
             } else {
                 navigate('/');
