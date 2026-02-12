@@ -250,6 +250,8 @@ function RefereeSchedule() {
                                         <td>{game.rink || 'TBD'}</td>
                                         <td>
                                             <select
+                                                id={`referee1-${game.id}`}
+                                                name={`referee1-${game.id}`}
                                                 value={game.referee1Id || ''}
                                                 onChange={(e) => handleAssignReferee(game.id, 1, e.target.value ? parseInt(e.target.value) : null)}
                                                 className="referee-select"
@@ -264,6 +266,8 @@ function RefereeSchedule() {
                                         </td>
                                         <td>
                                             <select
+                                                id={`referee2-${game.id}`}
+                                                name={`referee2-${game.id}`}
                                                 value={game.referee2Id || ''}
                                                 onChange={(e) => handleAssignReferee(game.id, 2, e.target.value ? parseInt(e.target.value) : null)}
                                                 className="referee-select"

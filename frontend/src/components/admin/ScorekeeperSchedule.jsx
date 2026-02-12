@@ -213,6 +213,8 @@ function ScorekeeperSchedule() {
                                         <td>{game.rink || 'TBD'}</td>
                                         <td>
                                             <select
+                                                id={`scorekeeper-${game.id}`}
+                                                name={`scorekeeper-${game.id}`}
                                                 value={game.scorekeeperId || ''}
                                                 onChange={(e) => handleAssignScorekeeper(game.id, e.target.value ? parseInt(e.target.value) : null)}
                                                 className="scorekeeper-select"

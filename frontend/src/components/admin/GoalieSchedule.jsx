@@ -269,6 +269,8 @@ function GoalieSchedule() {
                                         <td>{game.rink || 'TBD'}</td>
                                         <td>
                                             <select
+                                                id={`goalie1-${game.id}`}
+                                                name={`goalie1-${game.id}`}
                                                 value={game.goalie1Id || ''}
                                                 onChange={(e) => handleAssignGoalie(game.id, 1, e.target.value ? parseInt(e.target.value) : -1)}
                                                 className="goalie-select"
@@ -285,6 +287,8 @@ function GoalieSchedule() {
                                         </td>
                                         <td>
                                             <select
+                                                id={`goalie2-${game.id}`}
+                                                name={`goalie2-${game.id}`}
                                                 value={game.goalie2Id || ''}
                                                 onChange={(e) => handleAssignGoalie(game.id, 2, e.target.value ? parseInt(e.target.value) : -1)}
                                                 className="goalie-select"
