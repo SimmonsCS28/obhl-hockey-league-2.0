@@ -153,8 +153,10 @@ function GoalieSchedule() {
                 <h2>🥅 Goalie Schedule</h2>
                 <div className="header-controls">
                     <div className="filter-group">
-                        <label>Season:</label>
+                        <label htmlFor="seasonSelect">Season:</label>
                         <select
+                            id="seasonSelect"
+                            name="seasonSelect"
                             value={selectedSeason || ''}
                             onChange={(e) => setSelectedSeason(parseInt(e.target.value))}
                             className="season-select"
@@ -168,8 +170,10 @@ function GoalieSchedule() {
                     </div>
 
                     <div className="filter-group">
-                        <label>Filter:</label>
+                        <label htmlFor="filterSelect">Filter:</label>
                         <select
+                            id="filterSelect"
+                            name="filterSelect"
                             value={filter}
                             onChange={(e) => setFilter(e.target.value)}
                             className="filter-select"
@@ -181,8 +185,10 @@ function GoalieSchedule() {
                     </div>
 
                     <div className="filter-group">
-                        <label>Week:</label>
+                        <label htmlFor="weekSelect">Week:</label>
                         <select
+                            id="weekSelect"
+                            name="weekSelect"
                             value={weekFilter}
                             onChange={(e) => setWeekFilter(e.target.value)}
                             className="filter-select"

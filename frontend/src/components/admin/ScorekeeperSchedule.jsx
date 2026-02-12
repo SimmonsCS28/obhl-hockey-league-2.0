@@ -118,8 +118,10 @@ function ScorekeeperSchedule() {
                 <h2>📋 Scorekeeper Schedule</h2>
                 <div className="header-controls">
                     <div className="filter-group">
-                        <label>Season:</label>
+                        <label htmlFor="seasonSelect">Season:</label>
                         <select
+                            id="seasonSelect"
+                            name="seasonSelect"
                             value={selectedSeason || ''}
                             onChange={(e) => setSelectedSeason(parseInt(e.target.value))}
                             className="season-select"
@@ -133,8 +135,10 @@ function ScorekeeperSchedule() {
                     </div>
 
                     <div className="filter-group">
-                        <label>Filter:</label>
+                        <label htmlFor="filterSelect">Filter:</label>
                         <select
+                            id="filterSelect"
+                            name="filterSelect"
                             value={filter}
                             onChange={(e) => setFilter(e.target.value)}
                             className="filter-select"
