@@ -17,17 +17,18 @@ import com.obhl.gateway.dto.UpdateUserRequest;
 import com.obhl.gateway.dto.UserDTO;
 import com.obhl.gateway.model.Role;
 import com.obhl.gateway.model.User;
-import com.obhl.gateway.repository.RoleRepository;
-import com.obhl.gateway.repository.UserRepository;
 
 @Service
 public class UserManagementService {
 
     @Autowired
-    private UserRepository userRepository;
+    private com.obhl.gateway.repository.GoalieProfileRepository goalieProfileRepository;
 
     @Autowired
-    private RoleRepository roleRepository;
+    private com.obhl.gateway.repository.UserRepository userRepository;
+
+    @Autowired
+    private com.obhl.gateway.repository.RoleRepository roleRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -58,6 +59,9 @@ public class UserManagementService {
      * Get user by ID
      */
     public UserDTO getUserById(Long id) {
+        if (id == null) {
+            throw new RuntimeException("User ID cannot be null");
+        }
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
         return convertToDTO(user);
@@ -126,6 +130,9 @@ public class UserManagementService {
      */
     @Transactional
     public UserDTO updateUser(Long id, UpdateUserRequest request) {
+        if (id == null) {
+            throw new RuntimeException("User ID cannot be null");
+        }
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
 
@@ -190,6 +197,9 @@ public class UserManagementService {
      */
     @Transactional
     public void deleteUser(Long id) {
+        if (id == null) {
+            throw new RuntimeException("User ID cannot be null");
+        }
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
 
@@ -202,6 +212,9 @@ public class UserManagementService {
      */
     @Transactional
     public UserDTO updateUserRoles(Long id, List<String> roleNames) {
+        if (id == null) {
+            throw new RuntimeException("User ID cannot be null");
+        }
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
 
@@ -312,6 +325,47 @@ public class UserManagementService {
         return createdUsers;
     }
 
+    @Transactional
+    public List<UserDTO> importGoalies(List<com.obhl.gateway.dto.GoalieImportDTO> goalieDtos) {
+        List<UserDTO> createdUsers = new java.util.ArrayList<>();
+        Role goalieRole = roleRepository.findByName("GOALIE")
+                .orElseThrow(() -> new RuntimeException("Role 'GOALIE' not found"));
+
+        String defaultPasswordHash = passwordEncoder.encode("Welcome1!");
+
+        for (com.obhl.gateway.dto.GoalieImportDTO dto : goalieDtos) {
+            String email = dto.getEmail().trim();
+            if (userRepository.findByEmail(email).isPresent() || userRepository.findByUsername(email).isPresent()) {
+                continue; // Skip if user exists
+            }
+
+            User user = new User();
+            user.setUsername(email);
+            user.setEmail(email);
+            user.setFirstName(dto.getFirstName());
+            user.setLastName(dto.getLastName());
+            user.setPhoneNumber(dto.getPhoneNumber());
+            user.setPasswordHash(defaultPasswordHash);
+            user.setRoles(Collections.singleton(goalieRole));
+            user.setIsActive(true);
+            user.setMustChangePassword(true);
+
+            User savedUser = userRepository.save(user);
+
+            com.obhl.gateway.model.GoalieProfile profile = new com.obhl.gateway.model.GoalieProfile();
+            profile.setUser(savedUser);
+            profile.setEmail(email);
+            profile.setSkillRating(dto.getSkillRating());
+            profile.setWins(0);
+            profile.setLosses(0);
+            profile.setIsActive(true);
+
+            goalieProfileRepository.save(profile);
+            createdUsers.add(convertToDTO(savedUser));
+        }
+        return createdUsers;
+    }
+
     /**
      * Convert User entity to UserDTO (without password)
      */
@@ -325,6 +379,7 @@ public class UserManagementService {
         dto.setTeamId(user.getTeamId());
         dto.setIsActive(user.getIsActive());
         dto.setMustChangePassword(user.getMustChangePassword());
+        dto.setPhoneNumber(user.getPhoneNumber()); // Add phone number to DTO
         dto.setCreatedAt(user.getCreatedAt());
         dto.setUpdatedAt(user.getUpdatedAt());
         // passwordHash is intentionally NOT included

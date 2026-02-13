@@ -18,6 +18,7 @@ public class UserDTO {
     private java.util.Set<String> roles;
     private Long teamId;
     private Boolean isActive;
+    private String phoneNumber;
     private Boolean mustChangePassword;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

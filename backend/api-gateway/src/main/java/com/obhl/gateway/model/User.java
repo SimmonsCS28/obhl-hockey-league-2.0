@@ -61,6 +61,9 @@ public class User {
     @Column(name = "is_active")
     private Boolean isActive = true;
 
+    @Column(name = "phone_number", length = 20)
+    private String phoneNumber;
+
     @Column(name = "must_change_password")
     private Boolean mustChangePassword = false;
 
