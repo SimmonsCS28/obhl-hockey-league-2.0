@@ -686,6 +686,22 @@ const api = {
             throw new Error(error.message || 'Failed to generate users');
         }
         return response.json();
+    },
+
+    async importGoalies(goalies) {
+        const response = await fetch(`${API_BASE_URL}/users/import-goalies`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
+            body: JSON.stringify(goalies)
+        });
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.message || 'Failed to import goalies');
+        }
+        return response.json();
     }
 };
 
@@ -725,6 +741,7 @@ export const {
     updateUser,
     deleteUser,
     generateUsers,
+    importGoalies,
     getAllGoalieUnavailability,
     getMyAssignments,
     getMyShifts,

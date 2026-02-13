@@ -50,6 +50,12 @@ public class GoalieProfile {
     @Column(name = "games_played_current_season")
     private Integer gamesPlayedCurrentSeason = 0;
 
+    @Column(name = "wins")
+    private Integer wins = 0;
+
+    @Column(name = "losses")
+    private Integer losses = 0;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

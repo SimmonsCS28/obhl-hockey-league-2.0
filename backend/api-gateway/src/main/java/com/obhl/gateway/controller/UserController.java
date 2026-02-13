@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.obhl.gateway.dto.CreateUserRequest;
+import com.obhl.gateway.dto.GoalieImportDTO;
 import com.obhl.gateway.dto.UpdateUserRequest;
 import com.obhl.gateway.dto.UpdateUserRolesRequest;
 import com.obhl.gateway.dto.UserDTO;
@@ -73,9 +74,7 @@ public class UserController {
      */
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserDTO> updateUser(
-            @PathVariable Long id,
-            @Valid @RequestBody UpdateUserRequest request) {
+    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @Valid @RequestBody UpdateUserRequest request) {
         UserDTO updatedUser = userManagementService.updateUser(id, request);
         return ResponseEntity.ok(updatedUser);
     }
@@ -95,9 +94,7 @@ public class UserController {
      */
     @PutMapping("/{id}/roles")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserDTO> updateUserRoles(
-            @PathVariable Long id,
-            @RequestBody UpdateUserRolesRequest request) {
+    public ResponseEntity<UserDTO> updateUserRoles(@PathVariable Long id, @RequestBody UpdateUserRolesRequest request) {
         UserDTO updatedUser = userManagementService.updateUserRoles(id, request.getRoles());
         return ResponseEntity.ok(updatedUser);
     }
@@ -110,5 +107,15 @@ public class UserController {
     public ResponseEntity<List<UserDTO>> generateUsers() {
         List<UserDTO> newUsers = userManagementService.generateUsersFromPlayers();
         return ResponseEntity.status(HttpStatus.CREATED).body(newUsers);
+    }
+
+    /**
+     * Import goalies from CSV data
+     */
+    @PostMapping("/import-goalies")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<UserDTO>> importGoalies(@RequestBody List<GoalieImportDTO> goalieDtos) {
+        List<UserDTO> importedUsers = userManagementService.importGoalies(goalieDtos);
+        return ResponseEntity.status(HttpStatus.CREATED).body(importedUsers);
     }
 }
