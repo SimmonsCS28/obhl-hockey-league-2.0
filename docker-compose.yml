@@ -98,6 +98,7 @@ services:
       SPRING_DATASOURCE_USERNAME: obhl_admin
       SPRING_DATASOURCE_PASSWORD: changeme
       ENVIRONMENT: docker
+      SPRING_PROFILES_ACTIVE: docker
     ports:
       - "8003:8003"
     depends_on:

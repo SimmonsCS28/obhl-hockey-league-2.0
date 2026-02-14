@@ -702,6 +702,14 @@ const api = {
             throw new Error(error.message || 'Failed to import goalies');
         }
         return response.json();
+    },
+
+    async getPlayerDashboard() {
+        const response = await fetch(`${API_BASE_URL}/user/dashboard`, {
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to fetch player dashboard');
+        return response.json();
     }
 };
 
@@ -749,7 +757,8 @@ export const {
     signup,
     getSecurityQuestion,
     resetPassword,
-    getGameEvents
+    getGameEvents,
+    getPlayerDashboard
 } = api;
 
 export default api;
