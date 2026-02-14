@@ -1,4 +1,4 @@
-import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import './App.css';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLayout from './components/AdminLayout';
@@ -33,130 +33,174 @@ import ScorekeeperSchedulePage from './components/scorekeeper/ScorekeeperSchedul
 // User Shift Management Components
 import ForgotPassword from './components/ForgotPassword';
 import GoalieShiftSignup from './components/user/GoalieShiftSignup';
+import PlayerDashboard from './components/user/PlayerDashboard';
 import RefereeShiftSignup from './components/user/RefereeShiftSignup';
 import ScorekeeperShiftSignup from './components/user/ScorekeeperShiftSignup';
 import UserDashboard from './components/user/UserDashboard';
 
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <PublicLayout />,
+    children: [
+      { index: true, element: <Home /> },
+      { path: "seasons", element: <SeasonsPage /> },
+      { path: "teams", element: <TeamsPage /> },
+      { path: "teams/:teamId", element: <TeamRosterPage /> },
+      { path: "players", element: <PlayersPage /> },
+      { path: "standings", element: <StandingsPage /> },
+      { path: "schedule", element: <SchedulePage /> },
+
+      // Public Staff Signups
+      // Unified Signup
+      { path: "signup", element: <Signup /> },
+      { path: "forgot-password", element: <ForgotPassword /> },
+
+      // Legacy Routes - Redirect to unified signup
+      { path: "referee/signup", element: <Signup /> },
+      { path: "scorekeeper/signup", element: <Signup /> },
+      { path: "goalie/signup", element: <Signup /> }
+    ]
+  },
+
+  // Protected GM Routes
+  {
+    path: "/gm",
+    element: (
+      <ProtectedRoute requiredRoles={['GM']}>
+        <GMLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true, element: <GMDashboard /> },
+      { path: "team", element: <GMTeam /> },
+      { path: "schedule", element: <GMSchedule /> }
+    ]
+  },
+
+  // Protected Referee Routes
+  {
+    path: "/referee",
+    element: (
+      <ProtectedRoute requiredRoles={['REFEREE']}>
+        <RefereeLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true, element: <RefereeSchedulePage /> }
+    ]
+  },
+
+  // Protected Scorekeeper Routes
+  {
+    path: "/scorekeeper",
+    element: (
+      <ProtectedRoute requiredRoles={['SCOREKEEPER']}>
+        <ScorekeeperLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true, element: <ScorekeeperSchedulePage /> },
+      { path: "game/:gameId", element: <LiveScoreEntry /> }
+    ]
+  },
+
+  // Protected Goalie Routes
+  {
+    path: "/goalie",
+    element: (
+      <ProtectedRoute requiredRoles={['GOALIE']}>
+        <GoalieLayout />
+      </ProtectedRoute>
+    ),
+    children: [
+      { index: true, element: <GoalieSchedulePage /> }
+    ]
+  },
+
+  // User Shift Management Routes
+  {
+    path: "/user",
+    element: (
+      <ProtectedRoute requiredRoles={['USER', 'GOALIE', 'REF', 'SCOREKEEPER']}>
+        <PlayerDashboard />
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/user/shifts",
+    element: (
+      <ProtectedRoute requiredRoles={['GOALIE', 'REF', 'SCOREKEEPER']}>
+        <UserDashboard />
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/user/goalie",
+    element: (
+      <ProtectedRoute requiredRoles={['GOALIE']}>
+        <GoalieShiftSignup />
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/user/referee",
+    element: (
+      <ProtectedRoute requiredRoles={['REF']}>
+        <RefereeShiftSignup />
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/user/scorekeeper",
+    element: (
+      <ProtectedRoute requiredRoles={['SCOREKEEPER']}>
+        <ScorekeeperShiftSignup />
+      </ProtectedRoute>
+    )
+  },
+
+  // Protected Admin Routes
+  {
+    path: "/admin",
+    element: (
+      <ProtectedRoute requiredRoles={['ADMIN']}>
+        <AdminDashboard />
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/admin/schedule",
+    element: (
+      <ProtectedRoute requiredRoles={['ADMIN']}>
+        <AdminLayout>
+          <ScheduleManager />
+        </AdminLayout>
+      </ProtectedRoute>
+    )
+  },
+  {
+    path: "/admin/teams/:teamId",
+    element: (
+      <ProtectedRoute requiredRoles={['ADMIN']}>
+        <AdminLayout activeTab="teams">
+          <TeamDetails onBack={() => window.history.back()} />
+        </AdminLayout>
+      </ProtectedRoute>
+    )
+  },
+
+  // Change Password Route
+  {
+    path: "/change-password",
+    element: <ChangePassword />
+  }
+]);
+
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<PublicLayout />}>
-            <Route index element={<Home />} />
-            <Route path="seasons" element={<SeasonsPage />} />
-            <Route path="teams" element={<TeamsPage />} />
-            <Route path="teams/:teamId" element={<TeamRosterPage />} />
-            <Route path="players" element={<PlayersPage />} />
-            <Route path="standings" element={<StandingsPage />} />
-            <Route path="schedule" element={<SchedulePage />} />
-
-            {/* Public Staff Signups */}
-            {/* Unified Signup */}
-            <Route path="signup" element={<Signup />} />
-            <Route path="forgot-password" element={<ForgotPassword />} />
-
-            {/* Legacy Routes - Redirect to unified signup */}
-            <Route path="referee/signup" element={<Signup />} />
-            <Route path="scorekeeper/signup" element={<Signup />} />
-            <Route path="goalie/signup" element={<Signup />} />
-          </Route>
-
-          {/* Protected GM Routes */}
-          <Route path="/gm" element={
-            <ProtectedRoute requiredRoles={['GM']}>
-              <GMLayout />
-            </ProtectedRoute>
-          }>
-            <Route index element={<GMDashboard />} />
-            <Route path="team" element={<GMTeam />} />
-            <Route path="schedule" element={<GMSchedule />} />
-          </Route>
-
-          {/* Protected Referee Routes */}
-          <Route path="/referee" element={
-            <ProtectedRoute requiredRoles={['REFEREE']}>
-              <RefereeLayout />
-            </ProtectedRoute>
-          }>
-            <Route index element={<RefereeSchedulePage />} />
-          </Route>
-
-          {/* Protected Scorekeeper Routes */}
-          <Route path="/scorekeeper" element={
-            <ProtectedRoute requiredRoles={['SCOREKEEPER']}>
-              <ScorekeeperLayout />
-            </ProtectedRoute>
-          }>
-            <Route index element={<ScorekeeperSchedulePage />} />
-            <Route path="game/:gameId" element={<LiveScoreEntry />} />
-          </Route>
-
-          {/* Protected Goalie Routes */}
-          <Route path="/goalie" element={
-            <ProtectedRoute requiredRoles={['GOALIE']}>
-              <GoalieLayout />
-            </ProtectedRoute>
-          }>
-            <Route index element={<GoalieSchedulePage />} />
-          </Route>
-
-          {/* User Shift Management Routes */}
-          <Route path="/user" element={
-            <ProtectedRoute requiredRoles={['GOALIE', 'REF', 'SCOREKEEPER']}>
-              <UserDashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/user/goalie" element={
-            <ProtectedRoute requiredRoles={['GOALIE']}>
-              <GoalieShiftSignup />
-            </ProtectedRoute>
-          } />
-          <Route path="/user/referee" element={
-            <ProtectedRoute requiredRoles={['REF']}>
-              <RefereeShiftSignup />
-            </ProtectedRoute>
-          } />
-          <Route path="/user/scorekeeper" element={
-            <ProtectedRoute requiredRoles={['SCOREKEEPER']}>
-              <ScorekeeperShiftSignup />
-            </ProtectedRoute>
-          } />
-
-          {/* Protected Admin Routes */}
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute requiredRoles={['ADMIN']}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/schedule"
-            element={
-              <ProtectedRoute requiredRoles={['ADMIN']}>
-                <AdminLayout>
-                  <ScheduleManager />
-                </AdminLayout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/teams/:teamId"
-            element={
-              <ProtectedRoute requiredRoles={['ADMIN']}>
-                <AdminLayout activeTab="teams">
-                  <TeamDetails onBack={() => window.history.back()} />
-                </AdminLayout>
-              </ProtectedRoute>
-            }
-          />
-
-          {/* Change Password Route - No auth required since user must be logged in to get here */}
-          <Route path="/change-password" element={<ChangePassword />} />
-        </Routes>
-      </Router>
+      <RouterProvider router={router} />
     </AuthProvider>
   );
 }

@@ -35,14 +35,9 @@ function LoginModal({ isOpen, onClose }) {
                     navigate('/admin');
                 } else if (result.user?.roles?.includes('GM')) {
                     navigate('/gm');
-                } else if (
-                    result.user?.roles?.includes('GOALIE') ||
-                    result.user?.roles?.includes('REF') ||
-                    result.user?.roles?.includes('SCOREKEEPER')
-                ) {
-                    navigate('/user');
                 } else {
-                    navigate('/');
+                    // Default for USER role and Staff roles
+                    navigate('/user');
                 }
             }
         } else {

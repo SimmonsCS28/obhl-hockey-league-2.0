@@ -1,0 +1,8 @@
+{
+    "firstName": "Test",
+    "lastName": "Player",
+    "email": "test@example.com",
+    "seasonId": 12,
+    "teamId": 9,
+    "isActive": true
+}

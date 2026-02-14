@@ -1,0 +1,199 @@
+.player-dashboard {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    color: #e0e0e0;
+}
+
+.dashboard-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #333;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.action-button {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.action-button.secondary {
+    background-color: #2c3e50;
+    color: white;
+    border: 1px solid #4a6fa5;
+}
+
+.action-button.secondary:hover {
+    background-color: #34495e;
+}
+
+.action-button.logout {
+    background-color: #c0392b;
+    color: white;
+}
+
+.action-button.logout:hover {
+    background-color: #e74c3c;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+}
+
+.dashboard-card {
+    background-color: #1e1e1e;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.dashboard-card h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #4a6fa5;
+    /* Main accent color */
+    border-bottom: 1px solid #333;
+    padding-bottom: 0.5rem;
+}
+
+/* Team Card */
+.team-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.team-name {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #fff;
+}
+
+.team-stats {
+    display: flex;
+    justify-content: space-around;
+    background-color: #2c2c2c;
+    padding: 1rem;
+    border-radius: 6px;
+}
+
+.stat-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #fff;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #aaa;
+    text-transform: uppercase;
+}
+
+/* Next Game Card */
+.next-game-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.game-date {
+    font-size: 1.1rem;
+    font-weight: 500;
+    display: flex;
+    justify-content: space-between;
+}
+
+.game-matchup {
+    font-size: 1.3rem;
+    text-align: center;
+    margin: 1rem 0;
+}
+
+.vs {
+    font-size: 0.9rem;
+    color: #aaa;
+    margin-right: 0.5rem;
+}
+
+.game-location {
+    text-align: right;
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+/* Schedule Card */
+.schedule-card.full-width {
+    grid-column: 1 / -1;
+}
+
+.schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.schedule-table th,
+.schedule-table td {
+    text-align: left;
+    padding: 0.75rem;
+    border-bottom: 1px solid #333;
+}
+
+.schedule-table th {
+    color: #aaa;
+    font-weight: 600;
+}
+
+.opponent-link {
+    cursor: pointer;
+    color: #4a6fa5;
+    text-decoration: none;
+}
+
+.opponent-link:hover {
+    text-decoration: underline;
+}
+
+.result {
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.result.win {
+    color: #2ecc71;
+}
+
+.result.loss {
+    color: #e74c3c;
+}
+
+.no-team,
+.loading-container,
+.error-container {
+    text-align: center;
+    padding: 2rem;
+    color: #aaa;
+}

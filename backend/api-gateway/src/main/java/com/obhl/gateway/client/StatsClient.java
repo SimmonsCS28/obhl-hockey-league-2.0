@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.obhl.gateway.dto.PlayerDto;
 
@@ -19,4 +20,7 @@ public interface StatsClient {
 
     @GetMapping("/api/v1/players/{playerId}")
     PlayerDto getPlayer(@PathVariable("playerId") Long playerId);
+
+    @GetMapping("/api/v1/players/by-email-season")
+    PlayerDto getPlayerByEmailAndSeason(@RequestParam("email") String email, @RequestParam("seasonId") Long seasonId);
 }
