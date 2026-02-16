@@ -285,6 +285,14 @@ function LiveScoreEntry(props) {
                 });
 
                 setEvents(mappedEvents);
+
+                // Recalculate scores from events to ensure consistency
+                const homeGoals = mappedEvents.filter(e => e.type === 'goal' && e.team === 'home').length;
+                const awayGoals = mappedEvents.filter(e => e.type === 'goal' && e.team === 'away').length;
+
+                // Update score state
+                setHomeScore(homeGoals);
+                setAwayScore(awayGoals);
             }
         } catch (error) {
             console.error('Error loading events:', error);
