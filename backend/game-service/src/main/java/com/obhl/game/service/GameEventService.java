@@ -57,10 +57,26 @@ public class GameEventService {
         event.setAssist2PlayerId(dto.getAssist2PlayerId());
         event.setPenaltyMinutes(dto.getPenaltyMinutes());
 
-        // Auto-set game status to in_progress when events are added
+        // Auto-set game status to in_progress when events are added and update score
         gameRepository.findById(dto.getGameId()).ifPresent(game -> {
+            boolean updated = false;
             if (!"completed".equals(game.getStatus())) {
                 game.setStatus("in_progress");
+                updated = true;
+            }
+
+            // Update score if event is a goal
+            if ("goal".equalsIgnoreCase(dto.getEventType())) {
+                if (game.getHomeTeamId().equals(dto.getTeamId())) {
+                    game.setHomeScore(game.getHomeScore() == null ? 1 : game.getHomeScore() + 1);
+                    updated = true;
+                } else if (game.getAwayTeamId().equals(dto.getTeamId())) {
+                    game.setAwayScore(game.getAwayScore() == null ? 1 : game.getAwayScore() + 1);
+                    updated = true;
+                }
+            }
+
+            if (updated) {
                 gameRepository.save(game);
             }
         });

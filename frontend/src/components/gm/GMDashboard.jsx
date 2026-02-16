@@ -55,7 +55,23 @@ function GMDashboard() {
 
     return (
         <div className="gm-dashboard">
-            <h1>GM Dashboard</h1>
+            <div className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <h1>GM Dashboard</h1>
+                <button
+                    className="action-button secondary"
+                    onClick={() => window.location.href = '/user'}
+                    style={{
+                        padding: '0.5rem 1rem',
+                        backgroundColor: '#2c3e50',
+                        color: 'white',
+                        border: '1px solid #4a6fa5',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                    }}
+                >
+                    My Dashboard
+                </button>
+            </div>
 
             <div className="dashboard-grid">
                 {/* Roster Section */}

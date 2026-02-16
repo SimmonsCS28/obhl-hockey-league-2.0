@@ -145,6 +145,13 @@ const UserDashboard = () => {
                 <div className="header-buttons">
                     <button
                         className="home-button"
+                        onClick={() => navigate('/user')}
+                        style={{ marginRight: '1rem' }}
+                    >
+                        My Dashboard
+                    </button>
+                    <button
+                        className="home-button"
                         onClick={() => navigate('/')}
                     >
                         OBHL Home

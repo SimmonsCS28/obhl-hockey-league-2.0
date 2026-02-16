@@ -247,7 +247,10 @@ const api = {
     async finalizeGame(gameId, homeScore, awayScore, endedInOT = false) {
         const response = await fetch(`${API_BASE_URL}/games/${gameId}/finalize`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                ...getAuthHeaders()
+            },
             body: JSON.stringify({ homeScore, awayScore, endedInOT })
         });
 

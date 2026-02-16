@@ -1,0 +1,9 @@
+{
+    "firstName": "Write",
+    "lastName": "Test",
+    "email": "write.test.2@example.com",
+    "seasonId": 12,
+    "teamId": 9,
+    "isActive": true,
+    "position": "Forward"
+}

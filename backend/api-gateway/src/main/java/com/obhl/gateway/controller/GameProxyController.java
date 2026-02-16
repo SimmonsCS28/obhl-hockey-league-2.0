@@ -58,6 +58,13 @@ public class GameProxyController {
                         } else {
                                 proxyHeaders.setContentType(MediaType.APPLICATION_JSON);
                         }
+
+                        // Forward Authorization header if present
+                        String authHeader = request.getHeader("Authorization");
+                        if (authHeader != null) {
+                                proxyHeaders.set("Authorization", authHeader);
+                        }
+
                         HttpEntity<String> entity = new HttpEntity<>(body, proxyHeaders);
 
                         // Forward the request
