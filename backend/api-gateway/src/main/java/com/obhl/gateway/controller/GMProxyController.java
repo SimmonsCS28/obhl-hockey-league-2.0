@@ -71,6 +71,11 @@ public class GMProxyController {
             } else {
                 proxyHeaders.setContentType(MediaType.APPLICATION_JSON);
             }
+
+            // Forward Authorization header
+            if (headers.containsKey(HttpHeaders.AUTHORIZATION)) {
+                proxyHeaders.set(HttpHeaders.AUTHORIZATION, headers.getFirst(HttpHeaders.AUTHORIZATION));
+            }
             HttpEntity<String> entity = new HttpEntity<>(body, proxyHeaders);
 
             // Forward the request
