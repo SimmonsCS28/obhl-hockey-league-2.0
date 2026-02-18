@@ -9,9 +9,10 @@
     margin-bottom: 2rem;
 }
 
-.team-header h1 {
-    color: #2d3748;
+.gm-team .team-header h1 {
+    color: #1e3a5f !important;
     font-size: 2rem;
+    font-weight: 700;
     margin: 0;
 }
 

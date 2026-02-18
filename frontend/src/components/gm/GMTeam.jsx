@@ -59,7 +59,7 @@ function GMTeam() {
     const fetchPlayerStats = async (seasonId) => {
         try {
             const response = await axios.get(
-                `${API_BASE_URL}/stats/team/${user.teamId}?seasonId=${seasonId}`,
+                `${API_BASE_URL}/stats/players?seasonId=${seasonId}&teamId=${user.teamId}`,
                 { headers: getAuthHeaders() }
             );
             const statsMap = {};
