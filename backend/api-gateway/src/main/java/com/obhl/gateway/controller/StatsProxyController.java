@@ -61,6 +61,12 @@ public class StatsProxyController {
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
+            // Forward Authorization header
+            String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
+            if (authHeader != null) {
+                headers.set(HttpHeaders.AUTHORIZATION, authHeader);
+            }
+
             // Create request entity
             HttpEntity<String> entity = new HttpEntity<>(body, headers);
 

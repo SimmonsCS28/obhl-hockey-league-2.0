@@ -5,6 +5,33 @@ import './GMSchedule.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
+const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
+// Map non-CSS team color names to valid CSS colors
+const COLOR_MAP = {
+    'lt. blue': '#add8e6',
+    'lt. blu': '#add8e6',
+    'light blue': '#add8e6',
+    'tan': '#d2b48c',
+    'maroon': '#800000',
+    'gray': '#808080',
+    'grey': '#808080',
+    'orange': '#ffa500',
+    'black': '#000000',
+    'white': '#ffffff',
+    'green': '#008000',
+    'blue': '#0000ff',
+    'red': '#ff0000',
+};
+
+const resolveTeamColor = (color) => {
+    if (!color) return null;
+    return COLOR_MAP[color.toLowerCase()] || color;
+};
+
 function GMSchedule() {
     const { user } = useAuth();
     const [games, setGames] = useState([]);
@@ -30,7 +57,9 @@ function GMSchedule() {
             const activeSeason = seasonsRes.data.find(s => s.isActive);
 
             if (activeSeason) {
-                const gamesRes = await axios.get(`${API_BASE_URL}/gm/team/${user.teamId}/schedule?seasonId=${activeSeason.id}`);
+                const gamesRes = await axios.get(`${API_BASE_URL}/gm/team/${user.teamId}/schedule?seasonId=${activeSeason.id}`, {
+                    headers: getAuthHeaders(),
+                });
                 setGames(gamesRes.data);
 
                 // Extract unique weeks
@@ -103,11 +132,13 @@ function GMSchedule() {
                                         <td
                                             className="opponent-cell"
                                             style={{
-                                                backgroundColor: (isHomeGame ? game.awayTeamColor : game.homeTeamColor) || '',
+                                                backgroundColor: resolveTeamColor(isHomeGame ? game.awayTeamColor : game.homeTeamColor) || '',
                                                 color: (() => {
-                                                    const bgColor = isHomeGame ? game.awayTeamColor : game.homeTeamColor;
-                                                    if (!bgColor) return 'inherit';
-                                                    return bgColor.toLowerCase() === 'white' || bgColor.toLowerCase() === '#ffffff' ? '#2d3748' : '#fff';
+                                                    const rawColor = isHomeGame ? game.awayTeamColor : game.homeTeamColor;
+                                                    const resolved = resolveTeamColor(rawColor);
+                                                    if (!resolved) return 'inherit';
+                                                    const lower = (rawColor || '').toLowerCase();
+                                                    return lower === 'white' || lower === '#ffffff' ? '#2d3748' : '#fff';
                                                 })()
                                             }}
                                         >

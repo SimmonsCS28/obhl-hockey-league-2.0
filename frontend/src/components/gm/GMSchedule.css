@@ -11,8 +11,8 @@
     margin-bottom: 2rem;
 }
 
-.schedule-header h1 {
-    color: #2c3e50;
+.gm-schedule .schedule-header h1 {
+    color: #1e3a5f !important;
     margin: 0;
 }
 
