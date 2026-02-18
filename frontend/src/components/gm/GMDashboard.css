@@ -28,30 +28,30 @@
     font-size: 1.5rem;
 }
 
-.roster-table {
+.gm-dashboard .roster-table {
     width: 100%;
     border-collapse: collapse;
 }
 
-.roster-table thead {
+.gm-dashboard .roster-table thead {
     background: rgba(255, 255, 255, 0.08);
 }
 
-.roster-table th {
+.gm-dashboard .roster-table th {
     padding: 0.75rem;
     text-align: left;
     font-weight: 600;
-    color: #ffffff;
+    color: #ffffff !important;
     border-bottom: 2px solid rgba(255, 255, 255, 0.15);
 }
 
-.roster-table td {
+.gm-dashboard .roster-table td {
     padding: 0.75rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    color: #ffffff;
+    color: #ffffff !important;
 }
 
-.roster-table tbody tr:hover {
+.gm-dashboard .roster-table tbody tr:hover {
     background-color: rgba(255, 255, 255, 0.05);
 }
 
