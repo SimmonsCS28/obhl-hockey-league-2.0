@@ -1,16 +1,20 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { getPlayerStats } from '../../services/api';
 import './GMTeam.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+
+const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 function GMTeam() {
     const { user } = useAuth();
     const [roster, setRoster] = useState([]);
     const [teamInfo, setTeamInfo] = useState(null);
-    const [playerStats, setPlayerStats] = useState({});  // Map of playerId -> stats
+    const [playerStats, setPlayerStats] = useState({});
     const [editedPlayers, setEditedPlayers] = useState({});
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -18,44 +22,54 @@ function GMTeam() {
     const [sortConfig, setSortConfig] = useState({ key: 'jerseyNumber', direction: 'ascending' });
 
     useEffect(() => {
-        if (user?.teamId && user?.seasonId) {
-            fetchRoster();
-            fetchTeamInfo();
-            fetchPlayerStats();
+        if (user?.teamId) {
+            fetchAll();
         }
     }, [user]);
 
-    const fetchRoster = async () => {
+    const fetchAll = async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/gm/team/${user.teamId}/roster`);
-            setRoster(response.data);
+            // Fetch roster and team info in parallel
+            const [rosterRes, teamRes, seasonsRes] = await Promise.all([
+                axios.get(`${API_BASE_URL}/gm/team/${user.teamId}/roster`, {
+                    headers: getAuthHeaders(),
+                }),
+                axios.get(`${API_BASE_URL}/teams/${user.teamId}`, {
+                    headers: getAuthHeaders(),
+                }),
+                axios.get(`${API_BASE_URL}/seasons`),
+            ]);
+
+            setRoster(rosterRes.data);
+            setTeamInfo(teamRes.data);
+
+            // Get active season and fetch stats
+            const activeSeason = seasonsRes.data.find(s => s.isActive);
+            if (activeSeason) {
+                await fetchPlayerStats(activeSeason.id);
+            }
         } catch (error) {
-            showMessage('error', 'Failed to load roster');
+            console.error('Failed to load team data:', error);
+            showMessage('error', 'Failed to load team data');
         } finally {
             setLoading(false);
         }
     };
 
-    const fetchTeamInfo = async () => {
+    const fetchPlayerStats = async (seasonId) => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/teams/${user.teamId}`);
-            setTeamInfo(response.data);
-        } catch (error) {
-            console.error('Failed to load team info:', error);
-        }
-    };
-
-    const fetchPlayerStats = async () => {
-        try {
-            const stats = await getPlayerStats(user.seasonId, user.teamId);
-            // Create a map of playerId -> stats for easy lookup
+            const response = await axios.get(
+                `${API_BASE_URL}/stats/team/${user.teamId}?seasonId=${seasonId}`,
+                { headers: getAuthHeaders() }
+            );
             const statsMap = {};
-            stats.forEach(stat => {
+            (response.data || []).forEach(stat => {
                 statsMap[stat.playerId] = stat;
             });
             setPlayerStats(statsMap);
         } catch (error) {
             console.error('Failed to load player stats:', error);
+            // Non-fatal — stats just won't show
         }
     };
 
@@ -71,14 +85,19 @@ function GMTeam() {
         try {
             const updates = Object.entries(editedPlayers);
             for (const [playerId, jerseyNumber] of updates) {
-                await axios.patch(`${API_BASE_URL}/gm/players/${playerId}/jersey`, {
-                    jerseyNumber: parseInt(jerseyNumber)
-                });
+                await axios.patch(
+                    `${API_BASE_URL}/gm/players/${playerId}/jersey`,
+                    { jerseyNumber: parseInt(jerseyNumber) },
+                    { headers: getAuthHeaders() }
+                );
             }
-
             showMessage('success', 'Jersey numbers updated successfully!');
-            await fetchRoster(); // Fetch first to ensure data is fresh
-            setEditedPlayers({}); // Then clear local edits
+            // Refresh roster
+            const rosterRes = await axios.get(`${API_BASE_URL}/gm/team/${user.teamId}/roster`, {
+                headers: getAuthHeaders(),
+            });
+            setRoster(rosterRes.data);
+            setEditedPlayers({});
         } catch (error) {
             showMessage('error', 'Failed to update jersey numbers');
         } finally {
@@ -102,8 +121,6 @@ function GMTeam() {
     const getSortedRoster = () => {
         const sorted = [...roster].sort((a, b) => {
             let aValue, bValue;
-
-            // Handle stats fields
             if (['goals', 'assists', 'points', 'penaltyMinutes'].includes(sortConfig.key)) {
                 const aStats = playerStats[a.id] || {};
                 const bStats = playerStats[b.id] || {};
@@ -113,13 +130,8 @@ function GMTeam() {
                 aValue = a[sortConfig.key];
                 bValue = b[sortConfig.key];
             }
-
-            if (aValue < bValue) {
-                return sortConfig.direction === 'ascending' ? -1 : 1;
-            }
-            if (aValue > bValue) {
-                return sortConfig.direction === 'ascending' ? 1 : -1;
-            }
+            if (aValue < bValue) return sortConfig.direction === 'ascending' ? -1 : 1;
+            if (aValue > bValue) return sortConfig.direction === 'ascending' ? 1 : -1;
             return 0;
         });
         return sorted;
