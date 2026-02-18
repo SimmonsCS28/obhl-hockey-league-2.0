@@ -5,6 +5,11 @@ import './GMSchedule.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
+const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 function GMSchedule() {
     const { user } = useAuth();
     const [games, setGames] = useState([]);
@@ -30,7 +35,9 @@ function GMSchedule() {
             const activeSeason = seasonsRes.data.find(s => s.isActive);
 
             if (activeSeason) {
-                const gamesRes = await axios.get(`${API_BASE_URL}/gm/team/${user.teamId}/schedule?seasonId=${activeSeason.id}`);
+                const gamesRes = await axios.get(`${API_BASE_URL}/gm/team/${user.teamId}/schedule?seasonId=${activeSeason.id}`, {
+                    headers: getAuthHeaders(),
+                });
                 setGames(gamesRes.data);
 
                 // Extract unique weeks
