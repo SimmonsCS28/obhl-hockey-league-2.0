@@ -34,25 +34,64 @@
 }
 
 .roster-table thead {
-    background: #f7fafc;
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .roster-table th {
     padding: 0.75rem;
     text-align: left;
     font-weight: 600;
-    color: #4a5568;
-    border-bottom: 2px solid #e2e8f0;
+    color: #ffffff;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.15);
 }
 
 .roster-table td {
     padding: 0.75rem;
-    border-bottom: 1px solid #e2e8f0;
-    color: #2d3748;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
 }
 
 .roster-table tbody tr:hover {
-    background-color: #f7fafc;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.jersey-edit-input {
+    width: 52px;
+    padding: 0.25rem 0.4rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 4px;
+    color: #ffffff;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.jersey-edit-input:focus {
+    outline: none;
+    border-color: #4a9eff;
+    background: rgba(74, 158, 255, 0.15);
+}
+
+.save-jersey-btn {
+    margin-left: 0.4rem;
+    padding: 0.2rem 0.5rem;
+    background: #2ecc71;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.save-jersey-btn:hover {
+    background: #27ae60;
+}
+
+.save-jersey-btn:disabled {
+    background: #555;
+    cursor: not-allowed;
 }
 
 .game-info {

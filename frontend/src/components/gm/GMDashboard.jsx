@@ -15,6 +15,10 @@ function GMDashboard() {
     const [roster, setRoster] = useState([]);
     const [nextGame, setNextGame] = useState(null);
     const [loading, setLoading] = useState(true);
+    // Track edited jersey numbers: { [playerId]: value }
+    const [jerseyEdits, setJerseyEdits] = useState({});
+    // Track saving state per player: { [playerId]: boolean }
+    const [savingJersey, setSavingJersey] = useState({});
 
     useEffect(() => {
         if (user?.teamId) {
@@ -36,7 +40,6 @@ function GMDashboard() {
 
     const fetchNextGame = async () => {
         try {
-            // Get active season first
             const seasonsRes = await axios.get(`${API_BASE_URL}/seasons`);
             const activeSeason = seasonsRes.data.find(s => s.isActive);
 
@@ -58,6 +61,43 @@ function GMDashboard() {
             console.error('Failed to fetch next game:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleJerseyChange = (playerId, value) => {
+        setJerseyEdits(prev => ({ ...prev, [playerId]: value }));
+    };
+
+    const saveJersey = async (player) => {
+        const newJersey = jerseyEdits[player.id];
+        const parsed = parseInt(newJersey, 10);
+        if (isNaN(parsed) || parsed < 0 || parsed > 99) {
+            alert('Jersey number must be between 0 and 99.');
+            return;
+        }
+
+        setSavingJersey(prev => ({ ...prev, [player.id]: true }));
+        try {
+            await axios.patch(
+                `${API_BASE_URL}/gm/players/${player.id}/jersey`,
+                { jerseyNumber: parsed },
+                { headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' } }
+            );
+            // Update local roster state
+            setRoster(prev =>
+                prev.map(p => p.id === player.id ? { ...p, jerseyNumber: parsed } : p)
+            );
+            // Clear the edit for this player
+            setJerseyEdits(prev => {
+                const next = { ...prev };
+                delete next[player.id];
+                return next;
+            });
+        } catch (error) {
+            console.error('Failed to save jersey number:', error);
+            alert('Failed to save jersey number. Please try again.');
+        } finally {
+            setSavingJersey(prev => ({ ...prev, [player.id]: false }));
         }
     };
 
@@ -98,14 +138,36 @@ function GMDashboard() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {roster.map(player => (
-                                    <tr key={player.id}>
-                                        <td>{player.jerseyNumber || '-'}</td>
-                                        <td>{player.firstName} {player.lastName}</td>
-                                        <td>{player.position || '-'}</td>
-                                        <td>{player.skillRating || '-'}</td>
-                                    </tr>
-                                ))}
+                                {roster.map(player => {
+                                    const editValue = jerseyEdits[player.id];
+                                    const isEdited = editValue !== undefined && editValue !== String(player.jerseyNumber ?? '');
+                                    return (
+                                        <tr key={player.id}>
+                                            <td>
+                                                <input
+                                                    className="jersey-edit-input"
+                                                    type="number"
+                                                    min="0"
+                                                    max="99"
+                                                    value={editValue !== undefined ? editValue : (player.jerseyNumber ?? '')}
+                                                    onChange={e => handleJerseyChange(player.id, e.target.value)}
+                                                />
+                                                {isEdited && (
+                                                    <button
+                                                        className="save-jersey-btn"
+                                                        disabled={savingJersey[player.id]}
+                                                        onClick={() => saveJersey(player)}
+                                                    >
+                                                        {savingJersey[player.id] ? '...' : 'Save'}
+                                                    </button>
+                                                )}
+                                            </td>
+                                            <td>{player.firstName} {player.lastName}</td>
+                                            <td>{player.position || '-'}</td>
+                                            <td>{player.skillRating || '-'}</td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     ) : (
