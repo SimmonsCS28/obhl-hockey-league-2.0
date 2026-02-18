@@ -3,9 +3,10 @@
 }
 
 .gm-dashboard h1 {
-    color: #2d3748;
-    margin-bottom: 2rem;
+    color: #1e3a5f !important;
+    margin-bottom: 0;
     font-size: 2rem;
+    font-weight: 700;
 }
 
 .dashboard-grid {
