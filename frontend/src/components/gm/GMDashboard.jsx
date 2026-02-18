@@ -5,6 +5,11 @@ import './GMDashboard.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
+const getAuthHeaders = () => {
+    const token = localStorage.getItem('token');
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 function GMDashboard() {
     const { user } = useAuth();
     const [roster, setRoster] = useState([]);
@@ -20,7 +25,9 @@ function GMDashboard() {
 
     const fetchRoster = async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/gm/team/${user.teamId}/roster`);
+            const response = await axios.get(`${API_BASE_URL}/gm/team/${user.teamId}/roster`, {
+                headers: getAuthHeaders(),
+            });
             setRoster(response.data);
         } catch (error) {
             console.error('Failed to fetch roster:', error);
@@ -34,7 +41,10 @@ function GMDashboard() {
             const activeSeason = seasonsRes.data.find(s => s.isActive);
 
             if (activeSeason) {
-                const gamesRes = await axios.get(`${API_BASE_URL}/gm/team/${user.teamId}/schedule?seasonId=${activeSeason.id}`);
+                const gamesRes = await axios.get(
+                    `${API_BASE_URL}/gm/team/${user.teamId}/schedule?seasonId=${activeSeason.id}`,
+                    { headers: getAuthHeaders() }
+                );
                 const now = new Date();
                 const upcomingGames = gamesRes.data
                     .filter(g => new Date(g.gameDate.endsWith('Z') ? g.gameDate : g.gameDate + 'Z') > now)
