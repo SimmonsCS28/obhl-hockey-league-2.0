@@ -39,6 +39,14 @@ public class GameService {
     }
 
     @Transactional(readOnly = true)
+    public List<GameDto.Response> getGamesBySeasonAndTeam(Long seasonId, Long teamId) {
+        return gameRepository.findBySeasonIdAndTeam(seasonId, teamId)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
     public List<GameDto.Response> getGamesByStatus(String status) {
         return gameRepository.findByStatus(status)
                 .stream()

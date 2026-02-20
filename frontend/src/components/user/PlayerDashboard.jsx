@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import TeamBadge from '../common/TeamBadge';
 import './PlayerDashboard.css'; // Will create this next
 
 const PlayerDashboard = () => {
@@ -25,36 +26,55 @@ const PlayerDashboard = () => {
         };
 
         fetchDashboard();
-    }, []);
+    }, [user?.email]); // Depend on user.email to refetch if user changes
 
     if (loading) return <div className="loading-container">Loading dashboard...</div>;
     if (error) return <div className="error-container">{error}</div>;
 
-    const { team, record, nextGame, schedule } = dashboardData || {};
+    // Destructure data from dashboardData
+    const { team, record, nextGame, schedule, firstName, lastName } = dashboardData || {};
 
     const hasStaffRole = user?.roles?.some(role =>
         ['REF', 'GOALIE', 'SCOREKEEPER'].includes(role)
     );
 
-    const formatTime = (dateStr, timeStr) => {
-        if (!dateStr) return '';
-        // Combine date and time if needed, or just use dateStr if it's ISO
-        // Assuming dateStr is YYYY-MM-DD and timeStr is HH:mm:ss
-        const dateTime = new Date(`${dateStr}T${timeStr || '00:00'}`);
-        return dateTime.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    const isGM = user?.roles?.includes('GM');
+
+    // gameDate arrives as UTC ISO datetime without 'Z', e.g. '2026-01-10T04:15:00'
+    // Append 'Z' to force UTC parsing, then display in America/Chicago (CST/CDT)
+    const toDate = (dateStr) => {
+        if (!dateStr) return null;
+        // If it already has a timezone offset, use as-is; otherwise treat as UTC
+        const normalized = /[Z+\-]\d*$/.test(dateStr) ? dateStr : dateStr + 'Z';
+        return new Date(normalized);
+    };
+
+    const formatTime = (dateStr) => {
+        const d = toDate(dateStr);
+        if (!d || isNaN(d)) return '';
+        return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' });
     };
 
     const formatDate = (dateStr) => {
-        if (!dateStr) return '';
-        return new Date(dateStr).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+        const d = toDate(dateStr);
+        if (!d || isNaN(d)) return '';
+        return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/Chicago' });
     };
 
     return (
         <div className="player-dashboard">
             <header className="dashboard-header">
                 <div className="header-content">
-                    <h1>Welcome, {user?.firstName}</h1>
+                    <h1>Welcome, {firstName ? `${firstName} ${lastName}` : user?.firstName}</h1>
                     <div className="header-actions">
+                        {isGM && (
+                            <button
+                                className="action-button secondary"
+                                onClick={() => navigate('/gm')}
+                            >
+                                GM Dashboard
+                            </button>
+                        )}
                         {hasStaffRole && (
                             <button
                                 className="action-button secondary"
@@ -63,6 +83,12 @@ const PlayerDashboard = () => {
                                 My Shifts
                             </button>
                         )}
+                        <button
+                            className="action-button secondary"
+                            onClick={() => navigate('/')}
+                        >
+                            OBHL Home
+                        </button>
                         <button className="action-button logout" onClick={logout}>Logout</button>
                     </div>
                 </div>
@@ -113,16 +139,18 @@ const PlayerDashboard = () => {
                         <div className="next-game-details">
                             <div className="game-date">
                                 <span className="date">{formatDate(nextGame.gameDate)}</span>
-                                <span className="time">{formatTime(nextGame.gameDate, nextGame.gameTime)}</span>
+                                <span className="time">{formatTime(nextGame.gameDate)}</span>
                             </div>
                             <div className="game-matchup">
                                 <span className="vs">vs</span>
-                                <span className="opponent">
-                                    {nextGame.homeTeamId === team?.id ? nextGame.awayTeamName : nextGame.homeTeamName}
-                                </span>
+                                <TeamBadge
+                                    teamName={nextGame.homeTeamId === team?.id ? nextGame.awayTeamName : nextGame.homeTeamName}
+                                    teamColor={nextGame.homeTeamId === team?.id ? nextGame.awayTeamColor : nextGame.homeTeamColor}
+                                    className="opponent"
+                                />
                             </div>
                             <div className="game-location">
-                                <span>{nextGame.rinkName || 'TBD'}</span>
+                                <span>{nextGame.rink || 'TBD'}</span>
                             </div>
                         </div>
                     ) : (
@@ -159,17 +187,19 @@ const PlayerDashboard = () => {
                                             if (game.endedInOT) result += ' (OT)';
                                         }
 
+                                        const opponentColor = isHome ? game.awayTeamColor : game.homeTeamColor;
+
                                         return (
                                             <tr key={game.id}>
                                                 <td>{formatDate(game.gameDate)}</td>
-                                                <td>{formatTime(game.gameDate, game.gameTime)}</td>
+                                                <td>{formatTime(game.gameDate)}</td>
                                                 <td>
-                                                    <span
+                                                    <TeamBadge
+                                                        teamName={opponentName}
+                                                        teamColor={opponentColor}
                                                         className="opponent-link"
                                                         onClick={() => navigate(`/teams/${opponentId}`)}
-                                                    >
-                                                        {opponentName}
-                                                    </span>
+                                                    />
                                                 </td>
                                                 <td><span className={`result p-tag ${result.startsWith('W') ? 'win' : result.startsWith('L') ? 'loss' : ''}`}>{result}</span></td>
                                             </tr>

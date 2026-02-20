@@ -66,16 +66,18 @@
 .dashboard-card h2 {
     margin-top: 0;
     margin-bottom: 1rem;
-    color: #4a6fa5;
-    /* Main accent color */
+    color: #ffffff;
     border-bottom: 1px solid #333;
     padding-bottom: 0.5rem;
+    text-align: center;
+    width: 100%;
 }
 
 /* Team Card */
 .team-header {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
+    justify-content: center;
     align-items: center;
     margin-bottom: 1rem;
 }
@@ -149,6 +151,12 @@
     grid-column: 1 / -1;
 }
 
+.schedule-list {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 .schedule-table {
     width: 100%;
     border-collapse: collapse;
@@ -157,23 +165,60 @@
 .schedule-table th,
 .schedule-table td {
     text-align: left;
-    padding: 0.75rem;
+    padding: 0.75rem 0.25rem;
     border-bottom: 1px solid #333;
+    color: #e0e0e0;
+    font-size: 0.9rem;
 }
+
+/* Mobile-friendly column widths */
+.schedule-table th:nth-child(1),
+.schedule-table td:nth-child(1) {
+    width: 18%;
+}
+
+/* Date */
+
+.schedule-table th:nth-child(2),
+.schedule-table td:nth-child(2) {
+    width: 18%;
+}
+
+/* Time */
+
+.schedule-table th:nth-child(3),
+.schedule-table td:nth-child(3) {
+    width: 40%;
+}
+
+/* Opponent */
+
+.schedule-table th:nth-child(4),
+.schedule-table td:nth-child(4) {
+    width: 24%;
+    text-align: center;
+}
+
+/* Result */
 
 .schedule-table th {
     color: #aaa;
     font-weight: 600;
 }
 
+.opponent,
 .opponent-link {
-    cursor: pointer;
-    color: #4a6fa5;
+    padding: 4px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    font-weight: bold;
     text-decoration: none;
+    cursor: pointer;
 }
 
 .opponent-link:hover {
-    text-decoration: underline;
+    opacity: 0.9;
+    text-decoration: none;
 }
 
 .result {

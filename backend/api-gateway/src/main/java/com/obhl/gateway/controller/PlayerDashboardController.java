@@ -19,6 +19,8 @@ import com.obhl.gateway.client.LeagueClient;
 import com.obhl.gateway.client.StatsClient;
 import com.obhl.gateway.dto.PlayerDashboardDTO;
 import com.obhl.gateway.dto.PlayerDto;
+import com.obhl.gateway.dto.TeamDto;
+import com.obhl.gateway.service.TeamService;
 
 @RestController
 @RequestMapping("/api/v1/user/dashboard")
@@ -29,11 +31,14 @@ public class PlayerDashboardController {
     private final StatsClient statsClient;
     private final LeagueClient leagueClient;
     private final GameClient gameClient;
+    private final TeamService teamService;
 
-    public PlayerDashboardController(StatsClient statsClient, LeagueClient leagueClient, GameClient gameClient) {
+    public PlayerDashboardController(StatsClient statsClient, LeagueClient leagueClient, GameClient gameClient,
+            TeamService teamService) {
         this.statsClient = statsClient;
         this.leagueClient = leagueClient;
         this.gameClient = gameClient;
+        this.teamService = teamService;
     }
 
     @GetMapping
@@ -77,7 +82,6 @@ public class PlayerDashboardController {
             player = statsClient.getPlayerByEmailAndSeason(email, seasonId);
         } catch (Exception e) {
             log.warn("Player not found for email {} and season {}", email, seasonId);
-            // Return empty dashboard if not a player in current season
             return ResponseEntity.ok(new PlayerDashboardDTO());
         }
 
@@ -85,10 +89,16 @@ public class PlayerDashboardController {
             return ResponseEntity.ok(new PlayerDashboardDTO());
         }
 
-        // 3. Get Team
+        // 3. Get Team - use local TeamService (teams live in the api-gateway DB)
         Map<String, Object> team;
         try {
-            team = leagueClient.getTeam(player.getTeamId());
+            TeamDto.Response teamDto = teamService.getTeamById(player.getTeamId())
+                    .orElseThrow(() -> new RuntimeException("Team not found: " + player.getTeamId()));
+            team = new java.util.HashMap<>();
+            team.put("id", teamDto.getId());
+            team.put("name", teamDto.getName());
+            team.put("abbreviation", teamDto.getAbbreviation());
+            team.put("seasonId", teamDto.getSeasonId());
         } catch (Exception e) {
             log.error("Failed to fetch team {}", player.getTeamId(), e);
             return ResponseEntity.ok(new PlayerDashboardDTO());
@@ -101,6 +111,43 @@ public class PlayerDashboardController {
         } catch (Exception e) {
             log.error("Failed to fetch games", e);
             games = List.of();
+        }
+
+        // 4b. Enrich game maps with team names (game-service returns null for team
+        // names)
+        if (!games.isEmpty()) {
+            // Collect all unique team IDs across all games
+            java.util.Set<Long> teamIds = new java.util.HashSet<>();
+            for (Map<String, Object> g : games) {
+                if (g.get("homeTeamId") instanceof Number n)
+                    teamIds.add(n.longValue());
+                if (g.get("awayTeamId") instanceof Number n)
+                    teamIds.add(n.longValue());
+            }
+            // Build id->name and id->color cache
+            java.util.Map<Long, String> teamNames = new java.util.HashMap<>();
+            java.util.Map<Long, String> teamColors = new java.util.HashMap<>();
+            for (Long tid : teamIds) {
+                teamService.getTeamById(tid).ifPresent(t -> {
+                    teamNames.put(t.getId(), t.getName());
+                    teamColors.put(t.getId(), t.getTeamColor());
+                });
+            }
+            // Patch each game map with resolved names and colors (make mutable copies)
+            List<Map<String, Object>> enriched = new java.util.ArrayList<>();
+            for (Map<String, Object> g : games) {
+                Map<String, Object> m = new java.util.HashMap<>(g);
+                if (m.get("homeTeamId") instanceof Number n) {
+                    m.put("homeTeamName", teamNames.getOrDefault(n.longValue(), "Unknown"));
+                    m.put("homeTeamColor", teamColors.getOrDefault(n.longValue(), "#ffffff"));
+                }
+                if (m.get("awayTeamId") instanceof Number n) {
+                    m.put("awayTeamName", teamNames.getOrDefault(n.longValue(), "Unknown"));
+                    m.put("awayTeamColor", teamColors.getOrDefault(n.longValue(), "#ffffff"));
+                }
+                enriched.add(m);
+            }
+            games = enriched;
         }
 
         // 5. Calculate Record & Identify Next Game
@@ -119,17 +166,20 @@ public class PlayerDashboardController {
 
         for (Map<String, Object> game : games) {
             String status = (String) game.get("status");
-            String gameDateStr = (String) game.get("gameDate"); // ISO format expected
-            String gameTimeStr = (String) game.get("gameTime");
+            String gameDateStr = (String) game.get("gameDate"); // Already a full ISO datetime e.g.
+                                                                // '2026-01-10T04:15:00'
 
             // Basic Next Game Logic
             if (!"COMPLETED".equalsIgnoreCase(status)) {
-                if (nextGame == null) {
-                    // unexpected date format handling might be needed, assuming ISO YYYY-MM-DD
-                    LocalDateTime gameDateTime = LocalDateTime
-                            .parse(gameDateStr + "T" + (gameTimeStr != null ? gameTimeStr : "00:00:00"));
-                    if (gameDateTime.isAfter(now)) {
-                        nextGame = game;
+                if (nextGame == null && gameDateStr != null) {
+                    try {
+                        LocalDateTime gameDateTime = LocalDateTime
+                                .parse(gameDateStr.length() > 19 ? gameDateStr.substring(0, 19) : gameDateStr);
+                        if (gameDateTime.isAfter(now)) {
+                            nextGame = game;
+                        }
+                    } catch (Exception ex) {
+                        log.warn("Could not parse gameDate: {}", gameDateStr);
                     }
                 }
             }
@@ -166,8 +216,14 @@ public class PlayerDashboardController {
             }
         }
 
-        PlayerDashboardDTO.TeamRecord record = new PlayerDashboardDTO.TeamRecord(wins, losses, ties, otLosses);
+        PlayerDashboardDTO dto = new PlayerDashboardDTO();
+        dto.setFirstName(player.getFirstName());
+        dto.setLastName(player.getLastName());
+        dto.setTeam(team);
+        dto.setRecord(new PlayerDashboardDTO.TeamRecord(wins, losses, ties, otLosses));
+        dto.setNextGame(nextGame);
+        dto.setSchedule(games);
 
-        return ResponseEntity.ok(new PlayerDashboardDTO(team, record, nextGame, games));
+        return ResponseEntity.ok(dto);
     }
 }
