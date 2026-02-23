@@ -24,6 +24,17 @@ export const AuthProvider = ({ children }) => {
             setUser(JSON.parse(storedUser));
         }
         setLoading(false);
+
+        const handleAuthError = () => {
+            console.warn('Authentication error detected, logging out');
+            alert('Your session has expired. Please log in again.');
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setUser(null);
+        };
+
+        window.addEventListener('auth-error', handleAuthError);
+        return () => window.removeEventListener('auth-error', handleAuthError);
     }, []);
 
     const login = async (usernameOrEmail, password) => {
