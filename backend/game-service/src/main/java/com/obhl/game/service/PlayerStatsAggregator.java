@@ -81,6 +81,50 @@ public class PlayerStatsAggregator {
     }
 
     /**
+     * Reverts aggregated stats for a game when unfinalizing
+     */
+    public void revertPlayerStats(Game game) {
+        logger.info("Reverting stats for game {}", game.getId());
+
+        List<GameEvent> events = gameEventRepository.findByGameId(game.getId());
+
+        if (events.isEmpty()) {
+            logger.info("No events found for game {}, skipping stats reversion", game.getId());
+            return;
+        }
+
+        Map<Long, PlayerStatsUpdateDto> playerStatsMap = new HashMap<>();
+
+        for (GameEvent event : events) {
+            String eventType = event.getEventType().toLowerCase();
+
+            if ("goal".equals(eventType)) {
+                if (event.getPlayerId() != null) {
+                    incrementStats(playerStatsMap, event.getPlayerId(), game, event.getTeamId(), -1, 0, 0);
+                }
+                if (event.getAssist1PlayerId() != null) {
+                    incrementStats(playerStatsMap, event.getAssist1PlayerId(), game, event.getTeamId(), 0, -1, 0);
+                }
+                if (event.getAssist2PlayerId() != null) {
+                    incrementStats(playerStatsMap, event.getAssist2PlayerId(), game, event.getTeamId(), 0, -1, 0);
+                }
+            } else if ("penalty".equals(eventType)) {
+                if (event.getPlayerId() != null && event.getPenaltyMinutes() != null) {
+                    incrementStats(playerStatsMap, event.getPlayerId(), game, event.getTeamId(), 0, 0,
+                            -event.getPenaltyMinutes());
+                }
+            }
+        }
+
+        for (PlayerStatsUpdateDto stats : playerStatsMap.values()) {
+            stats.setGamesPlayed(-1);
+            updatePlayerStats(stats);
+        }
+
+        logger.info("Stats reversion complete for game {}. Reverted {} players", game.getId(), playerStatsMap.size());
+    }
+
+    /**
      * Helper method to increment stats for a player
      */
     private void incrementStats(Map<Long, PlayerStatsUpdateDto> statsMap, Long playerId, Game game, Long teamId,

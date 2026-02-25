@@ -266,6 +266,26 @@ const api = {
         return response.json();
     },
 
+    async unfinalizeGame(gameId) {
+        const response = await fetch(`${API_BASE_URL}/games/${gameId}/unfinalize`, {
+            method: 'POST',
+            headers: {
+                ...getAuthHeaders()
+            }
+        });
+
+        if (!response.ok) {
+            if (response.status === 401 || response.status === 403) {
+                window.dispatchEvent(new Event('auth-error'));
+                throw new Error('Your session has expired. Please log in again.');
+            }
+            const error = await response.text();
+            throw new Error(`Failed to unfinalize game: ${error}`);
+        }
+
+        return response.json();
+    },
+
     // ============================================
     // PENALTY VALIDATION API
     //Connect to Game Service penalty validation endpoint

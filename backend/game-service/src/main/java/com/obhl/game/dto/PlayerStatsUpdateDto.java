@@ -15,4 +15,5 @@ public class PlayerStatsUpdateDto {
     private Integer assists;
     private Integer points;
     private Integer penaltyMinutes;
+    private Integer gamesPlayed;
 }
