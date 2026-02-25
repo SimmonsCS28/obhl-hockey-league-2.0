@@ -182,6 +182,28 @@ public class GameService {
         return toResponse(savedGame);
     }
 
+    @Transactional
+    public GameDto.Response unfinalizeGame(Long id) {
+        Game game = gameRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Game not found"));
+
+        if (!"completed".equals(game.getStatus())) {
+            throw new RuntimeException("Game is not completed");
+        }
+
+        // Revert stats first using the OLD completed values
+        teamStatsUpdater.revertTeamStats(game);
+        playerStatsAggregator.revertPlayerStats(game);
+
+        // Reset points and status
+        game.setHomeTeamPoints(0);
+        game.setAwayTeamPoints(0);
+        // Leave scores as is, so they can be edited or left alone
+        game.setStatus("in_progress");
+
+        return toResponse(gameRepository.save(game));
+    }
+
     private GameDto.Response toResponse(Game game) {
         GameDto.Response dto = new GameDto.Response();
         dto.setId(game.getId());

@@ -68,9 +68,12 @@ function LiveScoreEntry(props) {
     const [penaltyTimeMinutes, setPenaltyTimeMinutes] = useState('');
     const [penaltyTimeSeconds, setPenaltyTimeSeconds] = useState('');
 
-    // Finalize confirmation modal
     const [showFinalizeModal, setShowFinalizeModal] = useState(false);
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+    // Unfinalize tracking
+    const [showUnfinalizeModal, setShowUnfinalizeModal] = useState(false);
+    const [isUnfinalizing, setIsUnfinalizing] = useState(false);
 
     // Penalty validation and alerts
     const [showPenaltyAlert, setShowPenaltyAlert] = useState(false);
@@ -622,6 +625,37 @@ function LiveScoreEntry(props) {
         setShowFinalizeModal(false);
     };
 
+    const handleUnfinalizeClick = () => {
+        setShowUnfinalizeModal(true);
+    };
+
+    const confirmUnfinalize = async () => {
+        setIsUnfinalizing(true);
+        try {
+            await api.unfinalizeGame(game.id);
+            setGameFinalized(false);
+            setShowUnfinalizeModal(false);
+
+            // Reload game info to get the proper score/status
+            if (onGameUpdated) {
+                onGameUpdated({
+                    ...game,
+                    status: 'in_progress'
+                });
+            }
+            alert('Game has been unfinalized. You may now edit the score.');
+        } catch (error) {
+            console.error('Error unfinalizing game:', error);
+            alert('❌ ERROR\n\nFailed to unfinalize game.\n\nError: ' + error.message);
+        } finally {
+            setIsUnfinalizing(false);
+        }
+    };
+
+    const cancelUnfinalize = () => {
+        setShowUnfinalizeModal(false);
+    };
+
     const resetGoalForm = () => {
         setGoalScorer('');
         setGoalAssist1('');
@@ -839,6 +873,13 @@ function LiveScoreEntry(props) {
             {gameFinalized && (
                 <div className="finalized-message">
                     This game has been finalized. Score entry is locked.
+                    {isAdmin && (
+                        <div style={{ marginTop: '15px' }}>
+                            <button className="btn-action" onClick={handleUnfinalizeClick} style={{ backgroundColor: '#e67e22', color: 'white' }}>
+                                🔓 Unfinalize Game to Edit
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -1150,6 +1191,35 @@ function LiveScoreEntry(props) {
                     </div>
                 )}
             </div>
+
+            {/* Unfinalize Confirmation Modal */}
+            {showUnfinalizeModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+                        <h3>⚠️ Unfinalize Game</h3>
+                        <div className="modal-body">
+                            <p>Are you sure you want to unfinalize this game?</p>
+                            <div className="warning-list">
+                                <p><strong>This will:</strong></p>
+                                <ul>
+                                    <li>Revert all points awarded to the teams in the standings</li>
+                                    <li>Revert player games played statistics</li>
+                                    <li>Unlock the game for score editing</li>
+                                </ul>
+                            </div>
+                            <p className="confirm-question">You MUST re-finalize the game after making edits to ensure stats are accurate.</p>
+                        </div>
+                        <div className="modal-actions">
+                            <button className="btn-confirm" onClick={confirmUnfinalize} disabled={isUnfinalizing} style={{ backgroundColor: '#e67e22' }}>
+                                {isUnfinalizing ? 'Unfinalizing...' : 'Yes, Unfinalize Game'}
+                            </button>
+                            <button className="btn-cancel-modal" onClick={cancelUnfinalize} disabled={isUnfinalizing}>
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Finalize Confirmation Modal */}
             {showFinalizeModal && (
