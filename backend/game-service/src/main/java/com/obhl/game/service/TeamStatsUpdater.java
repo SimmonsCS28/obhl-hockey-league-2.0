@@ -83,4 +83,63 @@ public class TeamStatsUpdater {
             throw new RuntimeException("Failed to update away team stats", e);
         }
     }
+
+    /**
+     * Revert team standings when a game is unfinalized
+     * This decrements the team stats based on the game outcome
+     */
+    public void revertTeamStats(Game game) {
+        log.info("Reverting team stats for game {}", game.getId());
+
+        int homeScore = game.getHomeScore();
+        int awayScore = game.getAwayScore();
+        boolean endedInOT = game.getEndedInOT() != null && game.getEndedInOT();
+
+        Map<String, Integer> homeStats = new HashMap<>();
+        homeStats.put("goalsFor", -homeScore);
+        homeStats.put("goalsAgainst", -awayScore);
+        homeStats.put("points", -game.getHomeTeamPoints());
+
+        Map<String, Integer> awayStats = new HashMap<>();
+        awayStats.put("goalsFor", -awayScore);
+        awayStats.put("goalsAgainst", -homeScore);
+        awayStats.put("points", -game.getAwayTeamPoints());
+
+        if (homeScore > awayScore) {
+            if (endedInOT) {
+                homeStats.put("overtimeWins", -1);
+                awayStats.put("overtimeLosses", -1);
+            } else {
+                homeStats.put("wins", -1);
+                awayStats.put("losses", -1);
+            }
+        } else if (awayScore > homeScore) {
+            if (endedInOT) {
+                awayStats.put("overtimeWins", -1);
+                homeStats.put("overtimeLosses", -1);
+            } else {
+                awayStats.put("wins", -1);
+                homeStats.put("losses", -1);
+            }
+        } else {
+            homeStats.put("ties", -1);
+            awayStats.put("ties", -1);
+        }
+
+        try {
+            teamClient.updateTeamStats(game.getHomeTeamId(), homeStats);
+            log.info("Reverted home team {} stats", game.getHomeTeamId());
+        } catch (Exception e) {
+            log.error("Failed to revert home team {} stats: {}", game.getHomeTeamId(), e.getMessage());
+            throw new RuntimeException("Failed to revert home team stats", e);
+        }
+
+        try {
+            teamClient.updateTeamStats(game.getAwayTeamId(), awayStats);
+            log.info("Reverted away team {} stats", game.getAwayTeamId());
+        } catch (Exception e) {
+            log.error("Failed to revert away team {} stats: {}", game.getAwayTeamId(), e.getMessage());
+            throw new RuntimeException("Failed to revert away team stats", e);
+        }
+    }
 }

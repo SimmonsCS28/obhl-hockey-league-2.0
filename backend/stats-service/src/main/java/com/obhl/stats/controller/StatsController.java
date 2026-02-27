@@ -107,8 +107,9 @@ public class StatsController {
         stats.setPoints(stats.getPoints() + dto.getPoints());
         stats.setPenaltyMinutes(stats.getPenaltyMinutes() + dto.getPenaltyMinutes());
 
-        // Increment games played (once per game finalization)
-        stats.setGamesPlayed(stats.getGamesPlayed() + 1);
+        // Increment or decrement games played
+        int gamesPlayedIncrement = dto.getGamesPlayed() != null ? dto.getGamesPlayed() : 1;
+        stats.setGamesPlayed(stats.getGamesPlayed() + gamesPlayedIncrement);
 
         PlayerStats saved = playerStatsRepository.save(stats);
         return ResponseEntity.ok(saved);

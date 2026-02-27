@@ -139,6 +139,16 @@ public class GameController {
         }
     }
 
+    @PostMapping("/{gameId}/unfinalize")
+    public ResponseEntity<?> unfinalizeGame(@PathVariable Long gameId) {
+        try {
+            GameDto.Response unfinalized = gameService.unfinalizeGame(gameId);
+            return ResponseEntity.ok(unfinalized);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @PostMapping("/generate")
     public ResponseEntity<?> generateSchedule(@Valid @RequestBody com.obhl.game.dto.ScheduleGenerateRequest request) {
         try {
