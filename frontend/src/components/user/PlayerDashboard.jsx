@@ -12,6 +12,7 @@ const PlayerDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [teamRecords, setTeamRecords] = useState({});
+    const [teamStanding, setTeamStanding] = useState(null);
 
     useEffect(() => {
         const fetchDashboard = async () => {
@@ -61,6 +62,61 @@ const PlayerDashboard = () => {
                     setTeamRecords(records);
                 } catch (err) {
                     console.warn('Could not fetch opponent records:', err.message);
+                }
+
+                // Fetch data for standings calculation
+                if (data?.team?.seasonId) {
+                    try {
+                        const [teamsData, gamesData] = await Promise.all([
+                            api.getTeams(),
+                            api.getGames(data.team.seasonId)
+                        ]);
+
+                        const standings = teamsData
+                            .filter(t => t.seasonId === data.team.seasonId)
+                            .map(t => ({
+                                id: t.id,
+                                wins: 0, losses: 0, ties: 0, points: 0, goalsFor: 0, goalsAgainst: 0
+                            }));
+
+                        const completedGames = gamesData.filter(g => g.status === 'completed');
+                        completedGames.forEach(g => {
+                            const ht = standings.find(s => s.id === g.homeTeamId);
+                            const at = standings.find(s => s.id === g.awayTeamId);
+                            if (!ht || !at) return;
+
+                            ht.goalsFor += g.homeScore || 0;
+                            ht.goalsAgainst += g.awayScore || 0;
+                            at.goalsFor += g.awayScore || 0;
+                            at.goalsAgainst += g.homeScore || 0;
+
+                            if (g.homeScore > g.awayScore) {
+                                if (g.endedInOT) { ht.wins++; ht.points += 2; at.losses++; at.points += 1; }
+                                else { ht.wins++; ht.points += 2; at.losses++; }
+                            } else if (g.awayScore > g.homeScore) {
+                                if (g.endedInOT) { at.wins++; at.points += 2; ht.losses++; ht.points += 1; }
+                                else { at.wins++; at.points += 2; ht.losses++; }
+                            } else {
+                                ht.ties++; at.ties++; ht.points += 1; at.points += 1;
+                            }
+                        });
+
+                        standings.sort((a, b) => {
+                            if (b.points !== a.points) return b.points - a.points;
+                            if (b.wins !== a.wins) return b.wins - a.wins;
+                            if (a.goalsAgainst !== b.goalsAgainst) return a.goalsAgainst - b.goalsAgainst;
+                            return b.goalsFor - a.goalsFor;
+                        });
+
+                        const index = standings.findIndex(s => s.id === data.team.id);
+                        if (index !== -1) {
+                            const rank = index + 1;
+                            const suffix = ["st", "nd", "rd"][((rank + 90) % 100 - 10) % 10 - 1] || "th";
+                            setTeamStanding(`${rank}${suffix}`);
+                        }
+                    } catch (err) {
+                        console.warn('Could not calculate team standing:', err.message);
+                    }
                 }
             } catch (err) {
                 console.error("Failed to fetch dashboard:", err);
@@ -175,6 +231,10 @@ const PlayerDashboard = () => {
                                 <div className="stat-box">
                                     <span className="stat-value">{record?.otLosses || 0}</span>
                                     <span className="stat-label">OTL</span>
+                                </div>
+                                <div className="stat-box">
+                                    <span className="stat-value" style={{ color: '#f5c518' }}>{teamStanding || '-'}</span>
+                                    <span className="stat-label" style={{ color: '#f5c518' }}>Rank</span>
                                 </div>
                             </div>
                         </>
