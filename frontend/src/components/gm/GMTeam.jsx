@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import TeamBadge from '../common/TeamBadge';
 import './GMTeam.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
@@ -147,7 +148,15 @@ function GMTeam() {
     return (
         <div className="gm-team">
             <div className="team-header">
-                <h1>{teamInfo?.name || 'My Team'}</h1>
+                {teamInfo ? (
+                    <TeamBadge
+                        teamName={teamInfo.name}
+                        teamColor={teamInfo.teamColor}
+                        style={{ fontSize: '1.5rem', padding: '10px 24px' }}
+                    />
+                ) : (
+                    <h1>My Team</h1>
+                )}
                 {Object.keys(editedPlayers).length > 0 && (
                     <button
                         onClick={handleSave}

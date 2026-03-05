@@ -15,30 +15,33 @@ function GMLayout() {
     return (
         <div className="gm-layout">
             <header className="gm-header">
-                <div className="gm-header-content">
+                <div className="gm-header-left">
                     <Link to="/gm" className="gm-logo">
                         <img src={logo} alt="OBHL Logo" className="gm-logo-img" />
                     </Link>
+                    <h1>GM Portal</h1>
                     <nav className="gm-nav">
                         <Link to="/gm">Dashboard</Link>
                         <Link to="/gm/team">My Team</Link>
                         <Link to="/gm/schedule">Schedule</Link>
                     </nav>
-                    <div className="gm-user-section">
-                        <span className="gm-greeting">Hi, {user?.username}</span>
-                        <Link to="/" className="btn-secondary">Back to Public Site</Link>
-                        <button onClick={handleLogout} className="btn-logout">Logout</button>
-                    </div>
+                </div>
+                <div className="gm-header-actions">
+                    <button className="action-button secondary" onClick={() => navigate('/user')}>
+                        My Dashboard
+                    </button>
+                    <button className="action-button secondary" onClick={() => navigate('/')}>
+                        OBHL Home
+                    </button>
+                    <button className="action-button logout" onClick={handleLogout}>
+                        Logout
+                    </button>
                 </div>
             </header>
 
             <main className="gm-main">
                 <Outlet />
             </main>
-
-            <footer className="gm-footer">
-                <p>&copy; {new Date().getFullYear()} Old Buzzard Hockey League GM Portal</p>
-            </footer>
         </div>
     );
 }
