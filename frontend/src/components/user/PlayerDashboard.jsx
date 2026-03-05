@@ -253,7 +253,7 @@ const PlayerDashboard = () => {
                         const opponentName = isHome ? prevGame.awayTeamName : prevGame.homeTeamName;
                         const opponentColor = isHome ? prevGame.awayTeamColor : prevGame.homeTeamColor;
                         const opponentId = isHome ? prevGame.awayTeamId : prevGame.homeTeamId;
-                        const isCompleted = prevGame.status === 'COMPLETED';
+                        const isCompleted = prevGame.status === 'completed';
                         const myScore = isHome ? (prevGame.homeScore ?? 0) : (prevGame.awayScore ?? 0);
                         const oppScore = isHome ? (prevGame.awayScore ?? 0) : (prevGame.homeScore ?? 0);
                         return (
@@ -326,7 +326,7 @@ const PlayerDashboard = () => {
                                         const opponentId = isHome ? game.awayTeamId : game.homeTeamId;
 
                                         let result = '-';
-                                        if (game.status === 'COMPLETED') {
+                                        if (game.status === 'completed') {
                                             const myScore = isHome ? game.homeScore : game.awayScore;
                                             const oppScore = isHome ? game.awayScore : game.homeScore;
                                             const wl = myScore > oppScore ? 'W' : (myScore < oppScore ? 'L' : 'T');
