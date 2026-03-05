@@ -20,6 +20,8 @@ import com.obhl.gateway.client.StatsClient;
 import com.obhl.gateway.dto.PlayerDashboardDTO;
 import com.obhl.gateway.dto.PlayerDto;
 import com.obhl.gateway.dto.TeamDto;
+import com.obhl.gateway.model.User;
+import com.obhl.gateway.repository.UserRepository;
 import com.obhl.gateway.service.TeamService;
 
 @RestController
@@ -32,13 +34,15 @@ public class PlayerDashboardController {
     private final LeagueClient leagueClient;
     private final GameClient gameClient;
     private final TeamService teamService;
+    private final UserRepository userRepository;
 
     public PlayerDashboardController(StatsClient statsClient, LeagueClient leagueClient, GameClient gameClient,
-            TeamService teamService) {
+            TeamService teamService, UserRepository userRepository) {
         this.statsClient = statsClient;
         this.leagueClient = leagueClient;
         this.gameClient = gameClient;
         this.teamService = teamService;
+        this.userRepository = userRepository;
     }
 
     @GetMapping
@@ -53,17 +57,26 @@ public class PlayerDashboardController {
             return ResponseEntity.badRequest().build();
         }
 
-        String email = null;
+        String username = null;
         if (principal instanceof String) {
-            email = (String) principal;
+            username = (String) principal;
         } else if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
-            email = ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
+            username = ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
         } else {
             log.error("Unknown principal type: {}", principal.getClass().getName());
             return ResponseEntity.badRequest().build();
         }
 
-        log.info("DEBUG: Resolved email/username: {}", email);
+        log.info("DEBUG: Resolved username from principal: {}", username);
+
+        // Look up the User to get their actual email (principal is username, not email)
+        User userEntity = userRepository.findByUsername(username).orElse(null);
+        if (userEntity == null) {
+            log.warn("No user found for username: {}", username);
+            return ResponseEntity.ok(new PlayerDashboardDTO());
+        }
+        String email = userEntity.getEmail();
+        log.info("DEBUG: Resolved email from user record: {}", email);
 
         // 1. Get Active Season
         Map<String, Object> activeSeason;
@@ -91,14 +104,16 @@ public class PlayerDashboardController {
 
         // 3. Get Team - use local TeamService (teams live in the api-gateway DB)
         Map<String, Object> team;
+        TeamDto.Response teamDto = null;
         try {
-            TeamDto.Response teamDto = teamService.getTeamById(player.getTeamId())
+            teamDto = teamService.getTeamById(player.getTeamId())
                     .orElseThrow(() -> new RuntimeException("Team not found: " + player.getTeamId()));
             team = new java.util.HashMap<>();
             team.put("id", teamDto.getId());
             team.put("name", teamDto.getName());
             team.put("abbreviation", teamDto.getAbbreviation());
             team.put("seasonId", teamDto.getSeasonId());
+            team.put("teamColor", teamDto.getTeamColor());
         } catch (Exception e) {
             log.error("Failed to fetch team {}", player.getTeamId(), e);
             return ResponseEntity.ok(new PlayerDashboardDTO());
@@ -150,12 +165,7 @@ public class PlayerDashboardController {
             games = enriched;
         }
 
-        // 5. Calculate Record & Identify Next Game
-        int wins = 0;
-        int losses = 0;
-        int ties = 0;
-        int otLosses = 0; // Keeping track but rolling into losses for W-L-T display if requested
-
+        // 5. Identify Next Game & sort games by date
         LocalDateTime now = LocalDateTime.now();
         Map<String, Object> nextGame = null;
 
@@ -166,8 +176,7 @@ public class PlayerDashboardController {
 
         for (Map<String, Object> game : games) {
             String status = (String) game.get("status");
-            String gameDateStr = (String) game.get("gameDate"); // Already a full ISO datetime e.g.
-                                                                // '2026-01-10T04:15:00'
+            String gameDateStr = (String) game.get("gameDate");
 
             // Basic Next Game Logic
             if (!"COMPLETED".equalsIgnoreCase(status)) {
@@ -183,38 +192,14 @@ public class PlayerDashboardController {
                     }
                 }
             }
-
-            // Stats Logic
-            if ("COMPLETED".equalsIgnoreCase(status)) {
-                Long homeTeamId = ((Number) game.get("homeTeamId")).longValue();
-                int homeScore = ((Number) game.get("homeScore")).intValue();
-                int awayScore = ((Number) game.get("awayScore")).intValue();
-                boolean isOt = Boolean.TRUE.equals(game.get("endedInOT")); // Check field name compatibility
-
-                boolean isHome = player.getTeamId().equals(homeTeamId);
-
-                if (homeScore == awayScore) {
-                    ties++;
-                } else if (isHome) {
-                    if (homeScore > awayScore) {
-                        wins++;
-                    } else {
-                        if (isOt)
-                            otLosses++;
-                        losses++;
-                    }
-                } else {
-                    // isAway
-                    if (awayScore > homeScore) {
-                        wins++;
-                    } else {
-                        if (isOt)
-                            otLosses++;
-                        losses++;
-                    }
-                }
-            }
         }
+
+        // 6. Use stored team record from database (updated by TeamStatsUpdater on game
+        // finalize)
+        int wins = teamDto.getWins() != null ? teamDto.getWins() : 0;
+        int losses = teamDto.getLosses() != null ? teamDto.getLosses() : 0;
+        int ties = teamDto.getTies() != null ? teamDto.getTies() : 0;
+        int otLosses = teamDto.getOvertimeLosses() != null ? teamDto.getOvertimeLosses() : 0;
 
         PlayerDashboardDTO dto = new PlayerDashboardDTO();
         dto.setFirstName(player.getFirstName());

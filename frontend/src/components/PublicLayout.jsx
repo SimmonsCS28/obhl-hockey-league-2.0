@@ -84,7 +84,7 @@ function PublicLayout() {
                                                 Admin Dashboard
                                             </button>
                                         )}
-                                        {hasAnyRole('GOALIE', 'REF', 'SCOREKEEPER') && !isAdmin && (
+                                        {hasAnyRole('GOALIE', 'REF', 'SCOREKEEPER', 'PLAYER') && (
                                             <button
                                                 className="dashboard-link"
                                                 onClick={() => {
@@ -158,7 +158,7 @@ function PublicLayout() {
                                             Admin Dashboard
                                         </button>
                                     )}
-                                    {hasAnyRole('GOALIE', 'REF', 'SCOREKEEPER') && !isAdmin && (
+                                    {hasAnyRole('GOALIE', 'REF', 'SCOREKEEPER', 'PLAYER') && (
                                         <button
                                             className="dashboard-link"
                                             onClick={() => {

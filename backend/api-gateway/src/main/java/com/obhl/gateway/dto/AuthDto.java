@@ -33,6 +33,8 @@ public class AuthDto {
         private Long id;
         private String username;
         private String email;
+        private String firstName;
+        private String lastName;
         @Deprecated
         private String role;
         private List<String> roles;

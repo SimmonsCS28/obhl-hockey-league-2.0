@@ -2,6 +2,16 @@ import { useEffect, useState } from 'react';
 import * as api from '../services/api';
 import { getPlayerStatsBulk } from '../services/api';
 import './PlayerManagement.css';
+import './UserManagement.css';
+
+const AVAILABLE_ROLES = [
+    { name: 'ADMIN', description: 'Full system access' },
+    { name: 'GM', description: 'Team management' },
+    { name: 'REF', description: 'Referee scheduling' },
+    { name: 'SCOREKEEPER', description: 'Game scoring' },
+    { name: 'GOALIE', description: 'Goalie scheduling' },
+    { name: 'USER', description: 'Basic access' }
+];
 
 function PlayerManagement() {
     const [players, setPlayers] = useState([]);
@@ -31,6 +41,17 @@ function PlayerManagement() {
         isActive: true
     });
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+    const [alsoCreateUser, setAlsoCreateUser] = useState(false);
+    const [userData, setUserData] = useState({
+        username: '',
+        email: '',
+        password: '',
+        roles: ['USER'],
+        teamId: null
+    });
+    const [userPasswordError, setUserPasswordError] = useState('');
+    const [hasMatchingUser, setHasMatchingUser] = useState(null); // null = not checked, true/false = result
+    const [checkingCounterpart, setCheckingCounterpart] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -170,8 +191,55 @@ function PlayerManagement() {
         return isLight ? '#2c3e50' : 'white';
     };
 
+    const validatePassword = (password) => {
+        if (!password) return '';
+        const minLength = password.length >= 8;
+        const hasUppercase = /[A-Z]/.test(password);
+        const hasSpecial = /[!@#$%^&*()\-_=+\[\]{}|;:',.<>?/~`]/.test(password);
+        const noSpaces = !/\s/.test(password);
+        if (!minLength) return 'Password must be at least 8 characters';
+        if (!hasUppercase) return 'Password must contain at least 1 uppercase letter';
+        if (!hasSpecial) return 'Password must contain at least 1 special character';
+        if (!noSpaces) return 'Password cannot contain spaces';
+        return '';
+    };
+
+    const handleUserChange = (field, value) => {
+        setUserData(prev => ({ ...prev, [field]: value }));
+        if (field === 'password') {
+            setUserPasswordError(validatePassword(value));
+        }
+    };
+
+    const handleUserRoleToggle = (roleName) => {
+        setUserData(prev => ({
+            ...prev,
+            roles: prev.roles.includes(roleName)
+                ? prev.roles.filter(r => r !== roleName)
+                : [...prev.roles, roleName]
+        }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        // Validate user fields if also creating user
+        if (alsoCreateUser) {
+            if (!userData.username || !userData.email || !userData.password) {
+                alert('Username, Email, and Password are required for the user');
+                return;
+            }
+            if (!userData.roles || userData.roles.length === 0) {
+                alert('Please select at least one role for the user');
+                return;
+            }
+            const pwError = validatePassword(userData.password);
+            if (pwError) {
+                setUserPasswordError(pwError);
+                return;
+            }
+        }
+
         try {
             // Prepare data with proper type conversions
             const playerData = {
@@ -186,15 +254,48 @@ function PlayerManagement() {
 
             if (editingPlayer) {
                 await api.updatePlayer(editingPlayer.id, playerData);
+
+                // If creating a user from this player in edit mode
+                if (alsoCreateUser) {
+                    await api.createUser({
+                        username: userData.username,
+                        email: userData.email || formData.email,
+                        password: userData.password,
+                        roles: userData.roles,
+                        teamId: userData.teamId
+                    });
+                }
             } else {
-                await api.createPlayer(playerData);
+                // Create player first
+                const createdPlayer = await api.createPlayer(playerData);
+
+                // If also creating user, do that next
+                if (alsoCreateUser) {
+                    try {
+                        await api.createUser({
+                            username: userData.username,
+                            email: userData.email || formData.email, // fall back to player email
+                            password: userData.password,
+                            roles: userData.roles,
+                            teamId: userData.teamId
+                        });
+                    } catch (userErr) {
+                        // Rollback: delete the player we just created
+                        try {
+                            await api.deletePlayer(createdPlayer.id);
+                        } catch (rollbackErr) {
+                            console.error('Rollback failed:', rollbackErr);
+                        }
+                        throw new Error(`User creation failed: ${userErr.message}. Player creation has been rolled back.`);
+                    }
+                }
             }
             setShowModal(false);
             resetForm();
             loadData();
         } catch (error) {
             console.error('Error saving player:', error);
-            alert('Failed to save player');
+            alert(error.message || 'Failed to save player');
         }
     };
 
@@ -216,6 +317,20 @@ function PlayerManagement() {
             isActive: player.isActive
         });
         setShowModal(true);
+
+        // Check if a matching user exists
+        if (player.email) {
+            setCheckingCounterpart(true);
+            api.getUsers().then(users => {
+                const match = users.some(u => u.email && u.email.toLowerCase() === player.email.toLowerCase());
+                setHasMatchingUser(match);
+            }).catch(err => {
+                console.error('Failed to check for matching user:', err);
+                setHasMatchingUser(null);
+            }).finally(() => {
+                setCheckingCounterpart(false);
+            });
+        }
     };
 
     const handleDelete = (id) => {
@@ -257,6 +372,16 @@ function PlayerManagement() {
             hometown: '',
             isActive: true
         });
+        setAlsoCreateUser(false);
+        setUserData({
+            username: '',
+            email: '',
+            password: '',
+            roles: ['USER'],
+            teamId: null
+        });
+        setUserPasswordError('');
+        setHasMatchingUser(null);
     };
 
     const handleCloseModal = () => {
@@ -556,12 +681,190 @@ function PlayerManagement() {
                                 </div>
                             </div>
 
+                            {/* Also Create User - when creating OR editing without a matching user */}
+                            {!editingPlayer && (
+                                <>
+                                    <hr style={{ margin: '16px 0', borderColor: '#444' }} />
+                                    <div className="form-group checkbox-group">
+                                        <label style={{ fontWeight: '600', fontSize: '1rem', color: '#4fc3f7' }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={alsoCreateUser}
+                                                onChange={(e) => setAlsoCreateUser(e.target.checked)}
+                                            />
+                                            Also create as User
+                                        </label>
+                                    </div>
+
+                                    {alsoCreateUser && (
+                                        <div className="linked-form-section" style={{
+                                            border: '1px solid #4fc3f7',
+                                            borderRadius: '8px',
+                                            padding: '16px',
+                                            marginTop: '8px',
+                                            backgroundColor: 'rgba(79, 195, 247, 0.05)'
+                                        }}>
+                                            <h4 style={{ marginTop: 0, color: '#4fc3f7' }}>User Account Details</h4>
+
+                                            <div className="form-group">
+                                                <label>Username *</label>
+                                                <input
+                                                    type="text"
+                                                    value={userData.username}
+                                                    onChange={(e) => handleUserChange('username', e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label>Email * (defaults to player email)</label>
+                                                <input
+                                                    type="email"
+                                                    value={userData.email || formData.email}
+                                                    onChange={(e) => handleUserChange('email', e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label>Password *</label>
+                                                <input
+                                                    type="password"
+                                                    value={userData.password}
+                                                    onChange={(e) => handleUserChange('password', e.target.value)}
+                                                    required
+                                                />
+                                                {userPasswordError && <div className="field-error" style={{ color: '#ff6b6b', fontSize: '0.85rem' }}>{userPasswordError}</div>}
+                                                <small style={{ color: '#aaa' }}>
+                                                    Min 8 characters, 1 uppercase, 1 special character, no spaces
+                                                </small>
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label>Roles * (Select at least one)</label>
+                                                <div className="roles-checkbox-grid">
+                                                    {AVAILABLE_ROLES.map(role => (
+                                                        <label key={role.name} className="role-checkbox-item">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={userData.roles.includes(role.name)}
+                                                                onChange={() => handleUserRoleToggle(role.name)}
+                                                            />
+                                                            <div className="role-checkbox-label">
+                                                                <span className="role-checkbox-name">{role.name}</span>
+                                                                <span className="role-checkbox-desc">{role.description}</span>
+                                                            </div>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
+                            {/* Create User from Player - only in edit mode when no matching user exists */}
+                            {editingPlayer && hasMatchingUser === false && !checkingCounterpart && (
+                                <>
+                                    <hr style={{ margin: '16px 0', borderColor: '#444' }} />
+                                    {!alsoCreateUser ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => setAlsoCreateUser(true)}
+                                            style={{
+                                                width: '100%',
+                                                padding: '10px',
+                                                background: 'linear-gradient(135deg, #4fc3f7, #0288d1)',
+                                                color: 'white',
+                                                border: 'none',
+                                                borderRadius: '6px',
+                                                fontWeight: 600,
+                                                cursor: 'pointer',
+                                                fontSize: '0.9rem'
+                                            }}
+                                        >
+                                            ⚡ Create User from this Player
+                                        </button>
+                                    ) : (
+                                        <div className="linked-form-section" style={{
+                                            border: '1px solid #4fc3f7',
+                                            borderRadius: '8px',
+                                            padding: '16px',
+                                            marginTop: '8px',
+                                            backgroundColor: 'rgba(79, 195, 247, 0.05)'
+                                        }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <h4 style={{ marginTop: 0, color: '#4fc3f7' }}>User Account Details</h4>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setAlsoCreateUser(false)}
+                                                    style={{ background: 'none', border: 'none', color: '#999', cursor: 'pointer', fontSize: '1.2rem' }}
+                                                >×</button>
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label>Username *</label>
+                                                <input
+                                                    type="text"
+                                                    value={userData.username}
+                                                    onChange={(e) => handleUserChange('username', e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label>Email * (defaults to player email)</label>
+                                                <input
+                                                    type="email"
+                                                    value={userData.email || formData.email}
+                                                    onChange={(e) => handleUserChange('email', e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label>Password *</label>
+                                                <input
+                                                    type="password"
+                                                    value={userData.password}
+                                                    onChange={(e) => handleUserChange('password', e.target.value)}
+                                                    required
+                                                />
+                                                {userPasswordError && <div className="field-error" style={{ color: '#ff6b6b', fontSize: '0.85rem' }}>{userPasswordError}</div>}
+                                                <small style={{ color: '#aaa' }}>
+                                                    Min 8 characters, 1 uppercase, 1 special character, no spaces
+                                                </small>
+                                            </div>
+
+                                            <div className="form-group">
+                                                <label>Roles * (Select at least one)</label>
+                                                <div className="roles-checkbox-grid">
+                                                    {AVAILABLE_ROLES.map(role => (
+                                                        <label key={role.name} className="role-checkbox-item">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={userData.roles.includes(role.name)}
+                                                                onChange={() => handleUserRoleToggle(role.name)}
+                                                            />
+                                                            <div className="role-checkbox-label">
+                                                                <span className="role-checkbox-name">{role.name}</span>
+                                                                <span className="role-checkbox-desc">{role.description}</span>
+                                                            </div>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
                             <div className="form-actions">
                                 <button type="button" onClick={handleCloseModal} className="btn-secondary">
                                     Cancel
                                 </button>
                                 <button type="submit" className="btn-primary">
-                                    {editingPlayer ? 'Update' : 'Create'}
+                                    {editingPlayer ? (alsoCreateUser ? 'Update & Create User' : 'Update') : (alsoCreateUser ? 'Create Player & User' : 'Create')}
                                 </button>
                             </div>
                         </form>

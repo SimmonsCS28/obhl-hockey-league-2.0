@@ -13,6 +13,8 @@ public class UserDTO {
     private Long id;
     private String username;
     private String email;
+    private String firstName;
+    private String lastName;
     @Deprecated
     private String role;
     private java.util.Set<String> roles;
