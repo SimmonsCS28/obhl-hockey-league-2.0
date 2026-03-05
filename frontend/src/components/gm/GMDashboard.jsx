@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import TeamBadge from '../common/TeamBadge';
 import './GMDashboard.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
@@ -14,6 +15,7 @@ function GMDashboard() {
     const { user } = useAuth();
     const [roster, setRoster] = useState([]);
     const [nextGame, setNextGame] = useState(null);
+    const [opponent, setOpponent] = useState(null);
     const [loading, setLoading] = useState(true);
     // Track edited jersey numbers: { [playerId]: value }
     const [jerseyEdits, setJerseyEdits] = useState({});
@@ -63,6 +65,26 @@ function GMDashboard() {
             setLoading(false);
         }
     };
+
+    useEffect(() => {
+        const fetchOpponent = async () => {
+            if (nextGame && user?.teamId) {
+                const opponentId = nextGame.homeTeamId === user.teamId ? nextGame.awayTeamId : nextGame.homeTeamId;
+                if (!opponentId) return;
+
+                try {
+                    const response = await axios.get(`${API_BASE_URL}/teams/${opponentId}`, {
+                        headers: getAuthHeaders()
+                    });
+                    setOpponent(response.data);
+                } catch (error) {
+                    console.error('Failed to fetch opponent:', error);
+                }
+            }
+        };
+
+        fetchOpponent();
+    }, [nextGame, user?.teamId]);
 
     const handleJerseyChange = (playerId, value) => {
         setJerseyEdits(prev => ({ ...prev, [playerId]: value }));
@@ -180,6 +202,20 @@ function GMDashboard() {
                     <h2>Next Game</h2>
                     {nextGame ? (
                         <div className="game-info">
+                            <div className="game-detail">
+                                <span className="label">Opponent:</span>
+                                <span className="value">
+                                    {opponent ? (
+                                        <div style={{ display: 'inline-block', verticalAlign: 'middle' }}>
+                                            <TeamBadge
+                                                teamName={opponent.name}
+                                                teamColor={opponent.teamColor || '#888888'}
+                                                style={{ fontSize: '0.9rem', padding: '0.2rem 0.6rem' }}
+                                            />
+                                        </div>
+                                    ) : 'Loading...'}
+                                </span>
+                            </div>
                             <div className="game-detail">
                                 <span className="label">Date:</span>
                                 <span className="value">

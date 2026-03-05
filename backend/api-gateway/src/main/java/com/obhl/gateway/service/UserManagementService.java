@@ -182,6 +182,14 @@ public class UserManagementService {
             user.setTeamId(request.getTeamId());
         }
 
+        if (request.getFirstName() != null) {
+            user.setFirstName(request.getFirstName());
+        }
+
+        if (request.getLastName() != null) {
+            user.setLastName(request.getLastName());
+        }
+
         // If password is being changed, hash it and set mustChangePassword flag
         if (request.getNewPassword() != null && !request.getNewPassword().isBlank()) {
             user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
@@ -374,6 +382,8 @@ public class UserManagementService {
         dto.setId(user.getId());
         dto.setUsername(user.getUsername());
         dto.setEmail(user.getEmail());
+        dto.setFirstName(user.getFirstName());
+        dto.setLastName(user.getLastName());
         dto.setRole(user.getRole());
         dto.setRoles(user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()));
         dto.setTeamId(user.getTeamId());

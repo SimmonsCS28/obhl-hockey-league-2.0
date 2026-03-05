@@ -244,20 +244,20 @@
 }
 
 /* Desktop Table View */
-.schedule-table-container {
+.schedule-page .schedule-table-container {
     background: white;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     overflow-x: auto;
 }
 
-.schedule-table {
+.schedule-page .schedule-table {
     width: 100%;
     border-collapse: collapse;
     min-width: 900px;
 }
 
-.schedule-table th {
+.schedule-page .schedule-table th {
     background-color: #f7fafc;
     color: #4a5568;
     font-weight: 600;
@@ -269,7 +269,7 @@
     line-height: 1.2;
 }
 
-.schedule-table td {
+.schedule-page .schedule-table td {
     padding: 2px 1rem;
     border-bottom: 1px solid #e2e8f0;
     color: #2d3748;
@@ -278,42 +278,42 @@
     line-height: 1.3;
 }
 
-.schedule-table tr:last-child td {
+.schedule-page .schedule-table tr:last-child td {
     border-bottom: none;
 }
 
-.schedule-table tr:hover td:not(.team-cell) {
+.schedule-page .schedule-table tr:hover td:not(.team-cell) {
     background-color: #f8fafc;
 }
 
-.schedule-table .week-col {
+.schedule-page .schedule-table .week-col {
     font-weight: 600;
     color: #aa9c00;
     white-space: nowrap;
 }
 
-.schedule-table .time-col {
+.schedule-page .schedule-table .time-col {
     font-weight: 500;
     white-space: nowrap;
 }
 
-.schedule-table .team-cell {
+.schedule-page .schedule-table .team-cell {
     font-weight: 600;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     transition: opacity 0.2s;
 }
 
-.schedule-table .team-cell:hover {
+.schedule-page .schedule-table .team-cell:hover {
     opacity: 0.85;
 }
 
-.schedule-table .score {
+.schedule-page .schedule-table .score {
     font-weight: bold;
     color: #2d3748;
     font-size: 0.875rem;
 }
 
-.schedule-table .upcoming-badge {
+.schedule-page .schedule-table .upcoming-badge {
     display: inline-block;
     padding: 0.125rem 0.5rem;
     background-color: #e2e8f0;
@@ -324,20 +324,20 @@
     line-height: 1.2;
 }
 
-.schedule-table .non-friday-row {
+.schedule-page .schedule-table .non-friday-row {
     background-color: rgba(245, 158, 11, 0.15);
 }
 
-.schedule-table .date-col {
+.schedule-page .schedule-table .date-col {
     white-space: nowrap;
 }
 
-.schedule-table .non-friday-date {
+.schedule-page .schedule-table .non-friday-date {
     font-weight: 700;
     color: #c2410c;
 }
 
-.schedule-table .day-warning {
+.schedule-page .schedule-table .day-warning {
     display: inline-block;
     width: 1.2em;
     margin-right: 0.25rem;
@@ -349,7 +349,7 @@
 }
 
 /* Week Separator */
-.schedule-table .week-separator td {
+.schedule-page .schedule-table .week-separator td {
     border-top: 2px solid #000 !important;
     padding-top: 0.5rem !important;
 }

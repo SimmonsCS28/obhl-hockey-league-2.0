@@ -53,20 +53,20 @@
 }
 
 /* Table Styles */
-.schedule-table-container {
+.game-schedule .schedule-table-container {
     background: white;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     overflow-x: auto;
 }
 
-.schedule-table {
+.game-schedule .schedule-table {
     width: 100%;
     border-collapse: collapse;
     min-width: 900px;
 }
 
-.schedule-table th {
+.game-schedule .schedule-table th {
     background-color: #f7fafc;
     color: #4a5568;
     font-weight: 600;
@@ -77,7 +77,7 @@
     font-size: 0.875rem;
 }
 
-.schedule-table td {
+.game-schedule .schedule-table td {
     padding: 0.75rem 1rem;
     border-bottom: 1px solid #e2e8f0;
     color: #2d3748;
@@ -85,7 +85,7 @@
     font-size: 0.875rem;
 }
 
-.schedule-table tr:last-child td {
+.game-schedule .schedule-table tr:last-child td {
     border-bottom: none;
 }
 
@@ -98,34 +98,34 @@
     background-color: #f8fafc;
 }
 
-.schedule-table .week-col {
+.game-schedule .schedule-table .week-col {
     font-weight: 600;
     color: #d97706;
     white-space: nowrap;
 }
 
-.schedule-table .time-col {
+.game-schedule .schedule-table .time-col {
     font-weight: 500;
     white-space: nowrap;
 }
 
-.schedule-table .team-cell {
+.game-schedule .schedule-table .team-cell {
     font-weight: 600;
     padding: 0.5rem 1rem;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
     transition: opacity 0.2s;
 }
 
-.schedule-table .team-cell:hover {
+.game-schedule .schedule-table .team-cell:hover {
     opacity: 0.9;
 }
 
-.schedule-table .score {
+.game-schedule .schedule-table .score {
     font-weight: bold;
     color: #2d3748;
 }
 
-.schedule-table .ot-badge {
+.game-schedule .schedule-table .ot-badge {
     margin-left: 6px;
     font-size: 0.7rem;
     background: #fbbf24;
@@ -135,8 +135,8 @@
     font-weight: 700;
 }
 
-.schedule-table .upcoming-badge,
-.schedule-table .in-progress-badge {
+.game-schedule .schedule-table .upcoming-badge,
+.game-schedule .schedule-table .in-progress-badge {
     display: inline-block;
     padding: 0.25rem 0.75rem;
     border-radius: 12px;
@@ -144,30 +144,30 @@
     font-weight: 600;
 }
 
-.schedule-table .upcoming-badge {
+.game-schedule .schedule-table .upcoming-badge {
     background-color: #e2e8f0;
     color: #4a5568;
 }
 
-.schedule-table .in-progress-badge {
+.game-schedule .schedule-table .in-progress-badge {
     background-color: #dbeafe;
     color: #1e40af;
 }
 
-.schedule-table .non-friday-row {
+.game-schedule .schedule-table .non-friday-row {
     background-color: rgba(245, 158, 11, 0.1);
 }
 
-.schedule-table .date-col {
+.game-schedule .schedule-table .date-col {
     white-space: nowrap;
 }
 
-.schedule-table .non-friday-date {
+.game-schedule .schedule-table .non-friday-date {
     font-weight: 700;
     color: #c2410c;
 }
 
-.schedule-table .day-warning {
+.game-schedule .schedule-table .day-warning {
     display: inline-block;
     width: 1.2em;
     margin-right: 0.25rem;
@@ -178,7 +178,7 @@
 }
 
 /* Week Separator */
-.schedule-table .week-separator td {
+.game-schedule .schedule-table .week-separator td {
     border-top: 2px solid #000 !important;
     padding-top: 0.75rem !important;
 }
@@ -199,17 +199,17 @@
         min-width: calc(50% - 4px);
     }
 
-    .schedule-table-container {
+    .game-schedule .schedule-table-container {
         border-radius: 0;
         margin: 0 -20px;
     }
 
-    .schedule-table {
+    .game-schedule .schedule-table {
         font-size: 0.75rem;
     }
 
-    .schedule-table th,
-    .schedule-table td {
+    .game-schedule .schedule-table th,
+    .game-schedule .schedule-table td {
         padding: 0.5rem;
     }
 }

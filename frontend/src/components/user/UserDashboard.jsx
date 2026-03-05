@@ -11,6 +11,7 @@ const UserDashboard = () => {
     const [teams, setTeams] = useState([]);
     const [loading, setLoading] = useState(true);
     const [shiftsError, setShiftsError] = useState(null);
+    const [userName, setUserName] = useState(null);
 
     const loadData = async () => {
         setLoading(true);
@@ -22,6 +23,15 @@ const UserDashboard = () => {
             setTeams(teamsData);
         } catch (error) {
             console.error("Failed to fetch teams:", error);
+        }
+
+        try {
+            const dashData = await api.getPlayerDashboard();
+            if (dashData?.firstName) {
+                setUserName(`${dashData.firstName} ${dashData.lastName || ''}`.trim());
+            }
+        } catch (error) {
+            console.warn("Could not fetch user name:", error.message);
         }
 
         try {
@@ -141,8 +151,17 @@ const UserDashboard = () => {
     return (
         <div className="user-dashboard">
             <div className="dashboard-header">
-                <h1>My Shifts Dashboard</h1>
+                <h1>Welcome{userName ? `, ${userName}` : ''}</h1>
                 <div className="header-buttons">
+                    {user?.roles?.includes('ADMIN') && (
+                        <button
+                            className="home-button"
+                            onClick={() => navigate('/admin')}
+                            style={{ marginRight: '1rem' }}
+                        >
+                            Admin Dashboard
+                        </button>
+                    )}
                     <button
                         className="home-button"
                         onClick={() => navigate('/user')}

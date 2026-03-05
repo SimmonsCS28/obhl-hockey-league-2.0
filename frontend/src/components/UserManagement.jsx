@@ -130,8 +130,14 @@ const UserManagement = () => {
     });
 
     const sortedUsers = [...filteredUsers].sort((a, b) => {
-        let aValue = a[sortConfig.key];
-        let bValue = b[sortConfig.key];
+        let aValue, bValue;
+        if (sortConfig.key === 'name') {
+            aValue = `${a.firstName || ''} ${a.lastName || ''}`.trim().toLowerCase();
+            bValue = `${b.firstName || ''} ${b.lastName || ''}`.trim().toLowerCase();
+        } else {
+            aValue = a[sortConfig.key];
+            bValue = b[sortConfig.key];
+        }
 
         // Handle string comparison case-insensitively
         if (typeof aValue === 'string') aValue = aValue.toLowerCase();
@@ -245,6 +251,9 @@ const UserManagement = () => {
                         <table className="users-table">
                             <thead>
                                 <tr>
+                                    <th onClick={() => requestSort('name')} className={getClassNamesFor('name')}>
+                                        Name {sortConfig.key === 'name' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
+                                    </th>
                                     <th onClick={() => requestSort('username')} className={getClassNamesFor('username')}>
                                         Username {sortConfig.key === 'username' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
                                     </th>
@@ -267,13 +276,14 @@ const UserManagement = () => {
                             <tbody>
                                 {sortedUsers.length === 0 ? (
                                     <tr>
-                                        <td colSpan="7" className="no-users">
+                                        <td colSpan="8" className="no-users">
                                             No users found
                                         </td>
                                     </tr>
                                 ) : (
                                     sortedUsers.map(user => (
                                         <tr key={user.id}>
+                                            <td>{[user.firstName, user.lastName].filter(Boolean).join(' ') || '—'}</td>
                                             <td className="username-col">{user.username}</td>
                                             <td>{user.email}</td>
                                             <td>

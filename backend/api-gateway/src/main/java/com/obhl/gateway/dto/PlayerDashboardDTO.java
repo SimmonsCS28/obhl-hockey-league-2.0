@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Map;
 
 public class PlayerDashboardDTO {
+    private String firstName;
+    private String lastName;
     private Map<String, Object> team;
     private TeamRecord record;
     private Map<String, Object> nextGame;
@@ -12,12 +14,31 @@ public class PlayerDashboardDTO {
     public PlayerDashboardDTO() {
     }
 
-    public PlayerDashboardDTO(Map<String, Object> team, TeamRecord record, Map<String, Object> nextGame,
+    public PlayerDashboardDTO(String firstName, String lastName, Map<String, Object> team, TeamRecord record,
+            Map<String, Object> nextGame,
             List<Map<String, Object>> schedule) {
+        this.firstName = firstName;
+        this.lastName = lastName;
         this.team = team;
         this.record = record;
         this.nextGame = nextGame;
         this.schedule = schedule;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 
     public Map<String, Object> getTeam() {

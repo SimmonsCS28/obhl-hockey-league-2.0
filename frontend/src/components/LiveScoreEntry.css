@@ -143,7 +143,7 @@
     min-width: 150px;
 }
 
-.home-away-label {
+.live-score-entry .home-away-label {
     display: block;
     font-size: 11px;
     font-weight: 700;
@@ -153,13 +153,13 @@
     text-align: center;
 }
 
-.score {
+.live-score-entry .score {
     font-size: 48px;
     font-weight: 700;
     color: #1e40af;
 }
 
-.score-input {
+.live-score-entry .score-input {
     width: 120px;
     text-align: center;
     border: 3px solid #3b82f6;
@@ -169,24 +169,24 @@
     transition: all 0.2s;
 }
 
-.score-input:hover:not(:disabled) {
+.live-score-entry .score-input:hover:not(:disabled) {
     border-color: #2563eb;
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.score-input:focus {
+.live-score-entry .score-input:focus {
     outline: none;
     border-color: #1d4ed8;
     box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
 }
 
-.score-input:disabled {
+.live-score-entry .score-input:disabled {
     border-color: #94a3b8;
     background: #f1f5f9;
     cursor: not-allowed;
 }
 
-.vs {
+.live-score-entry .vs {
     font-size: 20px;
     font-weight: 700;
     color: #94a3b8;

@@ -40,6 +40,22 @@ function AdminLayout({ children, activeTab }) {
                     <div className="admin-user-info">
                         <span className="user-email">{user?.email}</span>
                         <button
+                            onClick={() => navigate('/user')}
+                            className="public-site-btn"
+                            title="Go to my personal dashboard"
+                        >
+                            My Dashboard
+                        </button>
+                        {user?.roles?.some(role => ['REF', 'GOALIE', 'SCOREKEEPER'].includes(role)) && (
+                            <button
+                                onClick={() => navigate('/user/shifts')}
+                                className="public-site-btn"
+                                title="View my shifts"
+                            >
+                                My Shifts
+                            </button>
+                        )}
+                        <button
                             onClick={() => navigate('/')}
                             className="public-site-btn"
                         >

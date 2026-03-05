@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.obhl.gateway.dto.PlayerDto;
 
-@FeignClient(name = "stats-service", url = "${application.config.stats-service-url:http://localhost:8082}")
+@FeignClient(name = "stats-service", url = "${stats.service.url:http://localhost:8003}")
 public interface StatsClient {
 
     @PostMapping("/api/v1/players/batch")

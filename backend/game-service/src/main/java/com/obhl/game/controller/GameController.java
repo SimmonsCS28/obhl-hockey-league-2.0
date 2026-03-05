@@ -41,7 +41,9 @@ public class GameController {
             @RequestParam(required = false) Long teamId,
             @RequestParam(required = false) String status) {
 
-        if (seasonId != null) {
+        if (seasonId != null && teamId != null) {
+            return ResponseEntity.ok(gameService.getGamesBySeasonAndTeam(seasonId, teamId));
+        } else if (seasonId != null) {
             return ResponseEntity.ok(gameService.getGamesBySeason(seasonId));
         } else if (teamId != null) {
             return ResponseEntity.ok(gameService.getGamesByTeam(teamId));
