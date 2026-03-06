@@ -232,10 +232,99 @@
     background-color: #c53030;
 }
 
+.hamburger-menu {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 100;
+}
+
+.hamburger-menu span {
+    display: block;
+    width: 25px;
+    height: 3px;
+    background-color: #e2e8f0;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
 @media (max-width: 768px) {
+    .user-dashboard {
+        padding: 1rem 1rem;
+    }
+
     .dashboard-header {
+        margin: -1rem -1rem 1.5rem -1rem;
+        padding: 1rem 1rem;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .dashboard-header h1 {
+        font-size: 1.3rem;
+        white-space: normal;
+        margin: 0;
+        max-width: 80%;
+    }
+
+    .hamburger-menu {
+        display: flex;
+    }
+
+    .header-buttons {
+        display: none;
+        width: 100%;
         flex-direction: column;
-        gap: 1rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        gap: 0.5rem;
+    }
+
+    .header-buttons.mobile-open {
+        display: flex;
+        animation: slideDown 0.3s ease;
+    }
+
+    .header-buttons button {
+        width: 100%;
         text-align: center;
+        margin-right: 0 !important;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .dashboard-content {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .upcoming-shifts-section,
+    .role-cards {
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .shifts-table-container {
+        width: 100%;
+        overflow-x: auto;
     }
 }

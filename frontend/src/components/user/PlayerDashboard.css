@@ -60,6 +60,83 @@
     background-color: #e74c3c;
 }
 
+.hamburger-menu {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 100;
+}
+
+.hamburger-menu span {
+    display: block;
+    width: 25px;
+    height: 3px;
+    background-color: #e2e8f0;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .player-dashboard {
+        padding: 1rem 1rem;
+    }
+
+    .dashboard-header {
+        margin: -1rem -1rem 1.5rem -1rem;
+        padding: 1rem 1rem;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .dashboard-header h1 {
+        font-size: 1.3rem;
+        white-space: normal;
+        max-width: 80%;
+    }
+
+    .hamburger-menu {
+        display: flex;
+    }
+
+    .header-actions {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        gap: 0.5rem;
+    }
+
+    .header-actions.mobile-open {
+        display: flex;
+        animation: slideDown 0.3s ease;
+    }
+
+    .header-actions button {
+        width: 100%;
+        text-align: center;
+        margin-right: 0 !important;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
+
 .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));

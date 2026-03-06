@@ -127,6 +127,23 @@ function AdminLayout({ children, activeTab }) {
                     >
                         📋 Scorekeeper Schedule
                     </button>
+                    <div className="mobile-admin-actions">
+                        <div className="mobile-user-email">{user?.email}</div>
+                        <button onClick={() => navigate('/user')} className="nav-tab action-tab">
+                            👤 My Dashboard
+                        </button>
+                        {user?.roles?.some(role => ['REF', 'GOALIE', 'SCOREKEEPER'].includes(role)) && (
+                            <button onClick={() => navigate('/user/shifts')} className="nav-tab action-tab">
+                                ⏱️ My Shifts
+                            </button>
+                        )}
+                        <button onClick={() => navigate('/')} className="nav-tab action-tab">
+                            🌐 Public Site
+                        </button>
+                        <button onClick={handleLogout} className="nav-tab logout-tab">
+                            🚪 Logout
+                        </button>
+                    </div>
                 </div>
             </nav>
 

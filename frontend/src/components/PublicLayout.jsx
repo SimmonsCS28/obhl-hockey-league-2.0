@@ -84,6 +84,17 @@ function PublicLayout() {
                                                 Admin Dashboard
                                             </button>
                                         )}
+                                        {hasAnyRole('GOALIE', 'REF', 'SCOREKEEPER') && (
+                                            <button
+                                                className="dashboard-link"
+                                                onClick={() => {
+                                                    navigate('/user/shifts');
+                                                    closeMobileMenu();
+                                                }}
+                                            >
+                                                My Shifts
+                                            </button>
+                                        )}
                                         {hasAnyRole('GOALIE', 'REF', 'SCOREKEEPER', 'PLAYER', 'GM') && (
                                             <button
                                                 className="dashboard-link"
@@ -145,6 +156,17 @@ function PublicLayout() {
                                             }}
                                         >
                                             GM Dashboard
+                                        </button>
+                                    )}
+                                    {hasAnyRole('GOALIE', 'REF', 'SCOREKEEPER') && (
+                                        <button
+                                            className="dashboard-link"
+                                            onClick={() => {
+                                                navigate('/user/shifts');
+                                                closeMobileMenu();
+                                            }}
+                                        >
+                                            My Shifts
                                         </button>
                                     )}
                                     {isAdmin && (

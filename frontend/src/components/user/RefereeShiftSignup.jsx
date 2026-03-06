@@ -7,6 +7,7 @@ import './ShiftSignup.css';
 const RefereeShiftSignup = () => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [seasons, setSeasons] = useState([]);
     const [selectedSeason, setSelectedSeason] = useState(null);
     const [games, setGames] = useState([]);
@@ -122,7 +123,15 @@ const RefereeShiftSignup = () => {
         <div className="shift-signup">
             <div className="shift-header">
                 <h1>Referee Shift Signup</h1>
-                <div className="header-buttons">
+                <button
+                    className="hamburger-menu"
+                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                >
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div className={`header-buttons ${mobileMenuOpen ? 'mobile-open' : ''}`}>
                     <button
                         className="back-button"
                         onClick={() => navigate('/user')}

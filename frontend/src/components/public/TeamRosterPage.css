@@ -182,3 +182,82 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
+
+/* Schedule Table Custom Styling */
+.team-schedule-content {
+    background: #1e1e1e;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.team-schedule-content h2 {
+    color: white;
+    margin-bottom: 1.5rem;
+}
+
+.team-schedule-content .schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #2c2c2c;
+    color: #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.team-schedule-content .schedule-table th {
+    text-align: left;
+    padding: 1rem;
+    background: #1a1a1a;
+    color: #aaa;
+    font-weight: 600;
+    border-bottom: 2px solid #333;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+}
+
+.team-schedule-content .schedule-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #333;
+    color: #e0e0e0;
+}
+
+.team-schedule-content .schedule-table td a {
+    color: #87CEEB;
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.team-schedule-content .schedule-table td a:hover {
+    text-decoration: underline;
+    color: #f5c518;
+}
+
+.team-schedule-content .schedule-table tr:hover {
+    background: #333;
+}
+
+.schedule-table-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+    .team-details {
+        padding: 1rem;
+    }
+
+    .team-schedule-content {
+        padding: 1rem;
+    }
+
+    .roster-table {
+        font-size: 0.9rem;
+    }
+
+    .roster-table th,
+    .roster-table td {
+        padding: 0.5rem;
+    }
+}

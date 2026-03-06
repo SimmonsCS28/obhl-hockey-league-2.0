@@ -52,8 +52,10 @@ function StandingsPage() {
                     return b.points - a.points;
                 }
                 // Tiebreaker 1: Wins (highest first)
-                if (b.wins !== a.wins) {
-                    return b.wins - a.wins;
+                const bTotalWins = (b.wins || 0) + (b.overtimeWins || 0);
+                const aTotalWins = (a.wins || 0) + (a.overtimeWins || 0);
+                if (bTotalWins !== aTotalWins) {
+                    return bTotalWins - aTotalWins;
                 }
                 // Tiebreaker 2: Goals Against (lowest first - fewer goals against is better)
                 if (a.goalsAgainst !== b.goalsAgainst) {

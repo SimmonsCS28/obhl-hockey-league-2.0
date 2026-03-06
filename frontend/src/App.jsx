@@ -12,6 +12,8 @@ import TeamDetails from './components/TeamDetails';
 import GMDashboard from './components/gm/GMDashboard';
 import GMSchedule from './components/gm/GMSchedule';
 import GMTeam from './components/gm/GMTeam';
+import GamePreview from './components/public/GamePreview';
+import GameRecap from './components/public/GameRecap';
 import Home from './components/public/Home';
 import PlayersPage from './components/public/PlayersPage';
 import SeasonsPage from './components/public/SeasonsPage';
@@ -50,6 +52,8 @@ const router = createBrowserRouter([
       { path: "players", element: <PlayersPage /> },
       { path: "standings", element: <StandingsPage /> },
       { path: "schedule", element: <SchedulePage /> },
+      { path: "game/:gameId/preview", element: <GamePreview /> },
+      { path: "game/:gameId/recap", element: <GameRecap /> },
 
       // Public Staff Signups
       // Unified Signup

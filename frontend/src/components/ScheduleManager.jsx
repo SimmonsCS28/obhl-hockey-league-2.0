@@ -789,7 +789,7 @@ const ScheduleManager = () => {
                                         const dayOfWeek = gameDate.getDay();
                                         const isNotFriday = dayOfWeek !== 5;
                                         const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
-                                        const isCompleted = game.homeScore !== null && game.awayScore !== null && (game.homeScore > 0 || game.awayScore > 0);
+                                        const isCompleted = game.status === 'completed';
 
                                         const homeBg = getValidColor(homeTeam?.teamColor);
                                         const awayBg = getValidColor(awayTeam?.teamColor);

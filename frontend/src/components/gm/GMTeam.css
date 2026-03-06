@@ -134,5 +134,10 @@
     text-align: center;
     padding: 3rem;
     font-size: 1.2rem;
-    color: #e0e0e0;
+}
+
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }

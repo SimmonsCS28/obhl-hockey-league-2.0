@@ -148,7 +148,7 @@ function ScorekeeperDashboard() {
                         const awayBg = getValidColor(game.awayTeamColor);
                         const homeTextColor = getTextColor(homeBg);
                         const awayTextColor = getTextColor(awayBg);
-                        const isCompleted = game.homeScore !== null && game.awayScore !== null;
+                        const isCompleted = game.status === 'completed';
 
                         return (
                             <div

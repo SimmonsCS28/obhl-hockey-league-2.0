@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import TeamBadge from '../common/TeamBadge';
 import './TeamRosterPage.css';
 
 function TeamRosterPage() {
@@ -7,6 +8,8 @@ function TeamRosterPage() {
     const navigate = useNavigate();
     const [team, setTeam] = useState(null);
     const [roster, setRoster] = useState([]);
+    const [schedule, setSchedule] = useState([]);
+    const [leagueTeams, setLeagueTeams] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -25,6 +28,22 @@ function TeamRosterPage() {
             if (!teamResponse.ok) throw new Error('Failed to fetch team');
             const teamData = await teamResponse.json();
             setTeam(teamData);
+
+            // Fetch all teams to support team badge lookups
+            const allTeamsResponse = await fetch('/api/v1/teams');
+            if (allTeamsResponse.ok) {
+                const allTeams = await allTeamsResponse.json();
+                setLeagueTeams(allTeams);
+            }
+
+            // Fetch schedule for this team
+            const gamesResponse = await fetch(`/games-api/games?seasonId=${teamData.seasonId}`);
+            if (gamesResponse.ok) {
+                const gamesData = await gamesResponse.json();
+                const teamGames = gamesData.filter(g => g.homeTeamId === parseInt(teamId) || g.awayTeamId === parseInt(teamId));
+                teamGames.sort((a, b) => new Date(a.gameDate) - new Date(b.gameDate));
+                setSchedule(teamGames);
+            }
 
             // Then fetch all players for that season and filter by teamId
             const playersResponse = await fetch(`/stats-api/players?seasonId=${teamData.seasonId}`);
@@ -90,7 +109,7 @@ function TeamRosterPage() {
                 <div className="team-stats-display">
                     <div className="stat-item">
                         <span className="stat-label">W</span>
-                        <span className="stat-value">{team.wins}</span>
+                        <span className="stat-value">{team.wins + (team.overtimeWins || 0)}</span>
                     </div>
                     <div className="stat-item">
                         <span className="stat-label">L</span>
@@ -150,6 +169,78 @@ function TeamRosterPage() {
                             ))}
                         </tbody>
                     </table>
+                )}
+            </div>
+
+            <div className="team-schedule-content" style={{ marginTop: '2rem' }}>
+                <h2>Team Schedule</h2>
+                {schedule.length === 0 ? (
+                    <p className="no-roster">No games scheduled for this team.</p>
+                ) : (
+                    <div className="schedule-table-container">
+                        <table className="roster-table schedule-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Opponent</th>
+                                    <th>Result</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {schedule.map(game => {
+                                    const isHomeGame = game.homeTeamId === parseInt(teamId);
+                                    const opponentId = isHomeGame ? game.awayTeamId : game.homeTeamId;
+                                    const opponentTeam = leagueTeams.find(t => t.id === opponentId) || {};
+                                    const opponentName = opponentTeam.name || 'Unknown';
+                                    const opponentColor = opponentTeam.teamColor || null;
+
+                                    const isCompleted = game.status === 'completed';
+                                    const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
+
+                                    let result = '-';
+                                    if (isCompleted) {
+                                        const myScore = isHomeGame ? game.homeScore : game.awayScore;
+                                        const oppScore = isHomeGame ? game.awayScore : game.homeScore;
+                                        const wl = myScore > oppScore ? 'W' : (myScore < oppScore ? 'L' : 'T');
+                                        result = `${wl} ${myScore}-${oppScore}`;
+                                        if (game.endedInOT) result += ' (OT)';
+                                    } else {
+                                        result = 'Scheduled';
+                                    }
+
+                                    return (
+                                        <tr key={game.id}>
+                                            <td>{gameDate.toLocaleDateString([], { month: 'short', day: 'numeric' })}<br />{gameDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</td>
+                                            <td>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                    <TeamBadge
+                                                        teamName={opponentName}
+                                                        teamColor={opponentColor}
+                                                        onClick={() => navigate(`/teams/${opponentId}`)}
+                                                        style={{ cursor: 'pointer', margin: 0 }}
+                                                    />
+                                                    <span style={{ fontSize: '0.85em', color: '#aaa', fontWeight: 'bold' }}>
+                                                        {isHomeGame ? '(H)' : '(A)'}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span className={`result-badge ${result.startsWith('W') ? 'win' : result.startsWith('L') ? 'loss' : ''}`}>{result}</span>
+                                            </td>
+                                            <td>
+                                                {isCompleted ? (
+                                                    <Link to={`/game/${game.id}/recap`} state={{ fromTeamId: teamId }} className="btn-action-small preview-btn">Recap</Link>
+                                                ) : (
+                                                    <Link to={`/game/${game.id}/preview`} state={{ fromTeamId: teamId }} className="btn-action-small preview-btn">Preview</Link>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </div>
         </div>

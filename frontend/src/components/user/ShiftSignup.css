@@ -59,6 +59,84 @@
     gap: 10px;
 }
 
+.hamburger-menu {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    z-index: 100;
+}
+
+.hamburger-menu span {
+    display: block;
+    width: 25px;
+    height: 3px;
+    background-color: #e2e8f0;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+    .shift-signup {
+        padding: 10px;
+    }
+
+    .shift-header {
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .shift-header h1 {
+        font-size: 1.5rem;
+        max-width: 85%;
+        white-space: normal;
+    }
+
+    .hamburger-menu {
+        display: flex;
+    }
+
+    .header-buttons {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        gap: 0.5rem;
+    }
+
+    .header-buttons.mobile-open {
+        display: flex;
+        animation: slideDown 0.3s ease;
+    }
+
+    .header-buttons button,
+    .header-buttons .back-button,
+    .header-buttons .home-button,
+    .header-buttons .logout-button {
+        width: 100%;
+        text-align: center;
+        margin-right: 0 !important;
+    }
+
+    @keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+}
+
 .season-selector label {
     color: #ffffff;
     font-weight: bold;

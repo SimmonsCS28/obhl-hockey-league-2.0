@@ -134,6 +134,11 @@
     transition: all 0.3s ease;
 }
 
+/* Hide mobile actions on desktop */
+.mobile-admin-actions {
+    display: none;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .admin-nav-header {
@@ -200,5 +205,31 @@
 
     .admin-content>* {
         padding: 0 0.5rem;
+    }
+
+    .mobile-admin-actions {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        border-top: 2px solid #333;
+        margin-top: 0.5rem;
+        padding-top: 0.5rem;
+    }
+
+    .mobile-user-email {
+        color: #94a3b8;
+        padding: 1rem 1.5rem;
+        font-size: 0.9rem;
+        border-bottom: 1px solid #333;
+    }
+
+    .nav-tab.action-tab {
+        background: #1e293b;
+        color: #e2e8f0;
+    }
+
+    .nav-tab.logout-tab {
+        background: #dc2626;
+        color: white;
     }
 }

@@ -240,7 +240,7 @@ function TeamManagement() {
                                     <div className="stat">
                                         <span className="stat-label">W-L-T</span>
                                         <span className="stat-value">
-                                            {team.wins}-{team.losses}-{team.ties}
+                                            {team.wins + (team.overtimeWins || 0)}-{team.losses}-{team.ties}
                                         </span>
                                     </div>
                                     <div className="stat">

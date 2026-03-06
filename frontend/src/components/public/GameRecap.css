@@ -1,0 +1,252 @@
+.game-recap-container {
+    padding: 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+    color: #e0e0e0;
+}
+
+.game-recap-container .recap-nav {
+    margin-bottom: 2rem;
+}
+
+.game-recap-container .btn-back {
+    background: transparent;
+    border: 1px solid #4a5568;
+    color: #e2e8f0;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.game-recap-container .btn-back:hover {
+    background: #4a5568;
+    color: #fff;
+}
+
+.game-recap-container .recap-header {
+    background: #1e1e1e;
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.game-recap-container .recap-sup-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #333;
+    padding-bottom: 1.5rem;
+}
+
+.game-recap-container .recap-sup-header h2 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #fff;
+    font-size: 2rem;
+}
+
+.game-recap-container .game-logistics {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.game-recap-container .logistics-item {
+    background: #2c2c2c;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.9rem;
+    color: #aaa;
+    font-weight: 600;
+}
+
+.game-recap-container .scoreboard {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 3rem;
+    padding: 1rem 0;
+}
+
+.game-recap-container .team-score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    max-width: 250px;
+}
+
+.game-recap-container .home-away-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #888;
+    letter-spacing: 2px;
+    margin-bottom: 0.5rem;
+}
+
+.game-recap-container .team-name-link {
+    text-decoration: none;
+    color: inherit;
+    width: 100%;
+}
+
+.game-recap-container .team-name {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 1rem;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-align: center;
+    min-height: 80px;
+    margin-bottom: 1rem;
+    background: #2c2c2c;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.game-recap-container .team-name:hover {
+    transform: translateY(-2px);
+    background: #333;
+}
+
+.game-recap-container .name-text {
+    margin-top: 0.5rem;
+}
+
+.game-recap-container .score {
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: #fff;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.game-recap-container .vs {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.game-recap-container .events-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.game-recap-container .events-section {
+    background: #1e1e1e;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.game-recap-container .events-section h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: #fff;
+    font-size: 1.2rem;
+    border-bottom: 1px solid #333;
+    padding-bottom: 1rem;
+}
+
+.game-recap-container .table-responsive {
+    overflow-x: auto;
+}
+
+.game-recap-container .events-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+}
+
+.game-recap-container .events-table th {
+    text-align: left;
+    padding: 0.75rem;
+    background-color: #2c2c2c;
+    color: #aaa;
+    border-bottom: 2px solid #333;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.game-recap-container .events-table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #333;
+    color: #e0e0e0;
+}
+
+.game-recap-container .events-table tbody tr:hover {
+    background: #2c2c2c;
+}
+
+.game-recap-container .period-cell,
+.game-recap-container .time-cell {
+    width: 80px;
+    color: #888;
+    font-variant-numeric: tabular-nums;
+}
+
+.game-recap-container .team-cell {
+    width: 150px;
+    font-weight: 500;
+}
+
+.game-recap-container .player-cell strong {
+    color: #fff;
+}
+
+.game-recap-container .min-cell {
+    width: 60px;
+    text-align: center;
+    font-weight: bold;
+    color: #e74c3c;
+}
+
+.game-recap-container .unassisted {
+    color: #666;
+    font-style: italic;
+    font-size: 0.85rem;
+}
+
+.game-recap-container .no-events {
+    text-align: center;
+    color: #888;
+    padding: 2rem;
+    background: #2c2c2c;
+    border-radius: 8px;
+}
+
+.game-recap-container .mt-4 {
+    margin-top: 1rem;
+}
+
+@media (max-width: 768px) {
+    .game-recap-container .scoreboard {
+        gap: 1rem;
+    }
+
+    .game-recap-container .team-name {
+        font-size: 1rem;
+        padding: 0.75rem;
+        min-height: 60px;
+    }
+
+    .game-recap-container .score {
+        font-size: 2.5rem;
+    }
+
+    .game-recap-container .events-table th,
+    .game-recap-container .events-table td {
+        padding: 0.5rem;
+    }
+}
