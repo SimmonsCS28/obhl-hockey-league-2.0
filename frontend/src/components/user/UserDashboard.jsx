@@ -7,6 +7,7 @@ import './UserDashboard.css';
 const UserDashboard = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [shifts, setShifts] = useState([]);
     const [teams, setTeams] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -152,7 +153,15 @@ const UserDashboard = () => {
         <div className="user-dashboard">
             <div className="dashboard-header">
                 <h1>Welcome{userName ? `, ${userName}` : ''}</h1>
-                <div className="header-buttons">
+                <button
+                    className="hamburger-menu"
+                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                >
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div className={`header-buttons ${mobileMenuOpen ? 'mobile-open' : ''}`}>
                     {user?.roles?.includes('ADMIN') && (
                         <button
                             className="home-button"

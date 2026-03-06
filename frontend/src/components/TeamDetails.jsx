@@ -196,7 +196,7 @@ function TeamDetails({ team: propTeam, onBack }) {
                 <div className="team-stats-display">
                     <div className="stat-item">
                         <span className="stat-label">W</span>
-                        <span className="stat-value">{team.wins}</span>
+                        <span className="stat-value">{team.wins + (team.overtimeWins || 0)}</span>
                     </div>
                     <div className="stat-item">
                         <span className="stat-label">L</span>

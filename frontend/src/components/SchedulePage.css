@@ -547,3 +547,20 @@
         opacity: 1;
     }
 }
+.btn-action-small.preview-btn {
+    background-color: #3498db;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+    text-align: center;
+    transition: background-color 0.2s;
+}
+
+.btn-action-small.preview-btn:hover {
+    background-color: #2980b9;
+}
+

@@ -7,6 +7,7 @@ import './ShiftSignup.css';
 const GoalieShiftSignup = () => {
     const navigate = useNavigate();
     const { logout } = useAuth();
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [gameDays, setGameDays] = useState([]);
     const [initialUnavailableDates, setInitialUnavailableDates] = useState([]);
     const [currentUnavailableDates, setCurrentUnavailableDates] = useState([]);
@@ -185,7 +186,15 @@ const GoalieShiftSignup = () => {
         <div className="shift-signup">
             <div className="shift-header">
                 <h1>Goalie Availability</h1>
-                <div className="header-buttons">
+                <button
+                    className="hamburger-menu"
+                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                >
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div className={`header-buttons ${mobileMenuOpen ? 'mobile-open' : ''}`}>
                     <button
                         className="back-button"
                         onClick={() => handleNavigationClick(() => navigate('/user'))}

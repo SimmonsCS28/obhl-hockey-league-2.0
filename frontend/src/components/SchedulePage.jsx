@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import './SchedulePage.css';
 
 const SchedulePage = () => {
@@ -341,6 +342,7 @@ const SchedulePage = () => {
                                 <th>Location</th>
                                 <th>Staff</th>
                                 <th>Score/Status</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -351,7 +353,7 @@ const SchedulePage = () => {
                                 const dayOfWeek = gameDate.getDay();
                                 const isNotFriday = dayOfWeek !== 5;
                                 const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
-                                const isCompleted = game.homeScore !== null && game.awayScore !== null;
+                                const isCompleted = game.gameStatus === 'COMPLETED';
 
                                 // Determine winner
                                 const homeWin = isCompleted && game.homeScore > game.awayScore;
@@ -388,25 +390,17 @@ const SchedulePage = () => {
                                                 minute: '2-digit'
                                             })}
                                         </td>
-                                        <td
-                                            className={`team-cell ${homeWin ? 'winning-team' : ''}`}
-                                            style={{
-                                                backgroundColor: homeBg,
-                                                color: getTextColor(homeBg)
-                                            }}
-                                        >
-                                            {homeTeam?.name || `Team ${game.homeTeamId}`}
-                                            {homeWin && <span className="win-icon" title="Winner">★</span>}
+                                        <td className={`team-cell ${homeWin ? 'winning-team' : ''}`} style={{ backgroundColor: homeBg, color: getTextColor(homeBg) }}>
+                                            <Link to={`/teams/${game.homeTeamId}`} style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', width: '100%', height: '100%', justifyContent: 'center' }}>
+                                                {homeTeam?.name || `Team ${game.homeTeamId}`}
+                                                {homeWin && <span className="win-icon" title="Winner">★</span>}
+                                            </Link>
                                         </td>
-                                        <td
-                                            className={`team-cell ${awayWin ? 'winning-team' : ''}`}
-                                            style={{
-                                                backgroundColor: awayBg,
-                                                color: getTextColor(awayBg)
-                                            }}
-                                        >
-                                            {awayTeam?.name || `Team ${game.awayTeamId}`}
-                                            {awayWin && <span className="win-icon" title="Winner">★</span>}
+                                        <td className={`team-cell ${awayWin ? 'winning-team' : ''}`} style={{ backgroundColor: awayBg, color: getTextColor(awayBg) }}>
+                                            <Link to={`/teams/${game.awayTeamId}`} style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', width: '100%', height: '100%', justifyContent: 'center' }}>
+                                                {awayTeam?.name || `Team ${game.awayTeamId}`}
+                                                {awayWin && <span className="win-icon" title="Winner">★</span>}
+                                            </Link>
                                         </td>
                                         <td>{game.rink}</td>
                                         <td className="staff-cell">
@@ -431,6 +425,13 @@ const SchedulePage = () => {
                                                 <span className="upcoming-badge">Upcoming</span>
                                             )}
                                         </td>
+                                        <td>
+                                            {isCompleted ? (
+                                                <Link to={`/game/${game.id}/recap`} className="btn-action-small preview-btn">Recap</Link>
+                                            ) : (
+                                                <Link to={`/game/${game.id}/preview`} className="btn-action-small preview-btn">Preview</Link>
+                                            )}
+                                        </td>
                                     </tr>
                                 );
                             })}
@@ -451,7 +452,7 @@ const SchedulePage = () => {
                                     const dayOfWeek = gameDate.getDay();
                                     const isNotFriday = dayOfWeek !== 5;
                                     const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
-                                    const isCompleted = game.homeScore !== null && game.awayScore !== null;
+                                    const isCompleted = game.gameStatus === 'COMPLETED';
 
                                     // Determine winner
                                     const homeWin = isCompleted && game.homeScore > game.awayScore;
@@ -484,27 +485,19 @@ const SchedulePage = () => {
                                                 })}
                                             </div>
                                             <div className="game-teams">
-                                                <span
-                                                    className={`team-badge ${homeWin ? 'winning-team' : ''}`}
-                                                    style={{
-                                                        backgroundColor: homeBg,
-                                                        color: getTextColor(homeBg)
-                                                    }}
-                                                >
-                                                    {homeTeam?.name || `Team ${game.homeTeamId}`}
-                                                    {homeWin && <span className="win-icon">★</span>}
-                                                </span>
+                                                <Link to={`/teams/${game.homeTeamId}`} style={{ textDecoration: 'none', display: 'inline-block' }}>
+                                                    <span className={`team-badge ${homeWin ? 'winning-team' : ''}`} style={{ backgroundColor: homeBg, color: getTextColor(homeBg) }}>
+                                                        {homeTeam?.name || `Team ${game.homeTeamId}`}
+                                                        {homeWin && <span className="win-icon">★</span>}
+                                                    </span>
+                                                </Link>
                                                 <span className="vs">vs</span>
-                                                <span
-                                                    className={`team-badge ${awayWin ? 'winning-team' : ''}`}
-                                                    style={{
-                                                        backgroundColor: awayBg,
-                                                        color: getTextColor(awayBg)
-                                                    }}
-                                                >
-                                                    {awayTeam?.name || `Team ${game.awayTeamId}`}
-                                                    {awayWin && <span className="win-icon">★</span>}
-                                                </span>
+                                                <Link to={`/teams/${game.awayTeamId}`} style={{ textDecoration: 'none', display: 'inline-block' }}>
+                                                    <span className={`team-badge ${awayWin ? 'winning-team' : ''}`} style={{ backgroundColor: awayBg, color: getTextColor(awayBg) }}>
+                                                        {awayTeam?.name || `Team ${game.awayTeamId}`}
+                                                        {awayWin && <span className="win-icon">★</span>}
+                                                    </span>
+                                                </Link>
                                             </div>
                                             <div className="game-location">
                                                 📍 {game.rink}
@@ -521,6 +514,13 @@ const SchedulePage = () => {
                                                     Final: <span className={homeWin ? 'winning-score' : ''}>{game.homeScore}</span> - <span className={awayWin ? 'winning-score' : ''}>{game.awayScore}</span>
                                                 </div>
                                             )}
+                                            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+                                                {isCompleted ? (
+                                                    <Link to={`/game/${game.id}/recap`} className="btn-action-small preview-btn" style={{ width: '100%', display: 'block' }}>Recap</Link>
+                                                ) : (
+                                                    <Link to={`/game/${game.id}/preview`} className="btn-action-small preview-btn" style={{ width: '100%', display: 'block' }}>Preview</Link>
+                                                )}
+                                            </div>
                                         </div>
                                     );
                                 })}

@@ -8,6 +8,7 @@ import './PlayerDashboard.css'; // Will create this next
 const PlayerDashboard = () => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [dashboardData, setDashboardData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -166,7 +167,15 @@ const PlayerDashboard = () => {
         <div className="player-dashboard">
             <header className="dashboard-header">
                 <h1>Welcome, {firstName ? `${firstName} ${lastName}` : user?.firstName}</h1>
-                <div className="header-actions">
+                <button
+                    className="hamburger-menu"
+                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                >
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+                <div className={`header-actions ${mobileMenuOpen ? 'mobile-open' : ''}`}>
                     {user?.roles?.includes('ADMIN') && (
                         <button
                             className="action-button secondary"
@@ -197,7 +206,7 @@ const PlayerDashboard = () => {
                     >
                         OBHL Home
                     </button>
-                    <button className="action-button logout" onClick={logout}>Logout</button>
+                    <button className="action-button logout" onClick={() => { logout(); navigate('/'); }}>Logout</button>
                 </div>
             </header>
 
@@ -217,7 +226,7 @@ const PlayerDashboard = () => {
                             </div>
                             <div className="team-stats">
                                 <div className="stat-box">
-                                    <span className="stat-value">{record?.wins || 0}</span>
+                                    <span className="stat-value">{(record?.wins || 0) + (record?.overtimeWins || 0)}</span>
                                     <span className="stat-label">Wins</span>
                                 </div>
                                 <div className="stat-box">
@@ -280,7 +289,7 @@ const PlayerDashboard = () => {
                                 return r ? (
                                     <div className="game-info-row">
                                         <span className="game-info-label">Opp. Record:</span>
-                                        <span className="game-info-value">{r.wins}-{r.losses}-{r.ties}-{r.otLosses}</span>
+                                        <span className="game-info-value">{r.wins + (r.overtimeWins || 0)}-{r.losses}-{r.ties}-{r.overtimeLosses || r.otLosses || 0}</span>
                                     </div>
                                 ) : null;
                             })()}
@@ -346,7 +355,7 @@ const PlayerDashboard = () => {
                                     return r ? (
                                         <div className="game-info-row">
                                             <span className="game-info-label">Opp. Record:</span>
-                                            <span className="game-info-value">{r.wins}-{r.losses}-{r.ties}-{r.otLosses}</span>
+                                            <span className="game-info-value">{r.wins + (r.overtimeWins || 0)}-{r.losses}-{r.ties}-{r.overtimeLosses || r.otLosses || 0}</span>
                                         </div>
                                     ) : null;
                                 })()}
@@ -377,6 +386,7 @@ const PlayerDashboard = () => {
                                         <th>Time</th>
                                         <th>Opponent</th>
                                         <th>Result</th>
+                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -401,14 +411,35 @@ const PlayerDashboard = () => {
                                                 <td>{formatDate(game.gameDate)}</td>
                                                 <td>{formatTime(game.gameDate)}</td>
                                                 <td>
-                                                    <TeamBadge
-                                                        teamName={opponentName}
-                                                        teamColor={opponentColor}
-                                                        className="opponent-link"
-                                                        onClick={() => navigate(`/teams/${opponentId}`)}
-                                                    />
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <TeamBadge
+                                                            teamName={opponentName}
+                                                            teamColor={opponentColor}
+                                                            className="opponent-link"
+                                                            onClick={() => navigate(`/teams/${opponentId}`)}
+                                                            style={{ margin: 0 }}
+                                                        />
+                                                        <span style={{ fontSize: '0.85em', color: '#aaa', fontWeight: 'bold' }}>
+                                                            {isHome ? '(H)' : '(A)'}
+                                                        </span>
+                                                    </div>
                                                 </td>
                                                 <td><span className={`result p-tag ${result.startsWith('W') ? 'win' : result.startsWith('L') ? 'loss' : ''}`}>{result}</span></td>
+                                                <td>
+                                                    {game.status === 'completed' ? (
+                                                        <button
+                                                            className="btn-action-small preview-btn"
+                                                            onClick={() => navigate(`/game/${game.id}/recap`, { state: { fromDashboard: true } })}>
+                                                            Recap
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            className="btn-action-small preview-btn"
+                                                            onClick={() => navigate(`/game/${game.id}/preview`, { state: { fromDashboard: true } })}>
+                                                            Preview
+                                                        </button>
+                                                    )}
+                                                </td>
                                             </tr>
                                         );
                                     })}

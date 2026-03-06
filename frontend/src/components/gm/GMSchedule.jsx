@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './GMSchedule.css';
 
@@ -115,14 +116,17 @@ function GMSchedule() {
                                 <th>Opponent</th>
                                 <th>Location</th>
                                 <th>Result</th>
+                                <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             {filteredGames.map(game => {
                                 const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
                                 const isHomeGame = game.homeTeamId === user.teamId;
+                                const opponentId = isHomeGame ? game.awayTeamId : game.homeTeamId;
                                 const opponentName = isHomeGame ? game.awayTeamName : game.homeTeamName;
                                 const locationContext = isHomeGame ? '(Home)' : '(Away)';
+                                const isCompleted = game.gameStatus === 'COMPLETED';
 
                                 return (
                                     <tr key={game.id}>
@@ -142,17 +146,26 @@ function GMSchedule() {
                                                 })()
                                             }}
                                         >
-                                            <span className="opponent-name">{opponentName}</span>
-                                            <span className="game-context"> {locationContext}</span>
+                                            <Link to={`/teams/${opponentId}`} style={{ color: 'inherit', textDecoration: 'none', display: 'block', width: '100%' }}>
+                                                <span className="opponent-name">{opponentName}</span>
+                                                <span className="game-context"> {locationContext}</span>
+                                            </Link>
                                         </td>
                                         <td>{game.rink}</td>
                                         <td>
-                                            {game.homeScore !== null && game.awayScore !== null ? (
+                                            {isCompleted ? (
                                                 <span className="game-score">
                                                     {game.homeScore} - {game.awayScore}
                                                 </span>
                                             ) : (
                                                 <span className="upcoming-badge">Upcoming</span>
+                                            )}
+                                        </td>
+                                        <td>
+                                            {isCompleted ? (
+                                                <Link to={`/game/${game.id}/recap`} className="btn-action-small preview-btn">Recap</Link>
+                                            ) : (
+                                                <Link to={`/game/${game.id}/preview`} className="btn-action-small preview-btn">Preview</Link>
                                             )}
                                         </td>
                                     </tr>
