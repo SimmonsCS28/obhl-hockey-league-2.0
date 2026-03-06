@@ -126,7 +126,7 @@ function GMSchedule() {
                                 const opponentId = isHomeGame ? game.awayTeamId : game.homeTeamId;
                                 const opponentName = isHomeGame ? game.awayTeamName : game.homeTeamName;
                                 const locationContext = isHomeGame ? '(Home)' : '(Away)';
-                                const isCompleted = game.gameStatus === 'COMPLETED';
+                                const isCompleted = game.status === 'completed';
 
                                 return (
                                     <tr key={game.id}>

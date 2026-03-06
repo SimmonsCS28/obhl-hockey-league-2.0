@@ -195,7 +195,7 @@ function TeamRosterPage() {
                                     const opponentName = opponentTeam.name || 'Unknown';
                                     const opponentColor = opponentTeam.teamColor || null;
 
-                                    const isCompleted = game.gameStatus === 'COMPLETED';
+                                    const isCompleted = game.status === 'completed';
                                     const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
 
                                     let result = '-';

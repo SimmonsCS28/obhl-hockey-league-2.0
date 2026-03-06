@@ -196,7 +196,9 @@ public class PlayerDashboardController {
 
         // 6. Use stored team record from database (updated by TeamStatsUpdater on game
         // finalize)
-        int wins = teamDto.getWins() != null ? teamDto.getWins() : 0;
+        int regWins = teamDto.getWins() != null ? teamDto.getWins() : 0;
+        int otWins = teamDto.getOvertimeWins() != null ? teamDto.getOvertimeWins() : 0;
+        int wins = regWins + otWins;
         int losses = teamDto.getLosses() != null ? teamDto.getLosses() : 0;
         int ties = teamDto.getTies() != null ? teamDto.getTies() : 0;
         int otLosses = teamDto.getOvertimeLosses() != null ? teamDto.getOvertimeLosses() : 0;

@@ -9,6 +9,10 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2rem;
+    background: #1e1e1e;
+    padding: 1.5rem 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .gm-schedule .schedule-header h1 {
@@ -24,7 +28,7 @@
 
 .week-filter label {
     font-weight: 500;
-    color: #4a5568;
+    color: #ffffff;
 }
 
 .week-select {
@@ -125,5 +129,13 @@
     color: #718096;
     background: white;
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+    .schedule-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1rem;
+    }
 }

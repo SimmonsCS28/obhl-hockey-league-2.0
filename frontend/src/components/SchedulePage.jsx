@@ -353,7 +353,7 @@ const SchedulePage = () => {
                                 const dayOfWeek = gameDate.getDay();
                                 const isNotFriday = dayOfWeek !== 5;
                                 const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
-                                const isCompleted = game.gameStatus === 'COMPLETED';
+                                const isCompleted = game.status === 'completed';
 
                                 // Determine winner
                                 const homeWin = isCompleted && game.homeScore > game.awayScore;
@@ -452,7 +452,7 @@ const SchedulePage = () => {
                                     const dayOfWeek = gameDate.getDay();
                                     const isNotFriday = dayOfWeek !== 5;
                                     const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
-                                    const isCompleted = game.gameStatus === 'COMPLETED';
+                                    const isCompleted = game.status === 'completed';
 
                                     // Determine winner
                                     const homeWin = isCompleted && game.homeScore > game.awayScore;

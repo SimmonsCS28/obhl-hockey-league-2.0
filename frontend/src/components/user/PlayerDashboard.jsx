@@ -51,7 +51,7 @@ const PlayerDashboard = () => {
                         try {
                             const teamData = await api.getTeam(id);
                             records[id] = {
-                                wins: teamData.wins || 0,
+                                wins: (teamData.wins || 0) + (teamData.overtimeWins || 0),
                                 losses: teamData.losses || 0,
                                 ties: teamData.ties || 0,
                                 otLosses: teamData.overtimeLosses || 0
@@ -74,37 +74,13 @@ const PlayerDashboard = () => {
                         ]);
 
                         const standings = teamsData
-                            .filter(t => t.seasonId === data.team.seasonId)
-                            .map(t => ({
-                                id: t.id,
-                                wins: 0, losses: 0, ties: 0, points: 0, goalsFor: 0, goalsAgainst: 0
-                            }));
-
-                        const completedGames = gamesData.filter(g => g.status === 'completed');
-                        completedGames.forEach(g => {
-                            const ht = standings.find(s => s.id === g.homeTeamId);
-                            const at = standings.find(s => s.id === g.awayTeamId);
-                            if (!ht || !at) return;
-
-                            ht.goalsFor += g.homeScore || 0;
-                            ht.goalsAgainst += g.awayScore || 0;
-                            at.goalsFor += g.awayScore || 0;
-                            at.goalsAgainst += g.homeScore || 0;
-
-                            if (g.homeScore > g.awayScore) {
-                                if (g.endedInOT) { ht.wins++; ht.points += 2; at.losses++; at.points += 1; }
-                                else { ht.wins++; ht.points += 2; at.losses++; }
-                            } else if (g.awayScore > g.homeScore) {
-                                if (g.endedInOT) { at.wins++; at.points += 2; ht.losses++; ht.points += 1; }
-                                else { at.wins++; at.points += 2; ht.losses++; }
-                            } else {
-                                ht.ties++; at.ties++; ht.points += 1; at.points += 1;
-                            }
-                        });
+                            .filter(t => t.seasonId === data.team.seasonId);
 
                         standings.sort((a, b) => {
                             if (b.points !== a.points) return b.points - a.points;
-                            if (b.wins !== a.wins) return b.wins - a.wins;
+                            const bTotalWins = (b.wins || 0) + (b.overtimeWins || 0);
+                            const aTotalWins = (a.wins || 0) + (a.overtimeWins || 0);
+                            if (bTotalWins !== aTotalWins) return bTotalWins - aTotalWins;
                             if (a.goalsAgainst !== b.goalsAgainst) return a.goalsAgainst - b.goalsAgainst;
                             return b.goalsFor - a.goalsFor;
                         });

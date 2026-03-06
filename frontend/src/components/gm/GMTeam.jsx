@@ -176,48 +176,50 @@ function GMTeam() {
 
             <div className="team-roster-card">
                 {roster.length > 0 ? (
-                    <table className="team-roster-table">
-                        <thead>
-                            <tr>
-                                <th onClick={() => requestSort('jerseyNumber')} style={{ cursor: 'pointer' }}>Jersey #{getSortIcon('jerseyNumber')}</th>
-                                <th onClick={() => requestSort('lastName')} style={{ cursor: 'pointer' }}>Name{getSortIcon('lastName')}</th>
-                                <th onClick={() => requestSort('position')} style={{ cursor: 'pointer' }}>Position{getSortIcon('position')}</th>
-                                <th onClick={() => requestSort('skillRating')} style={{ cursor: 'pointer' }}>Skill{getSortIcon('skillRating')}</th>
-                                <th onClick={() => requestSort('goals')} style={{ cursor: 'pointer' }}>G{getSortIcon('goals')}</th>
-                                <th onClick={() => requestSort('assists')} style={{ cursor: 'pointer' }}>A{getSortIcon('assists')}</th>
-                                <th onClick={() => requestSort('points')} style={{ cursor: 'pointer' }}>P{getSortIcon('points')}</th>
-                                <th onClick={() => requestSort('penaltyMinutes')} style={{ cursor: 'pointer' }}>PM{getSortIcon('penaltyMinutes')}</th>
-                                <th>Email</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {getSortedRoster().map(player => {
-                                const stats = playerStats[player.id] || {};
-                                return (
-                                    <tr key={player.id}>
-                                        <td>
-                                            <input
-                                                type="number"
-                                                min="0"
-                                                max="99"
-                                                value={editedPlayers[player.id] ?? player.jerseyNumber ?? ''}
-                                                onChange={(e) => handleJerseyChange(player.id, e.target.value)}
-                                                className="jersey-input"
-                                            />
-                                        </td>
-                                        <td className="player-name">{player.firstName} {player.lastName}</td>
-                                        <td>{player.position || '-'}</td>
-                                        <td>{player.skillRating || '-'}</td>
-                                        <td>{stats.goals || 0}</td>
-                                        <td>{stats.assists || 0}</td>
-                                        <td>{stats.points || 0}</td>
-                                        <td>{stats.penaltyMinutes || 0}</td>
-                                        <td className="player-email">{player.email || '-'}</td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
+                    <div className="table-container">
+                        <table className="team-roster-table">
+                            <thead>
+                                <tr>
+                                    <th onClick={() => requestSort('jerseyNumber')} style={{ cursor: 'pointer' }}>Jersey #{getSortIcon('jerseyNumber')}</th>
+                                    <th onClick={() => requestSort('lastName')} style={{ cursor: 'pointer' }}>Name{getSortIcon('lastName')}</th>
+                                    <th onClick={() => requestSort('position')} style={{ cursor: 'pointer' }}>Position{getSortIcon('position')}</th>
+                                    <th onClick={() => requestSort('skillRating')} style={{ cursor: 'pointer' }}>Skill{getSortIcon('skillRating')}</th>
+                                    <th onClick={() => requestSort('goals')} style={{ cursor: 'pointer' }}>G{getSortIcon('goals')}</th>
+                                    <th onClick={() => requestSort('assists')} style={{ cursor: 'pointer' }}>A{getSortIcon('assists')}</th>
+                                    <th onClick={() => requestSort('points')} style={{ cursor: 'pointer' }}>P{getSortIcon('points')}</th>
+                                    <th onClick={() => requestSort('penaltyMinutes')} style={{ cursor: 'pointer' }}>PM{getSortIcon('penaltyMinutes')}</th>
+                                    <th>Email</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {getSortedRoster().map(player => {
+                                    const stats = playerStats[player.id] || {};
+                                    return (
+                                        <tr key={player.id}>
+                                            <td>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    max="99"
+                                                    value={editedPlayers[player.id] ?? player.jerseyNumber ?? ''}
+                                                    onChange={(e) => handleJerseyChange(player.id, e.target.value)}
+                                                    className="jersey-input"
+                                                />
+                                            </td>
+                                            <td className="player-name">{player.firstName} {player.lastName}</td>
+                                            <td>{player.position || '-'}</td>
+                                            <td>{player.skillRating || '-'}</td>
+                                            <td>{stats.goals || 0}</td>
+                                            <td>{stats.assists || 0}</td>
+                                            <td>{stats.points || 0}</td>
+                                            <td>{stats.penaltyMinutes || 0}</td>
+                                            <td className="player-email">{player.email || '-'}</td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 ) : (
                     <p className="no-data">No players on roster</p>
                 )}

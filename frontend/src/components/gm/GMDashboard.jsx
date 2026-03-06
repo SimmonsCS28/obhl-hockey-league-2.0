@@ -14,6 +14,7 @@ const getAuthHeaders = () => {
 function GMDashboard() {
     const { user } = useAuth();
     const [roster, setRoster] = useState([]);
+    const [teamInfo, setTeamInfo] = useState(null);
     const [nextGame, setNextGame] = useState(null);
     const [opponent, setOpponent] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -24,10 +25,22 @@ function GMDashboard() {
 
     useEffect(() => {
         if (user?.teamId) {
+            fetchTeamInfo();
             fetchRoster();
             fetchNextGame();
         }
     }, [user]);
+
+    const fetchTeamInfo = async () => {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/teams/${user.teamId}`, {
+                headers: getAuthHeaders(),
+            });
+            setTeamInfo(response.data);
+        } catch (error) {
+            console.error('Failed to fetch team info:', error);
+        }
+    };
 
     const fetchRoster = async () => {
         try {
@@ -127,56 +140,69 @@ function GMDashboard() {
 
     return (
         <div className="gm-dashboard">
+            <div className="gm-dashboard-header">
+                {teamInfo ? (
+                    <TeamBadge
+                        teamName={teamInfo.name}
+                        teamColor={teamInfo.teamColor}
+                        style={{ fontSize: '1.5rem', padding: '10px 24px', marginBottom: '2rem' }}
+                    />
+                ) : (
+                    <h1>Dashboard</h1>
+                )}
+            </div>
 
             <div className="dashboard-grid">
                 {/* Roster Section */}
                 <div className="dashboard-card roster-card">
                     <h2>Team Roster</h2>
                     {roster.length > 0 ? (
-                        <table className="roster-table">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Name</th>
-                                    <th>Position</th>
-                                    <th>Skill</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {roster.map(player => {
-                                    const editValue = jerseyEdits[player.id];
-                                    const isEdited = editValue !== undefined && editValue !== String(player.jerseyNumber ?? '');
-                                    return (
-                                        <tr key={player.id}>
-                                            <td>
-                                                <input
-                                                    className="jersey-edit-input"
-                                                    type="number"
-                                                    min="0"
-                                                    max="99"
-                                                    value={editValue !== undefined ? editValue : (player.jerseyNumber ?? '')}
-                                                    onChange={e => handleJerseyChange(player.id, e.target.value)}
-                                                />
-                                                {isEdited && (
-                                                    <button
-                                                        className="save-jersey-btn"
-                                                        disabled={savingJersey[player.id]}
-                                                        onClick={() => saveJersey(player)}
-                                                    >
-                                                        {savingJersey[player.id] ? '...' : 'Save'}
-                                                    </button>
-                                                )}
-                                            </td>
-                                            <td>{player.firstName} {player.lastName}</td>
-                                            <td>{player.position || '-'}</td>
-                                            <td>{player.skillRating || '-'}</td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
+                        <div className="table-container">
+                            <table className="roster-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Name</th>
+                                        <th>Position</th>
+                                        <th>Skill</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {roster.map(player => {
+                                        const editValue = jerseyEdits[player.id];
+                                        const isEdited = editValue !== undefined && editValue !== String(player.jerseyNumber ?? '');
+                                        return (
+                                            <tr key={player.id}>
+                                                <td>
+                                                    <input
+                                                        className="jersey-edit-input"
+                                                        type="number"
+                                                        min="0"
+                                                        max="99"
+                                                        value={editValue !== undefined ? editValue : (player.jerseyNumber ?? '')}
+                                                        onChange={e => handleJerseyChange(player.id, e.target.value)}
+                                                    />
+                                                    {isEdited && (
+                                                        <button
+                                                            className="save-jersey-btn"
+                                                            disabled={savingJersey[player.id]}
+                                                            onClick={() => saveJersey(player)}
+                                                        >
+                                                            {savingJersey[player.id] ? '...' : 'Save'}
+                                                        </button>
+                                                    )}
+                                                </td>
+                                                <td>{player.firstName} {player.lastName}</td>
+                                                <td>{player.position || '-'}</td>
+                                                <td>{player.skillRating || '-'}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
                     ) : (
-                        <p className="no-data">No players on roster</p>
+                        <div className="no-data">No roster data available</div>
                     )}
                 </div>
 
@@ -225,7 +251,7 @@ function GMDashboard() {
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 }
 
