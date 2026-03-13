@@ -58,7 +58,14 @@ function RefereeSchedule() {
                 u.role === 'REF' || // Check legacy role field as fallback
                 u.role === 'REFEREE'
             );
-            setReferees(refereeUsers);
+            
+            // Sort referees alphabetically by display name (First Last or Username)
+            const sortedReferees = refereeUsers.sort((a, b) => {
+                const nameA = (a.firstName && a.lastName) ? `${a.firstName} ${a.lastName}`.toLowerCase() : (a.username || '').toLowerCase();
+                const nameB = (b.firstName && b.lastName) ? `${b.firstName} ${b.lastName}`.toLowerCase() : (b.username || '').toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+            setReferees(sortedReferees);
 
             setTeams(teamsData);
         } catch (error) {
@@ -276,7 +283,9 @@ function RefereeSchedule() {
                                                 <option value="">-- Select Referee 1 --</option>
                                                 {referees.map(ref => (
                                                     <option key={ref.id} value={ref.id}>
-                                                        {ref.firstName} {ref.lastName} ({ref.username})
+                                                        {(ref.firstName && ref.lastName) 
+                                                            ? `${ref.firstName} ${ref.lastName}` 
+                                                            : (ref.username || `User ${ref.id}`)}
                                                     </option>
                                                 ))}
                                             </select>
@@ -292,7 +301,9 @@ function RefereeSchedule() {
                                                 <option value="">-- Select Referee 2 --</option>
                                                 {referees.map(ref => (
                                                     <option key={ref.id} value={ref.id}>
-                                                        {ref.firstName} {ref.lastName} ({ref.username})
+                                                        {(ref.firstName && ref.lastName) 
+                                                            ? `${ref.firstName} ${ref.lastName}` 
+                                                            : (ref.username || `User ${ref.id}`)}
                                                     </option>
                                                 ))}
                                             </select>

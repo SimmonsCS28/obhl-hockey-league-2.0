@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 import './Login.css';
 
 const Login = () => {
@@ -25,10 +26,16 @@ const Login = () => {
                 navigate('/admin');
             } else if (roles.includes('GM')) {
                 navigate('/gm');
-            } else if (roles.some(r => ['SCOREKEEPER', 'REF', 'GOALIE'].includes(r))) {
-                navigate('/user');
             } else {
-                navigate('/');
+                // Check if user has a player profile in the player table
+                const email = result.user?.email || result.user?.username;
+                const hasPlayerProfile = email ? await api.checkPlayerProfileExists(email) : false;
+
+                if (hasPlayerProfile) {
+                    navigate('/user'); // Player Dashboard
+                } else {
+                    navigate('/user/shifts'); // My Shifts (staff without a player profile)
+                }
             }
         } else {
             setError(result.error || 'Login failed. Please check your credentials.');

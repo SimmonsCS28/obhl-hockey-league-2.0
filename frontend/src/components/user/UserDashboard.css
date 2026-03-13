@@ -232,6 +232,23 @@
     background-color: #c53030;
 }
 
+.preview-btn {
+    background-color: #2b6cb0;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: background-color 0.2s;
+    margin-right: 8px;
+}
+
+.preview-btn:hover {
+    background-color: #2c5282;
+}
+
 .hamburger-menu {
     display: none;
     flex-direction: column;

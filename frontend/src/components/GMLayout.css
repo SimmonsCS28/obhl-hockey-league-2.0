@@ -33,6 +33,20 @@
     color: white;
 }
 
+.gm-user-info {
+    margin-left: 1.5rem;
+    padding-left: 1.5rem;
+    border-left: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+}
+
+.user-name {
+    font-size: 1rem;
+    color: #cbd5e0;
+    font-weight: 500;
+}
+
 .gm-nav {
     display: flex;
     gap: 1.5rem;

@@ -60,6 +60,12 @@ public class PlayerController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    @GetMapping("/exists")
+    public ResponseEntity<java.util.Map<String, Boolean>> playerExists(@RequestParam String email) {
+        boolean exists = playerRepository.findByEmail(email).isPresent();
+        return ResponseEntity.ok(java.util.Map.of("exists", exists));
+    }
+
     @GetMapping("/by-email-season")
     public ResponseEntity<Player> getPlayerByEmailAndSeason(
             @RequestParam String email,

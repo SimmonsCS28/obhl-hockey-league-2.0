@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 import './LoginModal.css';
+
 
 function LoginModal({ isOpen, onClose }) {
     const [usernameOrEmail, setUsernameOrEmail] = useState('');
@@ -36,8 +38,15 @@ function LoginModal({ isOpen, onClose }) {
                 } else if (result.user?.roles?.includes('GM')) {
                     navigate('/gm');
                 } else {
-                    // Default for USER role and Staff roles
-                    navigate('/user');
+                    // Check if user has a player profile in the player table
+                    const email = result.user?.email || result.user?.username;
+                    const hasPlayerProfile = email ? await api.checkPlayerProfileExists(email) : false;
+
+                    if (hasPlayerProfile) {
+                        navigate('/user'); // Player Dashboard
+                    } else {
+                        navigate('/user/shifts'); // My Shifts (staff without a player profile)
+                    }
                 }
             }
         } else {

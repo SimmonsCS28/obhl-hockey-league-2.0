@@ -17,4 +17,5 @@ public class ShiftAssignmentDTO {
     private String homeTeam;
     private String awayTeam;
     private String role; // GOALIE, REF, SCOREKEEPER
+    private Boolean finalized;
 }

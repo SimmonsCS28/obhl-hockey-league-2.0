@@ -249,4 +249,127 @@
     .game-recap-container .events-table td {
         padding: 0.5rem;
     }
+
+    .game-recap-container .staff-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .game-recap-container .staff-row {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
 }
+
+/* =============================================
+   Game Staff Section
+   ============================================= */
+.game-recap-container .game-staff-section {
+    background: #1e1e1e;
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    margin-top: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.game-recap-container .staff-header {
+    color: #fff;
+    font-size: 1.3rem;
+    margin-top: 0;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #333;
+}
+
+.game-recap-container .staff-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.game-recap-container .staff-group h4 {
+    color: #a0aec0;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0 0 0.75rem 0;
+}
+
+.game-recap-container .staff-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.game-recap-container .staff-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 130px;
+}
+
+.game-recap-container .staff-label {
+    font-size: 0.75rem;
+    color: #718096;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.game-recap-container .staff-value {
+    font-size: 1rem;
+    color: #e2e8f0;
+    font-weight: 500;
+}
+
+/* Goalie tag below team score */
+.game-recap-container .goalie-tag {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.1rem;
+}
+
+.game-recap-container .goalie-tag-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #718096;
+}
+
+.game-recap-container .goalie-tag-value {
+    font-size: 0.85rem;
+    color: #cbd5e0;
+    font-weight: 500;
+}
+
+/* Officials bar below scoreboard */
+.game-recap-container .officials-bar {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    flex-wrap: wrap;
+    padding-top: 1rem;
+    margin-top: 1rem;
+    border-top: 1px solid #333;
+}
+
+.game-recap-container .official-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+}
+
+.game-recap-container .official-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #718096;
+}
+
+.game-recap-container .official-value {
+    font-size: 0.9rem;
+    color: #cbd5e0;
+    font-weight: 500;
+}
+

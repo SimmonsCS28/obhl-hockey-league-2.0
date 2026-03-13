@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useBlocker, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import TeamBadge from './common/TeamBadge';
 import './LiveScoreEntry.css';
 
 const PENALTY_TYPES = [
@@ -1182,7 +1183,13 @@ function LiveScoreEntry(props) {
                                                 </>
                                             )}
                                         </td>
-                                        <td className="team-col">{event.team === 'home' ? game.homeTeamName : game.awayTeamName}</td>
+                                        <td className="team-col">
+                                            <TeamBadge 
+                                                teamId={event.team === 'home' ? game.homeTeamId : game.awayTeamId}
+                                                teamName={event.team === 'home' ? game.homeTeamName : game.awayTeamName}
+                                                teamColor={event.team === 'home' ? game.homeTeamColor : game.awayTeamColor}
+                                            />
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>

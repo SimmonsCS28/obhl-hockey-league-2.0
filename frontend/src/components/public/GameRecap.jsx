@@ -12,6 +12,7 @@ function GameRecap() {
 
     const [game, setGame] = useState(null);
     const [events, setEvents] = useState([]);
+    const [staffNames, setStaffNames] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -87,7 +88,9 @@ function GameRecap() {
                         period: periodMap[be.period] || String(be.period),
                         time: timeStr,
                         team: teamSide,
+                        teamId: be.teamId,
                         teamName: isHome ? enrichedGame.homeTeamName : enrichedGame.awayTeamName,
+                        teamColor: isHome ? enrichedGame.homeTeamColor : enrichedGame.awayTeamColor,
                         player: playerName,
                         assists: assists,
                         minutes: be.penaltyMinutes,
@@ -106,6 +109,22 @@ function GameRecap() {
 
                 setEvents(mappedEvents);
             }
+
+            // Resolve staff names
+            const [goalie1Name, goalie2Name, ref1Name, ref2Name, skName] = await Promise.all([
+                api.getUserPublicName(gameData.goalie1Id),
+                api.getUserPublicName(gameData.goalie2Id),
+                api.getUserPublicName(gameData.referee1Id),
+                api.getUserPublicName(gameData.referee2Id),
+                api.getUserPublicName(gameData.scorekeeperId),
+            ]);
+            setStaffNames({
+                homeGoalie: goalie1Name,
+                awayGoalie: goalie2Name,
+                referee1: ref1Name,
+                referee2: ref2Name,
+                scorekeeper: skName,
+            });
 
         } catch (err) {
             setError(err.message);
@@ -154,6 +173,10 @@ function GameRecap() {
                             </div>
                         </Link>
                         <div className="score">{game.awayScore}</div>
+                        <div className="goalie-tag">
+                            <span className="goalie-tag-label">Goalie</span>
+                            <span className="goalie-tag-value">{staffNames?.awayGoalie || 'Not Assigned'}</span>
+                        </div>
                     </div>
 
                     <div className="vs">VS</div>
@@ -166,6 +189,25 @@ function GameRecap() {
                             </div>
                         </Link>
                         <div className="score">{game.homeScore}</div>
+                        <div className="goalie-tag">
+                            <span className="goalie-tag-label">Goalie</span>
+                            <span className="goalie-tag-value">{staffNames?.homeGoalie || 'Not Assigned'}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="officials-bar">
+                    <div className="official-item">
+                        <span className="official-label">Referee 1</span>
+                        <span className="official-value">{staffNames?.referee1 || 'Not Assigned'}</span>
+                    </div>
+                    <div className="official-item">
+                        <span className="official-label">Referee 2</span>
+                        <span className="official-value">{staffNames?.referee2 || 'Not Assigned'}</span>
+                    </div>
+                    <div className="official-item">
+                        <span className="official-label">Scorekeeper</span>
+                        <span className="official-value">{staffNames?.scorekeeper || 'Not Assigned'}</span>
                     </div>
                 </div>
             </div>
@@ -192,7 +234,13 @@ function GameRecap() {
                                         <tr key={goal.id}>
                                             <td className="period-cell">{goal.period}</td>
                                             <td className="time-cell">{goal.time}</td>
-                                            <td className="team-cell">{goal.teamName}</td>
+                                            <td className="team-cell">
+                                                <TeamBadge
+                                                    teamName={goal.teamName}
+                                                    teamColor={goal.teamColor}
+                                                    onClick={() => navigate(`/teams/${goal.teamId}`)}
+                                                />
+                                            </td>
                                             <td className="player-cell"><strong>{goal.player}</strong></td>
                                             <td className="assists-cell">
                                                 {goal.assists && goal.assists.length > 0
@@ -229,7 +277,13 @@ function GameRecap() {
                                         <tr key={penalty.id}>
                                             <td className="period-cell">{penalty.period}</td>
                                             <td className="time-cell">{penalty.time}</td>
-                                            <td className="team-cell">{penalty.teamName}</td>
+                                            <td className="team-cell">
+                                                <TeamBadge
+                                                    teamName={penalty.teamName}
+                                                    teamColor={penalty.teamColor}
+                                                    onClick={() => navigate(`/teams/${penalty.teamId}`)}
+                                                />
+                                            </td>
                                             <td className="player-cell"><strong>{penalty.player}</strong></td>
                                             <td className="min-cell">{penalty.minutes}</td>
                                             <td className="infraction-cell">{penalty.description}</td>

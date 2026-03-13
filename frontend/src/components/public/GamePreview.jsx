@@ -17,6 +17,7 @@ function GamePreview() {
     const [awayRank, setAwayRank] = useState('');
     const [homeRoster, setHomeRoster] = useState([]);
     const [awayRoster, setAwayRoster] = useState([]);
+    const [staffNames, setStaffNames] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -89,6 +90,22 @@ function GamePreview() {
 
             setHomeRoster(sortPlayers(playersData.filter(p => p.teamId === gameData.homeTeamId)));
             setAwayRoster(sortPlayers(playersData.filter(p => p.teamId === gameData.awayTeamId)));
+
+            // Resolve staff names
+            const [goalie1Name, goalie2Name, ref1Name, ref2Name, skName] = await Promise.all([
+                api.getUserPublicName(gameData.goalie1Id),
+                api.getUserPublicName(gameData.goalie2Id),
+                api.getUserPublicName(gameData.referee1Id),
+                api.getUserPublicName(gameData.referee2Id),
+                api.getUserPublicName(gameData.scorekeeperId),
+            ]);
+            setStaffNames({
+                homeGoalie: goalie1Name,
+                awayGoalie: goalie2Name,
+                referee1: ref1Name,
+                referee2: ref2Name,
+                scorekeeper: skName,
+            });
 
         } catch (err) {
             setError(err.message);
@@ -187,6 +204,10 @@ function GamePreview() {
                                 <div className="rank-value">{homeRank || '-'}</div>
                                 <div className="rank-label">RANK</div>
                             </div>
+                            <div className="goalie-tag">
+                                <span className="goalie-tag-label">Goalie</span>
+                                <span className="goalie-tag-value">{staffNames?.homeGoalie || 'Not Assigned'}</span>
+                            </div>
                         </div>
                     </div>
 
@@ -208,7 +229,26 @@ function GamePreview() {
                                 <div className="rank-value">{awayRank || '-'}</div>
                                 <div className="rank-label">RANK</div>
                             </div>
+                            <div className="goalie-tag">
+                                <span className="goalie-tag-label">Goalie</span>
+                                <span className="goalie-tag-value">{staffNames?.awayGoalie || 'Not Assigned'}</span>
+                            </div>
                         </div>
+                    </div>
+                </div>
+
+                <div className="officials-bar">
+                    <div className="official-item">
+                        <span className="official-label">Referee 1</span>
+                        <span className="official-value">{staffNames?.referee1 || 'Not Assigned'}</span>
+                    </div>
+                    <div className="official-item">
+                        <span className="official-label">Referee 2</span>
+                        <span className="official-value">{staffNames?.referee2 || 'Not Assigned'}</span>
+                    </div>
+                    <div className="official-item">
+                        <span className="official-label">Scorekeeper</span>
+                        <span className="official-value">{staffNames?.scorekeeper || 'Not Assigned'}</span>
                     </div>
                 </div>
             </div>
@@ -228,3 +268,4 @@ function GamePreview() {
 }
 
 export default GamePreview;
+
