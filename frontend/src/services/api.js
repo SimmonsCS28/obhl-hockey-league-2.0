@@ -817,7 +817,21 @@ export const {
     getGameEvents,
     getPlayerDashboard,
     getUserPublicName,
-    checkPlayerProfileExists
+    checkPlayerProfileExists,
+    updatePlayer,
+    createPlayer,
+    deletePlayer,
+    updateGameScore,
+    saveGameEvent,
+    finalizeGame,
+    unfinalizeGame,
+    validatePenalty,
+    getUserById,
+    getRoles,
+    createRole,
+    updateRole,
+    deleteRole,
+    removeGoalieUnavailability
 } = api;
 
 export default api;

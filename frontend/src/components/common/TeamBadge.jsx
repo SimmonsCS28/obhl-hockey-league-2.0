@@ -1,5 +1,18 @@
 import './TeamBadge.css';
 
+const COLOR_MAP = {
+    'Lt. Blu': '#ADD8E6',
+    'White': '#FFFFFF',
+    'Gray': '#808080',
+    'Maroon': '#800000',
+    'Black': '#000000',
+    'Red': '#FF0000',
+    'Blue': '#0000FF',
+    'Green': '#008000',
+    'Orange': '#FFA500',
+    'Tan': '#D2B48C'
+};
+
 const TeamBadge = ({
     teamName,
     teamColor,
@@ -7,28 +20,48 @@ const TeamBadge = ({
     style = {},
     onClick
 }) => {
-    const getContrastYIQ = (hexcolor) => {
-        if (!hexcolor) return 'black';
-        // Remove hash if present
-        hexcolor = hexcolor.replace('#', '');
+    const resolveColor = (color) => {
+        if (!color) return '#ffffff';
+        if (COLOR_MAP[color]) return COLOR_MAP[color];
+        return color;
+    };
 
-        // Handle 3-digit hex (e.g. #FFF -> #FFFFFF)
-        if (hexcolor.length === 3) {
-            hexcolor = hexcolor.split('').map(c => c + c).join('');
+    const getContrastYIQ = (color) => {
+        if (!color) return 'black';
+        
+        let hex = color;
+        // If it's a named color from our map, use the hex
+        if (COLOR_MAP[color]) {
+            hex = COLOR_MAP[color];
         }
 
-        // Validate length
-        if (hexcolor.length !== 6) return 'black';
+        // If it's still not a hex (could be a CSS name like 'white'),
+        // we can't easily calculate contrast without a full CSS color list.
+        // For simplicity, we'll handle the most common ones or return black.
+        if (!hex.startsWith('#')) {
+            const darkColors = ['maroon', 'navy', 'black', 'purple', 'darkblue'];
+            return darkColors.includes(hex.toLowerCase()) ? 'white' : 'black';
+        }
 
-        var r = parseInt(hexcolor.substr(0, 2), 16);
-        var g = parseInt(hexcolor.substr(2, 2), 16);
-        var b = parseInt(hexcolor.substr(4, 2), 16);
+        // Remove hash
+        hex = hex.replace('#', '');
+
+        // Handle 3-digit hex
+        if (hex.length === 3) {
+            hex = hex.split('').map(c => c + c).join('');
+        }
+
+        if (hex.length !== 6) return 'black';
+
+        var r = parseInt(hex.substr(0, 2), 16);
+        var g = parseInt(hex.substr(2, 2), 16);
+        var b = parseInt(hex.substr(4, 2), 16);
         var yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
         return (yiq >= 128) ? 'black' : 'white';
     };
 
-    const contrastColor = getContrastYIQ(teamColor || '#ffffff');
-    const backgroundColor = teamColor || '#ffffff';
+    const backgroundColor = resolveColor(teamColor);
+    const contrastColor = getContrastYIQ(backgroundColor);
 
     const componentStyle = {
         backgroundColor,
