@@ -140,6 +140,19 @@ const api = {
     },
 
     // ============================================
+    // PLAYERS API (Proxied to Stats Service)
+    // ============================================
+    async getPlayers(params = {}) {
+        const queryString = new URLSearchParams(params).toString();
+        const url = `${API_BASE_URL}/players${queryString ? '?' + queryString : ''}`;
+        const response = await fetch(url, {
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) throw new Error('Failed to fetch players');
+        return response.json();
+    },
+
+    // ============================================
     // TEAMS API
     // ============================================
     async getTeams() {
@@ -162,6 +175,22 @@ const api = {
         });
         if (!response.ok) throw new Error('Failed to update team');
         return response.json();
+    },
+
+    // ============================================
+    // USERS API
+    // ============================================
+    async getUserPublicName(userId) {
+        if (!userId) return null;
+        try {
+            const response = await fetch(`${API_BASE_URL}/users/${userId}/name`);
+            if (!response.ok) return null;
+            const data = await response.json();
+            const name = `${data.firstName || ''} ${data.lastName || ''}`.trim();
+            return name || null;
+        } catch {
+            return null;
+        }
     },
 
     // ============================================
@@ -737,6 +766,15 @@ const api = {
         });
         if (!response.ok) throw new Error('Failed to fetch player dashboard');
         return response.json();
+    },
+
+    async checkPlayerProfileExists(email) {
+        const response = await fetch(`${API_BASE_URL}/players/exists?email=${encodeURIComponent(email)}`, {
+            headers: getAuthHeaders()
+        });
+        if (!response.ok) return false;
+        const data = await response.json();
+        return data.exists === true;
     }
 };
 
@@ -744,6 +782,7 @@ const api = {
 export const {
     login,
     logout,
+    getPlayers,
     getTeams,
     getTeam,
     updateTeam,
@@ -751,23 +790,14 @@ export const {
     deleteTeam,
     getGames,
     getGame,
-    updateGameScore,
-    saveGameEvent,
-    finalizeGame,
-    validatePenalty,
-    getPlayersByGame,
-    getPlayersByTeam,
-    getPlayers,
-    createPlayer,
-    updatePlayer,
-    deletePlayer,
+    updateGame,
     getSeasons,
+    getCurrentSeason,
     createSeason,
     updateSeason,
     deleteSeason,
     getPlayerStats,
     getPlayerStatsBulk,
-    refereeSignup,
     scorekeeperSignup,
     getUserRoles,
     updateUserRoles,
@@ -785,7 +815,9 @@ export const {
     getSecurityQuestion,
     resetPassword,
     getGameEvents,
-    getPlayerDashboard
+    getPlayerDashboard,
+    getUserPublicName,
+    checkPlayerProfileExists
 } = api;
 
 export default api;

@@ -28,6 +28,8 @@ function GMDashboard() {
             fetchTeamInfo();
             fetchRoster();
             fetchNextGame();
+        } else {
+            setLoading(false);
         }
     }, [user]);
 

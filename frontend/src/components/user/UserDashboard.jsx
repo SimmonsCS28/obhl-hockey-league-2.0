@@ -279,6 +279,18 @@ const UserDashboard = () => {
                                                         </button>
                                                     )}
 
+                                                    <button
+                                                        className="preview-btn"
+                                                        onClick={() => navigate(
+                                                            shift.finalized
+                                                                ? `/game/${shift.gameId}/recap`
+                                                                : `/game/${shift.gameId}/preview`
+                                                        )}
+                                                        title={shift.finalized ? 'View game recap' : 'View game preview'}
+                                                    >
+                                                        {shift.finalized ? 'Recap' : 'Preview'}
+                                                    </button>
+
                                                     {shift.role !== 'GOALIE' && (
                                                         <button
                                                             className="drop-shift-btn"

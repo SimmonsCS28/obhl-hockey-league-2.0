@@ -65,6 +65,7 @@ public class RefereeShiftService {
             }
 
             dto.setRole("REFEREE");
+            dto.setFinalized("completed".equals(game.getStatus()));
             return dto;
         }).collect(java.util.stream.Collectors.toList());
     }

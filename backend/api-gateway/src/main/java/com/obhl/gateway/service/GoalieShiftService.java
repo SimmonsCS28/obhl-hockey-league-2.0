@@ -116,6 +116,7 @@ public class GoalieShiftService {
             }
 
             dto.setRole("GOALIE");
+            dto.setFinalized("completed".equals(game.getStatus()));
             return dto;
         }).collect(Collectors.toList());
     }

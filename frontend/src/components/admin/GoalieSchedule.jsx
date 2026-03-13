@@ -50,7 +50,15 @@ function GoalieSchedule() {
             ]);
 
             setGames(gamesData);
-            setGoalies(goaliesData);
+            
+            // Sort goalies alphabetically by display name (First Last or Username)
+            const sortedGoalies = (goaliesData || []).sort((a, b) => {
+                const nameA = (a.firstName && a.lastName) ? `${a.firstName} ${a.lastName}`.toLowerCase() : (a.username || '').toLowerCase();
+                const nameB = (b.firstName && b.lastName) ? `${b.firstName} ${b.lastName}`.toLowerCase() : (b.username || '').toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+            setGoalies(sortedGoalies);
+            
             setTeams(teamsData);
             setUnavailability(unavailabilityData || []);
         } catch (error) {
@@ -286,7 +294,9 @@ function GoalieSchedule() {
                                                     .filter(g => isGoalieAvailable(g.id, game.gameDate, game.goalie1Id))
                                                     .map(goalie => (
                                                         <option key={goalie.id} value={goalie.id}>
-                                                            {goalie.username} ({goalie.email})
+                                                            {(goalie.firstName && goalie.lastName) 
+                                                                ? `${goalie.firstName} ${goalie.lastName}` 
+                                                                : (goalie.username || `User ${goalie.id}`)}
                                                         </option>
                                                     ))}
                                             </select>
@@ -304,7 +314,9 @@ function GoalieSchedule() {
                                                     .filter(g => isGoalieAvailable(g.id, game.gameDate, game.goalie2Id))
                                                     .map(goalie => (
                                                         <option key={goalie.id} value={goalie.id}>
-                                                            {goalie.username} ({goalie.email})
+                                                            {(goalie.firstName && goalie.lastName) 
+                                                                ? `${goalie.firstName} ${goalie.lastName}` 
+                                                                : (goalie.username || `User ${goalie.id}`)}
                                                         </option>
                                                     ))}
                                             </select>

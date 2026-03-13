@@ -1,6 +1,7 @@
 package com.obhl.gateway.controller;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -47,6 +48,22 @@ public class UserController {
             users = userManagementService.getAllUsers();
         }
         return ResponseEntity.ok(users);
+    }
+
+    /**
+     * Get user display name by ID (public, no auth required - returns only first/last name)
+     */
+    @GetMapping("/{id}/name")
+    public ResponseEntity<Map<String, String>> getUserPublicName(@PathVariable Long id) {
+        try {
+            UserDTO user = userManagementService.getUserById(id);
+            return ResponseEntity.ok(Map.of(
+                "firstName", user.getFirstName() != null ? user.getFirstName() : "",
+                "lastName", user.getLastName() != null ? user.getLastName() : ""
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     /**

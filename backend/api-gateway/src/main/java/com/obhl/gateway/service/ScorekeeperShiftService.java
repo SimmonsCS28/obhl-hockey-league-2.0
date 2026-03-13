@@ -65,6 +65,7 @@ public class ScorekeeperShiftService {
             }
 
             dto.setRole("SCOREKEEPER");
+            dto.setFinalized("completed".equals(game.getStatus()));
             return dto;
         }).collect(java.util.stream.Collectors.toList());
     }

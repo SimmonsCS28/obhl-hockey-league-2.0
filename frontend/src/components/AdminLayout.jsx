@@ -38,7 +38,10 @@ function AdminLayout({ children, activeTab }) {
                         <span></span>
                     </button>
                     <div className="admin-user-info">
-                        <span className="user-email">{user?.email}</span>
+                        <div className="admin-user-details">
+                            <span className="user-name">{user?.firstName} {user?.lastName}</span>
+                            <span className="user-email">{user?.email}</span>
+                        </div>
                         <button
                             onClick={() => navigate('/user')}
                             className="public-site-btn"

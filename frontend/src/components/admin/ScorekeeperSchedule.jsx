@@ -58,7 +58,14 @@ function ScorekeeperSchedule() {
                 u.role === 'Scorekeeper' ||
                 u.role === 'SK'
             );
-            setScorekeepers(scorekeeperUsers);
+            
+            // Sort scorekeepers alphabetically by display name (First Last or Username)
+            const sortedScorekeepers = scorekeeperUsers.sort((a, b) => {
+                const nameA = (a.firstName && a.lastName) ? `${a.firstName} ${a.lastName}`.toLowerCase() : (a.username || '').toLowerCase();
+                const nameB = (b.firstName && b.lastName) ? `${b.firstName} ${b.lastName}`.toLowerCase() : (b.username || '').toLowerCase();
+                return nameA.localeCompare(nameB);
+            });
+            setScorekeepers(sortedScorekeepers);
 
             setTeams(teamsData);
         } catch (error) {
@@ -238,7 +245,9 @@ function ScorekeeperSchedule() {
                                                 <option value="">-- Select Scorekeeper --</option>
                                                 {scorekeepers.map(sk => (
                                                     <option key={sk.id} value={sk.id}>
-                                                        {sk.firstName} {sk.lastName} ({sk.username})
+                                                        {(sk.firstName && sk.lastName) 
+                                                            ? `${sk.firstName} ${sk.lastName}` 
+                                                            : (sk.username || `User ${sk.id}`)}
                                                     </option>
                                                 ))}
                                             </select>

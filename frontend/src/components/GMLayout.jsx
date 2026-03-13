@@ -23,6 +23,11 @@ function GMLayout() {
                             <img src={logo} alt="OBHL Logo" className="gm-logo-img" />
                         </Link>
                         <h1>GM Portal</h1>
+                        {user && (
+                            <div className="gm-user-info">
+                                <span className="user-name">{user.firstName} {user.lastName}</span>
+                            </div>
+                        )}
                     </div>
 
                     <button
