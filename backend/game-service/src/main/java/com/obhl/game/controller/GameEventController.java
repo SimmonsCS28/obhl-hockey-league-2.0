@@ -34,8 +34,9 @@ public class GameEventController {
     @PostMapping("/validate-penalty")
     public ResponseEntity<PenaltyValidationResponse> validatePenalty(
             @RequestParam Long playerId,
-            @RequestParam Long gameId) {
-        PenaltyValidationResponse response = penaltyValidator.validatePenalty(playerId, gameId);
+            @RequestParam Long gameId,
+            @RequestParam Long teamId) {
+        PenaltyValidationResponse response = penaltyValidator.validatePenalty(playerId, gameId, teamId);
         return ResponseEntity.ok(response);
     }
 

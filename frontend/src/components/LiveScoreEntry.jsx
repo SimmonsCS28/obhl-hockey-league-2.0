@@ -212,7 +212,7 @@ function LiveScoreEntry(props) {
                 }
             }
         }
-    }, [players.length, events.length]);
+    }, [players, events]);
 
     // Warn on browser close/refresh if there are unsaved changes
     useEffect(() => {
@@ -242,8 +242,11 @@ function LiveScoreEntry(props) {
                 api.getPlayers({ teamId: game.awayTeamId })
             ]);
 
+            const mappedHome = homePlayers.map(p => ({ ...p, teamId: game.homeTeamId }));
+            const mappedAway = awayPlayers.map(p => ({ ...p, teamId: game.awayTeamId }));
+
             // Add goalsInGame tracking and full name for each player
-            const allPlayers = [...homePlayers, ...awayPlayers].map(player => ({
+            const allPlayers = [...mappedHome, ...mappedAway].map(player => ({
                 ...player,
                 name: `${player.firstName || ''} ${player.lastName || ''}`.trim() || 'Unknown',
                 goalsInGame: 0 // Initialize goal count for this game
@@ -450,7 +453,7 @@ function LiveScoreEntry(props) {
 
         // Validate penalty for ejection/suspension
         try {
-            const validation = await api.validatePenalty(player.id, game.id);
+            const validation = await api.validatePenalty(player.id, game.id, player.teamId);
 
             // If ejection or suspension, show alert modal
             if (validation.shouldEject) {
@@ -1241,14 +1244,12 @@ function LiveScoreEntry(props) {
                                 </div>
                             </div>
 
-                            {/* OT Selection - show for tied games or when OT goal detected */}
-                            {(homeScore === awayScore || events.some(e => e.type === 'goal' && e.period === 'OT')) && (
                                 <div className="ot-selection">
                                     {events.some(e => e.type === 'goal' && e.period === 'OT') ? (
                                         <p><strong>✓ OT goal detected - Game ended in overtime</strong></p>
                                     ) : (
                                         <>
-                                            <p><strong>Game ended in a tie. Did it go to overtime?</strong></p>
+                                            <p><strong>Did this game end in overtime?</strong></p>
                                             <div className="ot-options">
                                                 <label className="ot-option">
                                                     <input
@@ -1274,7 +1275,6 @@ function LiveScoreEntry(props) {
                                         </>
                                     )}
                                 </div>
-                            )}
 
                             <div className="warning-list">
                                 <p><strong>This will:</strong></p>

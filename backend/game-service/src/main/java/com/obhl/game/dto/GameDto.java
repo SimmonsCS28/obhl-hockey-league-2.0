@@ -102,6 +102,9 @@ public class GameDto {
     public static class PenaltyValidationRequest {
         @NotNull
         private Long playerId;
+        
+        @NotNull
+        private Long teamId;
     }
 
     @Data

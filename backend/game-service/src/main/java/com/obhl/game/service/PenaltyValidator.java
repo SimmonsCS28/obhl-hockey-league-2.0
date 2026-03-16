@@ -17,6 +17,7 @@ import com.obhl.game.repository.PenaltyTrackingRepository;
 public class PenaltyValidator {
 
     private final PenaltyTrackingRepository penaltyTrackingRepository;
+    private final com.obhl.game.repository.GameRepository gameRepository;
 
     /**
      * Validates if a penalty should result in ejection or suspension
@@ -26,8 +27,12 @@ public class PenaltyValidator {
      * next game
      */
     @Transactional
-    public PenaltyValidationResponse validatePenalty(Long playerId, Long gameId) {
-        log.info("Validating penalty for player {} in game {}", playerId, gameId);
+    public PenaltyValidationResponse validatePenalty(Long playerId, Long gameId, Long teamId) {
+        log.info("Validating penalty for player {} in game {} for team {}", playerId, gameId, teamId);
+
+        // Get current game details
+        com.obhl.game.model.Game currentGame = gameRepository.findById(gameId)
+                .orElseThrow(() -> new IllegalArgumentException("Game not found: " + gameId));
 
         // Get or create penalty tracking for current game
         PenaltyTracking currentGameTracking = penaltyTrackingRepository
@@ -57,14 +62,28 @@ public class PenaltyValidator {
                     "EJECTION");
         }
 
-        // Check for 4-penalty suspension rule (across last 2 games)
-        List<PenaltyTracking> recentGames = penaltyTrackingRepository
-                .findByPlayerIdOrderByCreatedAtDesc(playerId);
+        // Check for 4-penalty suspension rule (across last 2 consecutive games in season)
+        List<com.obhl.game.model.Game> seasonGames = gameRepository.findBySeasonIdAndTeam(
+                currentGame.getSeasonId(), teamId);
 
-        if (recentGames.size() >= 1) {
-            // Get the most recent previous game
-            PenaltyTracking previousGame = recentGames.get(0);
-            int totalPenalties = newPenaltyCount + previousGame.getPenaltyCount();
+        com.obhl.game.model.Game previousGame = null;
+        // Iterate backwards to find the previous game before the current one
+        for (int i = seasonGames.size() - 1; i >= 0; i--) {
+            com.obhl.game.model.Game g = seasonGames.get(i);
+            if (g.getGameDate().isBefore(currentGame.getGameDate())) {
+                previousGame = g;
+                break;
+            }
+        }
+
+        if (previousGame != null) {
+            // Find penalty tracking for THAT specific previous game
+            PenaltyTracking previousGameTracking = penaltyTrackingRepository
+                    .findByPlayerIdAndGameId(playerId, previousGame.getId())
+                    .orElse(null);
+
+            int previousCount = (previousGameTracking != null) ? previousGameTracking.getPenaltyCount() : 0;
+            int totalPenalties = newPenaltyCount + previousCount;
 
             if (totalPenalties >= 4) {
                 currentGameTracking.setIsEjected(true);
@@ -77,9 +96,8 @@ public class PenaltyValidator {
                         newPenaltyCount,
                         String.format(
                                 "🚨 EJECTION + SUSPENSION: Player has %d penalties in this game and %d in the previous game (total: %d). "
-                                        +
-                                        "Player must be ejected from this game AND is suspended for the next game.",
-                                newPenaltyCount, previousGame.getPenaltyCount(), totalPenalties),
+                                        + "Player must be ejected from this game AND is suspended for the next game.",
+                                newPenaltyCount, previousCount, totalPenalties),
                         "EJECTION_AND_SUSPENSION");
             }
         }

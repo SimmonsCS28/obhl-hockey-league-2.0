@@ -234,11 +234,11 @@ const api = {
     // PENALTY VALIDATION API
     //Connect to Game Service penalty validation endpoint
     // ============================================
-    async validatePenalty(playerId, gameId) {
+    async validatePenalty(playerId, gameId, teamId) {
         try {
             return await request(`/games/${gameId}/penalties/validate`, {
                 method: 'POST',
-                body: JSON.stringify({ playerId })
+                body: JSON.stringify({ playerId, teamId })
             });
         } catch (error) {
             console.warn('Penalty validation endpoint failed, falling back to default');

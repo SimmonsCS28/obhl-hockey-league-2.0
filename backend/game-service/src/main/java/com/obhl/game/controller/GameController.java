@@ -197,7 +197,7 @@ public class GameController {
             @PathVariable Long gameId,
             @RequestBody GameDto.PenaltyValidationRequest request) {
         PenaltyValidationResponse response = penaltyValidator.validatePenalty(
-                request.getPlayerId(), gameId);
+                request.getPlayerId(), gameId, request.getTeamId());
         return ResponseEntity.ok(response);
     }
 
