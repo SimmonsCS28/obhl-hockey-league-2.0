@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, Outlet, useNavigate } from 'react-router-dom';
 import logo from '../assets/images/obi-logo-nav.png';
 import { useAuth } from '../contexts/AuthContext';
@@ -11,6 +11,16 @@ function PublicLayout() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { user, logout, isAuthenticated, isAdmin, isGM, hasAnyRole } = useAuth();
     const navigate = useNavigate();
+    // Close mobile menu on resize to desktop
+    useEffect(() => {
+        const handleResize = () => {
+            if (window.innerWidth > 768) {
+                setIsMobileMenuOpen(false);
+            }
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const handleLogout = () => {
         logout();
@@ -223,10 +233,12 @@ function PublicLayout() {
                 <p>&copy; {new Date().getFullYear()} Old Buzzard Hockey League. All rights reserved.</p>
             </footer>
 
-            <LoginModal
-                isOpen={isLoginModalOpen}
-                onClose={() => setIsLoginModalOpen(false)}
-            />
+            {isLoginModalOpen && (
+                <LoginModal
+                    isOpen={isLoginModalOpen}
+                    onClose={() => setIsLoginModalOpen(false)}
+                />
+            )}
         </div>
     );
 }

@@ -201,9 +201,12 @@ const router = createBrowserRouter([
   }
 ]);
 
+import VersionChecker from './components/common/VersionChecker';
+
 function App() {
   return (
     <AuthProvider>
+      <VersionChecker />
       <RouterProvider router={router} />
     </AuthProvider>
   );

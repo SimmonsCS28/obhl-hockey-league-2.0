@@ -30,7 +30,12 @@ function LoginModal({ isOpen, onClose }) {
 
             // Check if password change is required first
             if (result.mustChangePassword) {
-                navigate('/change-password');
+                navigate('/change-password', { 
+                    state: { 
+                        ephemeralToken: result.token, 
+                        ephemeralUser: result.user 
+                    } 
+                });
             } else {
                 // Role-based redirect (priority: ADMIN > GM > staff roles > default)
                 if (result.user?.roles?.includes('ADMIN')) {

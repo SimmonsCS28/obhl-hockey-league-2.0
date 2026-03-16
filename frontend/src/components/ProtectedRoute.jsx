@@ -21,6 +21,11 @@ const ProtectedRoute = ({ children, requiredRole, requiredRoles = [] }) => {
         return <Navigate to="/" replace />;
     }
 
+    // Secondary check: if user must change password, redirect them
+    if (user.mustChangePassword && window.location.pathname !== '/change-password') {
+        return <Navigate to="/change-password" replace />;
+    }
+
     // Check single role (backward compatibility)
     if (requiredRole && !hasAnyRole(requiredRole)) {
         return <AccessDenied requiredRole={requiredRole} userRoles={user.roles || [user.role]} />;

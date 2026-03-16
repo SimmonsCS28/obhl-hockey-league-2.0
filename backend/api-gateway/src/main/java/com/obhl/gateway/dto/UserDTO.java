@@ -1,6 +1,6 @@
 package com.obhl.gateway.dto;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -22,8 +22,9 @@ public class UserDTO {
     private Boolean isActive;
     private String phoneNumber;
     private Boolean mustChangePassword;
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    private java.time.Instant createdAt;
+    private java.time.Instant updatedAt;
+    private java.time.Instant lastLogin;
 
     // Note: passwordHash is intentionally NOT included for security
 }

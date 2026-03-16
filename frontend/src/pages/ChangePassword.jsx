@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import api from '../services/api';
 import './ChangePassword.css';
 
 export default function ChangePassword() {
@@ -10,13 +11,25 @@ export default function ChangePassword() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-    const { user } = useAuth();
+    const location = useLocation();
+    const { completeLogin } = useAuth();
+
+    // Ephemeral state from Login
+    const ephemeralToken = location.state?.ephemeralToken;
+    const ephemeralUser = location.state?.ephemeralUser;
+
+    useEffect(() => {
+        // Redir if no ephemeral session
+        if (!ephemeralToken || !ephemeralUser) {
+            console.warn('No ephemeral session found, redirecting to home');
+            navigate('/', { replace: true });
+        }
+    }, [ephemeralToken, ephemeralUser, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
 
-        // Validation
         if (newPassword.length < 8) {
             setError('New password must be at least 8 characters');
             return;
@@ -30,37 +43,22 @@ export default function ChangePassword() {
         setLoading(true);
 
         try {
-            // Make API call using the token from localStorage
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/change-password`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    oldPassword,
-                    newPassword
-                })
-            });
+            await api.changePassword(oldPassword, newPassword, ephemeralToken);
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                console.error('Password change error:', errorData);
-                throw new Error(errorData.error || 'Failed to change password');
-            }
+            // Success: Finalize login
+            completeLogin(ephemeralToken, ephemeralUser);
 
-            // Password changed successfully, redirect to dashboard
-            if (user.role === 'GM') {
-                navigate('/gm');
-            } else if (user.role === 'ADMIN') {
+            const roles = ephemeralUser.roles || [ephemeralUser.role];
+            if (roles.includes('ADMIN')) {
                 navigate('/admin');
+            } else if (roles.includes('GM')) {
+                navigate('/gm');
             } else {
-                navigate('/');
+                navigate('/user');
             }
         } catch (err) {
-            console.error('Error details:', err);
-            setError(err.message || err.response?.data?.error || 'Failed to change password');
+            console.error('Error changing password:', err);
+            setError(err.message || 'Failed to change password');
         } finally {
             setLoading(false);
         }
