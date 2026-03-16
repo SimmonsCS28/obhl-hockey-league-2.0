@@ -35,8 +35,10 @@ const request = async (url, options = {}) => {
             // Handle session expiration/authorization errors
             if (response.status === 401 || response.status === 403) {
                 console.warn(`Auth error (${response.status}) for ${url}`);
-                window.dispatchEvent(new Event('auth-error'));
-                throw new Error('Your session has expired. Please log in again.');
+                if (!url.includes('/auth/login')) {
+                    window.dispatchEvent(new Event('auth-error'));
+                    throw new Error('Your session has expired. Please log in again.');
+                }
             }
 
             const errorBody = await response.text();
