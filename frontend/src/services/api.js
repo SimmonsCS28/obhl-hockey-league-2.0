@@ -9,67 +9,93 @@ const getAuthHeaders = () => {
     return token ? { 'Authorization': `Bearer ${token}` } : {};
 };
 
+// Centralized request helper
+const request = async (url, options = {}) => {
+    // List prefixes that shouldn't be prepended with API_BASE_URL
+    const PROXY_PREFIXES = ['/games-api', '/stats-api'];
+    const isProxyPath = PROXY_PREFIXES.some(prefix => url.startsWith(prefix));
+
+    const fullUrl = url.startsWith('http') 
+        ? url 
+        : (url.startsWith(API_BASE_URL) || isProxyPath ? url : `${API_BASE_URL}${url}`);
+
+    const headers = {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+        ...options.headers
+    };
+
+    try {
+        const response = await fetch(fullUrl, {
+            ...options,
+            headers
+        });
+
+        if (!response.ok) {
+            // Handle session expiration/authorization errors
+            if (response.status === 401 || response.status === 403) {
+                console.warn(`Auth error (${response.status}) for ${url}`);
+                window.dispatchEvent(new Event('auth-error'));
+                throw new Error('Your session has expired. Please log in again.');
+            }
+
+            const errorBody = await response.text();
+            throw new Error(errorBody || `Request failed with status ${response.status}`);
+        }
+
+        const text = await response.text();
+        return text ? JSON.parse(text) : {};
+    } catch (error) {
+        if (error.name === 'SyntaxError') {
+            return {}; // Handle cases where response might not be JSON
+        }
+        throw error;
+    }
+};
+
 // API client for backend services
 const api = {
     // ============================================
     // AUTHENTICATION API
     // ============================================
-    // Staff Signup
     async signup(data) {
-        const response = await fetch(`${API_BASE_URL}/users/signup`, {
+        return request('/users/signup', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        if (!response.ok) {
-            const error = await response.text();
-            throw new Error(error || 'Signup failed');
-        }
-        return response.json();
     },
 
-    // Password Reset
     async getSecurityQuestion(username) {
-        const response = await fetch(`${API_BASE_URL}/auth/security-question?username=${encodeURIComponent(username)}`);
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.message || 'Failed to fetch security question');
-        }
-        return response.json();
+        return request(`/auth/security-question?username=${encodeURIComponent(username)}`);
     },
 
     async resetPassword(data) {
-        const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+        return request('/auth/reset-password', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.message || 'Failed to reset password');
-        }
-        return response.json();
     },
 
     async login(usernameOrEmail, password) {
-        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        // Special case for login as we don't want auth headers yet usually, 
+        // but the request helper adds them safely if available.
+        return request('/auth/login', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ usernameOrEmail, password })
         });
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.message || 'Login failed');
-        }
-        return response.json();
+    },
+
+    async changePassword(oldPassword, newPassword, token) {
+        return request('/auth/change-password', {
+            method: 'POST',
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+            body: JSON.stringify({ oldPassword, newPassword })
+        });
     },
 
     async logout() {
         try {
-            await fetch(`${API_BASE_URL}/auth/logout`, {
-                method: 'POST',
-                headers: { ...getAuthHeaders() }
-            });
+            await request('/auth/logout', { method: 'POST' });
         } catch (error) {
             console.error('Logout error:', error);
         }
@@ -79,64 +105,25 @@ const api = {
     // GENERIC HTTP METHODS
     // ============================================
     async get(url) {
-        const response = await fetch(`${API_BASE_URL}${url}`, {
-            headers: {
-                ...getAuthHeaders(),
-                'Content-Type': 'application/json'
-            }
-        });
-        if (!response.ok) {
-            throw new Error(`GET ${url} failed with status ${response.status}`);
-        }
-        return response.json();
+        return request(url);
     },
 
     async post(url, data = null) {
-        const response = await fetch(`${API_BASE_URL}${url}`, {
+        return request(url, {
             method: 'POST',
-            headers: {
-                ...getAuthHeaders(),
-                'Content-Type': 'application/json'
-            },
             body: data ? JSON.stringify(data) : null
         });
-        if (!response.ok) {
-            throw new Error(`POST ${url} failed with status ${response.status}`);
-        }
-        const text = await response.text();
-        return text ? JSON.parse(text) : {};
     },
 
     async put(url, data) {
-        const response = await fetch(`${API_BASE_URL}${url}`, {
+        return request(url, {
             method: 'PUT',
-            headers: {
-                ...getAuthHeaders(),
-                'Content-Type': 'application/json'
-            },
             body: JSON.stringify(data)
         });
-        if (!response.ok) {
-            throw new Error(`PUT ${url} failed with status ${response.status}`);
-        }
-        const text = await response.text();
-        return text ? JSON.parse(text) : {};
     },
 
     async delete(url) {
-        const response = await fetch(`${API_BASE_URL}${url}`, {
-            method: 'DELETE',
-            headers: {
-                ...getAuthHeaders(),
-                'Content-Type': 'application/json'
-            }
-        });
-        if (!response.ok) {
-            throw new Error(`DELETE ${url} failed with status ${response.status}`);
-        }
-        // DELETE might return empty response
-        const text = await response.text();
-        return text ? JSON.parse(text) : {};
+        return request(url, { method: 'DELETE' });
     },
 
     // ============================================
@@ -144,37 +131,26 @@ const api = {
     // ============================================
     async getPlayers(params = {}) {
         const queryString = new URLSearchParams(params).toString();
-        const url = `${API_BASE_URL}/players${queryString ? '?' + queryString : ''}`;
-        const response = await fetch(url, {
-            headers: getAuthHeaders()
-        });
-        if (!response.ok) throw new Error('Failed to fetch players');
-        return response.json();
+        const url = `/players${queryString ? '?' + queryString : ''}`;
+        return request(url);
     },
 
     // ============================================
     // TEAMS API
     // ============================================
     async getTeams() {
-        const response = await fetch(`${API_BASE_URL}/teams`);
-        if (!response.ok) throw new Error('Failed to fetch teams');
-        return response.json();
+        return request('/teams');
     },
 
     async getTeam(id) {
-        const response = await fetch(`${API_BASE_URL}/teams/${id}`);
-        if (!response.ok) throw new Error('Failed to fetch team');
-        return response.json();
+        return request(`/teams/${id}`);
     },
 
     async updateTeam(id, data) {
-        const response = await fetch(`${API_BASE_URL}/teams/${id}`, {
+        return request(`/teams/${id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        if (!response.ok) throw new Error('Failed to update team');
-        return response.json();
     },
 
     // ============================================
@@ -183,9 +159,7 @@ const api = {
     async getUserPublicName(userId) {
         if (!userId) return null;
         try {
-            const response = await fetch(`${API_BASE_URL}/users/${userId}/name`);
-            if (!response.ok) return null;
-            const data = await response.json();
+            const data = await request(`/users/${userId}/name`);
             const name = `${data.firstName || ''} ${data.lastName || ''}`.trim();
             return name || null;
         } catch {
@@ -202,117 +176,56 @@ const api = {
         if (seasonId) {
             url += `&seasonId=${seasonId}`;
         }
-        const response = await fetch(url, {
+        return request(url, {
             headers: {
-                ...getAuthHeaders(),
                 'Cache-Control': 'no-cache',
                 'Pragma': 'no-cache'
             }
         });
-        if (!response.ok) throw new Error('Failed to fetch games');
-        return response.json();
     },
 
     async getGame(gameId) {
         const GAME_SERVICE_URL = '/games-api';
-        const response = await fetch(`${GAME_SERVICE_URL}/games/${gameId}`);
-        if (!response.ok) throw new Error('Failed to fetch game');
-        return response.json();
+        return request(`${GAME_SERVICE_URL}/games/${gameId}`);
     },
 
     async updateGame(gameId, data) {
         const GAME_SERVICE_URL = '/games-api';
-        const response = await fetch(`${GAME_SERVICE_URL}/games/${gameId}`, {
+        return request(`${GAME_SERVICE_URL}/games/${gameId}`, {
             method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                ...getAuthHeaders()
-            },
             body: JSON.stringify(data)
         });
-        if (!response.ok) throw new Error('Failed to update game');
-        return response.json();
     },
 
     async updateGameScore(gameId, homeScore, awayScore) {
-        const response = await fetch(`${API_BASE_URL}/games/${gameId}/score`, {
+        return request(`/games/${gameId}/score`, {
             method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                ...getAuthHeaders()
-            },
             body: JSON.stringify({ homeScore, awayScore })
         });
-        if (!response.ok) throw new Error('Failed to update game score');
-        return response.json();
     },
 
     async saveGameEvent(gameId, event) {
-        // First try to find mapping for event type
-        const endpoint = event.type === 'goal' ? 'goals' : 'penalties';
-
-        // Use generic events endpoint for now as backend seems to handle it
-        // Or specific endpoints if backend requires
-        const response = await fetch(`${API_BASE_URL}/games/${gameId}/events`, {
+        return request(`/games/${gameId}/events`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...getAuthHeaders()
-            },
             body: JSON.stringify(event)
         });
-        if (!response.ok) throw new Error('Failed to save game event');
-        return response.json();
     },
 
     async getGameEvents(gameId) {
-        const response = await fetch(`${API_BASE_URL}/games/${gameId}/events`, {
-            headers: getAuthHeaders()
-        });
-        if (!response.ok) throw new Error('Failed to load game events');
-        return response.json();
+        return request(`/games/${gameId}/events`);
     },
 
     async finalizeGame(gameId, homeScore, awayScore, endedInOT = false) {
-        const response = await fetch(`${API_BASE_URL}/games/${gameId}/finalize`, {
+        return request(`/games/${gameId}/finalize`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...getAuthHeaders()
-            },
             body: JSON.stringify({ homeScore, awayScore, endedInOT })
         });
-
-        if (!response.ok) {
-            if (response.status === 401 || response.status === 403) {
-                window.dispatchEvent(new Event('auth-error'));
-                throw new Error('Your session has expired. Please log in again.');
-            }
-            const error = await response.text();
-            throw new Error(`Failed to finalize game: ${error}`);
-        }
-
-        return response.json();
     },
 
     async unfinalizeGame(gameId) {
-        const response = await fetch(`${API_BASE_URL}/games/${gameId}/unfinalize`, {
-            method: 'POST',
-            headers: {
-                ...getAuthHeaders()
-            }
+        return request(`/games/${gameId}/unfinalize`, {
+            method: 'POST'
         });
-
-        if (!response.ok) {
-            if (response.status === 401 || response.status === 403) {
-                window.dispatchEvent(new Event('auth-error'));
-                throw new Error('Your session has expired. Please log in again.');
-            }
-            const error = await response.text();
-            throw new Error(`Failed to unfinalize game: ${error}`);
-        }
-
-        return response.json();
     },
 
     // ============================================
@@ -320,17 +233,12 @@ const api = {
     //Connect to Game Service penalty validation endpoint
     // ============================================
     async validatePenalty(playerId, gameId) {
-        const response = await fetch(`${API_BASE_URL}/games/${gameId}/penalties/validate`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...getAuthHeaders()
-            },
-            body: JSON.stringify({ playerId })
-        });
-
-        // If 404/500, might not be implemented yet on backend, fallback to safe default
-        if (!response.ok) {
+        try {
+            return await request(`/games/${gameId}/penalties/validate`, {
+                method: 'POST',
+                body: JSON.stringify({ playerId })
+            });
+        } catch (error) {
             console.warn('Penalty validation endpoint failed, falling back to default');
             return {
                 shouldEject: false,
@@ -340,8 +248,6 @@ const api = {
                 warningType: 'NORMAL'
             };
         }
-
-        return response.json();
     },
 
     // ============================================
@@ -410,371 +316,172 @@ const api = {
     // ============================================
     // PLAYER CRUD OPERATIONS
     // ============================================
-    async getPlayers(params = {}) {
-        const queryString = new URLSearchParams({ ...params, _t: Date.now() }).toString();
-        const url = `${API_BASE_URL}/players${queryString ? `?${queryString}` : ''}`;
-        const response = await fetch(url, {
-            headers: getAuthHeaders(),
-            cache: 'no-store'
-        });
-        if (!response.ok) throw new Error('Failed to fetch players');
-        return response.json();
-    },
-
     async createPlayer(data) {
-        const response = await fetch(`${API_BASE_URL}/players`, {
+        return request('/players', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...getAuthHeaders()
-            },
             body: JSON.stringify(data)
         });
-        if (!response.ok) throw new Error('Failed to create player');
-        return response.json();
     },
 
     async updatePlayer(id, data) {
-        const response = await fetch(`${API_BASE_URL}/players/${id}`, {
+        return request(`/players/${id}`, {
             method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                ...getAuthHeaders()
-            },
             body: JSON.stringify(data)
         });
-        if (!response.ok) throw new Error('Failed to update player');
-        return response.json();
     },
 
     async deletePlayer(id) {
-        const response = await fetch(`${API_BASE_URL}/players/${id}`, {
-            method: 'DELETE',
-            headers: getAuthHeaders()
-        });
-        if (!response.ok) throw new Error('Failed to delete player');
-        return response.ok;
+        return request(`/players/${id}`, { method: 'DELETE' });
     },
 
     // ============================================
     // SEASON CRUD OPERATIONS
     // ============================================
     async getSeasons() {
-        const response = await fetch(`${API_BASE_URL}/seasons`, {
-            headers: getAuthHeaders()
-        });
-        if (!response.ok) throw new Error('Failed to fetch seasons');
-        return response.json();
+        return request('/seasons');
     },
 
     async createSeason(data) {
-        const response = await fetch(`${API_BASE_URL}/seasons`, {
+        return request('/seasons', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...getAuthHeaders()
-            },
             body: JSON.stringify(data)
         });
-        if (!response.ok) throw new Error('Failed to create season');
-        return response.json();
     },
 
     async updateSeason(id, data) {
-        const response = await fetch(`${API_BASE_URL}/seasons/${id}`, {
+        return request(`/seasons/${id}`, {
             method: 'PATCH',
-            headers: {
-                'Content-Type': 'application/json',
-                ...getAuthHeaders()
-            },
             body: JSON.stringify(data)
         });
-        if (!response.ok) throw new Error('Failed to update season');
-        return response.json();
     },
 
     async deleteSeason(id) {
-        const response = await fetch(`${API_BASE_URL}/seasons/${id}`, {
-            method: 'DELETE',
-            headers: getAuthHeaders()
-        });
-        if (!response.ok) throw new Error('Failed to delete season');
-        return response.ok;
+        return request(`/seasons/${id}`, { method: 'DELETE' });
     },
 
-    // User Management http://localhost:5175/admin
+    // User Management
     async getUsers(params = {}) {
         const queryString = new URLSearchParams(params).toString();
-        const url = `${API_BASE_URL}/users${queryString ? `?${queryString}` : ''}`;
-        const response = await fetch(url, {
-            headers: { ...getAuthHeaders() }
-        });
-        if (!response.ok) throw new Error('Failed to fetch users');
-        return response.json();
+        return request(`/users${queryString ? `?${queryString}` : ''}`);
     },
 
     async getUserById(id) {
-        const response = await fetch(`${API_BASE_URL}/users/${id}`, {
-            headers: { ...getAuthHeaders() }
-        });
-        if (!response.ok) throw new Error('Failed to fetch user');
-        return response.json();
+        return request(`/users/${id}`);
     },
 
     async createUser(userData) {
-        const response = await fetch(`${API_BASE_URL}/users`, {
+        return request('/users', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...getAuthHeaders()
-            },
             body: JSON.stringify(userData)
         });
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.message || 'Failed to create user');
-        }
-        return response.json();
     },
 
     async updateUser(id, userData) {
-        const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+        return request(`/users/${id}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                ...getAuthHeaders()
-            },
             body: JSON.stringify(userData)
         });
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.message || 'Failed to update user');
-        }
-        return response.json();
     },
 
     async deleteUser(id) {
-        const response = await fetch(`${API_BASE_URL}/users/${id}`, {
-            method: 'DELETE',
-            headers: { ...getAuthHeaders() }
-        });
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.message || 'Failed to delete user');
-        }
+        return request(`/users/${id}`, { method: 'DELETE' });
     },
 
     // User Role Management
     async getUserRoles(userId) {
-        const response = await fetch(`${API_BASE_URL}/users/${userId}/roles`, {
-            headers: { ...getAuthHeaders() }
-        });
-        if (!response.ok) throw new Error('Failed to fetch user roles');
-        return response.json();
+        return request(`/users/${userId}/roles`);
     },
 
     async updateUserRoles(userId, roles) {
-        const response = await fetch(`${API_BASE_URL}/users/${userId}/roles`, {
+        return request(`/users/${userId}/roles`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                ...getAuthHeaders()
-            },
             body: JSON.stringify({ roles })
         });
-        if (!response.ok) throw new Error('Failed to update user roles');
-        return response.json();
     },
 
     // Role Management
     async getRoles() {
-        const response = await fetch(`${API_BASE_URL}/roles`, {
-            headers: { ...getAuthHeaders() }
-        });
-        if (!response.ok) throw new Error('Failed to fetch roles');
-        return response.json();
+        return request('/roles');
     },
 
     async createRole(roleData) {
-        const response = await fetch(`${API_BASE_URL}/roles`, {
+        return request('/roles', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...getAuthHeaders()
-            },
             body: JSON.stringify(roleData)
         });
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.message || 'Failed to create role');
-        }
-        return response.json();
     },
 
     async updateRole(id, roleData) {
-        const response = await fetch(`${API_BASE_URL}/roles/${id}`, {
+        return request(`/roles/${id}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                ...getAuthHeaders()
-            },
             body: JSON.stringify(roleData)
         });
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.message || 'Failed to update role');
-        }
-        return response.json();
     },
 
     async deleteRole(id) {
-        const response = await fetch(`${API_BASE_URL}/roles/${id}`, {
-            method: 'DELETE',
-            headers: { ...getAuthHeaders() }
-        });
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.message || 'Failed to delete role');
-        }
+        return request(`/roles/${id}`, { method: 'DELETE' });
     },
 
     // ============================================
     // GOALIE SHIFTS API
     // ============================================
     async getAllGoalieUnavailability() {
-        const response = await fetch(`${API_BASE_URL}/shifts/goalie/all-unavailability`, {
-            headers: getAuthHeaders()
-        });
-        if (!response.ok) throw new Error('Failed to fetch all unavailability');
-        return response.json();
+        return request('/shifts/goalie/all-unavailability');
     },
 
     async getMyAssignments() {
-        const response = await fetch(`${API_BASE_URL}/shifts/goalie/my-assignments`, {
-            headers: getAuthHeaders()
-        });
-        if (!response.ok) throw new Error('Failed to fetch my assignments');
-        return response.json();
+        return request('/shifts/goalie/my-assignments');
     },
 
     async getMyShifts() {
-        const response = await fetch(`${API_BASE_URL}/shifts/my-shifts`, {
-            headers: getAuthHeaders()
-        });
-        if (!response.ok) throw new Error('Failed to fetch my shifts');
-        return response.json();
+        return request('/shifts/my-shifts');
     },
 
     async goalieSignup(data) {
-        const response = await fetch(`${API_BASE_URL}/staff/goalie/signup`, {
+        return request('/staff/goalie/signup', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(data)
         });
-        if (!response.ok) {
-            const error = await response.text();
-            throw new Error(error || 'Signup failed');
-        }
-        return response.json();
-    },
-
-    // Password Reset
-    async getSecurityQuestion(username) {
-        const response = await fetch(`${API_BASE_URL}/auth/security-question?username=${encodeURIComponent(username)}`);
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.message || 'Failed to fetch security question');
-        }
-        return response.json();
-    },
-
-    async resetPassword(data) {
-        const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.message || 'Failed to reset password');
-        }
-        return response.json();
     },
 
     async removeGoalieUnavailability(date) {
-        const response = await fetch(`${API_BASE_URL}/shifts/goalie/unavailable/${date}`, {
-            method: 'DELETE',
-            headers: getAuthHeaders()
-        });
-        if (!response.ok) throw new Error('Failed to remove unavailability');
-        return response.json(); // or response.ok
+        return request(`/shifts/goalie/unavailable/${date}`, { method: 'DELETE' });
     },
 
     // ============================================
     // PLAYER STATS API
     // ============================================
     async getPlayerStats(seasonId, teamId = null) {
-
         const queryString = new URLSearchParams({ seasonId, ...(teamId && { teamId }) }).toString();
-        const response = await fetch(`${API_BASE_URL}/stats/players?${queryString}`, {
-            headers: getAuthHeaders()
-        });
-        if (!response.ok) throw new Error('Failed to fetch player stats');
-        return response.json();
+        return request(`/stats/players?${queryString}`);
     },
 
     async getPlayerStatsBulk(seasonId) {
-        // Fetch all player stats for a season
-        const response = await fetch(`${API_BASE_URL}/stats/players?seasonId=${seasonId}`, {
-            headers: getAuthHeaders()
-        });
-        if (!response.ok) throw new Error('Failed to fetch player stats');
-        return response.json();
+        return request(`/stats/players?seasonId=${seasonId}`);
     },
 
     async generateUsers() {
-        const response = await fetch(`${API_BASE_URL}/users/generate`, {
-            method: 'POST',
-            headers: { ...getAuthHeaders() }
-        });
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.message || 'Failed to generate users');
-        }
-        return response.json();
+        return request('/users/generate', { method: 'POST' });
     },
 
     async importGoalies(goalies) {
-        const response = await fetch(`${API_BASE_URL}/users/import-goalies`, {
+        return request('/users/import-goalies', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                ...getAuthHeaders()
-            },
             body: JSON.stringify(goalies)
         });
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.message || 'Failed to import goalies');
-        }
-        return response.json();
     },
 
     async getPlayerDashboard() {
-        const response = await fetch(`${API_BASE_URL}/user/dashboard`, {
-            headers: getAuthHeaders()
-        });
-        if (!response.ok) throw new Error('Failed to fetch player dashboard');
-        return response.json();
+        return request('/user/dashboard');
     },
 
     async checkPlayerProfileExists(email) {
-        const response = await fetch(`${API_BASE_URL}/players/exists?email=${encodeURIComponent(email)}`, {
-            headers: getAuthHeaders()
-        });
-        if (!response.ok) return false;
-        const data = await response.json();
-        return data.exists === true;
+        try {
+            const data = await request(`/players/exists?email=${encodeURIComponent(email)}`);
+            return data.exists === true;
+        } catch {
+            return false;
+        }
     }
 };
 
@@ -814,6 +521,7 @@ export const {
     signup,
     getSecurityQuestion,
     resetPassword,
+    changePassword,
     getGameEvents,
     getPlayerDashboard,
     getUserPublicName,

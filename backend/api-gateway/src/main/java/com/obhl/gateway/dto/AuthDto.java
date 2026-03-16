@@ -39,6 +39,7 @@ public class AuthDto {
         private String role;
         private List<String> roles;
         private Long teamId;
+        private java.time.Instant lastLogin;
     }
 
     @Data

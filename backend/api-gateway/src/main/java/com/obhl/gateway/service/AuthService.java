@@ -71,6 +71,10 @@ public class AuthService {
 
         log.info("Login successful for user: {}", user.getUsername());
 
+        // Record last login
+        user.setLastLogin(java.time.Instant.now());
+        userRepository.save(user);
+
         // Generate JWT token
         String token = jwtUtil.generateToken(user);
 
@@ -88,7 +92,8 @@ public class AuthService {
                 user.getLastName(),
                 user.getRole(),
                 roleNames,
-                user.getTeamId());
+                user.getTeamId(),
+                user.getLastLogin());
 
         // Create login response with password change flag
         AuthDto.LoginResponse response = new AuthDto.LoginResponse(token, "Bearer", userInfo,

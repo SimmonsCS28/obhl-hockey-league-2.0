@@ -392,6 +392,7 @@ public class UserManagementService {
         dto.setPhoneNumber(user.getPhoneNumber()); // Add phone number to DTO
         dto.setCreatedAt(user.getCreatedAt());
         dto.setUpdatedAt(user.getUpdatedAt());
+        dto.setLastLogin(user.getLastLogin());
         // passwordHash is intentionally NOT included
         return dto;
     }

@@ -270,6 +270,9 @@ const UserManagement = () => {
                                     <th onClick={() => requestSort('createdAt')} className={getClassNamesFor('createdAt')}>
                                         Created {sortConfig.key === 'createdAt' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
                                     </th>
+                                    <th onClick={() => requestSort('lastLogin')} className={getClassNamesFor('lastLogin')}>
+                                        Last Login {sortConfig.key === 'lastLogin' && (sortConfig.direction === 'ascending' ? '▲' : '▼')}
+                                    </th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -312,6 +315,11 @@ const UserManagement = () => {
                                                 )}
                                             </td>
                                             <td>{new Date(user.createdAt).toLocaleDateString()}</td>
+                                            <td>
+                                                {user.lastLogin 
+                                                    ? `${new Date(user.lastLogin).toLocaleDateString()} ${new Date(user.lastLogin).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                                                    : 'Never'}
+                                            </td>
                                             <td className="actions-col">
                                                 <button
                                                     className="btn-edit"

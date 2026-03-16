@@ -210,6 +210,11 @@
     }
 }
 
+/* Base style: hide mobile menu container on desktop */
+.mobile-menu-container {
+    display: none;
+}
+
 @media (max-width: 768px) {
     .header-content {
         padding: 0.75rem 1rem;

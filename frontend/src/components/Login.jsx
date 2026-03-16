@@ -20,6 +20,17 @@ const Login = () => {
         const result = await login(usernameOrEmail, password);
 
         if (result.success) {
+            if (result.mustChangePassword) {
+                // Navigate to change password with ephemeral token and user data
+                navigate('/change-password', { 
+                    state: { 
+                        ephemeralToken: result.token, 
+                        ephemeralUser: result.user 
+                    } 
+                });
+                return;
+            }
+
             const roles = result.user?.roles || (result.user?.role ? [result.user.role] : []);
 
             if (roles.includes('ADMIN')) {
