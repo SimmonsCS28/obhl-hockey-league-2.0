@@ -1,0 +1,271 @@
+.announcements-management {
+    animation: fadeIn 0.3s ease-in;
+    color: #1a202c;
+}
+
+.management-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.management-header h2 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+.btn-add-announcement {
+    background-color: #48bb78;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.btn-add-announcement:hover {
+    background-color: #38a169;
+}
+
+.error-message {
+    background-color: #fed7d7;
+    color: #c53030;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    border: 1px solid #fc8181;
+}
+
+/* Form Styles */
+.announcement-form-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    margin-bottom: 2rem;
+}
+
+.announcement-form-card h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    color: #2d3748;
+    font-size: 1.5rem;
+    border-bottom: 2px solid #edf2f7;
+    padding-bottom: 0.5rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #4a5568;
+}
+
+.form-group input[type="text"] {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+}
+
+.form-group input[type="text"]:focus {
+    outline: none;
+    border-color: #4299e1;
+}
+
+.editor-container {
+    background: white;
+}
+
+/* ReactQuill overrides */
+.ql-editor {
+    min-height: 200px;
+    font-size: 1rem;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 1.1rem;
+}
+
+.checkbox-group input[type="checkbox"] {
+    width: 1.25rem;
+    height: 1.25rem;
+    cursor: pointer;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid #edf2f7;
+}
+
+.btn-save, .btn-cancel {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s;
+}
+
+.btn-save {
+    background-color: #4299e1;
+    color: white;
+}
+
+.btn-save:hover {
+    background-color: #3182ce;
+}
+
+.btn-cancel {
+    background-color: #e2e8f0;
+    color: #4a5568;
+}
+
+.btn-cancel:hover {
+    background-color: #cbd5e0;
+}
+
+/* Table Styles */
+.announcements-table-container {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.announcements-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.announcements-table thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.announcements-table th {
+    padding: 1.25rem 1.5rem;
+    text-align: left;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.5px;
+}
+
+.announcements-table tbody tr {
+    border-bottom: 1px solid #e2e8f0;
+    transition: background-color 0.2s;
+}
+
+.announcements-table tbody tr:hover {
+    background-color: #f7fafc;
+}
+
+.announcements-table td {
+    padding: 1rem 1.5rem;
+    color: #2d3748;
+    vertical-align: middle;
+}
+
+.inactive-row td {
+    opacity: 0.7;
+    background-color: #f7fafc;
+}
+
+.status-toggle {
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.1s, opacity 0.2s;
+}
+
+.status-toggle:hover {
+    transform: scale(1.05);
+}
+
+.status-toggle.active {
+    background-color: #c6f6d5;
+    color: #22543d;
+}
+
+.status-toggle.inactive {
+    background-color: #e2e8f0;
+    color: #4a5568;
+}
+
+.actions-cell {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-edit-small {
+    background-color: #ecc94b;
+    color: #744210;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    border: none;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-edit-small:hover {
+    background-color: #d6b33d;
+}
+
+.btn-delete-small {
+    background-color: #fc8181;
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 4px;
+    border: none;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.btn-delete-small:hover {
+    background-color: #e53e3e;
+}
+
+.empty-state {
+    padding: 3rem;
+    text-align: center;
+    color: #718096;
+    font-size: 1.1rem;
+    font-style: italic;
+}
+
+.loading {
+    padding: 3rem;
+    text-align: center;
+    color: #4a5568;
+    font-size: 1.1rem;
+}

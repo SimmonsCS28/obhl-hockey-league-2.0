@@ -19,4 +19,20 @@ public interface LeagueClient {
 
     @GetMapping("/api/v1/teams/{teamId}")
     Map<String, Object> getTeam(@PathVariable("teamId") Long teamId);
+
+    // Announcements
+    @GetMapping("/api/v1/announcements")
+    java.util.List<com.obhl.gateway.dto.AnnouncementDTO> getAnnouncements(@org.springframework.web.bind.annotation.RequestParam(value = "activeOnly", required = false, defaultValue = "false") boolean activeOnly);
+
+    @PostMapping("/api/v1/announcements")
+    com.obhl.gateway.dto.AnnouncementDTO createAnnouncement(@RequestBody com.obhl.gateway.dto.AnnouncementCreateDTO dto);
+
+    @org.springframework.web.bind.annotation.PutMapping("/api/v1/announcements/{id}")
+    com.obhl.gateway.dto.AnnouncementDTO updateAnnouncement(@PathVariable("id") Integer id, @RequestBody com.obhl.gateway.dto.AnnouncementCreateDTO dto);
+
+    @org.springframework.web.bind.annotation.PatchMapping("/api/v1/announcements/{id}/toggle")
+    com.obhl.gateway.dto.AnnouncementDTO toggleActive(@PathVariable("id") Integer id, @org.springframework.web.bind.annotation.RequestParam("active") boolean active);
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/api/v1/announcements/{id}")
+    void deleteAnnouncement(@PathVariable("id") Integer id);
 }

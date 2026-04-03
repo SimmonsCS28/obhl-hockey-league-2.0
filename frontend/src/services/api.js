@@ -484,6 +484,37 @@ const api = {
         } catch {
             return false;
         }
+    },
+
+    // ============================================
+    // ANNOUNCEMENTS API
+    // ============================================
+    async getAnnouncements(activeOnly = false) {
+        return request(`/announcements?activeOnly=${activeOnly}`);
+    },
+
+    async createAnnouncement(data) {
+        return request('/announcements', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
+    async updateAnnouncement(id, data) {
+        return request(`/announcements/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    },
+
+    async toggleAnnouncementActive(id, active) {
+        return request(`/announcements/${id}/toggle?active=${active}`, {
+            method: 'PATCH'
+        });
+    },
+
+    async deleteAnnouncement(id) {
+        return request(`/announcements/${id}`, { method: 'DELETE' });
     }
 };
 
@@ -541,7 +572,12 @@ export const {
     createRole,
     updateRole,
     deleteRole,
-    removeGoalieUnavailability
+    removeGoalieUnavailability,
+    getAnnouncements,
+    createAnnouncement,
+    updateAnnouncement,
+    toggleAnnouncementActive,
+    deleteAnnouncement
 } = api;
 
 export default api;

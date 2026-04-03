@@ -111,7 +111,7 @@
     margin-bottom: 1rem;
 }
 
-.stat {
+.team-card .stat {
     flex: 1;
     text-align: center;
     padding: 0.75rem;
@@ -119,14 +119,14 @@
     border-radius: 8px;
 }
 
-.stat-label {
+.team-card .stat-label {
     display: block;
     font-size: 0.75rem;
     color: #718096;
     margin-bottom: 0.25rem;
 }
 
-.stat-value {
+.team-card .stat-value {
     display: block;
     font-size: 1.25rem;
     font-weight: 700;

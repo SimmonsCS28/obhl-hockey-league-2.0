@@ -113,6 +113,12 @@ function AdminLayout({ children, activeTab }) {
                         Users
                     </button>
                     <button
+                        className={`nav-tab ${activeTab === 'announcements' ? 'active' : ''}`}
+                        onClick={() => handleTabClick('announcements')}
+                    >
+                        📢 Announcements
+                    </button>
+                    <button
                         className={`nav-tab ${activeTab === 'goalies' ? 'active' : ''}`}
                         onClick={() => handleTabClick('goalies')}
                     >

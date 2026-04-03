@@ -1,0 +1,148 @@
+.announcements-section {
+    max-width: 1200px;
+    margin: 0 auto 2rem auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.5rem;
+    animation: fadeIn 0.4s ease-out;
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.announcements-section-title {
+    font-size: 1.25rem;
+    color: #4a5568;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+    border-bottom: 2px solid #edf2f7;
+    padding-bottom: 0.75rem;
+}
+
+.announcement-banner {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    border-left: 5px solid #48bb78; /* Green accent */
+    transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.announcement-banner:hover {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08);
+}
+
+.announcement-header {
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    background: white;
+    transition: background-color 0.2s;
+}
+
+.announcement-header:hover {
+    background-color: #f7fafc;
+}
+
+.announcement-header.expanded {
+    border-bottom: 1px solid #e2e8f0;
+    background-color: #f7fafc;
+}
+
+.announcement-title {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.announcement-icon {
+    font-size: 1.25rem;
+}
+
+.announcement-title h3 {
+    margin: 0;
+    color: #2d3748;
+    font-size: 1.15rem;
+    font-weight: 600;
+}
+
+.announcement-meta {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.announcement-date {
+    color: #718096;
+    font-size: 0.875rem;
+}
+
+.toggle-btn {
+    background: none;
+    border: none;
+    color: #4a5568;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0.25rem;
+}
+
+.announcement-body {
+    padding: 1.5rem;
+    background-color: white;
+    animation: slideDown 0.3s ease-out forwards;
+    transform-origin: top;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: scaleY(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: scaleY(1);
+    }
+}
+
+.announcement-content {
+    color: #4a5568;
+    line-height: 1.6;
+}
+
+/* Ensure quill rendered html looks okay */
+.ql-editor-display {
+    white-space: pre-wrap;
+}
+
+.ql-editor-display a {
+    color: #3182ce;
+    text-decoration: none;
+}
+
+.ql-editor-display a:hover {
+    text-decoration: underline;
+}
+
+.ql-editor-display ul,
+.ql-editor-display ol {
+    padding-left: 1.5rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .announcement-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    .announcement-meta {
+        width: 100%;
+        justify-content: space-between;
+    }
+}

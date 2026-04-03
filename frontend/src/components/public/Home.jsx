@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import AnnouncementBanner from './AnnouncementBanner';
 import './Home.css';
 
 function Home() {
     const [activeSeason, setActiveSeason] = useState(null);
+    const [announcements, setAnnouncements] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        fetchActiveSeason();
+        fetchInitialData();
     }, []);
 
-    const fetchActiveSeason = async () => {
+    const fetchInitialData = async () => {
         try {
             const response = await fetch('/api/v1/seasons');
             if (!response.ok) throw new Error('Failed to fetch seasons');
@@ -19,6 +21,17 @@ function Home() {
             const seasons = await response.json();
             const active = seasons.find(season => season.isActive);
             setActiveSeason(active);
+
+            // Fetch active announcements
+            try {
+                const annResponse = await fetch('/api/v1/announcements?activeOnly=true');
+                if (annResponse.ok) {
+                    const annData = await annResponse.json();
+                    setAnnouncements(annData);
+                }
+            } catch (err) {
+                console.error("Failed to load announcements:", err);
+            }
         } catch (err) {
             setError(err.message);
         } finally {
@@ -35,6 +48,15 @@ function Home() {
                 <h1>Welcome to OBHL</h1>
                 <p className="tagline">Old Buzzard Hockey League</p>
             </section>
+
+            {announcements.length > 0 && (
+                <section className="announcements-section">
+                    <h2 className="announcements-section-title">League Announcements</h2>
+                    {announcements.map(ann => (
+                        <AnnouncementBanner key={ann.id} announcement={ann} />
+                    ))}
+                </section>
+            )}
 
             {activeSeason && (
                 <section className="active-season-section">
