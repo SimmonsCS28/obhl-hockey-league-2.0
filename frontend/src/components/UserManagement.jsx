@@ -12,6 +12,7 @@ const UserManagement = () => {
     const [selectedRole, setSelectedRole] = useState('all');
     const [selectedStatus, setSelectedStatus] = useState('all');
     const [selectedPasswordChange, setSelectedPasswordChange] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedUser, setSelectedUser] = useState(null);
@@ -126,6 +127,14 @@ const UserManagement = () => {
             if (user.mustChangePassword !== mustChange) return false;
         }
 
+        // Name / username search
+        if (searchQuery.trim()) {
+            const q = searchQuery.trim().toLowerCase();
+            const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim().toLowerCase();
+            const username = (user.username || '').toLowerCase();
+            if (!fullName.includes(q) && !username.includes(q)) return false;
+        }
+
         return true;
     });
 
@@ -234,6 +243,27 @@ const UserManagement = () => {
                                     <option value="required">Change Required</option>
                                     <option value="not_required">OK</option>
                                 </select>
+                            </div>
+
+                            <div className="user-management-filter-item um-search-item">
+                                <div className="um-search-wrapper">
+                                    <span className="um-search-icon">🔍</span>
+                                    <input
+                                        id="user-search"
+                                        type="text"
+                                        placeholder="Search name or username..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="um-search-input"
+                                    />
+                                    {searchQuery && (
+                                        <button
+                                            className="um-search-clear"
+                                            onClick={() => setSearchQuery('')}
+                                            title="Clear search"
+                                        >✕</button>
+                                    )}
+                                </div>
                             </div>
 
                             <div className="user-management-filter-item user-count-wrapper">

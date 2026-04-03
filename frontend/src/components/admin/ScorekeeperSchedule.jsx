@@ -10,6 +10,7 @@ function ScorekeeperSchedule() {
     const [teams, setTeams] = useState([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all');
+    const [weekFilter, setWeekFilter] = useState('all');
 
     useEffect(() => {
         loadInitialData();
@@ -121,9 +122,13 @@ function ScorekeeperSchedule() {
         return isLight ? '#2c3e50' : 'white';
     };
 
+    // Get unique weeks for the filter dropdown
+    const availableWeeks = [...new Set(games.map(g => g.week).filter(w => w != null))].sort((a, b) => a - b);
+
     const filteredGames = games.filter(game => {
         if (filter === 'assigned') return game.scorekeeperId != null;
         if (filter === 'unassigned') return game.scorekeeperId == null;
+        if (weekFilter !== 'all' && game.week !== parseInt(weekFilter)) return false;
         return true;
     });
 
@@ -165,6 +170,24 @@ function ScorekeeperSchedule() {
                             <option value="all">All Games</option>
                             <option value="assigned">Assigned</option>
                             <option value="unassigned">Unassigned</option>
+                        </select>
+                    </div>
+
+                    <div className="filter-group">
+                        <label htmlFor="weekSelect">Week:</label>
+                        <select
+                            id="weekSelect"
+                            name="weekSelect"
+                            value={weekFilter}
+                            onChange={(e) => setWeekFilter(e.target.value)}
+                            className="filter-select"
+                        >
+                            <option value="all">All Weeks</option>
+                            {availableWeeks.map(week => (
+                                <option key={week} value={week}>
+                                    Week {week}
+                                </option>
+                            ))}
                         </select>
                     </div>
                 </div>
@@ -239,7 +262,7 @@ function ScorekeeperSchedule() {
                                                 id={`scorekeeper-${game.id}`}
                                                 name={`scorekeeper-${game.id}`}
                                                 value={game.scorekeeperId || ''}
-                                                onChange={(e) => handleAssignScorekeeper(game.id, e.target.value ? parseInt(e.target.value) : null)}
+                                                onChange={(e) => handleAssignScorekeeper(game.id, e.target.value ? parseInt(e.target.value) : -1)}
                                                 className="scorekeeper-select"
                                             >
                                                 <option value="">-- Select Scorekeeper --</option>

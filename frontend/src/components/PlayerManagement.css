@@ -63,6 +63,73 @@
     box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
 }
 
+/* Player Management search */
+.pm-search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.pm-search-icon {
+    position: absolute;
+    left: 0.85rem;
+    font-size: 0.9rem;
+    pointer-events: none;
+    opacity: 0.6;
+    z-index: 1;
+}
+
+.pm-search-input {
+    padding: 0.875rem 2.5rem 0.875rem 2.35rem;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.95);
+    color: #2d3748;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    width: 220px;
+    box-sizing: border-box;
+}
+
+.pm-search-input::placeholder {
+    color: #a0aec0;
+    font-weight: 400;
+}
+
+.pm-search-input:hover {
+    border-color: rgba(255, 255, 255, 0.6);
+    background: white;
+}
+
+.pm-search-input:focus {
+    outline: none;
+    border-color: white;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
+.pm-search-clear {
+    position: absolute;
+    right: 0.6rem;
+    background: none;
+    border: none;
+    color: #a0aec0;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    line-height: 1;
+    transition: color 0.15s, background 0.15s;
+}
+
+.pm-search-clear:hover {
+    color: #2d3748;
+    background: #edf2f7;
+}
+
+
+
 .players-table-container {
     background: white;
     border-radius: 12px;

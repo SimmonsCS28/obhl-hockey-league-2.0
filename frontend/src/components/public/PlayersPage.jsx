@@ -7,6 +7,7 @@ function PlayersPage() {
     const [players, setPlayers] = useState([]);
     const [teams, setTeams] = useState([]);
     const [selectedTeam, setSelectedTeam] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
     const [sortField, setSortField] = useState('lastName');
     const [sortDirection, setSortDirection] = useState('asc');
     const [loading, setLoading] = useState(true);
@@ -132,12 +133,18 @@ function PlayersPage() {
         }
     };
 
-    // Filter players by selected team
-    const filteredPlayers = selectedTeam === 'all'
-        ? players
-        : selectedTeam === 'free-agent'
-            ? players.filter(p => !p.teamId)
-            : players.filter(p => p.teamId === parseInt(selectedTeam));
+    // Filter players by selected team and search query
+    const filteredPlayers = players
+        .filter(p => {
+            if (selectedTeam === 'free-agent') return !p.teamId;
+            if (selectedTeam !== 'all') return p.teamId === parseInt(selectedTeam);
+            return true;
+        })
+        .filter(p => {
+            if (!searchQuery.trim()) return true;
+            const full = `${p.firstName} ${p.lastName}`.toLowerCase();
+            return full.includes(searchQuery.trim().toLowerCase());
+        });
 
     // Sort filtered players
     const sortedPlayers = [...filteredPlayers].sort((a, b) => {
@@ -211,6 +218,28 @@ function PlayersPage() {
                             </option>
                         ))}
                     </select>
+                </div>
+
+                <div className="filter-group search-group">
+                    <label htmlFor="player-search">Search:</label>
+                    <div className="search-input-wrapper">
+                        <span className="search-icon">🔍</span>
+                        <input
+                            id="player-search"
+                            type="text"
+                            placeholder="Search by name..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="search-input"
+                        />
+                        {searchQuery && (
+                            <button
+                                className="search-clear-btn"
+                                onClick={() => setSearchQuery('')}
+                                title="Clear search"
+                            >✕</button>
+                        )}
+                    </div>
                 </div>
             </div>
 

@@ -41,6 +41,7 @@ function PlayerManagement() {
         isActive: true
     });
     const [sortConfig, setSortConfig] = useState({ key: null, direction: 'ascending' });
+    const [searchQuery, setSearchQuery] = useState('');
     const [alsoCreateUser, setAlsoCreateUser] = useState(false);
     const [userData, setUserData] = useState({
         username: '',
@@ -113,8 +114,16 @@ function PlayerManagement() {
         return matchesActive && matchesSeason; // and move filteredTeams calculation after getTeamName just in case, though unrelated
     });
 
+    // Filter players by search query
+    const searchedPlayers = searchQuery.trim()
+        ? players.filter(p => {
+            const full = `${p.firstName} ${p.lastName}`.toLowerCase();
+            return full.includes(searchQuery.trim().toLowerCase());
+          })
+        : players;
+
     // Sort players
-    const sortedPlayers = [...players].sort((a, b) => {
+    const sortedPlayers = [...searchedPlayers].sort((a, b) => {
         if (!sortConfig.key) return 0;
 
         let aValue = a[sortConfig.key];
@@ -436,6 +445,23 @@ function PlayerManagement() {
                             </option>
                         ))}
                     </select>
+                    <div className="pm-search-wrapper">
+                        <span className="pm-search-icon">🔍</span>
+                        <input
+                            type="text"
+                            placeholder="Search by name..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pm-search-input"
+                        />
+                        {searchQuery && (
+                            <button
+                                className="pm-search-clear"
+                                onClick={() => setSearchQuery('')}
+                                title="Clear search"
+                            >✕</button>
+                        )}
+                    </div>
                     <button onClick={handleCopyEmails} className="btn-secondary">
                         📧 Copy All Emails
                     </button>

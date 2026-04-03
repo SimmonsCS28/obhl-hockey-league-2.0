@@ -168,6 +168,44 @@
     /* Brighter separator */
 }
 
+/* Stats Row */
+.schedule-stats {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: stretch;
+    gap: 1.5rem;
+    margin-bottom: 1.75rem;
+    flex-wrap: wrap;
+}
+
+.stat-card {
+    background: #2d3748;
+    border: 1px solid #4a5568;
+    border-radius: 10px;
+    padding: 1rem 2rem;
+    text-align: center;
+    min-width: 140px;
+    flex: 0 1 auto;
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #63b3ed;
+    line-height: 1.2;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    color: #a0aec0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 0.25rem;
+}
+
+
+
 @media (max-width: 768px) {
     .staff-schedule {
         padding: 1rem;

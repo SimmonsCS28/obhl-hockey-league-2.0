@@ -277,7 +277,7 @@ function RefereeSchedule() {
                                                 id={`referee1-${game.id}`}
                                                 name={`referee1-${game.id}`}
                                                 value={game.referee1Id || ''}
-                                                onChange={(e) => handleAssignReferee(game.id, 1, e.target.value ? parseInt(e.target.value) : null)}
+                                                onChange={(e) => handleAssignReferee(game.id, 1, e.target.value ? parseInt(e.target.value) : -1)}
                                                 className="referee-select"
                                             >
                                                 <option value="">-- Select Referee 1 --</option>
@@ -295,7 +295,7 @@ function RefereeSchedule() {
                                                 id={`referee2-${game.id}`}
                                                 name={`referee2-${game.id}`}
                                                 value={game.referee2Id || ''}
-                                                onChange={(e) => handleAssignReferee(game.id, 2, e.target.value ? parseInt(e.target.value) : null)}
+                                                onChange={(e) => handleAssignReferee(game.id, 2, e.target.value ? parseInt(e.target.value) : -1)}
                                                 className="referee-select"
                                             >
                                                 <option value="">-- Select Referee 2 --</option>
