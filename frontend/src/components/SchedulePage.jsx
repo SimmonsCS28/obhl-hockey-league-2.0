@@ -14,7 +14,6 @@ const SchedulePage = () => {
     const [showCalendarModal, setShowCalendarModal] = useState(false);
     const [showCompleted, setShowCompleted] = useState(false);
     const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
-    const [players, setPlayers] = useState([]);
 
     // Responsive detection
     useEffect(() => {
@@ -36,7 +35,6 @@ const SchedulePage = () => {
         if (selectedSeason) {
             fetchTeams(selectedSeason);
             fetchGames(selectedSeason);
-            fetchPlayers(selectedSeason);
         }
     }, [selectedSeason]);
 
@@ -75,23 +73,8 @@ const SchedulePage = () => {
         }
     };
 
-    const fetchPlayers = async (seasonId) => {
-        try {
-            const response = await axios.get(`/stats-api/players?seasonId=${seasonId}`);
-            setPlayers(response.data);
-        } catch (error) {
-            console.error('Failed to load players:', error);
-        }
-    };
-
     const getTeamById = (teamId) => {
         return teams.find(t => t.id === teamId);
-    };
-
-    const getPlayerName = (playerId) => {
-        if (!playerId) return '-';
-        const player = players.find(p => p.id === playerId);
-        return player ? `${player.firstName} ${player.lastName}` : '-';
     };
 
     // Filter games based on selected week, team, and completion status
@@ -340,7 +323,6 @@ const SchedulePage = () => {
                                 <th>Home Team</th>
                                 <th>Away Team</th>
                                 <th>Location</th>
-                                <th>Staff</th>
                                 <th>Score/Status</th>
                                 <th>Action</th>
                             </tr>
@@ -403,17 +385,6 @@ const SchedulePage = () => {
                                             </Link>
                                         </td>
                                         <td>{game.rink}</td>
-                                        <td className="staff-cell">
-                                            {game.goalieId || game.refereeId || game.scorekeeperId ? (
-                                                <div className="staff-info">
-                                                    {game.goalieId && <div>🥅 {getPlayerName(game.goalieId)}</div>}
-                                                    {game.refereeId && <div>👔 {getPlayerName(game.refereeId)}</div>}
-                                                    {game.scorekeeperId && <div>📋 {getPlayerName(game.scorekeeperId)}</div>}
-                                                </div>
-                                            ) : (
-                                                <span className="staff-pending">TBD</span>
-                                            )}
-                                        </td>
                                         <td>
                                             {isCompleted ? (
                                                 <span className="score">
@@ -502,13 +473,6 @@ const SchedulePage = () => {
                                             <div className="game-location">
                                                 📍 {game.rink}
                                             </div>
-                                            {(game.goalieId || game.refereeId || game.scorekeeperId) && (
-                                                <div className="game-staff">
-                                                    {game.goalieId && <div>🥅 {getPlayerName(game.goalieId)}</div>}
-                                                    {game.refereeId && <div>👔 {getPlayerName(game.refereeId)}</div>}
-                                                    {game.scorekeeperId && <div>📋 {getPlayerName(game.scorekeeperId)}</div>}
-                                                </div>
-                                            )}
                                             {isCompleted && (
                                                 <div className="game-score-mobile">
                                                     Final: <span className={homeWin ? 'winning-score' : ''}>{game.homeScore}</span> - <span className={awayWin ? 'winning-score' : ''}>{game.awayScore}</span>

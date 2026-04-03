@@ -116,16 +116,18 @@ function GamePreview() {
 
     const formatDate = (dateString) => {
         if (!dateString) return '';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        const dateStr = dateString.endsWith('Z') ? dateString : dateString + 'Z';
+        const date = new Date(dateStr);
+        return date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'America/Chicago' });
     };
 
     const formatTime = (timeString) => {
         if (!timeString) return '';
         // If it's a full ISO string
         if (timeString.includes('T')) {
-            const date = new Date(timeString);
-            return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            const dateStr = timeString.endsWith('Z') ? timeString : timeString + 'Z';
+            const date = new Date(dateStr);
+            return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' });
         }
         // If it's just 'HH:mm:ss'
         const [hours, minutes] = timeString.split(':');
