@@ -114,7 +114,7 @@
     line-height: 1.6;
     overflow-wrap: break-word;
     word-wrap: break-word;
-    word-break: break-word;
+    word-break: normal;
 }
 
 /* Ensure quill rendered html looks okay */
