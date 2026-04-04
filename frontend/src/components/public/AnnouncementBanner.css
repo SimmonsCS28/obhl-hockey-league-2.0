@@ -112,9 +112,12 @@
 .announcement-content {
     color: #4a5568;
     line-height: 1.6;
-    overflow-wrap: break-word;
-    word-wrap: break-word;
-    word-break: normal;
+}
+
+.announcement-content,
+.announcement-content * {
+    word-break: normal !important;
+    overflow-wrap: break-word !important;
 }
 
 /* Ensure quill rendered html looks okay */
