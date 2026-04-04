@@ -12,11 +12,16 @@ function AnnouncementBanner({ announcement }) {
         return d.toLocaleDateString();
     };
 
-    // Process HTML to ensure links have http protocol
+    // Process HTML to ensure links have http protocol and non-breaking spaces don't break text wrapping
     const processHtml = (html) => {
         if (!html) return '';
-        // Match href="something", where something doesn't start with http://, https://, mailto:, tel:, #, or /
-        return html.replace(/href="(?!(?:https?|mailto|tel|#|\/))([^"]+)"/ig, 'href="https://$1"');
+        
+        let processedHtml = html.replace(/href="(?!(?:https?|mailto|tel|#|\/))([^"]+)"/ig, 'href="https://$1"');
+        
+        // Convert non-breaking spaces to standard spaces to allow proper browser text-wrapping
+        processedHtml = processedHtml.replace(/&nbsp;/g, ' ');
+        
+        return processedHtml;
     };
 
     return (
