@@ -151,6 +151,28 @@ function GoalieSchedule() {
     // Get unique weeks for the filter dropdown
     const availableWeeks = [...new Set(games.map(g => g.week).filter(w => w != null))].sort((a, b) => a - b);
 
+    // Compute unique game dates for the selected week (for the availability panel)
+    const weekGameDates = weekFilter !== 'all'
+        ? [...new Set(
+            games
+                .filter(g => g.week === parseInt(weekFilter))
+                .map(g => g.gameDate.split('T')[0])
+          )].sort()
+        : [];
+
+    const getGoalieName = (goalie) =>
+        (goalie.firstName && goalie.lastName)
+            ? `${goalie.firstName} ${goalie.lastName}`
+            : (goalie.username || `Goalie ${goalie.id}`);
+
+    const isGoalieUnavailableForDate = (goalieId, dateStr) =>
+        unavailability.some(u => u.userId === goalieId && u.date === dateStr);
+
+    const formatPanelDate = (dateStr) => {
+        const d = new Date(dateStr + 'T12:00:00'); // noon to avoid timezone shifts
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    };
+
     if (loading) {
         return <div className="loading">Loading...</div>;
     }
@@ -328,6 +350,54 @@ function GoalieSchedule() {
                     </table>
                 )}
             </div>
+
+            {/* Goalie Availability Panel - only shown when a specific week is selected */}
+            {weekFilter !== 'all' && weekGameDates.length > 0 && (
+                <div className="availability-panel">
+                    <h3 className="availability-panel-title">
+                        🥅 Goalie Availability — Week {weekFilter}
+                    </h3>
+                    <div className="availability-table-wrapper">
+                        <table className="availability-table">
+                            <thead>
+                                <tr>
+                                    <th className="goalie-name-col">Goalie</th>
+                                    {weekGameDates.map(date => (
+                                        <th key={date} className="date-col">
+                                            {formatPanelDate(date)}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {goalies.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={weekGameDates.length + 1} className="availability-empty">
+                                            No goalies found.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    goalies.map(goalie => (
+                                        <tr key={goalie.id}>
+                                            <td className="goalie-name-cell">{getGoalieName(goalie)}</td>
+                                            {weekGameDates.map(date => {
+                                                const unavailable = isGoalieUnavailableForDate(goalie.id, date);
+                                                return (
+                                                    <td key={date} className="availability-cell">
+                                                        <span className={`availability-badge ${unavailable ? 'badge-unavailable' : 'badge-available'}`}>
+                                                            {unavailable ? '✗ Unavailable' : '✓ Available'}
+                                                        </span>
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
