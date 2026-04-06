@@ -246,10 +246,13 @@ public class GameService {
     // Shift Assignment Methods
     @Transactional(readOnly = true)
     public List<com.obhl.game.dto.GameDayDTO> getGameDaysBySeason(Long seasonId) {
+        java.time.ZoneId utcZone = java.time.ZoneId.of("UTC");
+        java.time.ZoneId centralZone = java.time.ZoneId.of("America/Chicago");
+
         java.util.Map<java.time.LocalDate, Long> gamesPerDay = gameRepository.findBySeasonIdOrderByGameDate(seasonId)
                 .stream()
                 .collect(Collectors.groupingBy(
-                        game -> game.getGameDate().toLocalDate(),
+                        game -> game.getGameDate().atZone(utcZone).withZoneSameInstant(centralZone).toLocalDate(),
                         Collectors.counting()));
 
         return gamesPerDay.entrySet().stream()

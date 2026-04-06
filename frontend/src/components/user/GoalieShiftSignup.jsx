@@ -230,7 +230,8 @@ const GoalieShiftSignup = () => {
                     <tbody>
                         {gameDays.map(day => {
                             const dateStr = day.date;
-                            const gameDate = new Date(dateStr);
+                            // Append time to avoid UTC midnight shifting date back one day in local timezone
+                            const gameDate = new Date(dateStr + 'T12:00:00');
                             const isUnavailable = currentUnavailableDates.includes(dateStr);
 
                             return (
@@ -275,7 +276,7 @@ const GoalieShiftSignup = () => {
                                 {myAssignments.map((assignment, idx) => (
                                     <tr key={idx}>
                                         <td>
-                                            {new Date(assignment.gameDate).toLocaleDateString('en-US', {
+                                            {new Date(assignment.gameDate.endsWith('Z') ? assignment.gameDate : assignment.gameDate + 'Z').toLocaleDateString('en-US', {
                                                 weekday: 'short', month: 'short', day: 'numeric'
                                             })}
                                         </td>
@@ -314,7 +315,7 @@ const GoalieShiftSignup = () => {
                         <ul className="changes-list">
                             {getUnsavedChangesList().map((change, idx) => (
                                 <li key={idx}>
-                                    {new Date(change.date).toLocaleDateString('en-US', {
+                                    {new Date(change.date + 'T12:00:00').toLocaleDateString('en-US', {
                                         month: 'short',
                                         day: 'numeric',
                                         year: 'numeric'

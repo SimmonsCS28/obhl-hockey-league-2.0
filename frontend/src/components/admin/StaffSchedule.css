@@ -254,20 +254,21 @@
     letter-spacing: 0.3px;
 }
 
-.availability-table-wrapper {
+.goalie-avail-table-wrapper {
     overflow-x: auto;
 }
 
-.availability-table {
+.goalie-avail-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: fixed;
 }
 
-.availability-table thead {
+.goalie-avail-table thead {
     background: #2c2c2c;
 }
 
-.availability-table th {
+.goalie-avail-table th {
     padding: 0.75rem 1.25rem;
     text-align: center;
     font-weight: 600;
@@ -278,30 +279,33 @@
     white-space: nowrap;
 }
 
-.availability-table th.goalie-name-col {
+.goalie-avail-table th.goalie-avail-name-col {
     text-align: left;
-    min-width: 160px;
+    width: 30%;
 }
 
-.availability-table tbody tr {
+.goalie-avail-table tbody tr {
     border-bottom: 1px solid #2d3748;
     transition: background-color 0.15s;
 }
 
-.availability-table tbody tr:hover {
+.goalie-avail-table tbody tr:hover {
     background-color: #2d3748;
 }
 
-.availability-table tbody tr:last-child {
+.goalie-avail-table tbody tr:last-child {
     border-bottom: none;
 }
 
-.goalie-name-cell {
+.goalie-avail-name-cell {
     padding: 0.75rem 1.25rem;
     color: #e2e8f0;
     font-weight: 600;
     font-size: 0.9rem;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 0;
 }
 
 .availability-cell {
@@ -331,7 +335,7 @@
     border: 1px solid rgba(245, 101, 101, 0.35);
 }
 
-.availability-empty {
+.goalie-avail-empty {
     padding: 2rem;
     text-align: center;
     color: #a0aec0;

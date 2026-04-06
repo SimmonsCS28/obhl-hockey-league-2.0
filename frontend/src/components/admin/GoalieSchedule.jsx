@@ -151,12 +151,22 @@ function GoalieSchedule() {
     // Get unique weeks for the filter dropdown
     const availableWeeks = [...new Set(games.map(g => g.week).filter(w => w != null))].sort((a, b) => a - b);
 
-    // Compute unique game dates for the selected week (for the availability panel)
+    // Convert a UTC gameDate string to local date string YYYY-MM-DD
+    // (late games cross UTC midnight so we can't just split on 'T')
+    const getLocalDateStr = (gameDateStr) => {
+        const d = new Date(gameDateStr.endsWith('Z') ? gameDateStr : gameDateStr + 'Z');
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    // Compute unique LOCAL game dates for the selected week (for the availability panel)
     const weekGameDates = weekFilter !== 'all'
         ? [...new Set(
             games
                 .filter(g => g.week === parseInt(weekFilter))
-                .map(g => g.gameDate.split('T')[0])
+                .map(g => getLocalDateStr(g.gameDate))
           )].sort()
         : [];
 
@@ -357,13 +367,13 @@ function GoalieSchedule() {
                     <h3 className="availability-panel-title">
                         🥅 Goalie Availability — Week {weekFilter}
                     </h3>
-                    <div className="availability-table-wrapper">
-                        <table className="availability-table">
+                    <div className="goalie-avail-table-wrapper">
+                        <table className="goalie-avail-table">
                             <thead>
                                 <tr>
-                                    <th className="goalie-name-col">Goalie</th>
+                                    <th className="goalie-avail-name-col">Goalie</th>
                                     {weekGameDates.map(date => (
-                                        <th key={date} className="date-col">
+                                        <th key={date} className="goalie-avail-date-col">
                                             {formatPanelDate(date)}
                                         </th>
                                     ))}
@@ -372,14 +382,14 @@ function GoalieSchedule() {
                             <tbody>
                                 {goalies.length === 0 ? (
                                     <tr>
-                                        <td colSpan={weekGameDates.length + 1} className="availability-empty">
+                                        <td colSpan={weekGameDates.length + 1} className="goalie-avail-empty">
                                             No goalies found.
                                         </td>
                                     </tr>
                                 ) : (
                                     goalies.map(goalie => (
                                         <tr key={goalie.id}>
-                                            <td className="goalie-name-cell">{getGoalieName(goalie)}</td>
+                                            <td className="goalie-avail-name-cell">{getGoalieName(goalie)}</td>
                                             {weekGameDates.map(date => {
                                                 const unavailable = isGoalieUnavailableForDate(goalie.id, date);
                                                 return (
