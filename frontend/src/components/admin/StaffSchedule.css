@@ -230,3 +230,110 @@
         min-width: 800px;
     }
 }
+
+/* =============================================
+   Goalie Availability Panel
+   ============================================= */
+
+.availability-panel {
+    margin-top: 2rem;
+    background: #1e1e1e;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+.availability-panel-title {
+    margin: 0;
+    padding: 1rem 1.5rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: white;
+    background: #2c2c2c;
+    border-bottom: 2px solid #4a5568;
+    letter-spacing: 0.3px;
+}
+
+.availability-table-wrapper {
+    overflow-x: auto;
+}
+
+.availability-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.availability-table thead {
+    background: #2c2c2c;
+}
+
+.availability-table th {
+    padding: 0.75rem 1.25rem;
+    text-align: center;
+    font-weight: 600;
+    color: #a0aec0;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+
+.availability-table th.goalie-name-col {
+    text-align: left;
+    min-width: 160px;
+}
+
+.availability-table tbody tr {
+    border-bottom: 1px solid #2d3748;
+    transition: background-color 0.15s;
+}
+
+.availability-table tbody tr:hover {
+    background-color: #2d3748;
+}
+
+.availability-table tbody tr:last-child {
+    border-bottom: none;
+}
+
+.goalie-name-cell {
+    padding: 0.75rem 1.25rem;
+    color: #e2e8f0;
+    font-weight: 600;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.availability-cell {
+    padding: 0.6rem 1rem;
+    text-align: center;
+}
+
+.availability-badge {
+    display: inline-block;
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    white-space: nowrap;
+    letter-spacing: 0.3px;
+}
+
+.badge-available {
+    background: rgba(72, 187, 120, 0.15);
+    color: #68d391;
+    border: 1px solid rgba(72, 187, 120, 0.35);
+}
+
+.badge-unavailable {
+    background: rgba(245, 101, 101, 0.15);
+    color: #fc8181;
+    border: 1px solid rgba(245, 101, 101, 0.35);
+}
+
+.availability-empty {
+    padding: 2rem;
+    text-align: center;
+    color: #a0aec0;
+    font-size: 0.95rem;
+}
