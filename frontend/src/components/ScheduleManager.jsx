@@ -7,6 +7,15 @@ const API_BASE_URL = '/api/v1';
 // TODO: Fix API Gateway multipart proxy and use API_BASE_URL for all requests
 const GAME_SERVICE_URL = '/games-api'; // Proxy through Nginx
 
+// Add auth token to all axios requests
+axios.interceptors.request.use(config => {
+    const token = localStorage.getItem('token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
 const ScheduleManager = () => {
     const [seasons, setSeasons] = useState([]);
     const [teams, setTeams] = useState([]);
