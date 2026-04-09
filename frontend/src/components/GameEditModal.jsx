@@ -28,8 +28,11 @@ const GameEditModal = ({ game, teams, onClose, onSave, onDelete }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Convert datetime-local to ISO format
-        const gameDateTime = new Date(formData.gameDate).toISOString();
+        // Convert datetime-local to ISO format and remove trailing 'Z' for Spring Boot compatibility
+        let gameDateTime = new Date(formData.gameDate).toISOString();
+        if (gameDateTime.endsWith('Z')) {
+            gameDateTime = gameDateTime.slice(0, -1);
+        }
 
         const gameData = {
             ...formData,

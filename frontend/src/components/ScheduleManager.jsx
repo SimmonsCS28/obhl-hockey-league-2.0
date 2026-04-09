@@ -323,7 +323,7 @@ const ScheduleManager = () => {
                 seasonId: selectedSeason,
                 leagueId: teams[0]?.leagueId || null,
                 week: nextWeek,
-                gameDate: new Date().toISOString(),
+                gameDate: new Date().toISOString().replace('Z', ''),
                 homeTeamId: placeholderHome,
                 awayTeamId: placeholderAway,
                 rink: 'Tubbs',
@@ -453,7 +453,11 @@ const ScheduleManager = () => {
     };
 
     const showMessage = (type, text) => {
-        setMessage({ type, text });
+        let messageText = text;
+        if (typeof text === 'object' && text !== null) {
+            messageText = text.message || text.error || JSON.stringify(text);
+        }
+        setMessage({ type, text: messageText });
         setTimeout(() => setMessage({ type: '', text: '' }), 5000);
     };
 
