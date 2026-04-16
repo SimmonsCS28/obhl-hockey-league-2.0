@@ -124,8 +124,9 @@ function GoalieSchedule() {
         if (goalieId === currentAssignedId) return true;
 
         // Check if marked as unavailable
-        // gameDate comes from game object, might be full ISO string
-        const dateStr = gameDate.split('T')[0];
+        // Use local date (not raw UTC split) so late-evening games that cross
+        // midnight UTC are compared against the correct local calendar date.
+        const dateStr = getLocalDateStr(gameDate);
 
         const isUnavailable = unavailability.some(u =>
             u.userId === goalieId && u.date === dateStr
