@@ -64,6 +64,7 @@ function PublicLayout() {
                                 <Link to="/players" onClick={closeMobileMenu}>Players</Link>
                                 <Link to="/standings" onClick={closeMobileMenu}>Standings</Link>
                                 <Link to="/schedule" onClick={closeMobileMenu}>Schedule</Link>
+                                <Link to="/rules" onClick={closeMobileMenu}>Rules</Link>
                             </nav>
                             <div className="donate-section mobile-open">
                                 <DonateButton />
@@ -148,6 +149,7 @@ function PublicLayout() {
                         <Link to="/players">Players</Link>
                         <Link to="/standings">Standings</Link>
                         <Link to="/schedule">Schedule</Link>
+                        <Link to="/rules">Rules</Link>
                     </nav>
                     <div className="header-actions">
                         <div className="donate-section">

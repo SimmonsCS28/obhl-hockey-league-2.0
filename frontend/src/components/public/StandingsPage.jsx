@@ -122,8 +122,13 @@ function StandingsPage() {
     if (error) return <div className="error">Error: {error}</div>;
 
     return (
-        <div className="standings-page">
-            <h1>Standings</h1>
+        <>
+            <div className="page-header-bar">
+                <div className="page-header-inner centered">
+                    <h1>Standings</h1>
+                </div>
+            </div>
+            <div className="standings-page">
 
             {selectedSeason && (
                 <div className="season-selector">
@@ -200,6 +205,7 @@ function StandingsPage() {
                 </div>
             )}
         </div>
+        </>
     );
 }
 

@@ -327,3 +327,39 @@
         padding: 0.65rem 1.25rem;
     }
 }
+
+/* Shared Public Page Header */
+.page-header-bar {
+    width: 100%;
+    background: rgba(10, 12, 20, 0.88);
+    padding: 2rem 0;
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.page-header-inner {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.page-header-inner.centered {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.page-header-inner h1 {
+    margin: 0;
+    color: white;
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.page-header-sub {
+    color: white;
+    font-size: 1.5rem;
+    opacity: 0.9;
+    margin: 0.5rem 0 0 0;
+}

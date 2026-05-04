@@ -178,8 +178,13 @@ function PlayersPage() {
     if (error) return <div className="error">Error: {error}</div>;
 
     return (
-        <div className="players-page">
-            <h1>Players</h1>
+        <>
+            <div className="page-header-bar">
+                <div className="page-header-inner centered">
+                    <h1>Players</h1>
+                </div>
+            </div>
+            <div className="players-page">
 
             <div className="filters-container">
                 {selectedSeason && (
@@ -301,6 +306,7 @@ function PlayersPage() {
                 </div>
             )}
         </div>
+        </>
     );
 }
 

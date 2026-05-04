@@ -52,8 +52,13 @@ function SeasonsPage() {
     if (seasons.length === 0) return <div className="no-data">No seasons available.</div>;
 
     return (
-        <div className="seasons-page">
-            <h1>Seasons</h1>
+        <>
+            <div className="page-header-bar">
+                <div className="page-header-inner centered">
+                    <h1>Seasons</h1>
+                </div>
+            </div>
+            <div className="seasons-page">
 
             {selectedSeason && (
                 <div className="season-selector">
@@ -109,6 +114,7 @@ function SeasonsPage() {
                 </div>
             )}
         </div>
+        </>
     );
 }
 

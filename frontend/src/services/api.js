@@ -515,6 +515,20 @@ const api = {
 
     async deleteAnnouncement(id) {
         return request(`/announcements/${id}`, { method: 'DELETE' });
+    },
+
+    // ============================================
+    // LEAGUE RULES API
+    // ============================================
+    async getRules() {
+        return request('/rules');
+    },
+
+    async updateRules(content) {
+        return request('/rules', {
+            method: 'PUT',
+            body: JSON.stringify({ content })
+        });
     }
 };
 
@@ -577,7 +591,9 @@ export const {
     createAnnouncement,
     updateAnnouncement,
     toggleAnnouncementActive,
-    deleteAnnouncement
+    deleteAnnouncement,
+    getRules,
+    updateRules
 } = api;
 
 export default api;

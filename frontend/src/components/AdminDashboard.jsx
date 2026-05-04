@@ -11,6 +11,7 @@ import SeasonManagement from './SeasonManagement';
 import TeamManagement from './TeamManagement';
 import UserManagement from './UserManagement';
 import AnnouncementsManagement from './admin/AnnouncementsManagement';
+import LeagueRulesAdmin from './LeagueRulesAdmin';
 
 function AdminDashboard() {
     const [searchParams] = useSearchParams();
@@ -32,6 +33,7 @@ function AdminDashboard() {
             {activeTab === 'gameManagement' && <ScorekeeperContent />}
             {activeTab === 'users' && <UserManagement />}
             {activeTab === 'announcements' && <AnnouncementsManagement />}
+            {activeTab === 'rules' && <LeagueRulesAdmin />}
             {activeTab === 'goalies' && <GoalieSchedule />}
             {activeTab === 'referees' && <RefereeSchedule />}
             {activeTab === 'scorekeepers' && <ScorekeeperSchedule />}

@@ -20,6 +20,7 @@ import SeasonsPage from './components/public/SeasonsPage';
 import StandingsPage from './components/public/StandingsPage';
 import TeamRosterPage from './components/public/TeamRosterPage';
 import TeamsPage from './components/public/TeamsPage';
+import RulesPage from './components/public/RulesPage';
 import { AuthProvider } from './contexts/AuthContext';
 import ChangePassword from './pages/ChangePassword';
 
@@ -54,6 +55,7 @@ const router = createBrowserRouter([
       { path: "schedule", element: <SchedulePage /> },
       { path: "game/:gameId/preview", element: <GamePreview /> },
       { path: "game/:gameId/recap", element: <GameRecap /> },
+      { path: "rules", element: <RulesPage /> },
 
       // Public Staff Signups
       // Unified Signup

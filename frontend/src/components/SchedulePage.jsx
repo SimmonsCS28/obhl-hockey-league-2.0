@@ -236,17 +236,21 @@ const SchedulePage = () => {
     };
 
     return (
-        <div className="schedule-page">
-            <div className="schedule-header">
-                <h1>Game Schedule</h1>
-                <button
-                    className="download-calendar-btn"
-                    onClick={() => setShowCalendarModal(true)}
-                    title="Download team schedule as calendar file"
-                >
-                    📅 Download Calendar
-                </button>
+        <>
+            <div className="page-header-bar">
+                <div className="page-header-inner centered">
+                    <h1>Game Schedule</h1>
+                    <button
+                        className="download-calendar-btn"
+                        style={{ marginTop: '1rem' }}
+                        onClick={() => setShowCalendarModal(true)}
+                        title="Download team schedule as calendar file"
+                    >
+                        📅 Download Calendar
+                    </button>
+                </div>
             </div>
+            <div className="schedule-page">
 
             <div className="filters">
                 <div className="filter-group">
@@ -525,6 +529,7 @@ const SchedulePage = () => {
                 </div>
             )}
         </div>
+        </>
     );
 };
 

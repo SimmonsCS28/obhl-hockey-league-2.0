@@ -117,8 +117,13 @@ function TeamsPage() {
     if (error) return <div className="error">Error: {error}</div>;
 
     return (
-        <div className="teams-page">
-            <h1>Teams</h1>
+        <>
+            <div className="page-header-bar">
+                <div className="page-header-inner centered">
+                    <h1>Teams</h1>
+                </div>
+            </div>
+            <div className="teams-page">
 
             {selectedSeason && (
                 <div className="season-selector">
@@ -178,6 +183,7 @@ function TeamsPage() {
                 </div>
             )}
         </div>
+        </>
     );
 }
 

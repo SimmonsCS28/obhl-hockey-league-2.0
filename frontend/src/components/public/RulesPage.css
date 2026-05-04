@@ -1,0 +1,199 @@
+/* ── Page Layout ── */
+.rules-page {
+    min-height: 100vh;
+}
+
+/* ── Hero Banner ── */
+.rules-page-hero {
+    padding: 0;
+    text-align: center;
+    width: 100%;
+}
+
+.rules-hero-content {
+    position: relative;
+    z-index: 1;
+    display: block;
+    background: rgba(10, 12, 20, 0.88);
+    border: none;
+    border-radius: 0;
+    padding: 2rem 2rem;
+    max-width: 100%;
+    width: 100%;
+}
+
+.rules-hero-icon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 0.75rem;
+    filter: drop-shadow(0 0 16px rgba(96, 165, 250, 0.35));
+}
+
+.rules-hero-title {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 800;
+    color: #f1f5f9;
+    margin: 0 0 0.6rem;
+    letter-spacing: -0.02em;
+}
+
+.rules-hero-subtitle {
+    font-size: 1rem;
+    color: #94a3b8;
+    margin: 0;
+    max-width: 480px;
+    margin-inline: auto;
+}
+
+/* ── Content Container ── */
+.rules-page-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    background: rgba(15, 23, 42, 0.82);
+    backdrop-filter: blur(4px);
+    border-radius: 12px;
+}
+
+/* ── Meta Bar (last updated) ── */
+.rules-meta-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.82rem;
+    color: #94a3b8;
+    background: rgba(148, 163, 184, 0.07);
+    border: 1px solid rgba(148, 163, 184, 0.12);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    margin-bottom: 2rem;
+}
+
+.rules-meta-icon {
+    font-size: 0.95rem;
+}
+
+/* ── Rules Content (from Quill HTML output) ── */
+.rules-content {
+    color: #cbd5e1;
+    line-height: 1.55;
+    font-size: 0.97rem;
+}
+
+/* These target the HTML that Quill outputs */
+.rules-content h1 {
+    font-size: 1.7rem;
+    font-weight: 700;
+    color: #f1f5f9;
+    margin: 2rem 0 0.5rem;
+    padding-bottom: 0.35rem;
+    border-bottom: 2px solid rgba(96, 165, 250, 0.25);
+}
+
+.rules-content h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #93c5fd;
+    margin: 1.75rem 0 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.rules-content h3 {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    margin: 1.1rem 0 0.1rem;
+}
+
+.rules-content p {
+    margin: 0 0 0.2rem 0 !important;
+    padding: 0 !important;
+}
+
+.rules-content strong {
+    color: #e2e8f0;
+}
+
+.rules-content ol,
+.rules-content ul {
+    padding-left: 1.5rem;
+    margin: 0.3rem 0;
+}
+
+.rules-content li {
+    margin: 0.15rem 0;
+}
+
+/* Indented paragraphs (from Quill) */
+.rules-content .ql-indent-1 {
+    padding-left: 3rem;
+}
+.rules-content .ql-indent-2 {
+    padding-left: 6rem;
+}
+
+/* ── Loading ── */
+.rules-loading {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: #94a3b8;
+    justify-content: center;
+    padding: 4rem;
+}
+
+.rules-spinner {
+    width: 28px;
+    height: 28px;
+    border: 3px solid rgba(96, 165, 250, 0.2);
+    border-top-color: #60a5fa;
+    border-radius: 50%;
+    animation: rulesSpin 0.8s linear infinite;
+}
+
+@keyframes rulesSpin {
+    to { transform: rotate(360deg); }
+}
+
+/* ── Error ── */
+.rules-error {
+    text-align: center;
+    color: #f87171;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 10px;
+    padding: 2rem;
+    margin: 2rem 0;
+}
+
+/* ── Empty State ── */
+.rules-empty {
+    text-align: center;
+    color: #64748b;
+    padding: 4rem 2rem;
+    font-size: 1rem;
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+    .rules-page-hero {
+        padding: 1.75rem 1rem 1.5rem;
+    }
+
+    .rules-hero-content {
+        padding: 1.5rem 1.25rem;
+    }
+
+    .rules-hero-icon {
+        font-size: 2.25rem;
+    }
+
+    .rules-page-container {
+        padding: 1.5rem 1rem 3rem;
+    }
+
+    .rules-content {
+        font-size: 0.9rem;
+    }
+}

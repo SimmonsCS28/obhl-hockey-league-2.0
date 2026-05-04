@@ -43,11 +43,14 @@ function Home() {
     if (error) return <div className="error">Error: {error}</div>;
 
     return (
-        <div className="home-container">
-            <section className="hero-section">
-                <h1>Welcome to OBHL</h1>
-                <p className="tagline">Old Buzzard Hockey League</p>
-            </section>
+        <>
+            <div className="page-header-bar">
+                <div className="page-header-inner centered">
+                    <h1>Welcome to OBHL</h1>
+                    <p className="page-header-sub">Old Buzzard Hockey League</p>
+                </div>
+            </div>
+            <div className="home-container">
 
             {announcements.length > 0 && (
                 <section className="announcements-section">
@@ -98,6 +101,7 @@ function Home() {
                 </section>
             )}
         </div>
+        </>
     );
 }
 
