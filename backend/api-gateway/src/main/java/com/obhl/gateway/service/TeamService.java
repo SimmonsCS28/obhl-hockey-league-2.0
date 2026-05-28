@@ -113,8 +113,7 @@ public class TeamService {
     public void deleteTeam(Long id) {
         Team team = teamRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Team not found"));
-        team.setActive(false);
-        teamRepository.save(team);
+        teamRepository.delete(team);
     }
 
     @Transactional

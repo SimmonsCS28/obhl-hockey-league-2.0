@@ -69,27 +69,50 @@ public class DraftService {
                                 ". All teams must have at least one GM before finalizing.");
             }
 
-            // 3. Create Season with default dates (admin can update later)
-            // First, mark all existing seasons as completed and inactive
+            // 3. Resolve the Season
+            Season season;
+            if (draftState.getSeasonId() != null) {
+                // Use the pre-existing season selected during drafting
+                Optional<Season> seasonOpt = seasonRepository.findById(draftState.getSeasonId());
+                if (!seasonOpt.isPresent()) {
+                    throw new IllegalArgumentException(
+                        "Selected season not found with id: " + draftState.getSeasonId() +
+                        ". The season may have been deleted. Please re-open the draft and select a valid season.");
+                }
+                season = seasonOpt.get();
+            } else {
+                // Fallback: create a new season from the name (legacy behaviour)
+                Season newSeason = new Season();
+                newSeason.setName(draftState.getSeasonName());
+                newSeason.setStartDate(LocalDate.now());
+                newSeason.setEndDate(LocalDate.now().plusMonths(6));
+                newSeason.setStatus("active");
+                newSeason.setIsActive(true);
+                season = seasonRepository.save(newSeason);
+                createdSeasonId = season.getId(); // Only track for rollback in fallback path
+                System.out.println("Created new season (legacy fallback) with ID: " + createdSeasonId);
+            }
+
+            // Mark all OTHER seasons as completed and inactive
             List<Season> existingSeasons = seasonRepository.findAll();
             for (Season existingSeason : existingSeasons) {
-                existingSeason.setIsActive(false);
-                existingSeason.setStatus("completed");
+                if (!existingSeason.getId().equals(season.getId())) {
+                    existingSeason.setIsActive(false);
+                    existingSeason.setStatus("completed");
+                }
             }
             seasonRepository.saveAll(existingSeasons);
 
-            // Now create the new season and set it as active
-            Season season = new Season();
-            season.setName(draftState.getSeasonName());
-            // Set default dates - admin can update these later
-            season.setStartDate(LocalDate.now()); // Default to today
-            season.setEndDate(LocalDate.now().plusMonths(6)); // Default to 6 months from now
+            // Activate the selected season
             season.setStatus("active");
-            season.setIsActive(true); // Set as active since this is the current season
+            season.setIsActive(true);
             season = seasonRepository.save(season);
-            createdSeasonId = season.getId(); // Track for rollback
 
-            System.out.println("Created season with ID: " + createdSeasonId);
+            System.out.println("Activated season '" + season.getName() + "' with ID: " + season.getId());
+
+
+            // Track all successfully drafted player IDs so we can deactivate the rest
+            List<Long> draftedPlayerIds = new ArrayList<>();
 
             // 4. Create Teams and Players
             // Track abbreviations to ensure uniqueness
@@ -146,38 +169,37 @@ public class DraftService {
 
                 // 5. Create/Update Players for this team
                 for (DraftPlayerDTO draftPlayer : draftTeam.getPlayers()) {
-                    // Check if player exists in this season via StatsClient
+                    // Per-season model: look up by email + NEW seasonId only.
+                    // If a record already exists for this season, update it (idempotent re-run).
+                    // Otherwise always create a fresh record — never touch prior-season records.
                     Map<String, Object> existingPlayerData = null;
                     try {
                         existingPlayerData = statsClient.getPlayerByEmailAndSeason(
-                                draftPlayer.getEmail(),
-                                season.getId());
+                                draftPlayer.getEmail(), season.getId());
                     } catch (Exception e) {
-                        // 404 means player doesn't exist, which is fine - we'll create them
-                        // Any other error will be caught by the outer try-catch
+                        // 404 = no record for this season yet — that's expected for new seasons
                     }
 
-                    // Use helper method that handles position normalization
                     Map<String, Object> playerData = mapPlayer(draftPlayer, season.getId(), teamId);
 
-                    // Explicitly put the isVeteran flag based on status check if needed,
-                    // or rely on mapPlayer which uses dto.isVeteran().
-                    // Since frontend sends both, mapPlayer is sufficient.
-
                     Map<String, Object> savedPlayer;
-                    if (existingPlayerData == null) {
-                        // Create new player
-                        savedPlayer = statsClient.createPlayer(playerData);
-                        Long playerId = ((Number) savedPlayer.get("id")).longValue();
-                        createdPlayerIds.add(playerId); // Track for rollback
-                        System.out.println("Created player: " + draftPlayer.getFirstName() + " " +
-                                draftPlayer.getLastName() + " (ID: " + playerId + ")");
-                    } else {
-                        // Update existing player
+                    if (existingPlayerData != null) {
+                        // Update the existing record for this season
                         Long playerId = ((Number) existingPlayerData.get("id")).longValue();
                         savedPlayer = statsClient.updatePlayer(playerId, playerData);
-                        System.out.println("Updated existing player: " + draftPlayer.getFirstName() + " " +
-                                draftPlayer.getLastName() + " (ID: " + playerId + ")");
+                        System.out.println("Updated existing season record for: " + draftPlayer.getFirstName() + " "
+                                + draftPlayer.getLastName() + " (ID: " + playerId + ")");
+                    } else {
+                        // Create a new record for this season (prior-season records untouched)
+                        savedPlayer = statsClient.createPlayer(playerData);
+                        Long playerId = ((Number) savedPlayer.get("id")).longValue();
+                        createdPlayerIds.add(playerId);
+                        System.out.println("Created new season record for: " + draftPlayer.getFirstName() + " "
+                                + draftPlayer.getLastName() + " (ID: " + playerId + ")");
+                    }
+
+                    if (savedPlayer != null && savedPlayer.get("id") != null) {
+                        draftedPlayerIds.add(((Number) savedPlayer.get("id")).longValue());
                     }
 
                     // Track GM player ID
@@ -194,7 +216,10 @@ public class DraftService {
                 }
             }
 
-            // 7. Mark draft as completed
+            // Under the per-season model, undrafted players simply have no record for the
+            // new season — we don't need to deactivate historical records.
+
+            // 8. Mark draft as completed
             draft.setStatus("complete");
             draftSaveRepository.save(draft);
 
@@ -301,7 +326,11 @@ public class DraftService {
         map.put("lastName", dto.getLastName());
         map.put("email", dto.getEmail());
         map.put("position", normalizePosition(dto.getPosition()));
-        map.put("skillRating", dto.getSkillRating());
+        // Clamp skill rating to valid range [1, 10] — DB constraint rejects 0
+        int rating = dto.getSkillRating();
+        if (rating < 1) rating = 1;
+        if (rating > 10) rating = 10;
+        map.put("skillRating", rating);
         map.put("isVeteran", dto.isVeteran());
         map.put("seasonId", seasonId);
         map.put("teamId", teamId);

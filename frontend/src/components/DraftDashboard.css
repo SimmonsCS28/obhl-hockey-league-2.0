@@ -117,6 +117,21 @@ button {
     background: #2c5aa0;
 }
 
+.btn-create-season {
+    background: #2c7a7b;
+    color: white;
+}
+
+.btn-create-season:hover {
+    background: #285e61;
+}
+
+.btn-create-season:disabled {
+    background: #4a5568;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
 .btn-finalize {
     background: #ed8936;
 }
@@ -162,6 +177,14 @@ button {
     padding: 1rem;
     background: #2a2a2a;
     border-bottom: 1px solid white;
+}
+
+.player-pool-container.collapsed {
+    width: 44px;
+}
+
+.player-pool-container.collapsed .pool-header {
+    padding: 1rem 0;
 }
 
 .pool-filters {
@@ -457,15 +480,21 @@ button {
 
 /* View-specific team card widths */
 .draft-team-card.detailed {
-    width: 280px;
+    flex: 1 1 0;
+    min-width: 250px;
+    max-width: 320px;
 }
 
 .draft-team-card.balanced {
-    width: 280px;
+    flex: 1 1 0;
+    min-width: 210px;
+    max-width: 290px;
 }
 
 .draft-team-card.overview {
-    width: 220px;
+    flex: 1 1 0;
+    min-width: 160px;
+    max-width: 240px;
 }
 
 .team-header {
@@ -649,6 +678,162 @@ button {
     max-width: 500px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
     color: white;
+}
+
+/* Light modal variant — matches the Seasons page Add New Season modal */
+.modal-content-light {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    max-width: 500px;
+    width: 100%;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    color: #2d3748;
+}
+
+.modal-content-light .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.modal-content-light .modal-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #1a202c;
+    font-weight: 700;
+}
+
+.modal-content-light .modal-close {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    color: #718096;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 0.25rem;
+    height: auto;
+}
+
+.modal-content-light .modal-close:hover {
+    color: #2d3748;
+    background: transparent;
+}
+
+.modal-content-light .season-form {
+    padding: 0;
+}
+
+.modal-content-light .form-group {
+    margin-bottom: 1.25rem;
+}
+
+.modal-content-light .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: #4a5568;
+    font-weight: 500;
+}
+
+.modal-content-light .form-group input[type="text"],
+.modal-content-light .form-group input[type="date"],
+.modal-content-light .form-group select {
+    width: 100%;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    color: #2d3748;
+    background: white;
+    box-sizing: border-box;
+    transition: border-color 0.2s;
+}
+
+.modal-content-light .form-group input:focus,
+.modal-content-light .form-group select:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
+}
+
+.modal-content-light .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.modal-content-light .form-row .form-group {
+    margin-bottom: 0;
+}
+
+.modal-content-light .checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    color: #4a5568;
+    cursor: pointer;
+    font-weight: 400;
+}
+
+.modal-content-light .checkbox-group input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #48bb78;
+}
+
+.modal-content-light .form-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.modal-content-light .btn-primary {
+    background: #48bb78;
+    color: white;
+    border: none;
+    padding: 0.625rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    height: auto;
+}
+
+.modal-content-light .btn-primary:hover {
+    background: #38a169;
+}
+
+.modal-content-light .btn-primary:disabled {
+    background: #9ae6b4;
+    cursor: not-allowed;
+}
+
+.modal-content-light .btn-secondary {
+    background: #718096;
+    color: white;
+    border: none;
+    padding: 0.625rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: background 0.2s;
+    height: auto;
+}
+
+.modal-content-light .btn-secondary:hover {
+    background: #4a5568;
 }
 
 .modal-content h2 {

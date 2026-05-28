@@ -462,6 +462,10 @@ const api = {
         return request(`/stats/players?seasonId=${seasonId}`);
     },
 
+    async generatePreview() {
+        return request('/users/generate-preview');
+    },
+
     async generateUsers() {
         return request('/users/generate', { method: 'POST' });
     },
@@ -559,6 +563,7 @@ export const {
     createUser,
     updateUser,
     deleteUser,
+    generatePreview,
     generateUsers,
     importGoalies,
     getAllGoalieUnavailability,

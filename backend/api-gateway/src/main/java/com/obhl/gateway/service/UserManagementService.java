@@ -1,8 +1,12 @@
 package com.obhl.gateway.service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -12,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.obhl.gateway.dto.CreateUserRequest;
+import com.obhl.gateway.dto.GeneratePreviewDTO;
 import com.obhl.gateway.dto.PlayerDto;
 import com.obhl.gateway.dto.UpdateUserRequest;
 import com.obhl.gateway.dto.UserDTO;
@@ -285,12 +290,66 @@ public class UserManagementService {
     private PlayerService playerService;
 
     /**
-     * Generate users from players who don't have an account
+     * Preview which players would get new users and which are potential duplicates.
+     * Deduplicates players by email (one per unique email, preferring the most recent season).
+     */
+    @Transactional(readOnly = true)
+    public GeneratePreviewDTO previewGenerateUsers() {
+        List<PlayerDto> allPlayers = playerService.getAllPlayers();
+
+        // Deduplicate: keep one PlayerDto per email (last-seen wins)
+        Map<String, PlayerDto> uniqueByEmail = new LinkedHashMap<>();
+        for (PlayerDto p : allPlayers) {
+            if (p.getEmail() != null && !p.getEmail().isBlank()) {
+                uniqueByEmail.put(p.getEmail().toLowerCase().trim(), p);
+            }
+        }
+
+        List<PlayerDto> toCreate = new ArrayList<>();
+        List<GeneratePreviewDTO.PotentialDuplicate> conflicts = new ArrayList<>();
+
+        for (PlayerDto player : uniqueByEmail.values()) {
+            String email = player.getEmail().toLowerCase().trim();
+
+            // Skip if a user with this exact email already exists
+            if (userRepository.findByEmail(email).isPresent() ||
+                    userRepository.findByUsername(email).isPresent()) {
+                continue;
+            }
+
+            // Check for a name-based match (same first + last, different email)
+            String firstName = player.getFirstName() != null ? player.getFirstName().trim() : "";
+            String lastName  = player.getLastName()  != null ? player.getLastName().trim()  : "";
+            Optional<User> nameMatch = userRepository
+                    .findByFirstNameIgnoreCaseAndLastNameIgnoreCase(firstName, lastName);
+
+            if (nameMatch.isPresent()) {
+                conflicts.add(new GeneratePreviewDTO.PotentialDuplicate(player, convertToDTO(nameMatch.get())));
+            } else {
+                toCreate.add(player);
+            }
+        }
+
+        return new GeneratePreviewDTO(toCreate, conflicts);
+    }
+
+    /**
+     * Generate users from players who don't have an account.
+     * Deduplicates players by email to avoid processing the same person twice across seasons.
      */
     @Transactional
     public List<UserDTO> generateUsersFromPlayers() {
-        List<PlayerDto> players = playerService.getAllPlayers();
-        List<UserDTO> createdUsers = new java.util.ArrayList<>();
+        List<PlayerDto> allPlayers = playerService.getAllPlayers();
+
+        // Deduplicate by email — same person can appear in multiple seasons
+        Map<String, PlayerDto> uniqueByEmail = new LinkedHashMap<>();
+        for (PlayerDto p : allPlayers) {
+            if (p.getEmail() != null && !p.getEmail().isBlank()) {
+                uniqueByEmail.put(p.getEmail().toLowerCase().trim(), p);
+            }
+        }
+
+        List<UserDTO> createdUsers = new ArrayList<>();
 
         // Get default USER role
         Role userRole = roleRepository.findByName("USER")
@@ -300,31 +359,26 @@ public class UserManagementService {
         // Default password
         String defaultPasswordHash = passwordEncoder.encode("Welcome1!");
 
-        for (PlayerDto player : players) {
-            if (player.getEmail() == null || player.getEmail().isBlank()) {
-                continue;
-            }
+        for (PlayerDto player : uniqueByEmail.values()) {
+            String email = player.getEmail().toLowerCase().trim();
 
-            // Check if user already exists
-            if (userRepository.findByEmail(player.getEmail()).isPresent() ||
-                    userRepository.findByUsername(player.getEmail()).isPresent()) {
+            // Check if user already exists by email or username
+            if (userRepository.findByEmail(email).isPresent() ||
+                    userRepository.findByUsername(email).isPresent()) {
                 continue;
             }
 
             // Create new user
             User user = new User();
-            user.setUsername(player.getEmail()); // Username is email
-            user.setEmail(player.getEmail());
+            user.setUsername(email);
+            user.setEmail(email);
             user.setFirstName(player.getFirstName());
             user.setLastName(player.getLastName());
             user.setPasswordHash(defaultPasswordHash);
             user.setRoles(roles);
             user.setRole("USER");
             user.setIsActive(true);
-            user.setMustChangePassword(true); // Force password change
-
-            // Note: teamId is not set on the user account itself, as that's for GMs
-            // The player record links to the team
+            user.setMustChangePassword(true);
 
             User savedUser = userRepository.save(user);
             createdUsers.add(convertToDTO(savedUser));

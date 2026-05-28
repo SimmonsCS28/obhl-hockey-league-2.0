@@ -233,3 +233,58 @@
         color: white;
     }
 }
+
+/* Season selector in admin nav */
+.season-selector-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.season-selector-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.admin-season-selector {
+    padding: 0.35rem 0.6rem;
+    background: #1e293b;
+    border: 1px solid #475569;
+    border-radius: 6px;
+    color: #e2e8f0;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    max-width: 200px;
+    min-width: 120px;
+    /* Force browser to respect our colors */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.5rem center;
+    padding-right: 1.6rem;
+}
+
+.admin-season-selector:hover,
+.admin-season-selector:focus {
+    border-color: #dc2626;
+    outline: none;
+}
+
+/* Historical season read-only banner */
+.historical-banner {
+    background: linear-gradient(90deg, #78350f, #92400e);
+    color: #fde68a;
+    text-align: center;
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    border-bottom: 2px solid #b45309;
+}

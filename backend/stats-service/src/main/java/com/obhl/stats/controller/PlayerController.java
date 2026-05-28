@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -66,6 +67,13 @@ public class PlayerController {
         return ResponseEntity.ok(java.util.Map.of("exists", exists));
     }
 
+    @GetMapping("/by-email")
+    public ResponseEntity<Player> getPlayerByEmail(@RequestParam String email) {
+        return playerRepository.findByEmail(email)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
     @GetMapping("/by-email-season")
     public ResponseEntity<Player> getPlayerByEmailAndSeason(
             @RequestParam String email,
@@ -88,6 +96,7 @@ public class PlayerController {
     }
 
     @PatchMapping("/{playerId}")
+    @PutMapping("/{playerId}")
     public ResponseEntity<Player> updatePlayer(
             @PathVariable Long playerId,
             @RequestBody java.util.Map<String, Object> updates) {

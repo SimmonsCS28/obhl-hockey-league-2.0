@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useSeason } from '../contexts/SeasonContext';
 import './AdminLayout.css';
 
 function AdminLayout({ children, activeTab }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const { seasons, selectedSeasonId, setSelectedSeasonId, isHistoricalView } = useSeason();
 
     const handleLogout = () => {
         logout();
@@ -37,7 +39,39 @@ function AdminLayout({ children, activeTab }) {
                         <span></span>
                         <span></span>
                     </button>
-                    <div className="admin-user-info">
+                     <div className="admin-user-info" style={{ alignItems: 'center' }}>
+                        <div className="season-selector-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '3px' }}>
+                            <label className="season-selector-label" style={{ margin: 0, lineHeight: 1 }}>Season</label>
+                            <select
+                                className="admin-season-selector"
+                                value={selectedSeasonId || ''}
+                                onChange={e => setSelectedSeasonId(Number(e.target.value))}
+                                style={{
+                                    background: '#1e293b',
+                                    backgroundColor: '#1e293b',
+                                    color: '#e2e8f0',
+                                    border: '1px solid #475569',
+                                    borderRadius: '6px',
+                                    padding: '0.5rem 1.8rem 0.5rem 0.6rem',
+                                    fontSize: '0.82rem',
+                                    maxWidth: '200px',
+                                    minWidth: '120px',
+                                    cursor: 'pointer',
+                                    appearance: 'none',
+                                    WebkitAppearance: 'none',
+                                    MozAppearance: 'none',
+                                    lineHeight: '1.4',
+                                    height: '36px',
+                                    boxSizing: 'border-box',
+                                }}
+                            >
+                                {seasons.map(s => (
+                                    <option key={s.id} value={s.id}>
+                                        {s.name}{s.isActive ? ' ★' : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                         <div className="admin-user-details">
                             <span className="user-name">{user?.firstName} {user?.lastName}</span>
                             <span className="user-email">{user?.email}</span>
@@ -163,6 +197,11 @@ function AdminLayout({ children, activeTab }) {
             </nav>
 
             <main className="admin-content">
+                {isHistoricalView && (
+                    <div className="historical-banner">
+                        📚 Viewing historical season — this view is read-only
+                    </div>
+                )}
                 {children}
             </main>
         </div>

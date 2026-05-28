@@ -22,6 +22,7 @@ import TeamRosterPage from './components/public/TeamRosterPage';
 import TeamsPage from './components/public/TeamsPage';
 import RulesPage from './components/public/RulesPage';
 import { AuthProvider } from './contexts/AuthContext';
+import { SeasonProvider } from './contexts/SeasonContext';
 import ChangePassword from './pages/ChangePassword';
 
 // New Staff Components
@@ -208,8 +209,10 @@ import VersionChecker from './components/common/VersionChecker';
 function App() {
   return (
     <AuthProvider>
-      <VersionChecker />
-      <RouterProvider router={router} />
+      <SeasonProvider>
+        <VersionChecker />
+        <RouterProvider router={router} />
+      </SeasonProvider>
     </AuthProvider>
   );
 }

@@ -7,12 +7,22 @@ const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '/api') ||
 const DraftDashboard = () => {
     // State
     const [seasonName, setSeasonName] = useState('');
+    const [selectedSeasonId, setSelectedSeasonId] = useState(null);
+    const [availableSeasons, setAvailableSeasons] = useState([]);
+    const [seasonsLoading, setSeasonsLoading] = useState(true);
+    const [showCreateSeasonModal, setShowCreateSeasonModal] = useState(false);
+    const [newSeasonForm, setNewSeasonForm] = useState({
+        name: '', startDate: '', endDate: '', status: 'upcoming', isActive: false
+    });
+    const [newSeasonSaving, setNewSeasonSaving] = useState(false);
     const [teamCount, setTeamCount] = useState(4);
     const [playerPool, setPlayerPool] = useState([]);
     const [teams, setTeams] = useState([]);
     const [isLive, setIsLive] = useState(false);
     const [warning, setWarning] = useState('');
     const [viewMode, setViewMode] = useState('balanced'); // 'detailed', 'balanced', 'overview'
+    const [isPoolCollapsed, setIsPoolCollapsed] = useState(false);
+    const [zoomLevel, setZoomLevel] = useState(1);
 
     // Filters & Sorting
     const [filter, setFilter] = useState('All');
@@ -47,6 +57,18 @@ const DraftDashboard = () => {
 
     // Finalize Draft confirmation modal state
     const [showFinalizeDraftConfirm, setShowFinalizeDraftConfirm] = useState(false);
+
+    // Unrated Veterans Modal State
+    const [showUnratedVeteransModal, setShowUnratedVeteransModal] = useState(false);
+    const [unratedVeterans, setUnratedVeterans] = useState([]);
+
+    // Potential Matches Modal State
+    const [showPotentialMatchesModal, setShowPotentialMatchesModal] = useState(false);
+    const [potentialMatches, setPotentialMatches] = useState([]);
+    
+    // Duplicate Player Resolution Modal State (Finalization)
+    const [showDuplicateResolutionModal, setShowDuplicateResolutionModal] = useState(false);
+    const [duplicatePlayersToResolve, setDuplicatePlayersToResolve] = useState([]);
 
     // Undo History State
     const [history, setHistory] = useState([]);
@@ -126,10 +148,164 @@ const DraftDashboard = () => {
         }
     }, [teamCount, isLive]);
 
-    // Check for saved drafts on mount
+    // Fetch available seasons and check for saved drafts on mount
     useEffect(() => {
+        fetchAvailableSeasons();
         checkForSavedDraft();
     }, []);
+
+    // Fetch active and upcoming seasons from the database
+    const fetchAvailableSeasons = async (autoSelectId = null) => {
+        setSeasonsLoading(true);
+        try {
+            const apiV1 = import.meta.env.VITE_API_URL || '/api/v1';
+            const [activeRes, upcomingRes] = await Promise.all([
+                fetch(`${apiV1}/seasons?status=active`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } }),
+                fetch(`${apiV1}/seasons?status=upcoming`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } })
+            ]);
+
+            const active = activeRes.ok ? await activeRes.json() : [];
+            const upcoming = upcomingRes.ok ? await upcomingRes.json() : [];
+
+            // Combine and deduplicate by id, active seasons first
+            const combined = [...active, ...upcoming].reduce((acc, season) => {
+                if (!acc.find(s => s.id === season.id)) acc.push(season);
+                return acc;
+            }, []);
+
+            setAvailableSeasons(combined);
+
+            // Auto-select a newly created season if requested
+            if (autoSelectId) {
+                const created = combined.find(s => s.id === autoSelectId);
+                if (created) {
+                    setSelectedSeasonId(created.id);
+                    setSeasonName(created.name);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching seasons:', error);
+            setAvailableSeasons([]);
+        } finally {
+            setSeasonsLoading(false);
+        }
+    };
+
+    // Create a new season directly from the draft tool
+    const handleCreateSeason = async (e) => {
+        e.preventDefault();
+        setNewSeasonSaving(true);
+        try {
+            const apiV1 = import.meta.env.VITE_API_URL || '/api/v1';
+            const response = await fetch(`${apiV1}/seasons`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(newSeasonForm)
+            });
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(errText || 'Failed to create season');
+            }
+            const created = await response.json();
+            setShowCreateSeasonModal(false);
+            setNewSeasonForm({ name: '', startDate: '', endDate: '', status: 'upcoming', isActive: false });
+            // Refresh dropdown and auto-select the new season
+            await fetchAvailableSeasons(created.id);
+            setWarning(`Season "${created.name}" created and selected!`);
+        } catch (error) {
+            setWarning(`Failed to create season: ${error.message}`);
+        } finally {
+            setNewSeasonSaving(false);
+        }
+    };
+
+    const checkMissingVeterans = (pool) => {
+        const missingRatings = pool.filter(p => p.isVeteran && !p.ratingFoundInDb && !p.adoptedMatchSkill);
+        if (missingRatings.length > 0) {
+            // Need to map them so they default to 1 if skillRating is missing
+            setUnratedVeterans(missingRatings.map(m => ({ ...m, skillRating: m.skillRating || 1 })));
+            setShowUnratedVeteransModal(true);
+        }
+    };
+
+    const handleSavePotentialMatches = () => {
+        setPlayerPool(prevPool => {
+            const newPool = [...prevPool];
+            potentialMatches.forEach(pm => {
+                const idx = newPool.findIndex(p => p.email === pm.email);
+                if (idx !== -1) {
+                    // If adopted, keep the dbId to link them later during finalization!
+                    if (pm.adoptRating) {
+                        newPool[idx] = { 
+                            ...newPool[idx], 
+                            skillRating: pm.potentialMatchSkill,
+                            dbId: pm.potentialMatchId,
+                            adoptedMatchSkill: true
+                        };
+                    } else {
+                        // Keep as new player, don't link dbId
+                        newPool[idx] = {
+                            ...newPool[idx],
+                            dbId: null,
+                            adoptedMatchSkill: false
+                        };
+                    }
+                }
+            });
+            checkMissingVeterans(newPool);
+            return newPool;
+        });
+        setShowPotentialMatchesModal(false);
+        setPotentialMatches([]);
+    };
+
+    const handleCancelPotentialMatches = () => {
+        setPlayerPool([]);
+        setBuddyPickMap({});
+        setShowPotentialMatchesModal(false);
+        setPotentialMatches([]);
+        setWarning('File upload cancelled.');
+    };
+
+    const toggleAdoptPotentialMatch = (email, adopt) => {
+        setPotentialMatches(prev => prev.map(pm => 
+            pm.email === email ? { ...pm, adoptRating: adopt } : pm
+        ));
+    };
+
+    // Save manually entered veteran ratings
+    const handleSaveUnratedVeterans = () => {
+        setPlayerPool(prevPool => {
+            const newPool = [...prevPool];
+            unratedVeterans.forEach(uv => {
+                const idx = newPool.findIndex(p => p.email === uv.email);
+                if (idx !== -1) {
+                    newPool[idx] = { ...newPool[idx], skillRating: uv.skillRating };
+                }
+            });
+            return newPool;
+        });
+        // Buddy pick map was already built with old ratings, no need to rebuild just for rating changes
+        setShowUnratedVeteransModal(false);
+        setUnratedVeterans([]);
+    };
+
+    const handleCancelUnratedVeterans = () => {
+        setPlayerPool([]);
+        setBuddyPickMap({});
+        setShowUnratedVeteransModal(false);
+        setUnratedVeterans([]);
+        setWarning('File upload cancelled.');
+    };
+
+    const handleUnratedVeteranRatingChange = (email, newRating) => {
+        setUnratedVeterans(prev => prev.map(uv => 
+            uv.email === email ? { ...uv, skillRating: parseInt(newRating) || 1 } : uv
+        ));
+    };
 
     // Rebuild buddy pick map when players move between pool and teams
     useEffect(() => {
@@ -150,7 +326,11 @@ const DraftDashboard = () => {
 
     const checkForSavedDraft = async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/league/draft/latest`);
+            const response = await fetch(`${API_BASE_URL}/league/draft/latest`, {
+                headers: {
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
             if (response.ok && response.status !== 204) {
                 const draft = await response.json();
                 if (draft && draft.status === 'saved') {
@@ -202,7 +382,6 @@ const DraftDashboard = () => {
         });
 
         setBuddyPickMap(buddyMap);
-        console.log('Buddy pick map built:', buddyMap);
     };
 
     // Handlers
@@ -212,13 +391,20 @@ const DraftDashboard = () => {
 
         try {
             if (type === 'registration') {
-                const players = await DraftService.uploadRegistration(file);
+                const players = await DraftService.importRegistration(file);
+                
                 setPlayerPool(players);
-
-                // Build buddy pick map
                 buildBuddyPickMap(players);
-
                 setWarning('');
+
+                const matches = players.filter(p => p.potentialMatchFound);
+                if (matches.length > 0) {
+                    // Initialize adoptRating to true by default
+                    setPotentialMatches(matches.map(m => ({ ...m, adoptRating: true })));
+                    setShowPotentialMatchesModal(true);
+                } else {
+                    checkMissingVeterans(players);
+                }
             } else if (type === 'draft') {
                 const state = await DraftService.loadDraftState(file);
                 setSeasonName(state.seasonName);
@@ -237,6 +423,8 @@ const DraftDashboard = () => {
             }
         } catch (error) {
             setWarning(`Upload failed: ${error.message}`);
+        } finally {
+            e.target.value = null;
         }
     };
 
@@ -441,7 +629,7 @@ const DraftDashboard = () => {
             if (availableBuddies.length === 0) {
                 // Determine if they are already on the team or just missing
                 const team = teams.find(t => t.id === teamId);
-                const onTeam = buddyEmails.every(email => team.players.some(p => p.email === email));
+                const onTeam = Array.from(allBuddyEmails).every(email => team.players.some(p => p.email === email));
 
                 if (!onTeam) {
                     warnings.push(`${gm.firstName} ${gm.lastName}'s buddies not found in pool (likely already assigned elsewhere)`);
@@ -496,9 +684,15 @@ const DraftDashboard = () => {
             return;
         }
 
+        if (!selectedSeasonId) {
+            setWarning('Please select a season before saving.');
+            return;
+        }
+
         try {
             const draftData = {
                 seasonName,
+                seasonId: selectedSeasonId,
                 teamCount,
                 isLive,
                 teams: teams.map(team => ({
@@ -544,7 +738,10 @@ const DraftDashboard = () => {
 
             const response = await fetch(url, {
                 method: method,
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
                 body: JSON.stringify(draftData)
             });
 
@@ -560,6 +757,46 @@ const DraftDashboard = () => {
             console.error('Error saving draft:', error);
             setWarning('Error saving draft. Check console for details.');
         }
+    };
+
+    const handleSaveDuplicateResolution = async () => {
+        // Apply resolution to all players
+        const applyResolution = (pool) => {
+            return pool.map(p => {
+                const resolved = duplicatePlayersToResolve.find(d => d.email === p.email);
+                if (resolved) {
+                    return {
+                        ...p,
+                        duplicateResolved: true,
+                        dbId: resolved.resolveAction === 'update' ? p.potentialMatchId : null
+                    };
+                }
+                return p;
+            });
+        };
+
+        setPlayerPool(prev => applyResolution(prev));
+        setTeams(prev => prev.map(t => ({
+            ...t,
+            players: applyResolution(t.players || [])
+        })));
+
+        setShowDuplicateResolutionModal(false);
+        setDuplicatePlayersToResolve([]);
+        
+        // Proceed to finalize confirmation
+        setShowFinalizeDraftConfirm(true);
+    };
+
+    const handleCancelDuplicateResolution = () => {
+        setShowDuplicateResolutionModal(false);
+        setDuplicatePlayersToResolve([]);
+    };
+
+    const toggleDuplicateResolutionAction = (email, action) => {
+        setDuplicatePlayersToResolve(prev => prev.map(d => 
+            d.email === email ? { ...d, resolveAction: action } : d
+        ));
     };
 
     // Handler for finalizing draft
@@ -579,6 +816,19 @@ const DraftDashboard = () => {
             return;
         }
 
+        // Check for unresolved duplicates
+        const allPlayers = [...playerPool];
+        teams.forEach(t => {
+            if (t.players) allPlayers.push(...t.players);
+        });
+        
+        const duplicates = allPlayers.filter(p => p.potentialMatchFound && !p.duplicateResolved);
+        if (duplicates.length > 0) {
+            setDuplicatePlayersToResolve(duplicates.map(d => ({ ...d, resolveAction: 'update' })));
+            setShowDuplicateResolutionModal(true);
+            return;
+        }
+
         // Show confirmation modal instead of window.confirm
         setShowFinalizeDraftConfirm(true);
     };
@@ -590,7 +840,12 @@ const DraftDashboard = () => {
         try {
             const response = await fetch(
                 `${API_BASE_URL}/league/draft/${currentDraftSaveId}/finalize`,
-                { method: 'POST' }
+                {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                }
             );
 
             if (!response.ok) {
@@ -670,6 +925,7 @@ const DraftDashboard = () => {
 
             // Then restore other state
             setSeasonName(data.seasonName);
+            setSelectedSeasonId(data.seasonId || null);
             setTeamCount(data.teamCount);
             setIsLive(data.isLive || false);
             setTeams(data.teams);
@@ -708,6 +964,7 @@ const DraftDashboard = () => {
 
         // Full Hard Reset
         setSeasonName('');
+        setSelectedSeasonId(null);
         setIsLive(false);
         setPlayerPool([]);
         setTeams([]);
@@ -1628,14 +1885,42 @@ const DraftDashboard = () => {
             {/* Top Controls */}
             <div className="draft-controls">
                 <div className="control-group">
-                    <input
-                        type="text"
-                        placeholder="Season Name"
+                    <select
                         className="draft-input"
-                        value={seasonName}
-                        onChange={(e) => setSeasonName(e.target.value)}
+                        value={selectedSeasonId || ''}
+                        onChange={(e) => {
+                            const id = e.target.value ? Number(e.target.value) : null;
+                            setSelectedSeasonId(id);
+                            const season = availableSeasons.find(s => s.id === id);
+                            setSeasonName(season ? season.name : '');
+                        }}
+                        disabled={isLive || seasonsLoading}
+                        style={{ minWidth: '200px' }}
+                        title="Select a season from the database"
+                    >
+                        {seasonsLoading ? (
+                            <option value="">Loading seasons...</option>
+                        ) : availableSeasons.length === 0 ? (
+                            <option value="">No active or upcoming seasons</option>
+                        ) : (
+                            <>
+                                <option value="">-- Select a Season --</option>
+                                {availableSeasons.map(season => (
+                                    <option key={season.id} value={season.id}>
+                                        {season.name} ({season.status})
+                                    </option>
+                                ))}
+                            </>
+                        )}
+                    </select>
+                    <button
+                        className="btn-draft btn-create-season"
+                        onClick={() => setShowCreateSeasonModal(true)}
                         disabled={isLive}
-                    />
+                        title="Create a new season without leaving the draft tool"
+                    >
+                        + New Season
+                    </button>
                     <select
                         className="draft-input"
                         value={teamCount}
@@ -1665,6 +1950,34 @@ const DraftDashboard = () => {
                             onClick={() => setViewMode('overview')}
                         >
                             Overview
+                        </button>
+                    </div>
+                    <div className="view-mode-selector">
+                        <span className="view-mode-label">Zoom:</span>
+                        <button
+                            className="view-mode-option"
+                            onClick={() => setZoomLevel(z => Math.max(0.5, z - 0.1))}
+                            title="Zoom Out"
+                        >
+                            -
+                        </button>
+                        <span style={{ fontSize: '0.85rem', color: '#cbd5e0', padding: '0 0.2rem', minWidth: '40px', textAlign: 'center' }}>
+                            {Math.round(zoomLevel * 100)}%
+                        </span>
+                        <button
+                            className="view-mode-option"
+                            onClick={() => setZoomLevel(z => Math.min(1.5, z + 0.1))}
+                            title="Zoom In"
+                        >
+                            +
+                        </button>
+                        <button
+                            className="view-mode-option"
+                            onClick={() => setZoomLevel(1)}
+                            title="Reset Zoom"
+                            style={{ marginLeft: '0.2rem' }}
+                        >
+                            ↺
                         </button>
                     </div>
                     {isReadyToStart() && (
@@ -1766,137 +2079,175 @@ const DraftDashboard = () => {
             <div className="draft-workspace">
                 {/* Left Column: Player Pool */}
                 <div
-                    className="player-pool-container"
+                    className={`player-pool-container ${isPoolCollapsed ? 'collapsed' : ''}`}
                     onDrop={(e) => handleDrop(e, 'pool')}
                     onDragOver={handleDragOver}
                 >
                     <div className="pool-header">
-                        <div className="pool-search" style={{ marginBottom: '0.75rem' }}>
-                            <input
-                                type="text"
-                                placeholder="Search players..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="draft-input"
-                                style={{ width: '100%', padding: '0.5rem', background: '#3a3a3a' }}
-                            />
-                        </div>
-                        <div className="pool-filters">
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: '#a0aec0', marginBottom: '0.25rem' }}>FILTER</label>
-                            <select
-                                className="draft-input"
-                                value={filter}
-                                onChange={(e) => setFilter(e.target.value)}
-                                style={{ width: '100%' }}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: isPoolCollapsed ? '0' : '0.75rem' }}>
+                            {!isPoolCollapsed && <h3 style={{ margin: 0, fontSize: '1.1rem' }}>Player Pool</h3>}
+                            <button
+                                onClick={() => setIsPoolCollapsed(!isPoolCollapsed)}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: '#cbd5e0',
+                                    cursor: 'pointer',
+                                    padding: '4px',
+                                    fontSize: '1.2rem',
+                                    lineHeight: 1,
+                                    margin: isPoolCollapsed ? '0 auto' : '0',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
+                                title={isPoolCollapsed ? "Expand Pool" : "Collapse Pool"}
                             >
-                                {['All', 'Forwards', 'Defense', 'Refs', 'GMs', 'Has Buddy'].map(f => (
-                                    <option key={f} value={f}>{f}</option>
-                                ))}
-                            </select>
+                                {isPoolCollapsed ? '▶' : '◀'}
+                            </button>
                         </div>
-                        <div className="pool-sorting" style={{ marginTop: '0.5rem', display: 'block' }}>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: '#a0aec0', marginBottom: '0.25rem' }}>SORT</label>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <select className="draft-input" value={sortOption} onChange={(e) => setSortOption(e.target.value)} style={{ flex: 1 }}>
-                                    <option>Name</option>
-                                    <option>Position</option>
-                                    <option>Skill</option>
-                                    <option>Veteran</option>
-                                </select>
-                                <button className="filter-btn" onClick={() => setSortAsc(!sortAsc)} style={{ padding: '0 0.5rem' }}>
-                                    {sortAsc ? '↑' : '↓'}
-                                </button>
-                            </div>
+                        {!isPoolCollapsed && (
+                            <>
+                                <div className="pool-search" style={{ marginBottom: '0.75rem' }}>
+                                    <input
+                                        type="text"
+                                        placeholder="Search players..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="draft-input"
+                                        style={{ width: '100%', padding: '0.5rem', background: '#3a3a3a' }}
+                                    />
+                                </div>
+                                <div className="pool-filters">
+                                    <label style={{ display: 'block', fontSize: '0.8rem', color: '#a0aec0', marginBottom: '0.25rem' }}>FILTER</label>
+                                    <select
+                                        className="draft-input"
+                                        value={filter}
+                                        onChange={(e) => setFilter(e.target.value)}
+                                        style={{ width: '100%' }}
+                                    >
+                                        {['All', 'Forwards', 'Defense', 'Refs', 'GMs', 'Has Buddy'].map(f => (
+                                            <option key={f} value={f}>{f}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="pool-sorting" style={{ marginTop: '0.5rem', display: 'block' }}>
+                                    <label style={{ display: 'block', fontSize: '0.8rem', color: '#a0aec0', marginBottom: '0.25rem' }}>SORT</label>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <select className="draft-input" value={sortOption} onChange={(e) => setSortOption(e.target.value)} style={{ flex: 1 }}>
+                                            <option>Name</option>
+                                            <option>Position</option>
+                                            <option>Skill</option>
+                                            <option>Veteran</option>
+                                        </select>
+                                        <button className="filter-btn" onClick={() => setSortAsc(!sortAsc)} style={{ padding: '0 0.5rem' }}>
+                                            {sortAsc ? '↑' : '↓'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+                    {!isPoolCollapsed && (
+                        <div className="pool-list">
+                            {getFilteredPlayers().map(player => renderPlayerCard(player, 'pool'))}
                         </div>
-                    </div>
-                    <div className="pool-list">
-                        {getFilteredPlayers().map(player => renderPlayerCard(player, 'pool'))}
-                    </div>
+                    )}
                 </div>
 
                 {/* Main Area: Teams */}
                 <div className="teams-area">
-                    {teams.map(team => {
-                        const stats = calculateTeamStats(team.players);
-                        const sortedPlayers = getSortedTeamPlayers(team.players, teamSortOptions[team.id] || 'Position + Rating');
-                        const teamColor = TEAM_COLORS[teamColors[team.id]] || TEAM_COLORS['White'];
+                    <div style={{
+                        display: 'flex',
+                        flexDirection: 'row',
+                        gap: '1rem',
+                        alignItems: 'stretch',
+                        transform: `scale(${zoomLevel})`,
+                        transformOrigin: 'top left',
+                        width: `${100 / zoomLevel}%`,
+                        height: `${100 / zoomLevel}%`
+                    }}>
+                        {teams.map(team => {
+                            const stats = calculateTeamStats(team.players);
+                            const sortedPlayers = getSortedTeamPlayers(team.players, teamSortOptions[team.id] || 'Position + Rating');
+                            const teamColor = TEAM_COLORS[teamColors[team.id]] || TEAM_COLORS['White'];
 
-                        // Determine text color based on background
-                        const textColor = (teamColors[team.id] === 'White' || teamColors[team.id] === 'Lt. Blue') ? '#000000' : '#ffffff';
+                            // Determine text color based on background
+                            const textColor = (teamColors[team.id] === 'White' || teamColors[team.id] === 'Lt. Blue') ? '#000000' : '#ffffff';
 
-                        return (
-                            <div
-                                key={team.id}
-                                className={`draft-team-card ${viewMode}`}
-                                style={{ borderColor: teamColor, borderWidth: '3px' }}
-                                onDrop={(e) => handleDrop(e, team.id)}
-                                onDragOver={handleDragOver}
-                            >
-                                <div className="team-header" style={{ backgroundColor: teamColor, color: textColor }}>
-                                    {editingTeamId === team.id ? (
-                                        <input
-                                            type="text"
-                                            value={team.name}
-                                            onChange={(e) => handleTeamNameChange(team.id, e.target.value)}
-                                            onBlur={() => setEditingTeamId(null)}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') setEditingTeamId(null);
-                                            }}
-                                            autoFocus
-                                            className="team-name-input"
-                                            style={{ color: textColor }}
-                                        />
-                                    ) : (
-                                        <h3
-                                            style={{ color: textColor, cursor: 'pointer' }}
-                                            onClick={() => setEditingTeamId(team.id)}
-                                            title="Click to edit team name"
-                                        >
-                                            {team.name}
-                                        </h3>
-                                    )}
-                                    <div className="team-controls">
-                                        <select
-                                            value={teamColors[team.id] || 'White'}
-                                            onChange={(e) => handleTeamColorChange(team.id, e.target.value)}
-                                            className="team-color-select"
-                                        >
-                                            {Object.keys(TEAM_COLORS).map(color => (
-                                                <option key={color} value={color}>{color}</option>
-                                            ))}
-                                        </select>
-                                        <select
-                                            value={teamSortOptions[team.id] || 'Position + Rating'}
-                                            onChange={(e) => handleTeamSortChange(team.id, e.target.value)}
-                                            className="team-sort-select"
-                                        >
-                                            <option>Rating: High to Low</option>
-                                            <option>Rating: Low to High</option>
-                                            <option>Position</option>
-                                            <option>Position + Rating</option>
-                                        </select>
+                            return (
+                                <div
+                                    key={team.id}
+                                    className={`draft-team-card ${viewMode}`}
+                                    style={{ borderColor: teamColor, borderWidth: '3px' }}
+                                    onDrop={(e) => handleDrop(e, team.id)}
+                                    onDragOver={handleDragOver}
+                                >
+                                    <div className="team-header" style={{ backgroundColor: teamColor, color: textColor }}>
+                                        {editingTeamId === team.id ? (
+                                            <input
+                                                type="text"
+                                                value={team.name}
+                                                onChange={(e) => handleTeamNameChange(team.id, e.target.value)}
+                                                onBlur={() => setEditingTeamId(null)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') setEditingTeamId(null);
+                                                }}
+                                                autoFocus
+                                                className="team-name-input"
+                                                style={{ color: textColor }}
+                                            />
+                                        ) : (
+                                            <h3
+                                                onClick={() => setEditingTeamId(team.id)}
+                                                style={{ cursor: 'text' }}
+                                                title="Click to edit team name"
+                                            >
+                                                {team.name}
+                                            </h3>
+                                        )}
+                                        <div className="team-controls">
+                                            <select
+                                                className="team-color-select"
+                                                value={teamColors[team.id] || 'White'}
+                                                onChange={(e) => handleTeamColorChange(team.id, e.target.value)}
+                                            >
+                                                {Object.keys(TEAM_COLORS).map(color => (
+                                                    <option key={color} value={color}>{color}</option>
+                                                ))}
+                                            </select>
+                                            <select
+                                                className="team-sort-select"
+                                                value={teamSortOptions[team.id] || 'Position + Rating'}
+                                                onChange={(e) => handleTeamSortChange(team.id, e.target.value)}
+                                            >
+                                                {['Position + Rating', 'Position + Name', 'Rating Only', 'Name Only'].map(opt => (
+                                                    <option key={opt} value={opt}>{opt}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div className="team-stats">
+                                        <div className="stat-row">
+                                            <span>Players: {team.players.length}</span>
+                                            <span>Skill: {stats.total}</span>
+                                        </div>
+                                        <div className="stat-row">
+                                            <span>F/D: {stats.forwards}/{stats.defense}</span>
+                                            <span>Avg: {stats.avg}</span>
+                                        </div>
+                                        <div className="stat-row" title="Average Rating (Forwards / Defense)">
+                                            <span>Avg F/D: {stats.avgF} / {stats.avgD}</span>
+                                        </div>
+                                    </div>
+                                    <div className="team-roster">
+                                        {sortedPlayers.map(player => renderPlayerCard(player, `team-${team.id}`, team.id))}
+                                        {team.players.length === 0 && <div className="roster-slot">Empty Slot</div>}
                                     </div>
                                 </div>
-                                <div className="team-stats">
-                                    <div className="stat-row">
-                                        <span>Players: {team.players.length}</span>
-                                        <span>Skill: {stats.total}</span>
-                                    </div>
-                                    <div className="stat-row">
-                                        <span>F/D: {stats.forwards}/{stats.defense}</span>
-                                        <span>Avg: {stats.avg}</span>
-                                    </div>
-                                    <div className="stat-row" title="Average Rating (Forwards / Defense)">
-                                        <span>Avg F/D: {stats.avgF} / {stats.avgD}</span>
-                                    </div>
-                                </div>
-                                <div className="team-roster">
-                                    {sortedPlayers.map(player => renderPlayerCard(player, `team-${team.id}`, team.id))}
-                                    {team.players.length === 0 && <div className="roster-slot">Empty Slot</div>}
-                                </div>
-                            </div>
-                        );
-                    })}
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
 
@@ -1973,6 +2324,260 @@ const DraftDashboard = () => {
                                 disabled={selectedBuddies.length === 0}
                             >
                                 {buddyQueue.length > 0 ? `Add & Next (${selectedBuddies.length})` : `Add Selected (${selectedBuddies.length})`}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Create New Season Modal */}
+            {showCreateSeasonModal && (
+                <div className="modal-overlay" onClick={() => !newSeasonSaving && setShowCreateSeasonModal(false)}>
+                    <div className="modal-content-light" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Add New Season</h3>
+                            <button
+                                className="modal-close"
+                                onClick={() => setShowCreateSeasonModal(false)}
+                                disabled={newSeasonSaving}
+                            >
+                                &times;
+                            </button>
+                        </div>
+                        <form onSubmit={handleCreateSeason} className="season-form">
+                            <div className="form-group">
+                                <label>Season Name</label>
+                                <input
+                                    type="text"
+                                    value={newSeasonForm.name}
+                                    onChange={(e) => setNewSeasonForm({ ...newSeasonForm, name: e.target.value })}
+                                    required
+                                    placeholder="e.g., 2026-2027 Season"
+                                />
+                            </div>
+                            <div className="form-row">
+                                <div className="form-group">
+                                    <label>Start Date</label>
+                                    <input
+                                        type="date"
+                                        value={newSeasonForm.startDate}
+                                        onChange={(e) => setNewSeasonForm({ ...newSeasonForm, startDate: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label>End Date</label>
+                                    <input
+                                        type="date"
+                                        value={newSeasonForm.endDate}
+                                        onChange={(e) => setNewSeasonForm({ ...newSeasonForm, endDate: e.target.value })}
+                                        required
+                                    />
+                                </div>
+                            </div>
+                            <div className="form-group">
+                                <label>Status</label>
+                                <select
+                                    value={newSeasonForm.status}
+                                    onChange={(e) => setNewSeasonForm({ ...newSeasonForm, status: e.target.value })}
+                                    required
+                                >
+                                    <option value="upcoming">Upcoming</option>
+                                    <option value="active">Active</option>
+                                </select>
+                            </div>
+                            <div className="form-group checkbox-group">
+                                <label>
+                                    <input
+                                        type="checkbox"
+                                        checked={newSeasonForm.isActive}
+                                        onChange={(e) => setNewSeasonForm({ ...newSeasonForm, isActive: e.target.checked })}
+                                    />
+                                    Set as Active Season
+                                </label>
+                            </div>
+                            <div className="form-actions">
+                                <button
+                                    type="button"
+                                    className="btn-secondary"
+                                    onClick={() => setShowCreateSeasonModal(false)}
+                                    disabled={newSeasonSaving}
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    className="btn-primary"
+                                    disabled={newSeasonSaving}
+                                >
+                                    {newSeasonSaving ? 'Creating...' : 'Create'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
+
+            {/* Unrated Veterans Modal */}
+            {showUnratedVeteransModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content-light" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Missing Veteran Ratings</h3>
+                        </div>
+                        <div className="modal-body" style={{ padding: '20px', maxHeight: '60vh', overflowY: 'auto' }}>
+                            <p style={{ marginBottom: '15px' }}>
+                                The following imported players are marked as Veterans but their skill ratings were not found in the database. Please assign them a skill rating before proceeding.
+                            </p>
+                            {unratedVeterans.map(uv => (
+                                <div key={uv.email} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', borderBottom: '1px solid #ddd' }}>
+                                    <div>
+                                        <strong>{uv.firstName} {uv.lastName}</strong>
+                                        <div style={{ fontSize: '12px', color: '#666' }}>{uv.position} • {uv.email}</div>
+                                    </div>
+                                    <div>
+                                        <label style={{ marginRight: '10px' }}>Rating:</label>
+                                        <input 
+                                            type="number" 
+                                            min="1" 
+                                            max="10" 
+                                            value={uv.skillRating} 
+                                            onChange={(e) => handleUnratedVeteranRatingChange(uv.email, e.target.value)}
+                                            style={{ width: '60px', padding: '5px', borderRadius: '4px', border: '1px solid #ccc' }}
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="modal-footer" style={{ padding: '20px', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #eee', gap: '10px' }}>
+                            <button
+                                className="btn-secondary"
+                                onClick={handleCancelUnratedVeterans}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="btn-primary"
+                                onClick={handleSaveUnratedVeterans}
+                            >
+                                Save Ratings
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showPotentialMatchesModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content-light" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Potential Matches Found</h3>
+                        </div>
+                        <div className="modal-body" style={{ padding: '20px', maxHeight: '60vh', overflowY: 'auto' }}>
+                            <p style={{ marginBottom: '15px' }}>
+                                The following players registered with a different email, but their names match existing profiles in the database. 
+                                Do you want to use their existing database skill ratings for this draft?
+                            </p>
+                            {potentialMatches.map(pm => (
+                                <div key={pm.email} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', borderBottom: '1px solid #ddd' }}>
+                                    <div>
+                                        <strong>{pm.firstName} {pm.lastName}</strong>
+                                        <div style={{ fontSize: '12px', color: '#666' }}>New Email: {pm.email} • Old Email: {pm.potentialMatchEmail}</div>
+                                        <div style={{ fontSize: '12px', color: '#2ecc71', fontWeight: 'bold' }}>Database Skill Rating: {pm.potentialMatchSkill}</div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                                            <input 
+                                                type="radio" 
+                                                checked={pm.adoptRating === true}
+                                                onChange={() => toggleAdoptPotentialMatch(pm.email, true)}
+                                                style={{ marginRight: '5px' }}
+                                            />
+                                            Use Old Rating ({pm.potentialMatchSkill})
+                                        </label>
+                                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                                            <input 
+                                                type="radio" 
+                                                checked={pm.adoptRating === false}
+                                                onChange={() => toggleAdoptPotentialMatch(pm.email, false)}
+                                                style={{ marginRight: '5px' }}
+                                            />
+                                            No
+                                        </label>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="modal-footer" style={{ padding: '20px', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #eee', gap: '10px' }}>
+                            <button
+                                className="btn-secondary"
+                                onClick={handleCancelPotentialMatches}
+                            >
+                                Cancel Upload
+                            </button>
+                            <button
+                                className="btn-primary"
+                                onClick={handleSavePotentialMatches}
+                            >
+                                Continue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {showDuplicateResolutionModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content-light" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Resolve Duplicate Players</h3>
+                        </div>
+                        <div className="modal-body" style={{ padding: '20px', maxHeight: '60vh', overflowY: 'auto' }}>
+                            <p style={{ marginBottom: '15px' }}>
+                                Before finalizing the draft, please confirm how you want to save the following players who registered with new emails.
+                            </p>
+                            {duplicatePlayersToResolve.map(d => (
+                                <div key={d.email} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px', borderBottom: '1px solid #ddd' }}>
+                                    <div>
+                                        <strong>{d.firstName} {d.lastName}</strong>
+                                        <div style={{ fontSize: '12px', color: '#666' }}>New Email: {d.email}</div>
+                                        <div style={{ fontSize: '12px', color: '#e67e22', fontWeight: 'bold' }}>Matched DB Profile: {d.potentialMatchEmail}</div>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '10px' }}>
+                                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                                            <input 
+                                                type="radio" 
+                                                checked={d.resolveAction === 'update'}
+                                                onChange={() => toggleDuplicateResolutionAction(d.email, 'update')}
+                                                style={{ marginRight: '5px' }}
+                                            />
+                                            Update Profile
+                                        </label>
+                                        <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                                            <input 
+                                                type="radio" 
+                                                checked={d.resolveAction === 'new'}
+                                                onChange={() => toggleDuplicateResolutionAction(d.email, 'new')}
+                                                style={{ marginRight: '5px' }}
+                                            />
+                                            Create New
+                                        </label>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="modal-footer" style={{ padding: '20px', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #eee', gap: '10px' }}>
+                            <button
+                                className="btn-secondary"
+                                onClick={handleCancelDuplicateResolution}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="btn-primary"
+                                onClick={handleSaveDuplicateResolution}
+                            >
+                                Confirm & Finalize Draft
                             </button>
                         </div>
                     </div>

@@ -117,6 +117,16 @@ public class UserController {
     }
 
     /**
+     * Preview which players would get new users vs potential name-based duplicates
+     */
+    @GetMapping("/generate-preview")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<com.obhl.gateway.dto.GeneratePreviewDTO> previewGenerateUsers() {
+        com.obhl.gateway.dto.GeneratePreviewDTO preview = userManagementService.previewGenerateUsers();
+        return ResponseEntity.ok(preview);
+    }
+
+    /**
      * Generate users from players
      */
     @PostMapping("/generate")

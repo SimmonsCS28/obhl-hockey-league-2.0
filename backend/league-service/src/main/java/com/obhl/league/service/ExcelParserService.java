@@ -16,8 +16,14 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.obhl.league.client.StatsClient;
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class ExcelParserService {
+
+    private final StatsClient statsClient;
 
     public List<Map<String, Object>> parseRegistrationFile(MultipartFile file) throws IOException {
         List<Map<String, Object>> players = new ArrayList<>();
@@ -64,6 +70,60 @@ public class ExcelParserService {
                     players.add(player);
                 }
             }
+        }
+
+        // Override skill rating with database values if they exist
+        try {
+            List<Map<String, Object>> dbPlayers = statsClient.getAllPlayers();
+            Map<String, Map<String, Object>> emailToPlayer = new HashMap<>();
+            Map<String, Map<String, Object>> nameToPlayer = new HashMap<>();
+            
+            for (Map<String, Object> dbPlayer : dbPlayers) {
+                if (dbPlayer.get("email") != null) {
+                    emailToPlayer.put(dbPlayer.get("email").toString().toLowerCase().trim(), dbPlayer);
+                }
+                if (dbPlayer.get("firstName") != null && dbPlayer.get("lastName") != null) {
+                    String nameKey = dbPlayer.get("firstName").toString().toLowerCase().trim() + " " + dbPlayer.get("lastName").toString().toLowerCase().trim();
+                    nameToPlayer.put(nameKey, dbPlayer);
+                }
+            }
+
+            for (Map<String, Object> player : players) {
+                player.put("ratingFoundInDb", false);
+                player.put("potentialMatchFound", false);
+                
+                String email = player.get("email") != null ? player.get("email").toString().toLowerCase().trim() : "";
+                String nameKey = "";
+                if (player.get("firstName") != null && player.get("lastName") != null) {
+                    nameKey = player.get("firstName").toString().toLowerCase().trim() + " " + player.get("lastName").toString().toLowerCase().trim();
+                }
+
+                if (!email.isEmpty() && emailToPlayer.containsKey(email)) {
+                    Map<String, Object> matchedDbPlayer = emailToPlayer.get(email);
+                    if (matchedDbPlayer.get("skillRating") != null) {
+                        player.put("skillRating", ((Number) matchedDbPlayer.get("skillRating")).intValue());
+                        player.put("ratingFoundInDb", true);
+                    }
+                    if (matchedDbPlayer.get("id") != null) {
+                        player.put("dbId", ((Number) matchedDbPlayer.get("id")).longValue());
+                    }
+                } else if (!nameKey.isEmpty() && nameToPlayer.containsKey(nameKey)) {
+                    Map<String, Object> matchedDbPlayer = nameToPlayer.get(nameKey);
+                    player.put("potentialMatchFound", true);
+                    if (matchedDbPlayer.get("id") != null) {
+                        player.put("potentialMatchId", ((Number) matchedDbPlayer.get("id")).longValue());
+                    }
+                    if (matchedDbPlayer.get("email") != null) {
+                        player.put("potentialMatchEmail", matchedDbPlayer.get("email").toString());
+                    }
+                    if (matchedDbPlayer.get("skillRating") != null) {
+                        player.put("potentialMatchSkill", ((Number) matchedDbPlayer.get("skillRating")).intValue());
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Failed to fetch database players for skill rating override: " + e.getMessage());
+            // Continue with the parsed players without overriding
         }
 
         return players;

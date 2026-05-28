@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useSeason } from '../../contexts/SeasonContext';
 import './PlayersPage.css';
 
 function PlayersPage() {
-    const [seasons, setSeasons] = useState([]);
-    const [selectedSeason, setSelectedSeason] = useState(null);
+    const { seasons, selectedSeason, selectedSeasonId, setSelectedSeasonId } = useSeason();
     const [players, setPlayers] = useState([]);
     const [teams, setTeams] = useState([]);
     const [selectedTeam, setSelectedTeam] = useState('all');
@@ -14,32 +14,11 @@ function PlayersPage() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        fetchSeasons();
-    }, []);
-
-    useEffect(() => {
-        if (selectedSeason) {
-            fetchPlayers(selectedSeason.id);
-            fetchTeams(selectedSeason.id);
+        if (selectedSeasonId) {
+            fetchPlayers(selectedSeasonId);
+            fetchTeams(selectedSeasonId);
         }
-    }, [selectedSeason]);
-
-    const fetchSeasons = async () => {
-        try {
-            const response = await fetch('/api/v1/seasons');
-            if (!response.ok) throw new Error('Failed to fetch seasons');
-
-            const data = await response.json();
-            setSeasons(data);
-
-            // Set active season as default
-            const activeSeason = data.find(season => season.isActive);
-            setSelectedSeason(activeSeason || data[0] || null);
-        } catch (err) {
-            setError(err.message);
-            setLoading(false);
-        }
-    };
+    }, [selectedSeasonId]);
 
     const fetchPlayers = async (seasonId) => {
         try {
@@ -70,9 +49,7 @@ function PlayersPage() {
     };
 
     const handleSeasonChange = (event) => {
-        const seasonId = parseInt(event.target.value);
-        const season = seasons.find(s => s.id === seasonId);
-        setSelectedSeason(season);
+        setSelectedSeasonId(Number(event.target.value));
     };
 
     const handleTeamChange = (event) => {
@@ -192,7 +169,7 @@ function PlayersPage() {
                         <label htmlFor="season-select">Season:</label>
                         <select
                             id="season-select"
-                            value={String(selectedSeason.id)}
+                            value={String(selectedSeasonId || '')}
                             onChange={handleSeasonChange}
                             className="filter-dropdown"
                         >

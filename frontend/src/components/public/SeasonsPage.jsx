@@ -1,38 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useSeason } from '../../contexts/SeasonContext';
 import './SeasonsPage.css';
 
 function SeasonsPage() {
-    const [seasons, setSeasons] = useState([]);
-    const [selectedSeason, setSelectedSeason] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    useEffect(() => {
-        fetchSeasons();
-    }, []);
-
-    const fetchSeasons = async () => {
-        try {
-            const response = await fetch('/api/v1/seasons');
-            if (!response.ok) throw new Error('Failed to fetch seasons');
-
-            const data = await response.json();
-            setSeasons(data);
-
-            // Set active season as default, or first season if no active
-            const activeSeason = data.find(season => season.isActive);
-            setSelectedSeason(activeSeason || data[0] || null);
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { seasons, selectedSeason, selectedSeasonId, setSelectedSeasonId } = useSeason();
 
     const handleSeasonChange = (event) => {
-        const seasonId = parseInt(event.target.value);
-        const season = seasons.find(s => s.id === seasonId);
-        setSelectedSeason(season);
+        setSelectedSeasonId(Number(event.target.value));
     };
 
     // Format date string (YYYY-MM-DD) without timezone conversion
@@ -47,8 +20,6 @@ function SeasonsPage() {
         });
     };
 
-    if (loading) return <div className="loading">Loading seasons...</div>;
-    if (error) return <div className="error">Error: {error}</div>;
     if (seasons.length === 0) return <div className="no-data">No seasons available.</div>;
 
     return (
@@ -62,10 +33,10 @@ function SeasonsPage() {
 
             {selectedSeason && (
                 <div className="season-selector">
-                    <label htmlFor="season-select">Select Season:</label>
+
                     <select
                         id="season-select"
-                        value={String(selectedSeason.id)}
+                        value={String(selectedSeasonId || '')}
                         onChange={handleSeasonChange}
                         className="season-dropdown"
                     >

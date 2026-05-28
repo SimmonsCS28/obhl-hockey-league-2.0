@@ -1,11 +1,17 @@
 import { useRef, useState } from 'react';
-import { generateUsers, importGoalies } from '../services/api';
+import { generatePreview, generateUsers, importGoalies, updateUser } from '../services/api';
 
 const UserGenerationTab = ({ onUserGenerated }) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [generatedUsers, setGeneratedUsers] = useState([]);
     const [successMessage, setSuccessMessage] = useState('');
+
+    // Duplicate resolution modal state
+    const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+    const [potentialDuplicates, setPotentialDuplicates] = useState([]);
+    const [resolutions, setResolutions] = useState({}); // index → 'create' | 'update'
+    const [resolving, setResolving] = useState(false);
 
     // Goalie Import State
     const [showGoalieModal, setShowGoalieModal] = useState(false);
@@ -21,13 +27,34 @@ const UserGenerationTab = ({ onUserGenerated }) => {
         setGeneratedUsers([]);
 
         try {
+            const preview = await generatePreview();
+
+            if (preview.potentialDuplicates && preview.potentialDuplicates.length > 0) {
+                // Default all conflicts to 'update' (safer choice)
+                const defaultResolutions = {};
+                preview.potentialDuplicates.forEach((_, i) => { defaultResolutions[i] = 'update'; });
+                setResolutions(defaultResolutions);
+                setPotentialDuplicates(preview.potentialDuplicates);
+                setShowDuplicateModal(true);
+                setLoading(false);
+            } else {
+                // No conflicts — generate directly
+                await runGenerate();
+            }
+        } catch (err) {
+            console.error('Error previewing users:', err);
+            setError(err.message || 'Failed to preview user generation.');
+            setLoading(false);
+        }
+    };
+
+    const runGenerate = async () => {
+        try {
             const users = await generateUsers();
             setGeneratedUsers(users);
             if (users.length > 0) {
                 setSuccessMessage(`Successfully generated ${users.length} new user(s).`);
-                if (onUserGenerated) {
-                    onUserGenerated();
-                }
+                if (onUserGenerated) onUserGenerated();
             } else {
                 setSuccessMessage('No new users needed to be generated. All players already have accounts.');
             }
@@ -39,6 +66,41 @@ const UserGenerationTab = ({ onUserGenerated }) => {
         }
     };
 
+    const handleResolutionChange = (index, value) => {
+        setResolutions(prev => ({ ...prev, [index]: value }));
+    };
+
+    const handleConfirmResolutions = async () => {
+        setResolving(true);
+        setError(null);
+
+        try {
+            // Apply 'update' resolutions: update the existing user's email/username to the player's current email
+            for (let i = 0; i < potentialDuplicates.length; i++) {
+                if (resolutions[i] === 'update') {
+                    const { player, existingUser } = potentialDuplicates[i];
+                    await updateUser(existingUser.id, {
+                        email: player.email,
+                        username: player.email,
+                    });
+                }
+                // 'create' resolutions: generate will create a new user for this player naturally
+            }
+
+            setShowDuplicateModal(false);
+            setPotentialDuplicates([]);
+
+            // Now run the actual generate
+            setLoading(true);
+            await runGenerate();
+        } catch (err) {
+            console.error('Error applying resolutions:', err);
+            setError(err.message || 'Failed to apply resolutions.');
+        } finally {
+            setResolving(false);
+        }
+    };
+
     const handleGoalieImportClick = () => {
         fileInputRef.current?.click();
     };
@@ -46,15 +108,9 @@ const UserGenerationTab = ({ onUserGenerated }) => {
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
-        // Reset file input value to allow re-selecting the same file
         e.target.value = '';
-
         const reader = new FileReader();
-        reader.onload = (event) => {
-            const csvText = event.target.result;
-            processGoalieCSV(csvText);
-        };
+        reader.onload = (event) => processGoalieCSV(event.target.result);
         reader.readAsText(file);
     };
 
@@ -63,8 +119,6 @@ const UserGenerationTab = ({ onUserGenerated }) => {
         try {
             const lines = csvText.split('\n');
             const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
-
-            // Validate headers
             const requiredHeaders = ['first name', 'last name', 'email', 'phone'];
             const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
 
@@ -77,18 +131,15 @@ const UserGenerationTab = ({ onUserGenerated }) => {
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i].trim();
                 if (!line) continue;
-
                 const values = line.split(',').map(v => v.trim());
                 if (values.length < requiredHeaders.length) continue;
-
                 const candidate = {
                     firstName: values[headers.indexOf('first name')],
                     lastName: values[headers.indexOf('last name')],
                     email: values[headers.indexOf('email')],
                     phoneNumber: values[headers.indexOf('phone')],
-                    skillRating: 5 // Default skill rating
+                    skillRating: 5
                 };
-
                 if (candidate.email && candidate.firstName && candidate.lastName) {
                     candidates.push(candidate);
                 }
@@ -110,28 +161,21 @@ const UserGenerationTab = ({ onUserGenerated }) => {
     const handleSkillChange = (index, value) => {
         const rating = parseInt(value);
         if (rating < 1 || rating > 10) return;
-
         const updated = [...goalieCandidates];
         updated[index].skillRating = rating;
         setGoalieCandidates(updated);
     };
 
     const handleConfirmImport = async () => {
-        if (!confirm(`Are you sure you want to import ${goalieCandidates.length} new goalies?`)) {
-            return;
-        }
-
+        if (!confirm(`Are you sure you want to import ${goalieCandidates.length} new goalies?`)) return;
         setImportLoading(true);
         setImportError(null);
-
         try {
             const result = await importGoalies(goalieCandidates);
             setSuccessMessage(`Successfully imported ${result.length} new goalies.`);
             setShowGoalieModal(false);
             setGoalieCandidates([]);
-            if (onUserGenerated) {
-                onUserGenerated(); // Refresh user list
-            }
+            if (onUserGenerated) onUserGenerated();
         } catch (err) {
             console.error('Error importing goalies:', err);
             setImportError(err.message || 'Failed to import goalies');
@@ -145,8 +189,8 @@ const UserGenerationTab = ({ onUserGenerated }) => {
             <div className="generation-controls">
                 <h3>Auto-Generate Users</h3>
                 <p>
-                    This tool will check for players in the database who do not yet have a user account.
-                    It matches players by email address.
+                    This tool checks for players who don't yet have a user account. It matches by email,
+                    and will flag any player who shares a name with an existing user so you can decide what to do.
                 </p>
                 <div>
                     <strong>New users will be created with:</strong>
@@ -164,7 +208,7 @@ const UserGenerationTab = ({ onUserGenerated }) => {
                         onClick={handleGenerate}
                         disabled={loading || importLoading}
                     >
-                        {loading ? 'Generating...' : 'Generate New Users'}
+                        {loading ? 'Checking...' : 'Generate New Users'}
                     </button>
 
                     <button
@@ -187,7 +231,6 @@ const UserGenerationTab = ({ onUserGenerated }) => {
 
             {error && <div className="error-message">{error}</div>}
             {importError && <div className="error-message">{importError}</div>}
-
             {successMessage && <div className="success-message">{successMessage}</div>}
 
             {generatedUsers.length > 0 && (
@@ -213,6 +256,78 @@ const UserGenerationTab = ({ onUserGenerated }) => {
                             ))}
                         </tbody>
                     </table>
+                </div>
+            )}
+
+            {/* Duplicate Resolution Modal */}
+            {showDuplicateModal && (
+                <div className="modal-overlay">
+                    <div className="modal-content" style={{ maxWidth: '820px', width: '95vw' }}>
+                        <h3>⚠️ Potential Duplicate Users Detected</h3>
+                        <p>
+                            The following players don't have an account matching their current email, but an existing
+                            user shares their name. Choose what to do for each:
+                        </p>
+                        <ul style={{ marginBottom: '1rem', color: '#555', fontSize: '0.9rem' }}>
+                            <li><strong>Update Existing User</strong> — change the existing account's email &amp; username to the player's current email (same person, email changed)</li>
+                            <li><strong>Create New User</strong> — create a brand-new account with the player's current email (different person with the same name)</li>
+                        </ul>
+
+                        <div className="table-container">
+                            <table className="users-table" style={{ width: '100%' }}>
+                                <thead>
+                                    <tr>
+                                        <th>Player Name</th>
+                                        <th>Player's Email</th>
+                                        <th>Existing Account Email</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {potentialDuplicates.map((dup, i) => (
+                                        <tr key={i}>
+                                            <td><strong>{dup.player.firstName} {dup.player.lastName}</strong></td>
+                                            <td>{dup.player.email}</td>
+                                            <td style={{ color: '#888' }}>{dup.existingUser.email}</td>
+                                            <td>
+                                                <div style={{ display: 'flex', gap: '12px' }}>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                                        <input
+                                                            type="radio"
+                                                            name={`resolution-${i}`}
+                                                            value="update"
+                                                            checked={resolutions[i] === 'update'}
+                                                            onChange={() => handleResolutionChange(i, 'update')}
+                                                        />
+                                                        Update Existing
+                                                    </label>
+                                                    <label style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                                                        <input
+                                                            type="radio"
+                                                            name={`resolution-${i}`}
+                                                            value="create"
+                                                            checked={resolutions[i] === 'create'}
+                                                            onChange={() => handleResolutionChange(i, 'create')}
+                                                        />
+                                                        Create New User
+                                                    </label>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div className="modal-actions">
+                            <button onClick={() => setShowDuplicateModal(false)} disabled={resolving} className="cancel-btn">
+                                Cancel
+                            </button>
+                            <button onClick={handleConfirmResolutions} disabled={resolving} className="confirm-btn">
+                                {resolving ? 'Applying...' : 'Confirm & Generate'}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -256,18 +371,10 @@ const UserGenerationTab = ({ onUserGenerated }) => {
                         </div>
 
                         <div className="modal-actions">
-                            <button
-                                onClick={() => setShowGoalieModal(false)}
-                                disabled={importLoading}
-                                className="cancel-btn"
-                            >
+                            <button onClick={() => setShowGoalieModal(false)} disabled={importLoading} className="cancel-btn">
                                 Cancel
                             </button>
-                            <button
-                                onClick={handleConfirmImport}
-                                disabled={importLoading}
-                                className="confirm-btn"
-                            >
+                            <button onClick={handleConfirmImport} disabled={importLoading} className="confirm-btn">
                                 {importLoading ? 'Importing...' : 'Confirm Import'}
                             </button>
                         </div>
@@ -276,113 +383,22 @@ const UserGenerationTab = ({ onUserGenerated }) => {
             )}
 
             <style>{`
-                .user-generation-tab {
-                    background: white;
-                    padding: 20px;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                }
-                .generation-controls {
-                    margin-bottom: 20px;
-                }
-                .generation-controls ul {
-                    margin-top: 5px;
-                    margin-bottom: 15px;
-                    padding-left: 20px;
-                }
-                .generate-btn {
-                    background-color: #28a745;
-                    color: white;
-                    border: none;
-                    padding: 10px 20px;
-                    border-radius: 4px;
-                    cursor: pointer;
-                    font-size: 16px;
-                }
-                .generate-btn:disabled {
-                    background-color: #94d3a2;
-                    cursor: not-allowed;
-                }
-                .error-message {
-                    color: #dc3545;
-                    padding: 10px;
-                    background-color: #f8d7da;
-                    border: 1px solid #f5c6cb;
-                    border-radius: 4px;
-                    margin-bottom: 20px;
-                }
-                .success-message {
-                    color: #155724;
-                    padding: 10px;
-                    background-color: #d4edda;
-                    border: 1px solid #c3e6cb;
-                    border-radius: 4px;
-                    margin-bottom: 20px;
-                }
-                .users-table {
-                    width: auto;
-                    min-width: 50%;
-                    border-collapse: collapse;
-                    margin-top: 10px;
-                }
-                .users-table th, .users-table td {
-                    border: 1px solid #dee2e6;
-                    padding: 6px 10px;
-                    text-align: left;
-                    white-space: nowrap;
-                }
-                .users-table th {
-                    background-color: #e9ecef;
-                }
-                .modal-overlay {
-                    position: fixed;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background-color: rgba(0, 0, 0, 0.5);
-                    display: flex;
-                    justify-content: center;
-                    align-items: center;
-                    z-index: 1000;
-                }
-                .modal-content {
-                    background-color: white;
-                    padding: 20px;
-                    border-radius: 8px;
-                    width: auto;
-                    max-width: 95vw;
-                    max-height: 90vh;
-                    overflow-y: auto;
-                }
-                .table-container {
-                    max-height: 500px;
-                    overflow: auto;
-                    margin-bottom: 20px;
-                    display: flex;
-                    justify-content: center;
-                }
-                .modal-actions {
-                    display: flex;
-                    justify-content: flex-end;
-                    gap: 10px;
-                }
-                .cancel-btn {
-                    padding: 8px 16px;
-                    cursor: pointer;
-                    background-color: #6c757d;
-                    color: white;
-                    border: none;
-                    border-radius: 4px;
-                }
-                .confirm-btn {
-                    padding: 8px 16px;
-                    cursor: pointer;
-                    background-color: #28a745;
-                    color: white;
-                    border: none;
-                    border-radius: 4px;
-                }
+                .user-generation-tab { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+                .generation-controls { margin-bottom: 20px; }
+                .generation-controls ul { margin-top: 5px; margin-bottom: 15px; padding-left: 20px; }
+                .generate-btn { background-color: #28a745; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; font-size: 16px; }
+                .generate-btn:disabled { background-color: #94d3a2; cursor: not-allowed; }
+                .error-message { color: #dc3545; padding: 10px; background-color: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; margin-bottom: 20px; }
+                .success-message { color: #155724; padding: 10px; background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 4px; margin-bottom: 20px; }
+                .users-table { width: auto; min-width: 50%; border-collapse: collapse; margin-top: 10px; }
+                .users-table th, .users-table td { border: 1px solid #dee2e6; padding: 6px 10px; text-align: left; white-space: nowrap; }
+                .users-table th { background-color: #e9ecef; }
+                .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+                .modal-content { background-color: white; padding: 20px; border-radius: 8px; width: auto; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+                .table-container { max-height: 400px; overflow: auto; margin-bottom: 20px; }
+                .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+                .cancel-btn { padding: 8px 16px; cursor: pointer; background-color: #6c757d; color: white; border: none; border-radius: 4px; }
+                .confirm-btn { padding: 8px 16px; cursor: pointer; background-color: #28a745; color: white; border: none; border-radius: 4px; }
             `}</style>
         </div>
     );

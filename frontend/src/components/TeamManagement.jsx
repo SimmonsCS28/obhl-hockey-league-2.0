@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import * as api from '../services/api';
+import { useSeason } from '../contexts/SeasonContext';
 import TeamDetails from './TeamDetails';
 import './TeamManagement.css';
 
 function TeamManagement() {
+    const { selectedSeasonId, isHistoricalView } = useSeason();
     const [teams, setTeams] = useState([]);
     const [seasons, setSeasons] = useState([]);
-    const [selectedSeason, setSelectedSeason] = useState('all');
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -23,13 +24,13 @@ function TeamManagement() {
 
     useEffect(() => {
         loadTeams();
-    }, []);
+    }, [selectedSeasonId]);
 
     const loadTeams = async () => {
         try {
             setLoading(true);
             const [teamsData, seasonsData] = await Promise.all([
-                api.getTeams(),
+                api.getTeams(selectedSeasonId ? { seasonId: selectedSeasonId } : {}),
                 api.getSeasons()
             ]);
             setTeams(teamsData);
@@ -42,9 +43,9 @@ function TeamManagement() {
         }
     };
 
-    const filteredTeams = selectedSeason === 'all'
-        ? teams
-        : teams.filter(team => team.seasonId === parseInt(selectedSeason));
+    const filteredTeams = selectedSeasonId
+        ? teams.filter(team => team.seasonId === selectedSeasonId)
+        : teams;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -198,21 +199,11 @@ function TeamManagement() {
             <div className="management-header">
                 <h2>Team Management</h2>
                 <div className="header-actions">
-                    <select
-                        value={selectedSeason}
-                        onChange={(e) => setSelectedSeason(e.target.value)}
-                        className="season-filter"
-                    >
-                        <option value="all">All Seasons</option>
-                        {seasons.map(season => (
-                            <option key={season.id} value={season.id}>
-                                {season.name}
-                            </option>
-                        ))}
-                    </select>
-                    <button onClick={() => setShowModal(true)} className="btn-primary">
-                        + Add Team
-                    </button>
+                    {!isHistoricalView && (
+                        <button onClick={() => setShowModal(true)} className="btn-primary">
+                            + Add Team
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -255,13 +246,17 @@ function TeamManagement() {
                                 </div>
                             </div>
                             <div className="team-card-actions">
-                                <button onClick={() => handleEdit(team)} className="btn-edit">
-                                    Edit
-                                </button>
-                                <button onClick={() => handleDelete(team.id)} className="btn-delete">
-                                    Delete
-                                </button>
-                            </div>
+                                    {!isHistoricalView && (
+                                        <>
+                                            <button onClick={() => handleEdit(team)} className="btn-edit">
+                                                Edit
+                                            </button>
+                                            <button onClick={() => handleDelete(team.id)} className="btn-delete">
+                                                Delete
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
                         </div>
                     );
                 })}

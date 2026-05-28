@@ -24,4 +24,9 @@ public class DraftPlayerDTO {
 
     @JsonProperty("isGm")
     private boolean isGm;
+
+    private Long dbId;
+    private Long potentialMatchId;
+    private String potentialMatchEmail;
+    private Integer potentialMatchSkill;
 }

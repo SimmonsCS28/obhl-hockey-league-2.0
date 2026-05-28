@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import * as api from '../services/api';
 import { getPlayerStatsBulk } from '../services/api';
+import { useSeason } from '../contexts/SeasonContext';
 import './PlayerManagement.css';
 import './UserManagement.css';
 
@@ -14,10 +15,10 @@ const AVAILABLE_ROLES = [
 ];
 
 function PlayerManagement() {
+    const { selectedSeasonId, isHistoricalView } = useSeason();
     const [players, setPlayers] = useState([]);
     const [teams, setTeams] = useState([]);
     const [seasons, setSeasons] = useState([]);
-    const [selectedSeason, setSelectedSeason] = useState('all');
     const [playerStats, setPlayerStats] = useState({});  // Map of playerId -> stats
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
@@ -56,14 +57,14 @@ function PlayerManagement() {
 
     useEffect(() => {
         loadData();
-    }, [selectedSeason]);
+    }, [selectedSeasonId]);
 
     const loadData = async () => {
         try {
             setLoading(true);
             const [playersData, teamsData, seasonsData] = await Promise.all([
-                api.getPlayers(selectedSeason !== 'all' ? { seasonId: selectedSeason } : {}),
-                api.getTeams(),
+                api.getPlayers(selectedSeasonId ? { seasonId: selectedSeasonId } : {}),
+                api.getTeams(selectedSeasonId ? { seasonId: selectedSeasonId } : {}),
                 api.getSeasons()
             ]);
             setPlayers(playersData);
@@ -71,10 +72,9 @@ function PlayerManagement() {
             setSeasons(seasonsData);
 
             // Fetch stats for selected season
-            if (selectedSeason && selectedSeason !== 'all') {
-                await fetchPlayerStats(selectedSeason);
+            if (selectedSeasonId) {
+                await fetchPlayerStats(selectedSeasonId);
             } else if (seasonsData.length > 0) {
-                // If 'all', fetch stats for most recent season as default
                 const mostRecentSeason = seasonsData[0];
                 await fetchPlayerStats(mostRecentSeason.id);
             }
@@ -433,18 +433,6 @@ function PlayerManagement() {
             <div className="management-header">
                 <h2>Player Management</h2>
                 <div className="header-actions">
-                    <select
-                        value={selectedSeason}
-                        onChange={(e) => setSelectedSeason(e.target.value)}
-                        className="season-filter"
-                    >
-                        <option value="all">All Seasons</option>
-                        {seasons.map(season => (
-                            <option key={season.id} value={season.id}>
-                                {season.name}
-                            </option>
-                        ))}
-                    </select>
                     <div className="pm-search-wrapper">
                         <span className="pm-search-icon">🔍</span>
                         <input
@@ -465,9 +453,11 @@ function PlayerManagement() {
                     <button onClick={handleCopyEmails} className="btn-secondary">
                         📧 Copy All Emails
                     </button>
-                    <button onClick={() => setShowModal(true)} className="btn-primary">
-                        + Add Player
-                    </button>
+                    {!isHistoricalView && (
+                        <button onClick={() => setShowModal(true)} className="btn-primary">
+                            + Add Player
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -530,12 +520,16 @@ function PlayerManagement() {
                                         </span>
                                     </td>
                                     <td className="actions">
-                                        <button onClick={() => handleEdit(player)} className="btn-edit-small">
-                                            Edit
-                                        </button>
-                                        <button onClick={() => handleDelete(player.id)} className="btn-delete-small">
-                                            Delete
-                                        </button>
+                                        {!isHistoricalView && (
+                                            <>
+                                                <button onClick={() => handleEdit(player)} className="btn-edit-small">
+                                                    Edit
+                                                </button>
+                                                <button onClick={() => handleDelete(player.id)} className="btn-delete-small">
+                                                    Delete
+                                                </button>
+                                            </>
+                                        )}
                                     </td>
                                 </tr>
                             );
