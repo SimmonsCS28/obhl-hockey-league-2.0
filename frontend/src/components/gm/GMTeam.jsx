@@ -144,14 +144,14 @@ function GMTeam() {
     const handleCopyEmails = () => {
         const emails = roster
             .map(p => p.email)
-            .filter(Boolean)
+            .filter(email => email && email.toLowerCase() !== user?.email?.toLowerCase())
             .join(', ');
         if (!emails) {
             showMessage('error', 'No player emails found');
             return;
         }
         navigator.clipboard.writeText(emails)
-            .then(() => showMessage('success', `${roster.filter(p => p.email).length} email(s) copied to clipboard!`))
+            .then(() => showMessage('success', `${emails.split(', ').length} email(s) copied to clipboard!`))
             .catch(() => showMessage('error', 'Failed to copy — check browser clipboard permissions'));
     };
 
