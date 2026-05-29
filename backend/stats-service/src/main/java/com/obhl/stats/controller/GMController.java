@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.obhl.stats.model.Player;
@@ -24,11 +25,17 @@ public class GMController {
     private final PlayerRepository playerRepository;
 
     /**
-     * Get team roster for GM
+     * Get team roster for GM, optionally scoped to a specific season.
+     * When seasonId is provided only players from that season are returned,
+     * preventing cross-season roster bleed.
      */
     @GetMapping("/team/{teamId}/roster")
-    public ResponseEntity<List<Player>> getTeamRoster(@PathVariable Long teamId) {
-        List<Player> roster = playerRepository.findByTeamId(teamId);
+    public ResponseEntity<List<Player>> getTeamRoster(
+            @PathVariable Long teamId,
+            @RequestParam(required = false) Long seasonId) {
+        List<Player> roster = (seasonId != null)
+                ? playerRepository.findBySeasonIdAndTeamId(seasonId, teamId)
+                : playerRepository.findByTeamId(teamId);
         return ResponseEntity.ok(roster);
     }
 

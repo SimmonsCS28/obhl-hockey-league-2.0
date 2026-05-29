@@ -30,24 +30,28 @@ function GMTeam() {
 
     const fetchAll = async () => {
         try {
-            // Fetch roster and team info in parallel
-            const [rosterRes, teamRes, seasonsRes] = await Promise.all([
-                axios.get(`${API_BASE_URL}/gm/team/${user.teamId}/roster`, {
-                    headers: getAuthHeaders(),
-                }),
+            // Fetch seasons and team info first to get the active season
+            const [teamRes, seasonsRes] = await Promise.all([
                 axios.get(`${API_BASE_URL}/teams/${user.teamId}`, {
                     headers: getAuthHeaders(),
                 }),
                 axios.get(`${API_BASE_URL}/seasons`),
             ]);
 
-            setRoster(rosterRes.data);
             setTeamInfo(teamRes.data);
 
-            // Get active season and fetch stats
             const activeSeason = seasonsRes.data.find(s => s.isActive);
-            if (activeSeason) {
-                await fetchPlayerStats(activeSeason.id);
+            const seasonId = activeSeason?.id;
+
+            // Fetch roster scoped to the active season
+            const rosterRes = await axios.get(
+                `${API_BASE_URL}/gm/team/${user.teamId}/roster${seasonId ? `?seasonId=${seasonId}` : ''}`,
+                { headers: getAuthHeaders() }
+            );
+            setRoster(rosterRes.data);
+
+            if (seasonId) {
+                await fetchPlayerStats(seasonId);
             }
         } catch (error) {
             console.error('Failed to load team data:', error);
