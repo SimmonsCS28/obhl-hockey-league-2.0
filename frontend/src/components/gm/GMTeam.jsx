@@ -18,6 +18,7 @@ function GMTeam() {
     const [teamInfo, setTeamInfo] = useState(null);
     const [playerStats, setPlayerStats] = useState({});
     const [editedPlayers, setEditedPlayers] = useState({});
+    const [editedSkills, setEditedSkills] = useState({});
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState(null);
@@ -85,33 +86,44 @@ function GMTeam() {
     };
 
     const handleJerseyChange = (playerId, newValue) => {
-        setEditedPlayers({
-            ...editedPlayers,
-            [playerId]: newValue
-        });
+        setEditedPlayers(prev => ({ ...prev, [playerId]: newValue }));
+    };
+
+    const handleSkillChange = (playerId, newValue) => {
+        setEditedSkills(prev => ({ ...prev, [playerId]: newValue }));
     };
 
     const handleSave = async () => {
         setSaving(true);
         try {
-            const updates = Object.entries(editedPlayers);
-            for (const [playerId, jerseyNumber] of updates) {
+            // Save jersey number changes
+            for (const [playerId, jerseyNumber] of Object.entries(editedPlayers)) {
                 await axios.patch(
                     `${API_BASE_URL}/gm/players/${playerId}/jersey`,
                     { jerseyNumber: parseInt(jerseyNumber) },
                     { headers: getAuthHeaders() }
                 );
             }
-            showMessage('success', 'Jersey numbers updated successfully!');
-            // Refresh roster using the resolved team id from teamInfo
+            // Save skill rating changes
+            for (const [playerId, skillRating] of Object.entries(editedSkills)) {
+                await axios.patch(
+                    `${API_BASE_URL}/gm/players/${playerId}/skill`,
+                    { skillRating: parseInt(skillRating) },
+                    { headers: getAuthHeaders() }
+                );
+            }
+            const changedCount = Object.keys(editedPlayers).length + Object.keys(editedSkills).length;
+            showMessage('success', `${changedCount} player update(s) saved!`);
+            // Refresh roster
             const rosterRes = await axios.get(
                 `${API_BASE_URL}/gm/team/${teamInfo.id}/roster?seasonId=${teamInfo.seasonId}`,
                 { headers: getAuthHeaders() }
             );
             setRoster(rosterRes.data);
             setEditedPlayers({});
+            setEditedSkills({});
         } catch (error) {
-            showMessage('error', 'Failed to update jersey numbers');
+            showMessage('error', 'Failed to save changes');
         } finally {
             setSaving(false);
         }
@@ -252,13 +264,13 @@ function GMTeam() {
                 </div>
 
                 <div className="header-actions">
-                    {Object.keys(editedPlayers).length > 0 && (
+                    {(Object.keys(editedPlayers).length > 0 || Object.keys(editedSkills).length > 0) && (
                         <button
                             onClick={handleSave}
                             disabled={saving}
                             className="btn-save"
                         >
-                            {saving ? 'Saving...' : 'Save Changes'}
+                            {saving ? 'Saving...' : `Save Changes (${Object.keys(editedPlayers).length + Object.keys(editedSkills).length})`}
                         </button>
                     )}
                 </div>
@@ -304,7 +316,16 @@ function GMTeam() {
                                             </td>
                                             <td className="player-name">{player.firstName} {player.lastName}</td>
                                             <td>{player.position || '-'}</td>
-                                            <td>{player.skillRating || '-'}</td>
+                                            <td>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    max="10"
+                                                    value={editedSkills[player.id] ?? player.skillRating ?? ''}
+                                                    onChange={(e) => handleSkillChange(player.id, e.target.value)}
+                                                    className="skill-input"
+                                                />
+                                            </td>
                                             <td>{stats.goals || 0}</td>
                                             <td>{stats.assists || 0}</td>
                                             <td>{stats.points || 0}</td>

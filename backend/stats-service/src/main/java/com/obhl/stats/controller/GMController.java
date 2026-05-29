@@ -54,12 +54,37 @@ public class GMController {
 
         return playerRepository.findById(playerId)
                 .map(player -> {
-                    // Convert to Integer
                     Integer newJerseyNumber = jerseyObj instanceof Number
                             ? ((Number) jerseyObj).intValue()
                             : Integer.parseInt(jerseyObj.toString());
-
                     player.setJerseyNumber(newJerseyNumber);
+                    Player updated = playerRepository.save(player);
+                    return ResponseEntity.ok(updated);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Update player skill rating (GM can only update their team's players)
+     * Valid range: 1–10
+     */
+    @PatchMapping("/players/{playerId}/skill")
+    public ResponseEntity<Player> updateSkillRating(
+            @PathVariable Long playerId,
+            @RequestBody Map<String, Object> updates) {
+
+        Object skillObj = updates.get("skillRating");
+        if (skillObj == null) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        return playerRepository.findById(playerId)
+                .map(player -> {
+                    int rating = skillObj instanceof Number
+                            ? ((Number) skillObj).intValue()
+                            : Integer.parseInt(skillObj.toString());
+                    rating = Math.max(1, Math.min(10, rating));
+                    player.setSkillRating(rating);
                     Player updated = playerRepository.save(player);
                     return ResponseEntity.ok(updated);
                 })
