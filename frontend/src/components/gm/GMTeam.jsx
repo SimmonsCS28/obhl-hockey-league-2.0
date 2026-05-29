@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import api from '../../services/api';
 import TeamBadge from '../common/TeamBadge';
 import './GMTeam.css';
 
@@ -23,35 +24,35 @@ function GMTeam() {
     const [sortConfig, setSortConfig] = useState({ key: 'jerseyNumber', direction: 'ascending' });
 
     useEffect(() => {
-        if (user?.teamId) {
+        if (user) {
             fetchAll();
         }
     }, [user]);
 
     const fetchAll = async () => {
         try {
-            // Fetch seasons and team info first to get the active season
-            const [teamRes, seasonsRes] = await Promise.all([
-                axios.get(`${API_BASE_URL}/teams/${user.teamId}`, {
-                    headers: getAuthHeaders(),
-                }),
-                axios.get(`${API_BASE_URL}/seasons`),
-            ]);
+            // Resolve current team via player dashboard — looks up by email + active season
+            // so we always get the current season's team regardless of user.teamId being stale.
+            const dashData = await api.getPlayerDashboard();
+            const currentTeamId = dashData?.team?.id;
+            const currentSeasonId = dashData?.team?.seasonId;
 
-            setTeamInfo(teamRes.data);
+            if (!currentTeamId) {
+                setLoading(false);
+                return;
+            }
 
-            const activeSeason = seasonsRes.data.find(s => s.isActive);
-            const seasonId = activeSeason?.id;
+            setTeamInfo(dashData.team);
 
-            // Fetch roster scoped to the active season
+            // Fetch roster scoped to the current season
             const rosterRes = await axios.get(
-                `${API_BASE_URL}/gm/team/${user.teamId}/roster${seasonId ? `?seasonId=${seasonId}` : ''}`,
+                `${API_BASE_URL}/gm/team/${currentTeamId}/roster?seasonId=${currentSeasonId}`,
                 { headers: getAuthHeaders() }
             );
             setRoster(rosterRes.data);
 
-            if (seasonId) {
-                await fetchPlayerStats(seasonId);
+            if (currentSeasonId) {
+                await fetchPlayerStats(currentTeamId, currentSeasonId);
             }
         } catch (error) {
             console.error('Failed to load team data:', error);
@@ -61,10 +62,10 @@ function GMTeam() {
         }
     };
 
-    const fetchPlayerStats = async (seasonId) => {
+    const fetchPlayerStats = async (teamId, seasonId) => {
         try {
             const response = await axios.get(
-                `${API_BASE_URL}/stats/players?seasonId=${seasonId}&teamId=${user.teamId}`,
+                `${API_BASE_URL}/stats/players?seasonId=${seasonId}&teamId=${teamId}`,
                 { headers: getAuthHeaders() }
             );
             const statsMap = {};
