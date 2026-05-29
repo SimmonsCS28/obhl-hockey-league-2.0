@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import api from '../../services/api';
 import TeamBadge from '../common/TeamBadge';
 import './GMDashboard.css';
 
@@ -22,69 +23,71 @@ function GMDashboard() {
     const [jerseyEdits, setJerseyEdits] = useState({});
     // Track saving state per player: { [playerId]: boolean }
     const [savingJersey, setSavingJersey] = useState({});
+    // Resolved current-season team ID (may differ from user.teamId which can be stale)
+    const [currentTeamId, setCurrentTeamId] = useState(null);
 
     useEffect(() => {
-        if (user?.teamId) {
-            fetchTeamInfo();
-            fetchRoster();
-            fetchNextGame();
+        if (user) {
+            fetchAll();
         } else {
             setLoading(false);
         }
     }, [user]);
 
-    const fetchTeamInfo = async () => {
+    const fetchAll = async () => {
         try {
-            const response = await axios.get(`${API_BASE_URL}/teams/${user.teamId}`, {
-                headers: getAuthHeaders(),
-            });
-            setTeamInfo(response.data);
-        } catch (error) {
-            console.error('Failed to fetch team info:', error);
-        }
-    };
+            // Resolve team via player dashboard — looks up by email + active season,
+            // so it always returns the current season's team regardless of user.teamId.
+            const dashData = await api.getPlayerDashboard();
+            const currentTeamId = dashData?.team?.id;
+            const currentSeasonId = dashData?.team?.seasonId;
 
-    const fetchRoster = async () => {
-        try {
-            const response = await axios.get(`${API_BASE_URL}/gm/team/${user.teamId}/roster`, {
-                headers: getAuthHeaders(),
-            });
-            setRoster(response.data);
-        } catch (error) {
-            console.error('Failed to fetch roster:', error);
-        }
-    };
-
-    const fetchNextGame = async () => {
-        try {
-            const seasonsRes = await axios.get(`${API_BASE_URL}/seasons`);
-            const activeSeason = seasonsRes.data.find(s => s.isActive);
-
-            if (activeSeason) {
-                const gamesRes = await axios.get(
-                    `${API_BASE_URL}/gm/team/${user.teamId}/schedule?seasonId=${activeSeason.id}`,
-                    { headers: getAuthHeaders() }
-                );
-                const now = new Date();
-                const upcomingGames = gamesRes.data
-                    .filter(g => new Date(g.gameDate.endsWith('Z') ? g.gameDate : g.gameDate + 'Z') > now)
-                    .sort((a, b) => new Date(a.gameDate).getTime() - new Date(b.gameDate).getTime());
-
-                if (upcomingGames.length > 0) {
-                    setNextGame(upcomingGames[0]);
-                }
+            if (!currentTeamId) {
+                setLoading(false);
+                return;
             }
+
+            setTeamInfo(dashData.team);
+            setCurrentTeamId(currentTeamId);
+
+            // Fetch roster scoped to the current season
+            const rosterRes = await axios.get(
+                `${API_BASE_URL}/gm/team/${currentTeamId}/roster?seasonId=${currentSeasonId}`,
+                { headers: getAuthHeaders() }
+            );
+            setRoster(rosterRes.data);
+
+            await fetchNextGame(currentTeamId, currentSeasonId);
         } catch (error) {
-            console.error('Failed to fetch next game:', error);
+            console.error('Failed to load GM data:', error);
         } finally {
             setLoading(false);
         }
     };
 
+    const fetchNextGame = async (teamId, seasonId) => {
+        try {
+            const gamesRes = await axios.get(
+                `${API_BASE_URL}/gm/team/${teamId}/schedule?seasonId=${seasonId}`,
+                { headers: getAuthHeaders() }
+            );
+            const now = new Date();
+            const upcomingGames = gamesRes.data
+                .filter(g => new Date(g.gameDate.endsWith('Z') ? g.gameDate : g.gameDate + 'Z') > now)
+                .sort((a, b) => new Date(a.gameDate).getTime() - new Date(b.gameDate).getTime());
+
+            if (upcomingGames.length > 0) {
+                setNextGame(upcomingGames[0]);
+            }
+        } catch (error) {
+            console.error('Failed to fetch next game:', error);
+        }
+    };
+
     useEffect(() => {
         const fetchOpponent = async () => {
-            if (nextGame && user?.teamId) {
-                const opponentId = nextGame.homeTeamId === user.teamId ? nextGame.awayTeamId : nextGame.homeTeamId;
+            if (nextGame && currentTeamId) {
+                const opponentId = nextGame.homeTeamId === currentTeamId ? nextGame.awayTeamId : nextGame.homeTeamId;
                 if (!opponentId) return;
 
                 try {
@@ -99,7 +102,7 @@ function GMDashboard() {
         };
 
         fetchOpponent();
-    }, [nextGame, user?.teamId]);
+    }, [nextGame, currentTeamId]);
 
     const handleJerseyChange = (playerId, value) => {
         setJerseyEdits(prev => ({ ...prev, [playerId]: value }));

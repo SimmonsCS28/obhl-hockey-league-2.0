@@ -45,7 +45,7 @@
 }
 
 /* Row 2: Actions container with donate and auth */
-.header-actions {
+.public-header .header-actions {
     grid-column: 2;
     grid-row: 2;
     display: flex;
@@ -204,7 +204,7 @@
 
 /* Desktop-specific: more padding on larger screens */
 @media (min-width: 1200px) {
-    .header-actions {
+    .public-header .header-actions {
         padding-right: 12.5rem;
         /* More padding on desktop to align with nav */
     }
@@ -243,7 +243,7 @@
 
     /* Hide nav, donate, and auth on mobile by default */
     .main-nav:not(.mobile-open),
-    .header-actions,
+    .public-header .header-actions,
     .donate-section:not(.mobile-open),
     .auth-section:not(.mobile-open) {
         display: none;

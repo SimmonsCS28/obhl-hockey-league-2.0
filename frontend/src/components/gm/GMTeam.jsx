@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import api from '../../services/api';
 import TeamBadge from '../common/TeamBadge';
 import './GMTeam.css';
 
@@ -22,32 +23,41 @@ function GMTeam() {
     const [message, setMessage] = useState(null);
     const [sortConfig, setSortConfig] = useState({ key: 'jerseyNumber', direction: 'ascending' });
 
+    // Team name editing
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [editedName, setEditedName] = useState('');
+    const [savingName, setSavingName] = useState(false);
+
     useEffect(() => {
-        if (user?.teamId) {
+        if (user) {
             fetchAll();
         }
     }, [user]);
 
     const fetchAll = async () => {
         try {
-            // Fetch roster and team info in parallel
-            const [rosterRes, teamRes, seasonsRes] = await Promise.all([
-                axios.get(`${API_BASE_URL}/gm/team/${user.teamId}/roster`, {
-                    headers: getAuthHeaders(),
-                }),
-                axios.get(`${API_BASE_URL}/teams/${user.teamId}`, {
-                    headers: getAuthHeaders(),
-                }),
-                axios.get(`${API_BASE_URL}/seasons`),
-            ]);
+            // Resolve current team via player dashboard — looks up by email + active season
+            // so we always get the current season's team regardless of user.teamId being stale.
+            const dashData = await api.getPlayerDashboard();
+            const currentTeamId = dashData?.team?.id;
+            const currentSeasonId = dashData?.team?.seasonId;
 
+            if (!currentTeamId) {
+                setLoading(false);
+                return;
+            }
+
+            setTeamInfo(dashData.team);
+
+            // Fetch roster scoped to the current season
+            const rosterRes = await axios.get(
+                `${API_BASE_URL}/gm/team/${currentTeamId}/roster?seasonId=${currentSeasonId}`,
+                { headers: getAuthHeaders() }
+            );
             setRoster(rosterRes.data);
-            setTeamInfo(teamRes.data);
 
-            // Get active season and fetch stats
-            const activeSeason = seasonsRes.data.find(s => s.isActive);
-            if (activeSeason) {
-                await fetchPlayerStats(activeSeason.id);
+            if (currentSeasonId) {
+                await fetchPlayerStats(currentTeamId, currentSeasonId);
             }
         } catch (error) {
             console.error('Failed to load team data:', error);
@@ -57,10 +67,10 @@ function GMTeam() {
         }
     };
 
-    const fetchPlayerStats = async (seasonId) => {
+    const fetchPlayerStats = async (teamId, seasonId) => {
         try {
             const response = await axios.get(
-                `${API_BASE_URL}/stats/players?seasonId=${seasonId}&teamId=${user.teamId}`,
+                `${API_BASE_URL}/stats/players?seasonId=${seasonId}&teamId=${teamId}`,
                 { headers: getAuthHeaders() }
             );
             const statsMap = {};
@@ -93,10 +103,11 @@ function GMTeam() {
                 );
             }
             showMessage('success', 'Jersey numbers updated successfully!');
-            // Refresh roster
-            const rosterRes = await axios.get(`${API_BASE_URL}/gm/team/${user.teamId}/roster`, {
-                headers: getAuthHeaders(),
-            });
+            // Refresh roster using the resolved team id from teamInfo
+            const rosterRes = await axios.get(
+                `${API_BASE_URL}/gm/team/${teamInfo.id}/roster?seasonId=${teamInfo.seasonId}`,
+                { headers: getAuthHeaders() }
+            );
             setRoster(rosterRes.data);
             setEditedPlayers({});
         } catch (error) {
@@ -104,6 +115,44 @@ function GMTeam() {
         } finally {
             setSaving(false);
         }
+    };
+
+    const handleSaveTeamName = async () => {
+        const trimmed = editedName.trim();
+        if (!trimmed || trimmed === teamInfo?.name) {
+            setIsEditingName(false);
+            return;
+        }
+        setSavingName(true);
+        try {
+            await axios.put(
+                `${API_BASE_URL}/teams/${teamInfo.id}`,
+                { name: trimmed },
+                { headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' } }
+            );
+            setTeamInfo(prev => ({ ...prev, name: trimmed }));
+            setIsEditingName(false);
+            showMessage('success', `Team renamed to "${trimmed}"`);
+        } catch (error) {
+            console.error('Failed to rename team:', error);
+            showMessage('error', 'Failed to save team name');
+        } finally {
+            setSavingName(false);
+        }
+    };
+
+    const handleCopyEmails = () => {
+        const emails = roster
+            .map(p => p.email)
+            .filter(email => email && email.toLowerCase() !== user?.email?.toLowerCase())
+            .join(', ');
+        if (!emails) {
+            showMessage('error', 'No player emails found');
+            return;
+        }
+        navigator.clipboard.writeText(emails)
+            .then(() => showMessage('success', `${emails.split(', ').length} email(s) copied to clipboard!`))
+            .catch(() => showMessage('error', 'Failed to copy — check browser clipboard permissions'));
     };
 
     const showMessage = (type, text) => {
@@ -148,24 +197,71 @@ function GMTeam() {
     return (
         <div className="gm-team">
             <div className="team-header">
-                {teamInfo ? (
-                    <TeamBadge
-                        teamName={teamInfo.name}
-                        teamColor={teamInfo.teamColor}
-                        style={{ fontSize: '1.5rem', padding: '10px 24px' }}
-                    />
-                ) : (
-                    <h1>My Team</h1>
-                )}
-                {Object.keys(editedPlayers).length > 0 && (
-                    <button
-                        onClick={handleSave}
-                        disabled={saving}
-                        className="btn-save"
-                    >
-                        {saving ? 'Saving...' : 'Save Changes'}
-                    </button>
-                )}
+                <div className="team-name-section">
+                    {teamInfo ? (
+                        isEditingName ? (
+                            <div className="team-name-edit">
+                                <input
+                                    className="team-name-input"
+                                    value={editedName}
+                                    onChange={e => setEditedName(e.target.value)}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter') handleSaveTeamName();
+                                        if (e.key === 'Escape') setIsEditingName(false);
+                                    }}
+                                    autoFocus
+                                    maxLength={100}
+                                />
+                                <button
+                                    className="btn-save"
+                                    onClick={handleSaveTeamName}
+                                    disabled={savingName}
+                                >
+                                    {savingName ? 'Saving...' : '✓ Save'}
+                                </button>
+                                <button
+                                    className="btn-cancel"
+                                    onClick={() => setIsEditingName(false)}
+                                    disabled={savingName}
+                                >
+                                    ✕ Cancel
+                                </button>
+                            </div>
+                        ) : (
+                            <TeamBadge
+                                teamName={teamInfo.name}
+                                teamColor={teamInfo.teamColor}
+                                style={{ fontSize: '1.5rem', padding: '10px 24px', cursor: 'pointer' }}
+                                title="Click to rename"
+                                onClick={() => { setEditedName(teamInfo.name); setIsEditingName(true); }}
+                            />
+                        )
+                    ) : (
+                        <h1>My Team</h1>
+                    )}
+
+                    {roster.length > 0 && !isEditingName && (
+                        <button
+                            className="btn-copy-emails"
+                            onClick={handleCopyEmails}
+                            title="Copy all player emails to clipboard"
+                        >
+                            📋 Copy Emails
+                        </button>
+                    )}
+                </div>
+
+                <div className="header-actions">
+                    {Object.keys(editedPlayers).length > 0 && (
+                        <button
+                            onClick={handleSave}
+                            disabled={saving}
+                            className="btn-save"
+                        >
+                            {saving ? 'Saving...' : 'Save Changes'}
+                        </button>
+                    )}
+                </div>
             </div>
 
             {message && (

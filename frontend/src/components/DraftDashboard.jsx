@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useBlocker } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import DraftService from '../services/DraftService';
 import './DraftDashboard.css';
@@ -72,6 +73,13 @@ const DraftDashboard = () => {
 
     // Undo History State
     const [history, setHistory] = useState([]);
+
+    // Unsaved changes tracking
+    const [isDirty, setIsDirty] = useState(false);
+    const isInitialMount = useRef(true);
+
+    // Block in-app navigation (React Router) when there are unsaved changes
+    const blocker = useBlocker(isDirty);
 
     // Save current state to history stack
     const saveHistory = () => {
@@ -153,6 +161,29 @@ const DraftDashboard = () => {
         fetchAvailableSeasons();
         checkForSavedDraft();
     }, []);
+
+    // Mark dirty whenever teams or playerPool change while the draft is live
+    // Skip the very first render and the initial data load
+    useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
+        if (isLive) {
+            setIsDirty(true);
+        }
+    }, [teams, playerPool]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Block browser tab close / page refresh when there are unsaved changes
+    useEffect(() => {
+        if (!isDirty) return;
+        const handleBeforeUnload = (e) => {
+            e.preventDefault();
+            e.returnValue = '';
+        };
+        window.addEventListener('beforeunload', handleBeforeUnload);
+        return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }, [isDirty]);
 
     // Fetch active and upcoming seasons from the database
     const fetchAvailableSeasons = async (autoSelectId = null) => {
@@ -679,14 +710,9 @@ const DraftDashboard = () => {
     // ===== Draft Save/Load Handlers =====
 
     const handleSaveDraft = async () => {
-        // Validate GM assignments
-        if (!validateGMAssignments()) {
-            return;
-        }
-
         if (!selectedSeasonId) {
             setWarning('Please select a season before saving.');
-            return;
+            return false;
         }
 
         try {
@@ -748,14 +774,18 @@ const DraftDashboard = () => {
             if (response.ok) {
                 const result = await response.json();
                 setCurrentDraftSaveId(result.id);
+                setIsDirty(false); // Draft is now saved — clear dirty flag
                 const action = currentDraftSaveId ? 'updated' : 'saved';
                 setWarning(`Draft "${seasonName}" ${action} successfully! (ID: ${result.id})`);
+                return true;
             } else {
                 setWarning('Failed to save draft');
+                return false;
             }
         } catch (error) {
             console.error('Error saving draft:', error);
             setWarning('Error saving draft. Check console for details.');
+            return false;
         }
     };
 
@@ -1789,6 +1819,43 @@ const DraftDashboard = () => {
 
     return (
         <div className={`draft-dashboard ${viewMode}`}>
+            {/* Unsaved Changes Navigation Guard Modal */}
+            {blocker.state === 'blocked' && (
+                <div className="resume-modal-overlay">
+                    <div className="resume-modal-content">
+                        <h2>⚠️ Unsaved Draft Changes</h2>
+                        <p>
+                            You have unsaved changes to your draft. If you leave now, any picks made since
+                            your last save will be lost.
+                        </p>
+                        <div className="resume-modal-actions">
+                            <button
+                                className="btn-draft btn-start"
+                                onClick={async () => {
+                                    const saved = await handleSaveDraft();
+                                    if (saved) blocker.proceed();
+                                }}
+                            >
+                                Save &amp; Leave
+                            </button>
+                            <button
+                                className="btn-draft"
+                                style={{ backgroundColor: '#e74c3c' }}
+                                onClick={() => blocker.proceed()}
+                            >
+                                Leave Without Saving
+                            </button>
+                            <button
+                                className="btn-draft btn-secondary"
+                                onClick={() => blocker.reset()}
+                            >
+                                Stay on Draft
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Resume Draft Prompt Modal */}
             {showResumePrompt && savedDraft && (
                 <div className="resume-modal-overlay">

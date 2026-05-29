@@ -5,7 +5,7 @@
 .team-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 2rem;
     padding: 0;
     background: transparent;
@@ -141,3 +141,79 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
+
+/* Team name + copy emails stacked column */
+.team-name-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+/* Remove old pencil icon rule */
+.team-name-display {
+    display: flex;
+    align-items: center;
+}
+
+/* Inline name edit row */
+.team-name-edit {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.team-name-input {
+    padding: 0.5rem 0.9rem;
+    font-size: 1.3rem;
+    font-weight: 700;
+    border: 2px solid #4299e1;
+    border-radius: 6px;
+    background: #2c2c2c;
+    color: #fff;
+    outline: none;
+    min-width: 220px;
+}
+
+.btn-cancel {
+    padding: 0.6rem 1.1rem;
+    background: #555;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.95rem;
+    transition: background 0.2s;
+}
+
+.btn-cancel:hover:not(:disabled) {
+    background: #444;
+}
+
+/* Header action buttons group (right side) */
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+/* Copy emails button — matches table header gray */
+.btn-copy-emails {
+    padding: 0.5rem 1.2rem;
+    background: #2c2c2c;
+    color: #ccc;
+    border: 1px solid #444;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: background 0.2s, color 0.2s;
+    white-space: nowrap;
+}
+
+.btn-copy-emails:hover {
+    background: #3a3a3a;
+    color: #fff;
+}

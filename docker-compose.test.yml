@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   test-postgres:
-    image: postgres:15
+    image: postgres:16-alpine
     container_name: obhl-test-db
     environment:
       POSTGRES_DB: obhl_test

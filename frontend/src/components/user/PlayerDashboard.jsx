@@ -142,15 +142,17 @@ const PlayerDashboard = () => {
     return (
         <div className="player-dashboard">
             <header className="dashboard-header">
-                <h1>Welcome, {firstName ? `${firstName} ${lastName}` : user?.firstName}</h1>
-                <button
-                    className="hamburger-menu"
-                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                >
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </button>
+                <div className="header-top-row">
+                    <h1>Welcome, {firstName ? `${firstName} ${lastName}` : user?.firstName}</h1>
+                    <button
+                        className="hamburger-menu"
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                    >
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </div>
                 <div className={`header-actions ${mobileMenuOpen ? 'mobile-open' : ''}`}>
                     {user?.roles?.includes('ADMIN') && (
                         <button
@@ -182,7 +184,12 @@ const PlayerDashboard = () => {
                     >
                         OBHL Home
                     </button>
-                    <button className="action-button logout" onClick={() => { logout(); navigate('/'); }}>Logout</button>
+                    <button
+                        className="action-button logout"
+                        onClick={() => { logout(); navigate('/'); }}
+                    >
+                        Logout
+                    </button>
                 </div>
             </header>
 
