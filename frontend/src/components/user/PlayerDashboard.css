@@ -80,69 +80,71 @@
     transition: all 0.3s ease;
 }
 
+/* Desktop: header-top-row just shows h1 (hamburger hidden) */
+.header-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
 @media (max-width: 768px) {
     .player-dashboard {
-        padding: 1rem 1rem;
+        padding: 1rem;
     }
 
-    .dashboard-header {
+    /* Scope under .player-dashboard to win over UserDashboard.css's flex-wrap:wrap rule */
+    .player-dashboard .dashboard-header {
         margin: -1rem -1rem 1.5rem -1rem;
-        padding: 1rem 1rem;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        align-items: flex-start; /* anchor each row to top so hamburger doesn't drift */
+        padding: 1rem;
+        flex-direction: column;
+        align-items: stretch;
     }
 
-    .dashboard-header h1 {
+    .player-dashboard .dashboard-header h1 {
         font-size: 1.3rem;
         white-space: normal;
-        max-width: 80%;
-        flex: 1;          /* fill remaining row-1 space, pushes hamburger to right */
-        order: 1;
     }
 
-    .hamburger-menu {
-        display: flex;
-        flex-shrink: 0;   /* never get squeezed off-screen */
-        order: 2;         /* always after h1 on row 1 */
-    }
-
-    /* Expanded menu always occupies its own row below h1 + hamburger */
-    .header-actions {
-        display: none;
-        order: 3;
+    .player-dashboard .header-top-row {
         width: 100%;
-        flex-direction: column;
+        display: flex;
+        justify-content: space-between;
         align-items: center;
+    }
+
+    .player-dashboard .hamburger-menu {
+        display: flex;
+        flex-shrink: 0;
+    }
+
+    .player-dashboard .header-actions {
+        display: none;
+        flex-direction: column;
+        width: 100%;
         margin-top: 0.75rem;
         padding-top: 0.75rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        border-top: 1px solid rgba(255, 255, 255, 0.15);
         gap: 0.5rem;
     }
 
-    .header-actions.mobile-open {
+    .player-dashboard .header-actions.mobile-open {
         display: flex;
         animation: slideDown 0.3s ease;
     }
 
-    .header-actions button {
+    .player-dashboard .header-actions .action-button {
         width: 100%;
+        box-sizing: border-box;
         text-align: center;
-        margin-right: 0 !important;
     }
 
     @keyframes slideDown {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(-8px); }
+        to   { opacity: 1; transform: translateY(0); }
     }
 }
+
+
 
 
 .dashboard-grid {

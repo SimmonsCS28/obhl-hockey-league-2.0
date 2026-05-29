@@ -279,27 +279,32 @@
         padding: 1rem 1rem;
         flex-wrap: wrap;
         justify-content: space-between;
-        align-items: center;
-        gap: 10px;
+        align-items: flex-start;
     }
 
     .dashboard-header h1 {
         font-size: 1.3rem;
         white-space: normal;
         margin: 0;
-        max-width: 80%;
+        flex: 1;         /* fill row-1 space so hamburger is pushed to the right */
+        order: 1;
     }
 
     .hamburger-menu {
         display: flex;
+        flex-shrink: 0;  /* never squeezed off-screen */
+        order: 2;
     }
 
     .header-buttons {
         display: none;
+        order: 3;
+        flex-basis: 100%;   /* forces its own row in the flex-wrap layout */
         width: 100%;
         flex-direction: column;
-        margin-top: 1rem;
-        padding-top: 1rem;
+        align-items: stretch;
+        margin-top: 0.75rem;
+        padding-top: 0.75rem;
         border-top: 1px solid rgba(255, 255, 255, 0.1);
         gap: 0.5rem;
     }
@@ -309,7 +314,8 @@
         animation: slideDown 0.3s ease;
     }
 
-    .header-buttons button {
+    .header-buttons .home-button,
+    .header-buttons .logout-button {
         width: 100%;
         text-align: center;
         margin-right: 0 !important;
