@@ -87,6 +87,10 @@ public class GameService {
         game.setWeek(dto.getWeek());
         game.setRink(dto.getRink());
         game.setGameNotes(dto.getGameNotes());
+        // Preserve playoff type — default to REGULAR_SEASON if not specified
+        game.setGameType(dto.getGameType() != null ? dto.getGameType() : "REGULAR_SEASON");
+        game.setPlayoffRound(dto.getPlayoffRound());
+        game.setBracketPosition(dto.getBracketPosition());
         game.setGoalie1Id(dto.getGoalie1Id());
         game.setGoalie2Id(dto.getGoalie2Id());
         game.setReferee1Id(dto.getReferee1Id());
@@ -131,6 +135,12 @@ public class GameService {
             game.setRink(dto.getRink());
         if (dto.getGameNotes() != null)
             game.setGameNotes(dto.getGameNotes());
+        if (dto.getGameType() != null)
+            game.setGameType(dto.getGameType());
+        if (dto.getPlayoffRound() != null)
+            game.setPlayoffRound(dto.getPlayoffRound());
+        if (dto.getBracketPosition() != null)
+            game.setBracketPosition(dto.getBracketPosition());
         if (dto.getGoalie1Id() != null)
             game.setGoalie1Id(dto.getGoalie1Id() == -1 ? null : dto.getGoalie1Id());
         if (dto.getGoalie2Id() != null)
