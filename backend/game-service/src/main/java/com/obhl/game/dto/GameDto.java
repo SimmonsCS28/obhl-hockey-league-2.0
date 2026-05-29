@@ -22,12 +22,9 @@ public class GameDto {
         private Long leagueId;
 
         // Min(0) allows TBD playoff games where teamId=0 means "to be determined"
-        @NotNull
-        @jakarta.validation.constraints.Min(0)
+        // homeTeamId and awayTeamId are nullable — null means TBD (playoff games before bracket is set)
         private Long homeTeamId;
 
-        @NotNull
-        @jakarta.validation.constraints.Min(0)
         private Long awayTeamId;
 
         @NotNull

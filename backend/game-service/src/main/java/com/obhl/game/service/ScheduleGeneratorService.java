@@ -170,8 +170,8 @@ public class ScheduleGeneratorService {
                 Game game = new Game();
                 game.setSeasonId(seasonId);
                 game.setLeagueId(leagueId);
-                game.setHomeTeamId(0L); // TBD — bracket not yet initialized
-                game.setAwayTeamId(0L); // TBD
+                game.setHomeTeamId(null); // TBD — bracket not yet initialized
+                game.setAwayTeamId(null); // TBD
                 game.setGameDate(LocalDateTime.of(slot.getDate(), slot.getTime())
                         .atZone(java.time.ZoneId.of("America/Chicago"))
                         .withZoneSameInstant(java.time.ZoneId.of("UTC"))

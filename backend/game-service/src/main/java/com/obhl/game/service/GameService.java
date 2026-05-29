@@ -340,7 +340,8 @@ public class GameService {
         };
         if (nextRound == null) return; // FINAL has no next round
 
-        // Determine winner
+        // Determine winner (only possible if both teams assigned)
+        if (completedGame.getHomeTeamId() == null || completedGame.getAwayTeamId() == null) return;
         Long winnerId = completedGame.getHomeScore() >= completedGame.getAwayScore()
                 ? completedGame.getHomeTeamId()
                 : completedGame.getAwayTeamId();

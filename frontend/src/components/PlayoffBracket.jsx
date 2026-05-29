@@ -2,7 +2,7 @@ import './PlayoffBracket.css';
 
 const PlayoffBracket = ({ games, teams }) => {
     const getTeam = (teamId) => {
-        if (!teamId || teamId === 0) return null;
+        if (!teamId) return null;
         return teams.find(t => t.id === teamId);
     };
 
@@ -53,7 +53,7 @@ const PlayoffBracket = ({ games, teams }) => {
                 style={{ backgroundColor: bg, color: fg }}
             >
                 <span className="bracket-team-name">
-                    {team ? team.name : (isTbd ? 'TBD' : `Team ${teamId}`)}
+                    {team ? team.name : 'TBD'}
                 </span>
                 {score !== null && score !== undefined && (
                     <span className={`bracket-score ${isWinner ? 'bracket-score-winner' : ''}`}>
@@ -66,8 +66,8 @@ const PlayoffBracket = ({ games, teams }) => {
     };
 
     const renderMatchup = (game, isFinal = false) => {
-        const homeTbd = !game.homeTeamId || game.homeTeamId === 0;
-        const awayTbd = !game.awayTeamId || game.awayTeamId === 0;
+        const homeTbd = !game.homeTeamId;
+        const awayTbd = !game.awayTeamId;
         const isCompleted = game.status === 'completed';
         const homeWin = isCompleted && game.homeScore > game.awayScore;
         const awayWin = isCompleted && game.awayScore > game.homeScore;

@@ -866,7 +866,7 @@ const ScheduleManager = () => {
                                         const awayBg = getValidColor(awayTeam?.teamColor);
 
                                         const isPlayoff = game.gameType === 'PLAYOFF';
-                                        const isTbd = game.homeTeamId === 0 || game.awayTeamId === 0;
+                                        const isTbd = !game.homeTeamId || !game.awayTeamId;
                                         return (
                                             <tr
                                                 key={game.id}
@@ -1011,7 +1011,7 @@ const ScheduleManager = () => {
                     }
 
                     {/* Initialize Playoff Bracket — shown when saved schedule has TBD playoff games */}
-                    {isActiveSeason && scheduleMode === 'saved' && games.some(g => g.gameType === 'PLAYOFF' && g.homeTeamId === 0) && (
+                    {isActiveSeason && scheduleMode === 'saved' && games.some(g => g.gameType === 'PLAYOFF' && !g.homeTeamId) && (
                         <button
                             onClick={handleInitializeBracket}
                             className="btn-bracket-init"
