@@ -79,8 +79,13 @@ const SchedulePage = () => {
         return teams.find(t => t.id === teamId);
     };
 
+    // Split games into regular season and playoffs
+    const regularSeasonGames = games.filter(g => g.gameType !== 'PLAYOFF');
+    const playoffGames = games.filter(g => g.gameType === 'PLAYOFF');
+    const hasPlayoffs = playoffGames.length > 0;
+
     // Filter games based on selected week, team, and completion status
-    const filteredGames = games.filter(game => {
+    const filteredGames = regularSeasonGames.filter(game => {
         const weekMatch = selectedWeek === 'all' || game.week === parseInt(selectedWeek);
         const teamMatch = selectedTeam === 'all' ||
             game.homeTeamId === parseInt(selectedTeam) ||
@@ -132,13 +137,8 @@ const SchedulePage = () => {
         return parseInt(a) - parseInt(b);
     });
 
-    // Get unique weeks for filter dropdown
-    const availableWeeks = [...new Set(games.map(g => g.week))].sort((a, b) => a - b);
-
-    // Split games into regular season and playoffs
-    const regularSeasonGames = games.filter(g => g.gameType !== 'PLAYOFF');
-    const playoffGames = games.filter(g => g.gameType === 'PLAYOFF');
-    const hasPlayoffs = playoffGames.length > 0;
+    // Get unique weeks for filter dropdown (regular season only)
+    const availableWeeks = [...new Set(regularSeasonGames.map(g => g.week))].sort((a, b) => a - b);
 
     // Helper to get valid CSS color
     const getValidColor = (color) => {
@@ -404,17 +404,25 @@ const SchedulePage = () => {
                                                 minute: '2-digit'
                                             })}
                                         </td>
-                                        <td className={`team-cell ${homeWin ? 'winning-team' : ''}`} style={{ backgroundColor: homeBg, color: getTextColor(homeBg) }}>
-                                            <Link to={`/teams/${game.homeTeamId}`} style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', width: '100%', height: '100%', justifyContent: 'center' }}>
-                                                {homeTeam?.name || `Team ${game.homeTeamId}`}
-                                                {homeWin && <span className="win-icon" title="Winner">★</span>}
-                                            </Link>
+                                        <td className={`team-cell ${homeWin ? 'winning-team' : ''}`} style={!game.homeTeamId ? { backgroundColor: '#374151', color: '#9ca3af' } : { backgroundColor: homeBg, color: getTextColor(homeBg) }}>
+                                            {!game.homeTeamId ? (
+                                                <span style={{ fontStyle: 'italic', opacity: 0.7 }}>TBD</span>
+                                            ) : (
+                                                <Link to={`/teams/${game.homeTeamId}`} style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', width: '100%', height: '100%', justifyContent: 'center' }}>
+                                                    {homeTeam?.name || `Team ${game.homeTeamId}`}
+                                                    {homeWin && <span className="win-icon" title="Winner">★</span>}
+                                                </Link>
+                                            )}
                                         </td>
-                                        <td className={`team-cell ${awayWin ? 'winning-team' : ''}`} style={{ backgroundColor: awayBg, color: getTextColor(awayBg) }}>
-                                            <Link to={`/teams/${game.awayTeamId}`} style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', width: '100%', height: '100%', justifyContent: 'center' }}>
-                                                {awayTeam?.name || `Team ${game.awayTeamId}`}
-                                                {awayWin && <span className="win-icon" title="Winner">★</span>}
-                                            </Link>
+                                        <td className={`team-cell ${awayWin ? 'winning-team' : ''}`} style={!game.awayTeamId ? { backgroundColor: '#374151', color: '#9ca3af' } : { backgroundColor: awayBg, color: getTextColor(awayBg) }}>
+                                            {!game.awayTeamId ? (
+                                                <span style={{ fontStyle: 'italic', opacity: 0.7 }}>TBD</span>
+                                            ) : (
+                                                <Link to={`/teams/${game.awayTeamId}`} style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', width: '100%', height: '100%', justifyContent: 'center' }}>
+                                                    {awayTeam?.name || `Team ${game.awayTeamId}`}
+                                                    {awayWin && <span className="win-icon" title="Winner">★</span>}
+                                                </Link>
+                                            )}
                                         </td>
                                         <td>{game.rink}</td>
                                         <td>
