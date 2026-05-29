@@ -197,57 +197,50 @@ function GMTeam() {
     return (
         <div className="gm-team">
             <div className="team-header">
-                {teamInfo ? (
-                    isEditingName ? (
-                        <div className="team-name-edit">
-                            <input
-                                className="team-name-input"
-                                value={editedName}
-                                onChange={e => setEditedName(e.target.value)}
-                                onKeyDown={e => {
-                                    if (e.key === 'Enter') handleSaveTeamName();
-                                    if (e.key === 'Escape') setIsEditingName(false);
-                                }}
-                                autoFocus
-                                maxLength={100}
-                            />
-                            <button
-                                className="btn-save"
-                                onClick={handleSaveTeamName}
-                                disabled={savingName}
-                            >
-                                {savingName ? 'Saving...' : '✓ Save'}
-                            </button>
-                            <button
-                                className="btn-cancel"
-                                onClick={() => setIsEditingName(false)}
-                                disabled={savingName}
-                            >
-                                ✕ Cancel
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="team-name-display">
+                <div className="team-name-section">
+                    {teamInfo ? (
+                        isEditingName ? (
+                            <div className="team-name-edit">
+                                <input
+                                    className="team-name-input"
+                                    value={editedName}
+                                    onChange={e => setEditedName(e.target.value)}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter') handleSaveTeamName();
+                                        if (e.key === 'Escape') setIsEditingName(false);
+                                    }}
+                                    autoFocus
+                                    maxLength={100}
+                                />
+                                <button
+                                    className="btn-save"
+                                    onClick={handleSaveTeamName}
+                                    disabled={savingName}
+                                >
+                                    {savingName ? 'Saving...' : '✓ Save'}
+                                </button>
+                                <button
+                                    className="btn-cancel"
+                                    onClick={() => setIsEditingName(false)}
+                                    disabled={savingName}
+                                >
+                                    ✕ Cancel
+                                </button>
+                            </div>
+                        ) : (
                             <TeamBadge
                                 teamName={teamInfo.name}
                                 teamColor={teamInfo.teamColor}
-                                style={{ fontSize: '1.5rem', padding: '10px 24px' }}
-                            />
-                            <button
-                                className="btn-edit-name"
-                                title="Rename team"
+                                style={{ fontSize: '1.5rem', padding: '10px 24px', cursor: 'pointer' }}
+                                title="Click to rename"
                                 onClick={() => { setEditedName(teamInfo.name); setIsEditingName(true); }}
-                            >
-                                ✏️
-                            </button>
-                        </div>
-                    )
-                ) : (
-                    <h1>My Team</h1>
-                )}
+                            />
+                        )
+                    ) : (
+                        <h1>My Team</h1>
+                    )}
 
-                <div className="header-actions">
-                    {roster.length > 0 && (
+                    {roster.length > 0 && !isEditingName && (
                         <button
                             className="btn-copy-emails"
                             onClick={handleCopyEmails}
@@ -256,6 +249,9 @@ function GMTeam() {
                             📋 Copy Emails
                         </button>
                     )}
+                </div>
+
+                <div className="header-actions">
                     {Object.keys(editedPlayers).length > 0 && (
                         <button
                             onClick={handleSave}

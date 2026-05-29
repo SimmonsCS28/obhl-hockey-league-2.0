@@ -5,7 +5,7 @@
 .team-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 2rem;
     padding: 0;
     background: transparent;
@@ -142,28 +142,19 @@
     -webkit-overflow-scrolling: touch;
 }
 
-/* Team name display + edit pencil */
+/* Team name + copy emails stacked column */
+.team-name-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+}
+
+/* Remove old pencil icon rule */
 .team-name-display {
     display: flex;
     align-items: center;
-    gap: 0.6rem;
-}
-
-.btn-edit-name {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    font-size: 1.2rem;
-    padding: 0.3rem;
-    border-radius: 4px;
-    opacity: 0.7;
-    transition: opacity 0.15s, background 0.15s;
-    line-height: 1;
-}
-
-.btn-edit-name:hover {
-    opacity: 1;
-    background: rgba(255,255,255,0.1);
 }
 
 /* Inline name edit row */
@@ -201,27 +192,28 @@
     background: #444;
 }
 
-/* Header action buttons group */
+/* Header action buttons group (right side) */
 .header-actions {
     display: flex;
     align-items: center;
     gap: 0.75rem;
 }
 
-/* Copy emails button */
+/* Copy emails button — matches table header gray */
 .btn-copy-emails {
-    padding: 0.6rem 1.2rem;
-    background: #3182ce;
-    color: #fff;
-    border: none;
+    padding: 0.5rem 1.2rem;
+    background: #2c2c2c;
+    color: #ccc;
+    border: 1px solid #444;
     border-radius: 6px;
     cursor: pointer;
     font-weight: 600;
-    font-size: 0.95rem;
-    transition: background 0.2s;
+    font-size: 0.9rem;
+    transition: background 0.2s, color 0.2s;
     white-space: nowrap;
 }
 
 .btn-copy-emails:hover {
-    background: #2b6cb0;
+    background: #3a3a3a;
+    color: #fff;
 }
