@@ -40,6 +40,12 @@ public class ScheduleGeneratorService {
     @Transactional
     public List<Game> generateSchedule(Long seasonId, Long leagueId, List<Long> teamIds,
             List<GameSlot> slots, Integer maxWeeks) {
+        return generateSchedule(seasonId, leagueId, teamIds, slots, maxWeeks, 0);
+    }
+
+    @Transactional
+    public List<Game> generateSchedule(Long seasonId, Long leagueId, List<Long> teamIds,
+            List<GameSlot> slots, Integer maxWeeks, Integer playoffWeeks) {
 
         log.info("Generating schedule for season {} with {} teams and {} slots",
                 seasonId, teamIds.size(), slots.size());
@@ -80,6 +86,13 @@ public class ScheduleGeneratorService {
         // Games will be saved when user explicitly clicks "Save Schedule"
         log.info("Successfully generated {} draft games (not saved to database)", games.size());
 
+        // Generate playoff week placeholders if requested
+        if (playoffWeeks != null && playoffWeeks > 0) {
+            List<Game> playoffGames = generatePlayoffSlots(seasonId, leagueId, slots, maxWeeks, playoffWeeks);
+            games.addAll(playoffGames);
+            log.info("Added {} playoff placeholder games", playoffGames.size());
+        }
+
         return games;
     }
 
@@ -118,6 +131,65 @@ public class ScheduleGeneratorService {
 
         log.info("Created {} round-robin matchups for {} teams", matchups.size(), n);
         return matchups;
+    }
+
+    /**
+     * Generate playoff week placeholder games (TBD teams, gameType=PLAYOFF).
+     * Round names (QUARTERFINAL/SEMIFINAL/FINAL) are assigned based on how
+     * many playoff weeks there are and which week we are processing.
+     *
+     * Standard mapping:
+     *   1 week  → FINAL
+     *   2 weeks → SEMIFINAL, FINAL
+     *   3 weeks → QUARTERFINAL, SEMIFINAL, FINAL
+     */
+    private List<Game> generatePlayoffSlots(Long seasonId, Long leagueId,
+            List<GameSlot> allSlots, int maxWeeks, int playoffWeeks) {
+
+        // Build ordered round names for the playoff weeks
+        String[] allRounds = {"QUARTERFINAL", "SEMIFINAL", "FINAL"};
+        // Take the last `playoffWeeks` entries from allRounds
+        int startIdx = Math.max(0, allRounds.length - playoffWeeks);
+        String[] rounds = java.util.Arrays.copyOfRange(allRounds, startIdx, allRounds.length);
+
+        List<Game> playoffGames = new ArrayList<>();
+
+        for (int i = 0; i < rounds.length; i++) {
+            int playoffWeekNumber = maxWeeks + i + 1; // e.g. week 12, 13, 14
+            String round = rounds[i];
+
+            // Get slots for this playoff week
+            final int weekNum = playoffWeekNumber;
+            List<GameSlot> weekSlots = allSlots.stream()
+                    .filter(slot -> slot.getWeek() == weekNum)
+                    .sorted(java.util.Comparator.comparing(GameSlot::getTime))
+                    .toList();
+
+            int position = 1;
+            for (GameSlot slot : weekSlots) {
+                Game game = new Game();
+                game.setSeasonId(seasonId);
+                game.setLeagueId(leagueId);
+                game.setHomeTeamId(0L); // TBD — bracket not yet initialized
+                game.setAwayTeamId(0L); // TBD
+                game.setGameDate(LocalDateTime.of(slot.getDate(), slot.getTime())
+                        .atZone(java.time.ZoneId.of("America/Chicago"))
+                        .withZoneSameInstant(java.time.ZoneId.of("UTC"))
+                        .toLocalDateTime());
+                game.setWeek(playoffWeekNumber);
+                game.setRink(slot.getRink());
+                game.setStatus("scheduled");
+                game.setGameType("PLAYOFF");
+                game.setPlayoffRound(round);
+                game.setBracketPosition(position++);
+                playoffGames.add(game);
+            }
+
+            log.info("Generated {} placeholder games for {} (week {})",
+                    weekSlots.size(), round, playoffWeekNumber);
+        }
+
+        return playoffGames;
     }
 
     /**

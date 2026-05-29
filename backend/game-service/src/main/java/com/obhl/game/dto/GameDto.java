@@ -135,6 +135,8 @@ public class GameDto {
         private String rink;
         private String gameNotes;
         private String gameType;
+        private String playoffRound;
+        private Integer bracketPosition;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
         private Long goalie1Id;

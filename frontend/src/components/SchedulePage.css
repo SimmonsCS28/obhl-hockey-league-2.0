@@ -564,3 +564,52 @@
     background-color: #2980b9;
 }
 
+/* Season/Playoff Tab Toggle */
+.schedule-tabs {
+    display: flex;
+    gap: 0;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 1.5rem;
+    width: fit-content;
+    border: 1px solid rgba(212, 160, 23, 0.25);
+}
+
+.schedule-tab {
+    padding: 10px 28px;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+    letter-spacing: 0.2px;
+}
+
+.schedule-tab:hover:not(.active) {
+    color: rgba(255, 255, 255, 0.85);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.schedule-tab.active {
+    background: linear-gradient(135deg, #d4a017 0%, #b8860b 100%);
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(212, 160, 23, 0.45);
+}
+
+@media (max-width: 768px) {
+    .schedule-tabs {
+        width: 100%;
+    }
+
+    .schedule-tab {
+        flex: 1;
+        padding: 10px 14px;
+        font-size: 0.875rem;
+        text-align: center;
+    }
+}

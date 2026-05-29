@@ -1,0 +1,314 @@
+/* PlayoffBracket — OBHL Playoff Bracket Viewer */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+.playoff-bracket {
+    background: linear-gradient(160deg, #0f172a 0%, #1e293b 60%, #0f172a 100%);
+    border-radius: 16px;
+    padding: 2rem;
+    margin: 1.5rem 0;
+    border: 1px solid rgba(212, 160, 23, 0.3);
+    box-shadow:
+        0 0 0 1px rgba(212, 160, 23, 0.1),
+        0 20px 60px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    font-family: 'Inter', sans-serif;
+}
+
+/* Header */
+.playoff-bracket-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid rgba(212, 160, 23, 0.2);
+}
+
+.playoff-bracket-title {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #f8d76a;
+    letter-spacing: -0.3px;
+    text-shadow: 0 0 20px rgba(212, 160, 23, 0.4);
+}
+
+.bracket-trophy {
+    font-size: 1.75rem;
+    filter: drop-shadow(0 0 8px rgba(212, 160, 23, 0.6));
+}
+
+.playoff-bracket-legend {
+    display: flex;
+    gap: 1rem;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.playoff-bracket-legend span {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+/* Rounds layout */
+.bracket-rounds {
+    display: grid;
+    grid-template-columns: repeat(var(--round-count, 3), 1fr);
+    gap: 0;
+    align-items: center;
+    position: relative;
+}
+
+.bracket-round {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    position: relative;
+    padding: 0 1rem;
+}
+
+.bracket-round:first-child {
+    padding-left: 0;
+}
+
+.bracket-round:last-child {
+    padding-right: 0;
+}
+
+.bracket-round-header {
+    text-align: center;
+    margin-bottom: 1.25rem;
+}
+
+.bracket-round-header h3 {
+    margin: 0 0 0.25rem;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #f8d76a;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.round-record {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.4);
+    font-weight: 500;
+}
+
+.bracket-matchups {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    justify-content: space-around;
+    flex: 1;
+}
+
+/* Championship gets extra spacing */
+.bracket-round-final .bracket-matchups {
+    justify-content: center;
+}
+
+/* Individual matchup card */
+.bracket-matchup {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.bracket-matchup:hover {
+    border-color: rgba(212, 160, 23, 0.4);
+    background: rgba(255, 255, 255, 0.07);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.bracket-matchup.bracket-completed {
+    border-color: rgba(212, 160, 23, 0.35);
+    box-shadow: 0 0 0 1px rgba(212, 160, 23, 0.15);
+}
+
+.bracket-matchup.bracket-final {
+    border-color: rgba(212, 160, 23, 0.6);
+    background: rgba(212, 160, 23, 0.08);
+    box-shadow:
+        0 0 0 1px rgba(212, 160, 23, 0.25),
+        0 0 30px rgba(212, 160, 23, 0.1);
+}
+
+.bracket-matchup.bracket-final.bracket-completed {
+    box-shadow:
+        0 0 0 2px rgba(212, 160, 23, 0.5),
+        0 0 40px rgba(212, 160, 23, 0.2);
+    animation: championGlow 3s ease-in-out infinite;
+}
+
+@keyframes championGlow {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(212, 160, 23, 0.5), 0 0 40px rgba(212, 160, 23, 0.2); }
+    50% { box-shadow: 0 0 0 2px rgba(212, 160, 23, 0.8), 0 0 60px rgba(212, 160, 23, 0.35); }
+}
+
+/* Matchup header */
+.bracket-matchup-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.45rem 0.75rem;
+    background: rgba(0, 0, 0, 0.25);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    flex-wrap: wrap;
+}
+
+.bracket-round-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: #d4a017;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+.bracket-game-date {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.45);
+    flex: 1;
+}
+
+.bracket-final-badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    background: rgba(212, 160, 23, 0.3);
+    color: #f8d76a;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Teams */
+.bracket-teams {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.bracket-team-slot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.75rem;
+    font-weight: 600;
+    font-size: 0.82rem;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.bracket-team-slot.bracket-tbd {
+    background: #1e293b !important;
+    color: rgba(255, 255, 255, 0.3) !important;
+    font-style: italic;
+    font-weight: 400;
+}
+
+.bracket-team-slot.bracket-winner {
+    position: relative;
+}
+
+.bracket-team-slot.bracket-winner::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: #22c55e;
+    border-radius: 0;
+}
+
+.bracket-team-name {
+    flex: 1;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.bracket-score {
+    font-size: 1rem;
+    font-weight: 800;
+    min-width: 1.5rem;
+    text-align: right;
+    opacity: 0.85;
+}
+
+.bracket-score-winner {
+    opacity: 1;
+    color: inherit;
+}
+
+.bracket-star {
+    font-size: 0.75rem;
+    margin-left: 4px;
+    color: #ffd700;
+    text-shadow: 0 0 6px rgba(255, 215, 0, 0.6);
+    flex-shrink: 0;
+}
+
+.bracket-vs {
+    text-align: center;
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.25);
+    letter-spacing: 1px;
+    padding: 3px 0;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Connector lines between rounds (desktop) */
+.bracket-connector {
+    display: none;
+}
+
+/* Responsive: mobile stacks rounds vertically */
+@media (max-width: 768px) {
+    .playoff-bracket {
+        padding: 1.25rem;
+    }
+
+    .bracket-rounds {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .bracket-round {
+        padding: 0;
+    }
+
+    .playoff-bracket-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .playoff-bracket-legend {
+        gap: 0.75rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .playoff-bracket {
+        padding: 1rem;
+        border-radius: 12px;
+    }
+
+    .bracket-team-slot {
+        padding: 0.5rem 0.65rem;
+        font-size: 0.78rem;
+    }
+}

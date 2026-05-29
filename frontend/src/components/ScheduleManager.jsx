@@ -21,6 +21,7 @@ const ScheduleManager = () => {
     const [teams, setTeams] = useState([]);
     const [selectedSeason, setSelectedSeason] = useState(null);
     const [maxWeeks, setMaxWeeks] = useState(10);
+    const [playoffWeeks, setPlayoffWeeks] = useState(3);
     const [csvFile, setCsvFile] = useState(null);
     const [parsedSlots, setParsedSlots] = useState([]);
     const [games, setGames] = useState([]);
@@ -156,7 +157,8 @@ const ScheduleManager = () => {
                 leagueId: teams[0]?.leagueId || null,
                 teamIds: teamIds,
                 gameSlots: parsedSlots,
-                maxWeeks: maxWeeks
+                maxWeeks: maxWeeks,
+                playoffWeeks: playoffWeeks
             };
 
 
@@ -461,6 +463,42 @@ const ScheduleManager = () => {
         });
     };
 
+    const handleInitializeBracket = async () => {
+        if (!selectedSeason || !teams.length) return;
+
+        setConfirmModal({
+            show: true,
+            title: 'Initialize Playoff Bracket?',
+            message: 'This will seed the playoff bracket based on current regular season standings.\n\nSeed 1 (top of standings) will be matched against Seed 8, Seed 2 vs Seed 7, etc.\n\nAre you sure?',
+            confirmText: 'Initialize Bracket',
+            isDestructive: false,
+            onConfirm: async () => {
+                setLoading(true);
+                try {
+                    // Sort teams by points desc, then goal differential desc
+                    const sorted = [...teams].sort((a, b) => {
+                        const ptsDiff = (b.points || 0) - (a.points || 0);
+                        if (ptsDiff !== 0) return ptsDiff;
+                        const aGD = (a.goalsFor || 0) - (a.goalsAgainst || 0);
+                        const bGD = (b.goalsFor || 0) - (b.goalsAgainst || 0);
+                        return bGD - aGD;
+                    });
+
+                    const teamIds = sorted.map(t => t.id);
+
+                    await axios.post(`${API_BASE_URL}/games/season/${selectedSeason}/initialize-bracket`, { teamIds });
+
+                    // Reload games to show updated bracket
+                    await fetchGames(selectedSeason, true);
+                    showMessage('success', `Playoff bracket initialized! Seeds: ${sorted.slice(0, 4).map((t, i) => `${i + 1}. ${t.name}`).join(', ')}...`);
+                } catch (error) {
+                    showMessage('error', error.response?.data || 'Failed to initialize bracket');
+                } finally {
+                    setLoading(false);
+                }
+            }
+        });
+    };
     const showMessage = (type, text) => {
         let messageText = text;
         if (typeof text === 'object' && text !== null) {
@@ -469,6 +507,7 @@ const ScheduleManager = () => {
         setMessage({ type, text: messageText });
         setTimeout(() => setMessage({ type: '', text: '' }), 5000);
     };
+
 
     const downloadTemplate = () => {
         // Create CSV content with headers and sample data
@@ -682,6 +721,25 @@ const ScheduleManager = () => {
                                 max="20"
                             />
                         </label>
+                        <label>
+                            Playoff Weeks:
+                            <input
+                                id="playoffWeeks"
+                                name="playoffWeeks"
+                                type="number"
+                                value={playoffWeeks}
+                                onChange={(e) => setPlayoffWeeks(parseInt(e.target.value) || 0)}
+                                min="0"
+                                max="5"
+                                title="Weeks at end of season for playoffs (e.g. 3 for QF/SF/Final)"
+                            />
+                        </label>
+                        <div className="playoff-weeks-hint">
+                            {playoffWeeks === 3 && '🏆 QF (Wk ' + (maxWeeks + 1) + ') → SF (Wk ' + (maxWeeks + 2) + ') → Final (Wk ' + (maxWeeks + 3) + ')'}
+                            {playoffWeeks === 2 && '🏆 SF (Wk ' + (maxWeeks + 1) + ') → Final (Wk ' + (maxWeeks + 2) + ')'}
+                            {playoffWeeks === 1 && '🏆 Final (Wk ' + (maxWeeks + 1) + ')'}
+                            {playoffWeeks === 0 && 'No playoff weeks will be generated'}
+                        </div>
                         <button
                             onClick={handleGenerateSchedule}
                             disabled={loading || games.length > 0}
@@ -807,14 +865,17 @@ const ScheduleManager = () => {
                                         const homeBg = getValidColor(homeTeam?.teamColor);
                                         const awayBg = getValidColor(awayTeam?.teamColor);
 
+                                        const isPlayoff = game.gameType === 'PLAYOFF';
+                                        const isTbd = game.homeTeamId === 0 || game.awayTeamId === 0;
                                         return (
                                             <tr
                                                 key={game.id}
-                                                className={`clickable-row ${isNotFriday ? 'non-friday-row' : ''}`}
+                                                className={`clickable-row ${isNotFriday ? 'non-friday-row' : ''} ${isPlayoff ? 'playoff-row' : ''}`}
                                                 onClick={() => setEditingGame(game)}
                                                 style={{ cursor: 'pointer' }}
                                             >
                                                 <td className="week-col">
+                                                    {isPlayoff && <span className="playoff-badge">{game.playoffRound?.replace('QUARTERFINAL', 'QF').replace('SEMIFINAL', 'SF').replace('FINAL', '🏆') || '🏆'}</span>}
                                                     Week {game.week}
                                                 </td>
                                                 <td className={isNotFriday ? 'date-col non-friday-date' : 'date-col'}>
@@ -835,21 +896,21 @@ const ScheduleManager = () => {
                                                 </td>
                                                 <td
                                                     className="team-cell"
-                                                    style={{
+                                                    style={isTbd ? { backgroundColor: '#555', color: '#aaa' } : {
                                                         backgroundColor: homeBg,
                                                         color: getTextColor(homeBg)
                                                     }}
                                                 >
-                                                    {homeTeam?.name || `Team ${game.homeTeamId}`}
+                                                    {isTbd ? 'TBD' : (homeTeam?.name || `Team ${game.homeTeamId}`)}
                                                 </td>
                                                 <td
                                                     className="team-cell"
-                                                    style={{
+                                                    style={isTbd ? { backgroundColor: '#555', color: '#aaa' } : {
                                                         backgroundColor: awayBg,
                                                         color: getTextColor(awayBg)
                                                     }}
                                                 >
-                                                    {awayTeam?.name || `Team ${game.awayTeamId}`}
+                                                    {isTbd ? 'TBD' : (awayTeam?.name || `Team ${game.awayTeamId}`)}
                                                 </td>
                                                 <td>{game.rink}</td>
                                                 <td>
@@ -948,6 +1009,18 @@ const ScheduleManager = () => {
                             </button>
                         )
                     }
+
+                    {/* Initialize Playoff Bracket — shown when saved schedule has TBD playoff games */}
+                    {isActiveSeason && scheduleMode === 'saved' && games.some(g => g.gameType === 'PLAYOFF' && g.homeTeamId === 0) && (
+                        <button
+                            onClick={handleInitializeBracket}
+                            className="btn-bracket-init"
+                            disabled={loading}
+                            title="Seed the playoff bracket based on current regular season standings"
+                        >
+                            🏆 Initialize Playoff Bracket
+                        </button>
+                    )}
                 </div >
             )}
 

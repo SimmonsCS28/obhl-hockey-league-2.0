@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import PlayoffBracket from './PlayoffBracket';
 import './SchedulePage.css';
 
 const SchedulePage = () => {
@@ -14,6 +15,7 @@ const SchedulePage = () => {
     const [showCalendarModal, setShowCalendarModal] = useState(false);
     const [showCompleted, setShowCompleted] = useState(false);
     const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
+    const [activeTab, setActiveTab] = useState('regular'); // 'regular' | 'playoffs'
 
     // Responsive detection
     useEffect(() => {
@@ -132,6 +134,11 @@ const SchedulePage = () => {
 
     // Get unique weeks for filter dropdown
     const availableWeeks = [...new Set(games.map(g => g.week))].sort((a, b) => a - b);
+
+    // Split games into regular season and playoffs
+    const regularSeasonGames = games.filter(g => g.gameType !== 'PLAYOFF');
+    const playoffGames = games.filter(g => g.gameType === 'PLAYOFF');
+    const hasPlayoffs = playoffGames.length > 0;
 
     // Helper to get valid CSS color
     const getValidColor = (color) => {
@@ -252,6 +259,24 @@ const SchedulePage = () => {
             </div>
             <div className="schedule-page">
 
+            {/* Regular Season / Playoffs Tab Toggle */}
+            {hasPlayoffs && (
+                <div className="schedule-tabs">
+                    <button
+                        className={`schedule-tab ${activeTab === 'regular' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('regular')}
+                    >
+                        📅 Regular Season
+                    </button>
+                    <button
+                        className={`schedule-tab ${activeTab === 'playoffs' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('playoffs')}
+                    >
+                        🏆 Playoffs
+                    </button>
+                </div>
+            )}
+
             <div className="filters">
                 <div className="filter-group">
                     <label>Season</label>
@@ -311,6 +336,9 @@ const SchedulePage = () => {
 
             {loading ? (
                 <div className="loading">Loading games...</div>
+            ) : activeTab === 'playoffs' ? (
+                // Playoff Bracket View
+                <PlayoffBracket games={playoffGames} teams={teams} />
             ) : filteredGames.length === 0 ? (
                 <div className="empty-state">
                     <p>No games scheduled yet.</p>

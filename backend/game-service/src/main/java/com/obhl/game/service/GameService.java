@@ -1,5 +1,7 @@
 package com.obhl.game.service;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -181,11 +183,16 @@ public class GameService {
         // Save game first
         Game savedGame = gameRepository.save(game);
 
-        // Update team standings
+        // Update team standings (skips PLAYOFF games automatically)
         teamStatsUpdater.updateTeamStats(savedGame);
 
         // Aggregate and update player stats
         playerStatsAggregator.aggregateAndUpdateStats(savedGame);
+
+        // Auto-advance the playoff bracket if this was a playoff game
+        if ("PLAYOFF".equals(savedGame.getGameType())) {
+            advancePlayoffBracket(savedGame);
+        }
 
         return toResponse(savedGame);
     }
@@ -233,6 +240,9 @@ public class GameService {
         dto.setWeek(game.getWeek());
         dto.setRink(game.getRink());
         dto.setGameNotes(game.getGameNotes());
+        dto.setGameType(game.getGameType());
+        dto.setPlayoffRound(game.getPlayoffRound());
+        dto.setBracketPosition(game.getBracketPosition());
         dto.setGoalie1Id(game.getGoalie1Id());
         dto.setGoalie2Id(game.getGoalie2Id());
         dto.setReferee1Id(game.getReferee1Id());
@@ -243,7 +253,111 @@ public class GameService {
         return dto;
     }
 
-    // Shift Assignment Methods
+
+
+    // -------------------------------------------------------------------------
+    // Playoff Bracket Methods
+    // -------------------------------------------------------------------------
+
+    /**
+     * Seed the first playoff round from an ordered standings list.
+     * teamIds must be ordered seed-1 first (best record first).
+     * Assigns standard top-8 bracket matchups:
+     *   Slot 1: seed1 (home) vs seed8 (away)
+     *   Slot 2: seed2 (home) vs seed7 (away)
+     *   Slot 3: seed3 (home) vs seed6 (away)
+     *   Slot 4: seed4 (home) vs seed5 (away)
+     */
+    @Transactional
+    public List<GameDto.Response> initializePlayoffBracket(Long seasonId, List<Long> seededTeamIds) {
+        // Find the first playoff round games (lowest week number with PLAYOFF type)
+        List<Game> allPlayoffGames = gameRepository.findBySeasonId(seasonId).stream()
+                .filter(g -> "PLAYOFF".equals(g.getGameType()))
+                .sorted(Comparator.comparingInt(Game::getWeek).thenComparingInt(Game::getBracketPosition))
+                .toList();
+
+        if (allPlayoffGames.isEmpty()) {
+            throw new RuntimeException("No playoff games found for season " + seasonId);
+        }
+
+        // Get the first round's week
+        int firstPlayoffWeek = allPlayoffGames.get(0).getWeek();
+        List<Game> firstRoundGames = allPlayoffGames.stream()
+                .filter(g -> g.getWeek() == firstPlayoffWeek)
+                .sorted(Comparator.comparingInt(Game::getBracketPosition))
+                .toList();
+
+        // Top-8 seeding: positions pair as (1v8, 2v7, 3v6, 4v5)
+        int numSeeds = Math.min(seededTeamIds.size(), firstRoundGames.size() * 2);
+        List<Long> seeds = seededTeamIds.subList(0, numSeeds);
+
+        List<Game> updated = new ArrayList<>();
+        for (int i = 0; i < firstRoundGames.size(); i++) {
+            int homeIdx = i;              // seed 1, 2, 3, 4
+            int awayIdx = seeds.size() - 1 - i;  // seed 8, 7, 6, 5
+            if (homeIdx < seeds.size() && awayIdx >= 0 && awayIdx < seeds.size()) {
+                Game g = firstRoundGames.get(i);
+                g.setHomeTeamId(seeds.get(homeIdx));
+                g.setAwayTeamId(seeds.get(awayIdx));
+                updated.add(gameRepository.save(g));
+            }
+        }
+
+        log.info("Initialized playoff bracket for season {} with {} first-round games", seasonId, updated.size());
+        return updated.stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    /**
+     * After a playoff game is finalized, automatically place the winner
+     * into the correct slot of the next round.
+     *
+     * Bracket linkage (standard top-8):
+     *   QUARTERFINAL pos P → SEMIFINAL pos ceil(P/2)
+     *     odd P  → home slot,  even P → away slot
+     *   SEMIFINAL pos P   → FINAL pos 1
+     *     odd P  → home slot,  even P → away slot
+     */
+    private void advancePlayoffBracket(Game completedGame) {
+        if (completedGame.getBracketPosition() == null) return;
+
+        String currentRound = completedGame.getPlayoffRound();
+        String nextRound = switch (currentRound != null ? currentRound : "") {
+            case "QUARTERFINAL" -> "SEMIFINAL";
+            case "SEMIFINAL"    -> "FINAL";
+            default             -> null;
+        };
+        if (nextRound == null) return; // FINAL has no next round
+
+        // Determine winner
+        Long winnerId = completedGame.getHomeScore() >= completedGame.getAwayScore()
+                ? completedGame.getHomeTeamId()
+                : completedGame.getAwayTeamId();
+
+        // Find the next round games for this season
+        int currentPos = completedGame.getBracketPosition();
+        int nextPos = (currentPos + 1) / 2; // ceil(P/2)
+        boolean isHomeSlot = (currentPos % 2 == 1); // odd positions → home
+
+        final String nextRoundFinal = nextRound;
+        gameRepository.findBySeasonId(completedGame.getSeasonId()).stream()
+                .filter(g -> "PLAYOFF".equals(g.getGameType())
+                        && nextRoundFinal.equals(g.getPlayoffRound())
+                        && g.getBracketPosition() != null
+                        && g.getBracketPosition() == nextPos)
+                .findFirst()
+                .ifPresent(nextGame -> {
+                    if (isHomeSlot) {
+                        nextGame.setHomeTeamId(winnerId);
+                    } else {
+                        nextGame.setAwayTeamId(winnerId);
+                    }
+                    gameRepository.save(nextGame);
+                    log.info("Advanced bracket: {} winner {} → {} pos {} slot {}",
+                            currentRound, winnerId, nextRound, nextPos,
+                            isHomeSlot ? "home" : "away");
+                });
+    }
+
     @Transactional(readOnly = true)
     public List<com.obhl.game.dto.GameDayDTO> getGameDaysBySeason(Long seasonId) {
         java.time.ZoneId utcZone = java.time.ZoneId.of("UTC");

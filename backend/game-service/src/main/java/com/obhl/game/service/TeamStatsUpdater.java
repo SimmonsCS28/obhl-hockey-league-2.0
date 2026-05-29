@@ -25,6 +25,12 @@ public class TeamStatsUpdater {
     public void updateTeamStats(Game game) {
         log.info("Updating team stats for game {}", game.getId());
 
+        // Playoff games do NOT affect regular season standings
+        if ("PLAYOFF".equals(game.getGameType())) {
+            log.info("Skipping standings update for playoff game {}", game.getId());
+            return;
+        }
+
         int homeScore = game.getHomeScore();
         int awayScore = game.getAwayScore();
         boolean endedInOT = game.getEndedInOT() != null && game.getEndedInOT();
@@ -91,9 +97,16 @@ public class TeamStatsUpdater {
     public void revertTeamStats(Game game) {
         log.info("Reverting team stats for game {}", game.getId());
 
+        // Playoff games were never applied to standings, so nothing to revert
+        if ("PLAYOFF".equals(game.getGameType())) {
+            log.info("Skipping standings revert for playoff game {}", game.getId());
+            return;
+        }
+
         int homeScore = game.getHomeScore();
         int awayScore = game.getAwayScore();
         boolean endedInOT = game.getEndedInOT() != null && game.getEndedInOT();
+
 
         Map<String, Integer> homeStats = new HashMap<>();
         homeStats.put("goalsFor", -homeScore);
