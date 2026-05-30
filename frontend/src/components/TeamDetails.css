@@ -43,6 +43,21 @@
     color: inherit;
 }
 
+/* Click-to-edit team name */
+.team-name-editable {
+    cursor: pointer;
+    display: inline-block;
+    border-bottom: 2px dashed transparent;
+    transition: border-color 0.2s;
+    margin: 0 0 2rem 0;
+    font-size: 3rem;
+    color: inherit;
+}
+
+.team-name-editable:hover {
+    border-bottom-color: rgba(255, 255, 255, 0.6);
+}
+
 .team-stats-display {
     display: flex;
     justify-content: center;

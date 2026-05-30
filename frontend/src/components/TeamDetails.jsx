@@ -14,6 +14,9 @@ function TeamDetails({ team: propTeam, onBack }) {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [playerToRemove, setPlayerToRemove] = useState(null);
     const [selectedPlayerId, setSelectedPlayerId] = useState('');
+    const [editingName, setEditingName] = useState(false);
+    const [editedName, setEditedName] = useState('');
+    const [savingName, setSavingName] = useState(false);
     const [editingPlayerId, setEditingPlayerId] = useState(null);
     const [editedJerseyNumber, setEditedJerseyNumber] = useState('');
 
@@ -63,6 +66,33 @@ function TeamDetails({ team: propTeam, onBack }) {
             onBack();
         } else {
             navigate(-1);
+        }
+    };
+
+    const handleStartEditName = () => {
+        setEditedName(team.name);
+        setEditingName(true);
+    };
+
+    const handleCancelEditName = () => {
+        setEditingName(false);
+        setEditedName('');
+    };
+
+    const handleSaveTeamName = async () => {
+        const trimmed = editedName.trim();
+        if (!trimmed) return;
+        if (trimmed === team.name) { setEditingName(false); return; }
+        try {
+            setSavingName(true);
+            const updated = await api.updateTeam(team.id, { ...team, name: trimmed });
+            setTeam(updated);
+            setEditingName(false);
+        } catch (error) {
+            console.error('Error updating team name:', error);
+            alert('Failed to update team name');
+        } finally {
+            setSavingName(false);
         }
     };
 
@@ -192,7 +222,48 @@ function TeamDetails({ team: propTeam, onBack }) {
             </button>
 
             <div className="team-header-colored" style={{ backgroundColor: bg, color: textColor }}>
-                <h1>{team.name}</h1>
+                {editingName ? (
+                    <div className="team-name-edit" style={{ display: 'flex', alignItems: 'center', gap: '10px', justifyContent: 'center', padding: '8px 0' }}>
+                        <input
+                            type="text"
+                            value={editedName}
+                            onChange={(e) => setEditedName(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') handleSaveTeamName(); if (e.key === 'Escape') handleCancelEditName(); }}
+                            autoFocus
+                            style={{
+                                fontSize: '2rem',
+                                fontWeight: 'bold',
+                                background: 'rgba(0,0,0,0.2)',
+                                border: '2px solid rgba(255,255,255,0.6)',
+                                borderRadius: '8px',
+                                color: 'inherit',
+                                padding: '4px 12px',
+                                textAlign: 'center',
+                                width: '300px',
+                                outline: 'none'
+                            }}
+                        />
+                        <button
+                            onClick={handleSaveTeamName}
+                            disabled={savingName}
+                            title="Save"
+                            style={{ background: 'rgba(255,255,255,0.25)', border: 'none', borderRadius: '6px', color: 'inherit', fontSize: '1.2rem', cursor: 'pointer', padding: '4px 10px' }}
+                        >✓</button>
+                        <button
+                            onClick={handleCancelEditName}
+                            title="Cancel"
+                            style={{ background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '6px', color: 'inherit', fontSize: '1.2rem', cursor: 'pointer', padding: '4px 10px' }}
+                        >✕</button>
+                    </div>
+                ) : (
+                    <h1
+                        onClick={handleStartEditName}
+                        title="Click to edit team name"
+                        className="team-name-editable"
+                    >
+                        {team.name}
+                    </h1>
+                )}
                 <div className="team-stats-display">
                     <div className="stat-item">
                         <span className="stat-label">W</span>
