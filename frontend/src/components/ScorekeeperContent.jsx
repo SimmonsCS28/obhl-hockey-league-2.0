@@ -264,7 +264,7 @@ function ScorekeeperContent() {
                 )}
 
                 {currentView === 'standings' && (
-                    <Standings />
+                    <Standings seasonId={selectedSeasonId} />
                 )}
             </div>
         </div>
