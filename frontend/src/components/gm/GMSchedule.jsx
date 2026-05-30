@@ -2,6 +2,7 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import api from '../../services/api';
 import './GMSchedule.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
@@ -40,9 +41,10 @@ function GMSchedule() {
     const [selectedWeek, setSelectedWeek] = useState('all');
     const [weeks, setWeeks] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [resolvedTeamId, setResolvedTeamId] = useState(null);
 
     useEffect(() => {
-        if (user?.teamId) {
+        if (user) {
             fetchSchedule();
         }
     }, [user]);
@@ -53,20 +55,28 @@ function GMSchedule() {
 
     const fetchSchedule = async () => {
         try {
-            // Get active season
-            const seasonsRes = await axios.get(`${API_BASE_URL}/seasons`);
-            const activeSeason = seasonsRes.data.find(s => s.isActive);
+            // Resolve team + season via player dashboard (same as GMDashboard),
+            // so this works even if user.teamId is stale or absent.
+            const dashData = await api.getPlayerDashboard();
+            const teamId = dashData?.team?.id;
+            const seasonId = dashData?.team?.seasonId;
 
-            if (activeSeason) {
-                const gamesRes = await axios.get(`${API_BASE_URL}/gm/team/${user.teamId}/schedule?seasonId=${activeSeason.id}`, {
-                    headers: getAuthHeaders(),
-                });
-                setGames(gamesRes.data);
-
-                // Extract unique weeks
-                const uniqueWeeks = [...new Set(gamesRes.data.map(g => g.week))].sort((a, b) => a - b);
-                setWeeks(uniqueWeeks);
+            if (!teamId || !seasonId) {
+                setLoading(false);
+                return;
             }
+
+            setResolvedTeamId(teamId);
+
+            const gamesRes = await axios.get(
+                `${API_BASE_URL}/gm/team/${teamId}/schedule?seasonId=${seasonId}`,
+                { headers: getAuthHeaders() }
+            );
+            setGames(gamesRes.data);
+
+            // Extract unique weeks
+            const uniqueWeeks = [...new Set(gamesRes.data.map(g => g.week))].sort((a, b) => a - b);
+            setWeeks(uniqueWeeks);
         } catch (error) {
             console.error('Failed to fetch schedule:', error);
         } finally {
@@ -87,7 +97,7 @@ function GMSchedule() {
     return (
         <div className="gm-schedule">
             <div className="schedule-header">
-                <h1>My Schedule</h1>
+                <h1>Team Schedule</h1>
                 {weeks.length > 0 && (
                     <div className="week-filter">
                         <label>Filter by week:</label>
@@ -122,7 +132,7 @@ function GMSchedule() {
                         <tbody>
                             {filteredGames.map(game => {
                                 const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
-                                const isHomeGame = game.homeTeamId === user.teamId;
+                                const isHomeGame = game.homeTeamId === resolvedTeamId;
                                 const opponentId = isHomeGame ? game.awayTeamId : game.homeTeamId;
                                 const opponentName = isHomeGame ? game.awayTeamName : game.homeTeamName;
                                 const locationContext = isHomeGame ? '(Home)' : '(Away)';
