@@ -242,19 +242,71 @@ const SchedulePage = () => {
         setShowCalendarModal(false);
     };
 
+    // Export full regular season schedule as CSV
+    const exportCSV = () => {
+        const seasonName = seasons.find(s => s.id === selectedSeason)?.name || 'Schedule';
+
+        const rows = [
+            ['Week', 'Date', 'Time', 'Home Team', 'Away Team', 'Location']
+        ];
+
+        const sortedGames = [...regularSeasonGames].sort((a, b) => {
+            if (a.week !== b.week) return a.week - b.week;
+            return new Date(a.gameDate) - new Date(b.gameDate);
+        });
+
+        sortedGames.forEach(game => {
+            const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
+            const date = gameDate.toLocaleDateString('en-US', {
+                timeZone: 'America/Chicago',
+                weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+            });
+            const time = gameDate.toLocaleTimeString('en-US', {
+                timeZone: 'America/Chicago',
+                hour: 'numeric', minute: '2-digit'
+            });
+            const homeTeam = getTeamById(game.homeTeamId)?.name || 'TBD';
+            const awayTeam = getTeamById(game.awayTeamId)?.name || 'TBD';
+            const location = game.rink || '';
+
+            rows.push([game.week, date, time, homeTeam, awayTeam, location]);
+        });
+
+        const csvContent = rows
+            .map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+            .join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = `${seasonName.replace(/\s+/g, '_')}_Schedule.csv`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <>
             <div className="page-header-bar">
                 <div className="page-header-inner centered">
                     <h1>Game Schedule</h1>
-                    <button
-                        className="download-calendar-btn"
-                        style={{ marginTop: '1rem' }}
-                        onClick={() => setShowCalendarModal(true)}
-                        title="Download team schedule as calendar file"
-                    >
-                        📅 Download Calendar
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                        <button
+                            className="download-calendar-btn"
+                            onClick={() => setShowCalendarModal(true)}
+                            title="Download team schedule as calendar file"
+                        >
+                            📅 Download Calendar
+                        </button>
+                        <button
+                            className="download-calendar-btn"
+                            onClick={exportCSV}
+                            title="Export full schedule as CSV"
+                            disabled={regularSeasonGames.length === 0}
+                        >
+                            📥 Export CSV
+                        </button>
+                    </div>
                 </div>
             </div>
             <div className="schedule-page">
