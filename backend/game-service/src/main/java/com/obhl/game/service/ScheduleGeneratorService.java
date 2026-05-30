@@ -260,7 +260,12 @@ public class ScheduleGeneratorService {
     }
 
     /**
-     * Assign matchups to slots with time balancing
+     * Assign matchups to slots with time balancing.
+     *
+     * For each week, matchups are sorted by their "early/late burden" before being
+     * assigned to slots. Matchups whose teams have played too many early games get
+     * pushed to the later slots that week, and vice versa. This creates a natural
+     * rotation so no team is stuck with predominantly early or late games all season.
      */
     private List<Game> assignSlotsWithBalancing(Long seasonId, Long leagueId, List<Long> teamIds,
             List<Matchup> matchups, List<GameSlot> slots) {
@@ -282,38 +287,56 @@ public class ScheduleGeneratorService {
 
         // Process each week
         for (Integer week : slotsByWeek.keySet().stream().sorted().toList()) {
-            List<GameSlot> weekSlots = slotsByWeek.get(week);
+            List<GameSlot> weekSlots = new ArrayList<>(slotsByWeek.get(week));
 
-            // Assign matchups to this week's slots with balancing
-            for (GameSlot slot : weekSlots) {
-                if (matchupIndex >= matchups.size()) {
-                    break;
-                }
+            // Sort slots earliest → latest so index 0 = earliest, index N-1 = latest
+            weekSlots.sort(java.util.Comparator.comparing(GameSlot::getTime));
 
-                Matchup matchup = matchups.get(matchupIndex);
-                String category = categorizeTimeSlot(slot.getTime());
+            int slotsThisWeek = weekSlots.size();
 
-                // Calculate fairness score for this assignment
-                int homeScore = calculateFairnessScore(teamStats.get(matchup.homeTeamId), category, week);
-                int awayScore = calculateFairnessScore(teamStats.get(matchup.awayTeamId), category, week);
+            // Collect this week's matchups (one per slot)
+            List<Matchup> weekMatchups = new ArrayList<>();
+            for (int i = 0; i < slotsThisWeek && (matchupIndex + i) < matchups.size(); i++) {
+                weekMatchups.add(matchups.get(matchupIndex + i));
+            }
+            matchupIndex += weekMatchups.size();
 
-                // Create game
+            // Sort matchups by early-game burden DESCENDING:
+            //   burden = (homeEarlyGames - homeLateGames) + (awayEarlyGames - awayLateGames)
+            //   A positive burden means the matchup's teams have played more early than late
+            //   games this season → they should receive a LATE slot this week to compensate.
+            weekMatchups.sort((a, b) -> {
+                int burdenA = getBurden(teamStats, a);
+                int burdenB = getBurden(teamStats, b);
+                if (burdenA != burdenB) return Integer.compare(burdenB, burdenA); // desc
+                // Tiebreaker: team with fewer total games played gets earlier slot
+                int gpA = teamStats.get(a.homeTeamId).getTotalGames()
+                        + teamStats.get(a.awayTeamId).getTotalGames();
+                int gpB = teamStats.get(b.homeTeamId).getTotalGames()
+                        + teamStats.get(b.awayTeamId).getTotalGames();
+                return Integer.compare(gpA, gpB); // asc: fewer games → earlier slot
+            });
+
+            // Assign: matchup[0] (highest burden) → latest slot
+            //         matchup[N-1] (lowest burden) → earliest slot
+            for (int i = 0; i < weekMatchups.size(); i++) {
+                int slotIdx = weekSlots.size() - 1 - i; // latest → earliest
+                Matchup matchup = weekMatchups.get(i);
+                GameSlot slot = weekSlots.get(slotIdx);
+
                 Game game = createGame(seasonId, leagueId, matchup, slot);
                 games.add(game);
 
-                // Update stats
+                // Update stats so future weeks factor in this week's assignment
+                String category = categorizeTimeSlot(slot.getTime());
                 TimeSlotStats homeStats = teamStats.get(matchup.homeTeamId);
                 TimeSlotStats awayStats = teamStats.get(matchup.awayTeamId);
-
                 homeStats.incrementCategory(category);
                 awayStats.incrementCategory(category);
-
                 if (category.equals("late")) {
                     homeStats.setLastLateWeek(week);
                     awayStats.setLastLateWeek(week);
                 }
-
-                matchupIndex++;
             }
         }
 
@@ -321,6 +344,17 @@ public class ScheduleGeneratorService {
         logTimeSlotDistribution(teamStats);
 
         return games;
+    }
+
+    /**
+     * Burden score for a matchup: how many more early games than late games the two
+     * teams have played combined this season. Positive = too many early → needs late slot.
+     */
+    private int getBurden(Map<Long, TimeSlotStats> teamStats, Matchup matchup) {
+        TimeSlotStats home = teamStats.get(matchup.homeTeamId);
+        TimeSlotStats away = teamStats.get(matchup.awayTeamId);
+        return (home.getEarlyGames() - home.getLateGames())
+             + (away.getEarlyGames() - away.getLateGames());
     }
 
     /**
@@ -343,35 +377,6 @@ public class ScheduleGeneratorService {
         else {
             return "mid";
         }
-    }
-
-    /**
-     * Calculate fairness score for assigning a team to a time slot
-     * Lower score = more fair
-     */
-    private int calculateFairnessScore(TimeSlotStats stats, String category, int currentWeek) {
-        int score = 0;
-
-        // Penalty for playing late in consecutive weeks
-        if (category.equals("late") && stats.getLastLateWeek() != null) {
-            int weeksSinceLastLate = currentWeek - stats.getLastLateWeek();
-            if (weeksSinceLastLate == 1) {
-                score += 100; // Heavy penalty for consecutive weeks
-            } else if (weeksSinceLastLate == 2) {
-                score += 50; // Moderate penalty for 2 weeks apart
-            }
-        }
-
-        // Penalty for having more games in this category than average
-        int categoryCount = stats.getCategoryCount(category);
-        score += categoryCount * 10;
-
-        // Bonus for having fewer games in this category
-        if (categoryCount == 0) {
-            score -= 20;
-        }
-
-        return score;
     }
 
     /**
