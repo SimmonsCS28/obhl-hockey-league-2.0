@@ -152,12 +152,14 @@ public class GameController {
     @PostMapping("/generate")
     public ResponseEntity<?> generateSchedule(@Valid @RequestBody com.obhl.game.dto.ScheduleGenerateRequest request) {
         try {
+            int playoffWeeks = request.getPlayoffWeeks() != null ? request.getPlayoffWeeks() : 0;
             java.util.List<com.obhl.game.model.Game> games = scheduleGeneratorService.generateSchedule(
                     request.getSeasonId(),
                     request.getLeagueId(),
                     request.getTeamIds(),
                     request.getGameSlots(),
-                    request.getMaxWeeks());
+                    request.getMaxWeeks(),
+                    playoffWeeks);
 
             return ResponseEntity.status(HttpStatus.CREATED).body(games);
         } catch (RuntimeException e) {
@@ -170,6 +172,28 @@ public class GameController {
         try {
             scheduleGeneratorService.resetSchedule(seasonId);
             return ResponseEntity.ok("Schedule reset successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    /**
+     * Initialize the playoff bracket for a season.
+     * Assigns seeded team matchups to the first playoff round's game slots.
+     * Request body: { "teamIds": [id1, id2, ...] } ordered by standing (seed 1 first).
+     */
+    @PostMapping("/season/{seasonId}/initialize-bracket")
+    public ResponseEntity<?> initializePlayoffBracket(
+            @PathVariable Long seasonId,
+            @RequestBody java.util.Map<String, Object> body) {
+        try {
+            @SuppressWarnings("unchecked")
+            java.util.List<Object> rawIds = (java.util.List<Object>) body.get("teamIds");
+            java.util.List<Long> teamIds = rawIds.stream()
+                    .map(id -> id instanceof Number ? ((Number) id).longValue() : Long.parseLong(id.toString()))
+                    .toList();
+            java.util.List<GameDto.Response> updated = gameService.initializePlayoffBracket(seasonId, teamIds);
+            return ResponseEntity.ok(updated);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

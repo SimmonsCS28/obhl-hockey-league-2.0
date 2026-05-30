@@ -500,3 +500,69 @@
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+/* Playoff row styling */
+.schedule-manager .schedule-table .playoff-row {
+    background: linear-gradient(90deg, rgba(180, 130, 0, 0.12) 0%, rgba(180, 130, 0, 0.06) 100%);
+    border-left: 3px solid #d4a017;
+}
+
+.schedule-manager .schedule-table .playoff-row:hover {
+    background: linear-gradient(90deg, rgba(180, 130, 0, 0.22) 0%, rgba(180, 130, 0, 0.12) 100%);
+}
+
+.playoff-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #d4a017 0%, #b8860b 100%);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-right: 6px;
+    vertical-align: middle;
+    text-transform: uppercase;
+    box-shadow: 0 1px 4px rgba(212, 160, 23, 0.5);
+}
+
+/* Playoff weeks hint text */
+.playoff-weeks-hint {
+    margin-top: 6px;
+    font-size: 0.8rem;
+    color: #b8860b;
+    font-weight: 500;
+    padding: 6px 10px;
+    background: rgba(212, 160, 23, 0.1);
+    border-radius: 6px;
+    border-left: 3px solid #d4a017;
+    white-space: nowrap;
+}
+
+/* Initialize Bracket button */
+.btn-bracket-init {
+    margin-top: 12px;
+    margin-left: 10px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #d4a017 0%, #b8860b 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(212, 160, 23, 0.4);
+    letter-spacing: 0.3px;
+}
+
+.btn-bracket-init:hover:not(:disabled) {
+    background: linear-gradient(135deg, #e6b020 0%, #c8960d 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(212, 160, 23, 0.5);
+}
+
+.btn-bracket-init:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

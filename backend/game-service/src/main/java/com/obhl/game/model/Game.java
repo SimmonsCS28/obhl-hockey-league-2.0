@@ -68,6 +68,12 @@ public class Game {
     @Column(name = "week")
     private Integer week;
 
+    @Column(name = "playoff_round", length = 20)
+    private String playoffRound; // "QUARTERFINAL", "SEMIFINAL", "FINAL" — null for regular season
+
+    @Column(name = "bracket_position")
+    private Integer bracketPosition; // 1-indexed position within the playoff round
+
     @Column(name = "rink", length = 20)
     private String rink;
 

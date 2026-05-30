@@ -78,6 +78,7 @@ services:
       SPRING_DATASOURCE_USERNAME: obhl_admin
       SPRING_DATASOURCE_PASSWORD: changeme
       ENVIRONMENT: docker
+      SPRING_PROFILES_ACTIVE: docker
       APPLICATION_CONFIG_API_GATEWAY_URL: http://api-gateway:8000
       STATS_SERVICE_URL: http://stats-service:8003/api/v1
     ports:

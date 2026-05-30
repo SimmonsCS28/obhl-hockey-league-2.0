@@ -21,12 +21,10 @@ public class GameDto {
 
         private Long leagueId;
 
-        @NotNull
-        @Positive
+        // Min(0) allows TBD playoff games where teamId=0 means "to be determined"
+        // homeTeamId and awayTeamId are nullable — null means TBD (playoff games before bracket is set)
         private Long homeTeamId;
 
-        @NotNull
-        @Positive
         private Long awayTeamId;
 
         @NotNull
@@ -44,6 +42,9 @@ public class GameDto {
         private Integer week;
         private String rink;
         private String gameNotes;
+        private String gameType;       // "REGULAR_SEASON" or "PLAYOFF"
+        private String playoffRound;   // "QUARTERFINAL", "SEMIFINAL", "FINAL"
+        private Integer bracketPosition;
         private Long goalie1Id;
         private Long goalie2Id;
         private Long referee1Id;
@@ -70,6 +71,9 @@ public class GameDto {
         private Integer week;
         private String rink;
         private String gameNotes;
+        private String gameType;
+        private String playoffRound;
+        private Integer bracketPosition;
         private Long goalie1Id;
         private Long goalie2Id;
         private Long referee1Id;
@@ -135,6 +139,8 @@ public class GameDto {
         private String rink;
         private String gameNotes;
         private String gameType;
+        private String playoffRound;
+        private Integer bracketPosition;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
         private Long goalie1Id;

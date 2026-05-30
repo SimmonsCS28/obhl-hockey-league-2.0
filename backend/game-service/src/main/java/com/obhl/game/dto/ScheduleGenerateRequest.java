@@ -29,4 +29,8 @@ public class ScheduleGenerateRequest {
     @NotNull(message = "Max weeks is required")
     @Positive
     private Integer maxWeeks;
+
+    // Number of playoff weeks to append after maxWeeks (default 0)
+    // These slots will be created with gameType=PLAYOFF and TBD teams
+    private Integer playoffWeeks = 0;
 }
