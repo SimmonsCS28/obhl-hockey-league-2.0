@@ -203,7 +203,7 @@ const PlayerDashboard = () => {
                                 <TeamBadge
                                     teamName={team.name}
                                     teamColor={team.teamColor}
-                                    onClick={() => navigate(`/teams/${team.id}`)}
+                                    onClick={() => user?.roles?.includes('GM') ? navigate('/gm/team') : navigate(`/teams/${team.id}`)}
                                     style={{ fontSize: '1.1rem', padding: '8px 20px', cursor: 'pointer' }}
                                 />
                             </div>
