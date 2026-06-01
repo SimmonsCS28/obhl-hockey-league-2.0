@@ -81,9 +81,14 @@ public class UserController {
      */
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<UserDTO> createUser(@Valid @RequestBody CreateUserRequest request) {
-        UserDTO createdUser = userManagementService.createUser(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+    public ResponseEntity<?> createUser(@Valid @RequestBody CreateUserRequest request) {
+        try {
+            UserDTO createdUser = userManagementService.createUser(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", e.getMessage()));
+        }
     }
 
     /**

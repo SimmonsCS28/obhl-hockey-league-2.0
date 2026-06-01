@@ -278,7 +278,8 @@ const UserModal = ({ user, isCreating, onClose }) => {
 
             onClose(true);
         } catch (err) {
-            setError(err.message || 'Failed to save user');
+            const message = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to save user';
+            setError(message);
         } finally {
             setLoading(false);
         }
