@@ -100,6 +100,7 @@ public class GoalieShiftService {
         return games.stream().map(game -> {
             ShiftAssignmentDTO dto = new ShiftAssignmentDTO();
             dto.setGameId(game.getId());
+            dto.setSeasonId(game.getSeasonId());
             dto.setGameDate(game.getGameDate().toLocalDate());
             dto.setGameTime(game.getGameDate().toLocalTime());
 

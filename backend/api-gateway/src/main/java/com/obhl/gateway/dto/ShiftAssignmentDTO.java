@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ShiftAssignmentDTO {
     private Long gameId;
+    private Long seasonId;
     private LocalDate gameDate;
     private LocalTime gameTime;
     private String homeTeam;

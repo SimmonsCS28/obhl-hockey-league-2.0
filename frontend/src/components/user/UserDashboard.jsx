@@ -10,6 +10,7 @@ const UserDashboard = () => {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [shifts, setShifts] = useState([]);
     const [teams, setTeams] = useState([]);
+    const [activeSeason, setActiveSeason] = useState(null);
     const [loading, setLoading] = useState(true);
     const [shiftsError, setShiftsError] = useState(null);
     const [userName, setUserName] = useState(null);
@@ -24,6 +25,14 @@ const UserDashboard = () => {
             setTeams(teamsData);
         } catch (error) {
             console.error("Failed to fetch teams:", error);
+        }
+
+        try {
+            const seasons = await api.getSeasons();
+            const active = seasons.find(s => s.isActive) || seasons[seasons.length - 1] || null;
+            setActiveSeason(active);
+        } catch (error) {
+            console.warn("Could not fetch seasons:", error.message);
         }
 
         try {
@@ -224,7 +233,10 @@ const UserDashboard = () => {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {shifts.map((shift, index) => {
+                                    {(activeSeason
+                                        ? shifts.filter(s => !s.seasonId || s.seasonId === activeSeason.id)
+                                        : shifts
+                                    ).map((shift, index) => {
                                         const homeTeam = getTeamByName(shift.homeTeam);
                                         const awayTeam = getTeamByName(shift.awayTeam);
                                         const homeBg = getValidColor(homeTeam?.teamColor);
