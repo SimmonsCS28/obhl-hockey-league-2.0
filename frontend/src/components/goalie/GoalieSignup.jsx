@@ -128,7 +128,7 @@ const GoalieSignup = () => {
                         {loading ? 'Creating Account...' : 'Sign Up'}
                     </button>
                     <div className="login-link">
-                        Already have an account? <a href="/login">Log In</a>
+                        Already have an account? <button type="button" onClick={() => navigate('/')} style={{ background: 'none', border: 'none', padding: 0, color: 'inherit', textDecoration: 'underline', cursor: 'pointer', font: 'inherit' }}>Log In</button>
                     </div>
                 </form>
             </div>

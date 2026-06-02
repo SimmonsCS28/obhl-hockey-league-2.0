@@ -48,7 +48,7 @@ const ForgotPassword = () => {
                 newPassword: formData.newPassword
             });
             setMessage('Password reset successfully! Redirecting to login...');
-            setTimeout(() => navigate('/login'), 2000);
+            setTimeout(() => navigate('/'), 2000);
         } catch (err) {
             setError(err.message || 'Failed to reset password. Check your answer.');
             setLoading(false);
@@ -131,7 +131,13 @@ const ForgotPassword = () => {
                 )}
 
                 <div className="login-link">
-                    <a href="/login">Back to Login</a>
+                    <button
+                        type="button"
+                        onClick={() => navigate('/')}
+                        style={{ background: 'none', border: 'none', padding: 0, color: 'inherit', textDecoration: 'underline', cursor: 'pointer', font: 'inherit' }}
+                    >
+                        Back to Login
+                    </button>
                 </div>
             </div>
         </div>

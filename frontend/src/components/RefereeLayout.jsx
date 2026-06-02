@@ -8,7 +8,7 @@ const RefereeLayout = () => {
 
     const handleLogout = () => {
         logout();
-        navigate('/login');
+        navigate('/');
     };
 
     return (
