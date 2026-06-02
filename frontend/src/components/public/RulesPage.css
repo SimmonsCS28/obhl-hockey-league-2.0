@@ -53,6 +53,8 @@
     background: rgba(15, 23, 42, 0.82);
     backdrop-filter: blur(4px);
     border-radius: 12px;
+    overflow: hidden;
+    min-width: 0;
 }
 
 /* ── Meta Bar (last updated) ── */
@@ -75,9 +77,42 @@
 
 /* ── Rules Content (from Quill HTML output) ── */
 .rules-content {
-    color: #cbd5e1;
-    line-height: 1.55;
+    color: #e2e8f0;
+    line-height: 1.7;
     font-size: 0.97rem;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    min-width: 0;
+    width: 100%;
+}
+
+/* ── Rule Items (generated from PDF) ── */
+.rules-content .rule-item {
+    background: rgba(30, 41, 59, 0.75);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+    border-left: 3px solid rgba(96, 165, 250, 0.5);
+    border-radius: 8px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.85rem;
+    color: #e2e8f0;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    min-width: 0;
+    box-sizing: border-box;
+    width: 100%;
+}
+
+.rules-content .rule-item p {
+    color: #e2e8f0;
+    margin: 0 0 0.25rem 0 !important;
+}
+
+.rules-content .rule-sub {
+    color: #cbd5e1;
+    padding-left: 1.25rem;
+    margin-top: 0.35rem !important;
+    border-left: 2px solid rgba(148, 163, 184, 0.2);
+    margin-left: 0.5rem;
 }
 
 /* These target the HTML that Quill outputs */
@@ -112,7 +147,8 @@
 }
 
 .rules-content strong {
-    color: #e2e8f0;
+    color: #93c5fd;
+    font-weight: 600;
 }
 
 .rules-content ol,
