@@ -86,6 +86,56 @@ function TeamRosterPage() {
         return isLight ? '#2c3e50' : 'white';
     };
 
+    const generateICS = () => {
+        if (!team || schedule.length === 0) return;
+
+        const formatICSDate = (date) =>
+            date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+        let icsContent = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//OBHL//Hockey Schedule//EN',
+            'CALSCALE:GREGORIAN',
+            'METHOD:PUBLISH',
+            `X-WR-CALNAME:${team.name} - OBHL Schedule`,
+            'X-WR-TIMEZONE:America/Chicago',
+        ];
+
+        schedule.forEach((game) => {
+            const homeTeam = leagueTeams.find(t => t.id === game.homeTeamId);
+            const awayTeam = leagueTeams.find(t => t.id === game.awayTeamId);
+            const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
+            const endDate = new Date(gameDate.getTime() + 90 * 60 * 1000);
+            const summary = `${homeTeam?.name || 'TBD'} vs ${awayTeam?.name || 'TBD'}`;
+            const description = `Week ${game.week || 'TBD'} - ${summary}`;
+
+            icsContent.push(
+                'BEGIN:VEVENT',
+                `UID:obhl-game-${game.id}@oldbuzzardhockey.com`,
+                `DTSTAMP:${formatICSDate(new Date())}`,
+                `DTSTART:${formatICSDate(gameDate)}`,
+                `DTEND:${formatICSDate(endDate)}`,
+                `SUMMARY:${summary}`,
+                `LOCATION:${game.rink || 'TBD'}`,
+                `DESCRIPTION:${description}`,
+                'STATUS:CONFIRMED',
+                'SEQUENCE:0',
+                'END:VEVENT'
+            );
+        });
+
+        icsContent.push('END:VCALENDAR');
+
+        const blob = new Blob([icsContent.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+        const link = document.createElement('a');
+        link.href = window.URL.createObjectURL(blob);
+        link.download = `${team.name.replace(/\s+/g, '_')}_Schedule.ics`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     if (loading) return <div className="loading">Loading team details...</div>;
     if (error) return <div className="error">Error: {error}</div>;
     if (!team) return <div className="error">Team not found</div>;
@@ -173,7 +223,18 @@ function TeamRosterPage() {
             </div>
 
             <div className="team-schedule-content" style={{ marginTop: '2rem' }}>
-                <h2>Team Schedule</h2>
+                <div className="schedule-section-header">
+                    <h2>Team Schedule</h2>
+                    {schedule.length > 0 && (
+                        <button
+                            className="download-calendar-btn"
+                            onClick={generateICS}
+                            title={`Download ${team.name} schedule as calendar file`}
+                        >
+                            📅 Download Calendar
+                        </button>
+                    )}
+                </div>
                 {schedule.length === 0 ? (
                     <p className="no-roster">No games scheduled for this team.</p>
                 ) : (

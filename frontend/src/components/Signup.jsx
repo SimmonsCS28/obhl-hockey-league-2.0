@@ -75,19 +75,22 @@ const Signup = () => {
             });
             navigate('/', { state: { message: 'Account created successfully! Please log in.' } });
         } catch (err) {
-            // Read the actual error from the response body
-            const data = err.response?.data;
-            const raw = data?.error || '';
+            // api.js uses fetch and throws Error(responseBodyText)
+            // so err.message is the raw JSON string from the server
+            let raw = '';
+            try {
+                const parsed = JSON.parse(err.message);
+                raw = parsed?.error || '';
+            } catch {
+                raw = '';
+            }
 
             if (raw.toLowerCase().includes('email already exists')) {
-                // Extract the email from "Email already exists: foo@bar.com"
                 const email = raw.split(':').slice(1).join(':').trim();
                 setError(`An account with the email address ${email} already exists. Please contact the site administrator at csimmons@sunprairieice.com for help.`);
             } else if (raw.toLowerCase().includes('username already exists')) {
                 const username = raw.split(':').slice(1).join(':').trim();
                 setError(`An account with the username "${username}" already exists. Please contact the site administrator at csimmons@sunprairieice.com for help.`);
-            } else if (err.response?.status === 409) {
-                setError('An account with that username or email already exists. Please contact csimmons@sunprairieice.com for help.');
             } else {
                 setError('Failed to create account. Please try again.');
             }

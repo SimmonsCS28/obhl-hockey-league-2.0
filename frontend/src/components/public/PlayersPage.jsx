@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useSeason } from '../../contexts/SeasonContext';
 import './PlayersPage.css';
 
@@ -259,7 +260,8 @@ function PlayersPage() {
                                         <td>{player.position || 'N/A'}</td>
                                         <td>
                                             {team ? (
-                                                <span
+                                                <Link
+                                                    to={`/teams/${team.id}`}
                                                     style={{
                                                         backgroundColor: bg,
                                                         color: textColor,
@@ -268,11 +270,17 @@ function PlayersPage() {
                                                         display: 'inline-block',
                                                         fontWeight: '600',
                                                         minWidth: '100px',
-                                                        textAlign: 'center'
+                                                        textAlign: 'center',
+                                                        textDecoration: 'none',
+                                                        cursor: 'pointer',
+                                                        transition: 'opacity 0.15s ease',
                                                     }}
+                                                    onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
+                                                    onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                                                    title={`View ${team.name} roster`}
                                                 >
                                                     {team.name}
-                                                </span>
+                                                </Link>
                                             ) : 'Free Agent'}
                                         </td>
                                     </tr>
