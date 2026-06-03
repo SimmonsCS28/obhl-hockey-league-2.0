@@ -1,8 +1,10 @@
 package com.obhl.gateway.controller;
 
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -24,7 +26,7 @@ public class StaffSignupController {
     private final UserManagementService userManagementService;
 
     @PostMapping("/signup")
-    public ResponseEntity<UserDTO> signup(@Valid @RequestBody CreateUserRequest request) {
+    public ResponseEntity<?> signup(@Valid @RequestBody CreateUserRequest request) {
         // Handle roles: prefer 'roles' set, fallback to 'role' string
         if (request.getRoles() == null || request.getRoles().isEmpty()) {
             Set<String> roles = new HashSet<>();
@@ -41,7 +43,12 @@ public class StaffSignupController {
             request.setRoles(upperRoles);
         }
 
-        UserDTO newUser = userManagementService.createUser(request);
-        return ResponseEntity.ok(newUser);
+        try {
+            UserDTO newUser = userManagementService.createUser(request);
+            return ResponseEntity.ok(newUser);
+        } catch (RuntimeException ex) {
+            String msg = ex.getMessage() != null ? ex.getMessage() : "An account with that username or email already exists.";
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("error", msg));
+        }
     }
 }

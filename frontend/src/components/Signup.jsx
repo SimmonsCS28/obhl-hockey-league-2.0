@@ -75,13 +75,20 @@ const Signup = () => {
             });
             navigate('/', { state: { message: 'Account created successfully! Please log in.' } });
         } catch (err) {
-            const errorMessage = err.message || 'Failed to create account';
-            // Extract meaningful message if it's a JSON string
-            try {
-                const parsed = JSON.parse(errorMessage);
-                setError(parsed.message || errorMessage);
-            } catch {
-                setError(errorMessage);
+            // Read the actual error from the response body
+            const data = err.response?.data;
+            if (data?.error) {
+                const raw = data.error;
+                // Turn technical duplicate messages into friendly ones
+                if (raw.toLowerCase().includes('username') && raw.toLowerCase().includes('exists')) {
+                    setError('An account with that username already exists. Please choose a different username or log in.');
+                } else if (raw.toLowerCase().includes('email') && raw.toLowerCase().includes('exists')) {
+                    setError('An account with that email address already exists. Please use a different email or log in.');
+                } else {
+                    setError(raw);
+                }
+            } else {
+                setError('Failed to create account. Please try again.');
             }
         } finally {
             setLoading(false);
