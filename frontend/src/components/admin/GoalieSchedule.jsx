@@ -12,6 +12,8 @@ function GoalieSchedule() {
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('all'); // all, assigned, unassigned
     const [weekFilter, setWeekFilter] = useState('all'); // all or specific week number
+    const [hoveredCell, setHoveredCell] = useState(null); // { goalieId, date }
+    const [overriding, setOverriding] = useState(null); // { goalieId, date } while saving
 
     useEffect(() => {
         loadInitialData();
@@ -178,6 +180,28 @@ function GoalieSchedule() {
 
     const isGoalieUnavailableForDate = (goalieId, dateStr) =>
         unavailability.some(u => u.userId === goalieId && u.date === dateStr);
+
+    const handleOverride = async (goalieId, dateStr) => {
+        const key = `${goalieId}-${dateStr}`;
+        setOverriding({ goalieId, date: dateStr });
+        const currentlyUnavailable = isGoalieUnavailableForDate(goalieId, dateStr);
+        try {
+            if (currentlyUnavailable) {
+                // Flip to Available: remove the unavailability record
+                await api.adminRemoveGoalieUnavailability(goalieId, dateStr);
+                setUnavailability(prev => prev.filter(u => !(u.userId === goalieId && u.date === dateStr)));
+            } else {
+                // Flip to Unavailable: add an unavailability record
+                await api.adminMarkGoalieUnavailable(goalieId, dateStr);
+                setUnavailability(prev => [...prev, { userId: goalieId, date: dateStr }]);
+            }
+        } catch (err) {
+            console.error('Override failed:', err);
+            alert('Failed to override availability. Please try again.');
+        } finally {
+            setOverriding(null);
+        }
+    };
 
     const formatPanelDate = (dateStr) => {
         const d = new Date(dateStr + 'T12:00:00'); // noon to avoid timezone shifts
@@ -395,9 +419,30 @@ function GoalieSchedule() {
                                                 const unavailable = isGoalieUnavailableForDate(goalie.id, date);
                                                 return (
                                                     <td key={date} className="availability-cell">
-                                                        <span className={`availability-badge ${unavailable ? 'badge-unavailable' : 'badge-available'}`}>
-                                                            {unavailable ? '✗ Unavailable' : '✓ Available'}
-                                                        </span>
+                                                        {(() => {
+                                                            const unavailable = isGoalieUnavailableForDate(goalie.id, date);
+                                                            const cellKey = `${goalie.id}-${date}`;
+                                                            const isHovered = hoveredCell === cellKey;
+                                                            const isSaving = overriding?.goalieId === goalie.id && overriding?.date === date;
+                                                            return (
+                                                                <span
+                                                                    className={`availability-badge ${
+                                                                        isSaving ? 'badge-overriding' :
+                                                                        isHovered ? 'badge-override-hover' :
+                                                                        unavailable ? 'badge-unavailable' : 'badge-available'
+                                                                    }`}
+                                                                    style={{ cursor: 'pointer' }}
+                                                                    title={`Click to override: mark as ${unavailable ? 'Available' : 'Unavailable'}`}
+                                                                    onMouseEnter={() => setHoveredCell(cellKey)}
+                                                                    onMouseLeave={() => setHoveredCell(null)}
+                                                                    onClick={() => !isSaving && handleOverride(goalie.id, date)}
+                                                                >
+                                                                    {isSaving ? '⟳ Saving...' :
+                                                                     isHovered ? `⟳ Override` :
+                                                                     unavailable ? '✗ Unavailable' : '✓ Available'}
+                                                                </span>
+                                                            );
+                                                        })()}
                                                     </td>
                                                 );
                                             })}

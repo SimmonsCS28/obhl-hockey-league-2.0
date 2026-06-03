@@ -94,6 +94,34 @@ public class GoalieShiftController {
     }
 
     /**
+     * Admin override: mark a specific goalie as unavailable for a date
+     */
+    @PostMapping("/admin/override/{userId}/{date}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> adminMarkUnavailable(
+            @PathVariable Long userId,
+            @PathVariable String date) {
+        LocalDate localDate = LocalDate.parse(date);
+        GoalieAvailabilityRequest request = new GoalieAvailabilityRequest();
+        request.setDates(java.util.List.of(localDate));
+        goalieShiftService.markUnavailable(userId, request);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * Admin override: remove a specific goalie's unavailability for a date
+     */
+    @DeleteMapping("/admin/override/{userId}/{date}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> adminRemoveUnavailability(
+            @PathVariable Long userId,
+            @PathVariable String date) {
+        LocalDate localDate = LocalDate.parse(date);
+        goalieShiftService.removeUnavailableDate(userId, localDate);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
      * Get my assigned games
      */
     @GetMapping("/my-assignments")

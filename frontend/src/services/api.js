@@ -450,6 +450,15 @@ const api = {
         return request(`/shifts/goalie/unavailable/${date}`, { method: 'DELETE' });
     },
 
+    // Admin-only: override any goalie's availability for a specific date
+    async adminMarkGoalieUnavailable(userId, date) {
+        return request(`/shifts/goalie/admin/override/${userId}/${date}`, { method: 'POST' });
+    },
+
+    async adminRemoveGoalieUnavailability(userId, date) {
+        return request(`/shifts/goalie/admin/override/${userId}/${date}`, { method: 'DELETE' });
+    },
+
     // ============================================
     // PLAYER STATS API
     // ============================================

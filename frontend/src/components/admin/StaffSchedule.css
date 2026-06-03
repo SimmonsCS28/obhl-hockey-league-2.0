@@ -341,3 +341,24 @@
     color: #a0aec0;
     font-size: 0.95rem;
 }
+
+/* Override hover state — amber to signal admin action */
+.badge-override-hover {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.5);
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+/* Saving state — muted grey with pulse */
+.badge-overriding {
+    background: rgba(160, 174, 192, 0.15);
+    color: #a0aec0;
+    border: 1px solid rgba(160, 174, 192, 0.3);
+    animation: pulse-saving 1s ease-in-out infinite;
+}
+
+@keyframes pulse-saving {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.5; }
+}
