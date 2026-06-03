@@ -77,16 +77,17 @@ const Signup = () => {
         } catch (err) {
             // Read the actual error from the response body
             const data = err.response?.data;
-            if (data?.error) {
-                const raw = data.error;
-                // Turn technical duplicate messages into friendly ones
-                if (raw.toLowerCase().includes('username') && raw.toLowerCase().includes('exists')) {
-                    setError('An account with that username already exists. Please choose a different username or log in.');
-                } else if (raw.toLowerCase().includes('email') && raw.toLowerCase().includes('exists')) {
-                    setError('An account with that email address already exists. Please use a different email or log in.');
-                } else {
-                    setError(raw);
-                }
+            const raw = data?.error || '';
+
+            if (raw.toLowerCase().includes('email already exists')) {
+                // Extract the email from "Email already exists: foo@bar.com"
+                const email = raw.split(':').slice(1).join(':').trim();
+                setError(`An account with the email address ${email} already exists. Please contact the site administrator at csimmons@sunprairieice.com for help.`);
+            } else if (raw.toLowerCase().includes('username already exists')) {
+                const username = raw.split(':').slice(1).join(':').trim();
+                setError(`An account with the username "${username}" already exists. Please contact the site administrator at csimmons@sunprairieice.com for help.`);
+            } else if (err.response?.status === 409) {
+                setError('An account with that username or email already exists. Please contact csimmons@sunprairieice.com for help.');
             } else {
                 setError('Failed to create account. Please try again.');
             }
