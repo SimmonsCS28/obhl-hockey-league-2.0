@@ -5,11 +5,9 @@ import com.obhl.league.dto.AnnouncementDTO;
 import com.obhl.league.model.Announcement;
 import com.obhl.league.repository.AnnouncementRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -19,25 +17,10 @@ public class AnnouncementService {
 
     private final AnnouncementRepository repository;
 
-    @Value("${announcements.auto-deactivate.days:14}")
-    private int autoDeactivateDays;
-
-    @Scheduled(cron = "0 0 0 * * ?") // Run at midnight every day
-    public void deactivateOldAnnouncements() {
-        LocalDateTime cutoffDate = LocalDateTime.now().minusDays(autoDeactivateDays);
-        List<Announcement> expiredAnnouncements = repository.findByIsActiveTrueAndCreatedAtBefore(cutoffDate);
-        
-        if (!expiredAnnouncements.isEmpty()) {
-            expiredAnnouncements.forEach(a -> a.setIsActive(false));
-            repository.saveAll(expiredAnnouncements);
-            System.out.println("Auto-deactivated " + expiredAnnouncements.size() + " old announcements.");
-        }
-    }
-
     public List<AnnouncementDTO> getAllAnnouncements(boolean activeOnly) {
-        List<Announcement> announcements = activeOnly ?
-                repository.findAllByIsActiveTrueOrderByCreatedAtDesc() :
-                repository.findAllByOrderByCreatedAtDesc();
+        List<Announcement> announcements = activeOnly
+                ? repository.findActiveWithinDateRange(LocalDate.now())
+                : repository.findAllByOrderByCreatedAtDesc();
         return announcements.stream().map(this::mapToDTO).collect(Collectors.toList());
     }
 
@@ -48,6 +31,8 @@ public class AnnouncementService {
                 .authorId(dto.getAuthorId())
                 .authorName(dto.getAuthorName())
                 .isActive(dto.getIsActive() != null ? dto.getIsActive() : true)
+                .startDate(dto.getStartDate())
+                .endDate(dto.getEndDate())
                 .build();
         return mapToDTO(repository.save(announcement));
     }
@@ -55,13 +40,15 @@ public class AnnouncementService {
     public AnnouncementDTO updateAnnouncement(Integer id, AnnouncementCreateDTO dto) {
         Announcement announcement = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Announcement not found"));
-        
+
         announcement.setTitle(dto.getTitle());
         announcement.setContent(dto.getContent());
         if (dto.getIsActive() != null) {
             announcement.setIsActive(dto.getIsActive());
         }
-        
+        announcement.setStartDate(dto.getStartDate());
+        announcement.setEndDate(dto.getEndDate());
+
         return mapToDTO(repository.save(announcement));
     }
 
@@ -84,6 +71,8 @@ public class AnnouncementService {
                 .authorId(announcement.getAuthorId())
                 .authorName(announcement.getAuthorName())
                 .isActive(announcement.getIsActive())
+                .startDate(announcement.getStartDate())
+                .endDate(announcement.getEndDate())
                 .createdAt(announcement.getCreatedAt())
                 .updatedAt(announcement.getUpdatedAt())
                 .build();

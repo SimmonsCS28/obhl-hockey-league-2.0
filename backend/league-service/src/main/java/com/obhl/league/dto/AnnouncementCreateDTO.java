@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Data
 @Builder
 @NoArgsConstructor
@@ -15,4 +17,6 @@ public class AnnouncementCreateDTO {
     private Integer authorId;
     private String authorName;
     private Boolean isActive;
+    private LocalDate startDate;
+    private LocalDate endDate;
 }

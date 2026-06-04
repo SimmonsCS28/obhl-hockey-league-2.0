@@ -87,6 +87,45 @@
     border-color: #4299e1;
 }
 
+/* Two-column row for date pickers */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 600px) {
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+.form-group input[type="date"] {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+    background: white;
+    color: #2d3748;
+    box-sizing: border-box;
+}
+
+.form-group input[type="date"]:focus {
+    outline: none;
+    border-color: #4299e1;
+}
+
+.field-hint {
+    display: block;
+    margin-top: 0.35rem;
+    font-size: 0.8rem;
+    color: #718096;
+    font-style: italic;
+}
+
 .editor-container {
     background: white;
 }

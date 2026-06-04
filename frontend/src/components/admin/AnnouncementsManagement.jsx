@@ -9,12 +9,14 @@ function AnnouncementsManagement() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [showForm, setShowForm] = useState(false);
-    
+
     // Form state
     const [currentAnnouncement, setCurrentAnnouncement] = useState(null);
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [isActive, setIsActive] = useState(true);
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
 
     const modules = {
         toolbar: [
@@ -23,6 +25,16 @@ function AnnouncementsManagement() {
             [{ 'list': 'ordered'}, { 'list': 'bullet' }],
             ['link', 'clean']
         ]
+    };
+
+    // Helper: today as YYYY-MM-DD
+    const todayStr = () => new Date().toISOString().split('T')[0];
+
+    // Helper: N days from today as YYYY-MM-DD
+    const daysFromToday = (n) => {
+        const d = new Date();
+        d.setDate(d.getDate() + n);
+        return d.toISOString().split('T')[0];
     };
 
     useEffect(() => {
@@ -47,6 +59,8 @@ function AnnouncementsManagement() {
         setTitle('');
         setContent('');
         setIsActive(true);
+        setStartDate(todayStr());
+        setEndDate(daysFromToday(14));
         setShowForm(true);
     };
 
@@ -55,6 +69,8 @@ function AnnouncementsManagement() {
         setTitle(ann.title);
         setContent(ann.content);
         setIsActive(ann.isActive);
+        setStartDate(ann.startDate || '');
+        setEndDate(ann.endDate || '');
         setShowForm(true);
     };
 
@@ -65,9 +81,14 @@ function AnnouncementsManagement() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
         if (!title.trim() || !content.trim() || content === '<p><br></p>') {
             alert('Title and content are required.');
+            return;
+        }
+
+        if (startDate && endDate && endDate < startDate) {
+            alert('End date must be on or after the start date.');
             return;
         }
 
@@ -76,11 +97,10 @@ function AnnouncementsManagement() {
                 title,
                 content,
                 isActive,
-                // In a real app we'd get authorId from the decoded JWT or a context Auth stub
-                // but since we need an author name for display, we'll request the user id here if available somewhere.
-                // Assuming admin user ID is 1 for now if we can't extract it easily, or null.
                 authorId: null,
-                authorName: 'Admin'
+                authorName: 'Admin',
+                startDate: startDate || null,
+                endDate: endDate || null,
             };
 
             if (currentAnnouncement) {
@@ -88,7 +108,7 @@ function AnnouncementsManagement() {
             } else {
                 await api.createAnnouncement(payload);
             }
-            
+
             await loadAnnouncements();
             setShowForm(false);
         } catch (err) {
@@ -120,9 +140,19 @@ function AnnouncementsManagement() {
     };
 
     const formatDate = (dateString) => {
-        if (!dateString) return '';
-        const d = new Date(dateString.endsWith('Z') ? dateString : dateString + 'Z');
-        return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute:'2-digit' });
+        if (!dateString) return '—';
+        // Handle both LocalDate (YYYY-MM-DD) and LocalDateTime strings
+        const d = new Date(dateString.length === 10 ? dateString + 'T12:00:00' : (dateString.endsWith('Z') ? dateString : dateString + 'Z'));
+        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    };
+
+    // Determine if an announcement is currently live based on date range
+    const isLive = (ann) => {
+        if (!ann.isActive) return false;
+        const today = todayStr();
+        if (ann.startDate && ann.startDate > today) return false;
+        if (ann.endDate && ann.endDate < today) return false;
+        return true;
     };
 
     return (
@@ -144,35 +174,56 @@ function AnnouncementsManagement() {
                     <form onSubmit={handleSubmit} className="announcement-form">
                         <div className="form-group">
                             <label>Title</label>
-                            <input 
-                                type="text" 
-                                value={title} 
-                                onChange={(e) => setTitle(e.target.value)} 
+                            <input
+                                type="text"
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
                                 placeholder="E.g., Winter Season Registration Open!"
                                 required
                             />
                         </div>
-                        
+
                         <div className="form-group">
                             <label>Content</label>
                             <div className="editor-container">
-                                <ReactQuill 
-                                    theme="snow" 
-                                    value={content} 
-                                    onChange={setContent} 
+                                <ReactQuill
+                                    theme="snow"
+                                    value={content}
+                                    onChange={setContent}
                                     modules={modules}
                                 />
                             </div>
                         </div>
 
+                        <div className="form-row">
+                            <div className="form-group">
+                                <label>Display Start Date</label>
+                                <input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                />
+                                <span className="field-hint">Leave blank to show immediately</span>
+                            </div>
+                            <div className="form-group">
+                                <label>Display End Date</label>
+                                <input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                />
+                                <span className="field-hint">Leave blank to show indefinitely</span>
+                            </div>
+                        </div>
+
                         <div className="form-group checkbox-group">
                             <label>
-                                <input 
-                                    type="checkbox" 
-                                    checked={isActive} 
-                                    onChange={(e) => setIsActive(e.target.checked)} 
+                                <input
+                                    type="checkbox"
+                                    checked={isActive}
+                                    onChange={(e) => setIsActive(e.target.checked)}
                                 />
-                                Active (Show on Public Home Page)
+                                Active (manual on/off override)
                             </label>
                         </div>
 
@@ -196,26 +247,26 @@ function AnnouncementsManagement() {
                                 <tr>
                                     <th>Status</th>
                                     <th>Title</th>
-                                    <th>Created At</th>
-                                    <th>Last Updated</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {announcements.map(ann => (
-                                    <tr key={ann.id} className={!ann.isActive ? 'inactive-row' : ''}>
+                                    <tr key={ann.id} className={!isLive(ann) ? 'inactive-row' : ''}>
                                         <td>
-                                            <button 
-                                                className={`status-toggle ${ann.isActive ? 'active' : 'inactive'}`}
+                                            <button
+                                                className={`status-toggle ${isLive(ann) ? 'active' : 'inactive'}`}
                                                 onClick={() => handleToggleActive(ann.id, ann.isActive)}
                                                 title={ann.isActive ? 'Click to Deactivate' : 'Click to Activate'}
                                             >
-                                                {ann.isActive ? '🟢 Active' : '⚪ Inactive'}
+                                                {isLive(ann) ? '🟢 Live' : ann.isActive ? '🟡 Scheduled' : '⚪ Inactive'}
                                             </button>
                                         </td>
                                         <td><strong>{ann.title}</strong></td>
-                                        <td>{formatDate(ann.createdAt)}</td>
-                                        <td>{formatDate(ann.updatedAt)}</td>
+                                        <td>{formatDate(ann.startDate)}</td>
+                                        <td>{formatDate(ann.endDate)}</td>
                                         <td className="actions-cell">
                                             <button onClick={() => handleEditClick(ann)} className="btn-edit-small">Edit</button>
                                             <button onClick={() => handleDelete(ann.id)} className="btn-delete-small">Delete</button>
