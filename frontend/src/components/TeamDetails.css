@@ -171,9 +171,16 @@
     cursor: not-allowed;
 }
 
+.roster-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+}
+
 .roster-table {
     width: 100%;
     border-collapse: collapse;
+    min-width: 320px;
 }
 
 .roster-table th {
@@ -310,3 +317,30 @@
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
+
+@media (max-width: 480px) {
+    .roster-section {
+        padding: 1rem;
+        overflow: hidden;
+    }
+
+    .section-header {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .roster-table th,
+    .roster-table td {
+        padding: 0.6rem 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .team-header-colored {
+        padding: 1.5rem 1rem;
+    }
+
+    .team-header-colored h1,
+    .team-name-editable {
+        font-size: 2rem;
+    }
+}

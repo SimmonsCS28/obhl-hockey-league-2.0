@@ -341,19 +341,21 @@ function TeamDetails({ team: propTeam, onBack }) {
                     </div>
                 )}
 
+                <div className="roster-table-wrapper">
                 <table className="roster-table">
                     <thead>
                         <tr>
                             <th>#</th>
                             <th>Name</th>
                             <th>Position</th>
+                            <th>Rating</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {roster.length === 0 ? (
                             <tr>
-                                <td colSpan="4" className="empty-roster">No players on roster</td>
+                                <td colSpan="5" className="empty-roster">No players on roster</td>
                             </tr>
                         ) : (
                             roster.map(player => (
@@ -401,6 +403,7 @@ function TeamDetails({ team: propTeam, onBack }) {
                                         {player.skillRating >= 9 && <span className="twogl-badge">2GL</span>}
                                     </td>
                                     <td>{player.position}</td>
+                                    <td>{player.skillRating ?? '—'}</td>
                                     <td>
                                         <button
                                             onClick={() => initiateRemovePlayer(player)}
@@ -414,6 +417,7 @@ function TeamDetails({ team: propTeam, onBack }) {
                         )}
                     </tbody>
                 </table>
+                </div>
             </div>
 
             {showConfirmModal && (
