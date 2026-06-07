@@ -243,6 +243,9 @@ function TeamManagement() {
                                     <span className={`status-badge ${team.active ? 'active' : 'inactive'}`}>
                                         {team.active ? 'Active' : 'Inactive'}
                                     </span>
+                                    <span className="team-id-badge">
+                                        ID: {team.id}
+                                    </span>
                                 </div>
                             </div>
                             <div className="team-card-actions">

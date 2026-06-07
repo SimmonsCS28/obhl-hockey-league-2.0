@@ -29,17 +29,8 @@ function AdminLayout({ children, activeTab }) {
         <div className="admin-layout">
             <nav className="admin-nav">
                 <div className="admin-nav-header">
-                    <h1>OBHL Admin</h1>
-                    <button
-                        className="hamburger-menu"
-                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        aria-label="Toggle menu"
-                    >
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                    </button>
-                     <div className="admin-user-info" style={{ alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                        <h1>OBHL Admin</h1>
                         <div className="season-selector-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '3px' }}>
                             <label className="season-selector-label" style={{ margin: 0, lineHeight: 1 }}>Season</label>
                             <select
@@ -72,6 +63,17 @@ function AdminLayout({ children, activeTab }) {
                                 ))}
                             </select>
                         </div>
+                    </div>
+                    <button
+                        className="hamburger-menu"
+                        onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                        aria-label="Toggle menu"
+                    >
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                    <div className="admin-user-info" style={{ alignItems: 'center' }}>
                         <div className="admin-user-details">
                             <span className="user-name">{user?.firstName} {user?.lastName}</span>
                             <span className="user-email">{user?.email}</span>

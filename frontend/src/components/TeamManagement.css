@@ -135,12 +135,24 @@
 
 .team-status {
     margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .status-badge {
     display: inline-block;
     padding: 0.25rem 0.75rem;
     border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.team-id-badge {
+    background: #000000;
+    color: #ffffff;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
     font-size: 0.875rem;
     font-weight: 600;
 }
