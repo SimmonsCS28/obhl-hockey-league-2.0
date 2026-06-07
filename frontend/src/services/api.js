@@ -87,11 +87,14 @@ const api = {
         });
     },
 
-    async changePassword(oldPassword, newPassword, token) {
+    async changePassword(oldPassword, newPassword, token, securityQuestion, securityAnswer) {
+        const body = { oldPassword, newPassword };
+        if (securityQuestion) body.securityQuestion = securityQuestion;
+        if (securityAnswer) body.securityAnswer = securityAnswer;
         return request('/auth/change-password', {
             method: 'POST',
             headers: token ? { 'Authorization': `Bearer ${token}` } : {},
-            body: JSON.stringify({ oldPassword, newPassword })
+            body: JSON.stringify(body)
         });
     },
 

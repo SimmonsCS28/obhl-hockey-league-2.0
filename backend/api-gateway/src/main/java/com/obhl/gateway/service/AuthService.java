@@ -95,9 +95,11 @@ public class AuthService {
                 user.getTeamId(),
                 user.getLastLogin());
 
-        // Create login response with password change flag
+        // Create login response with password change flag and security question status
+        boolean hasSecurityQuestion = user.getSecurityQuestion() != null
+                && !user.getSecurityQuestion().isBlank();
         AuthDto.LoginResponse response = new AuthDto.LoginResponse(token, "Bearer", userInfo,
-                user.getMustChangePassword());
+                user.getMustChangePassword(), hasSecurityQuestion);
 
         return response;
     }
@@ -128,6 +130,15 @@ public class AuthService {
         // Update password and clear must_change_password flag
         user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
         user.setMustChangePassword(false);
+
+        // Save security question/answer if provided (first-login setup)
+        if (request.getSecurityQuestion() != null && !request.getSecurityQuestion().isBlank()
+                && request.getSecurityAnswer() != null && !request.getSecurityAnswer().isBlank()) {
+            user.setSecurityQuestion(request.getSecurityQuestion());
+            user.setSecurityAnswerHash(passwordEncoder.encode(request.getSecurityAnswer().trim().toLowerCase()));
+            log.info("Security question set for user: {}", user.getUsername());
+        }
+
         userRepository.save(user);
 
         log.info("Password changed successfully for user: {}", user.getUsername());

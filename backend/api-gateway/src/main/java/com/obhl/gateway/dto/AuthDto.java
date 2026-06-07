@@ -24,6 +24,7 @@ public class AuthDto {
         private String tokenType = "Bearer";
         private UserInfo user;
         private Boolean mustChangePassword;
+        private Boolean hasSecurityQuestion;
     }
 
     @Data
@@ -48,5 +49,8 @@ public class AuthDto {
     public static class ChangePasswordRequest {
         private String oldPassword;
         private String newPassword;
+        // Optional — only sent on first login when no security question is set yet
+        private String securityQuestion;
+        private String securityAnswer;
     }
 }

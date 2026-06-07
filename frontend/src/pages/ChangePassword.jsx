@@ -4,10 +4,23 @@ import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import './ChangePassword.css';
 
+const SECURITY_QUESTIONS = [
+    "What was the name of your first pet?",
+    "What city were you born in?",
+    "What is your mother's maiden name?",
+    "What was the name of your elementary school?",
+    "What was the make and model of your first car?",
+    "What is the name of the street you grew up on?",
+    "What was your childhood nickname?",
+    "What is your oldest sibling's middle name?",
+];
+
 export default function ChangePassword() {
     const [oldPassword, setOldPassword] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [securityQuestion, setSecurityQuestion] = useState(SECURITY_QUESTIONS[0]);
+    const [securityAnswer, setSecurityAnswer] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
@@ -17,6 +30,9 @@ export default function ChangePassword() {
     // Ephemeral state from Login
     const ephemeralToken = location.state?.ephemeralToken;
     const ephemeralUser = location.state?.ephemeralUser;
+    // False means they have never set one — show the section
+    const hasSecurityQuestion = location.state?.hasSecurityQuestion ?? true;
+    const isFirstLogin = !hasSecurityQuestion;
 
     useEffect(() => {
         // Redir if no ephemeral session
@@ -40,10 +56,21 @@ export default function ChangePassword() {
             return;
         }
 
+        if (isFirstLogin && !securityAnswer.trim()) {
+            setError('Please provide an answer to your security question');
+            return;
+        }
+
         setLoading(true);
 
         try {
-            await api.changePassword(oldPassword, newPassword, ephemeralToken);
+            await api.changePassword(
+                oldPassword,
+                newPassword,
+                ephemeralToken,
+                isFirstLogin ? securityQuestion : undefined,
+                isFirstLogin ? securityAnswer.trim() : undefined
+            );
 
             // Success: Finalize login
             completeLogin(ephemeralToken, ephemeralUser);
@@ -67,16 +94,19 @@ export default function ChangePassword() {
     return (
         <div className="change-password-container">
             <div className="change-password-card">
-                <h1>Change Password</h1>
+                <h1>Welcome to OBHL</h1>
                 <p className="change-password-message">
-                    For security reasons, you must change your password before continuing.
+                    For security reasons, you must set a new password before continuing.
+                    {isFirstLogin && ' You\'ll also set a security question for account recovery.'}
                 </p>
 
                 <form onSubmit={handleSubmit} className="change-password-form">
                     {error && <div className="error-message">{error}</div>}
 
+                    <div className="cp-section-label">Password</div>
+
                     <div className="form-group">
-                        <label htmlFor="oldPassword">Current Password</label>
+                        <label htmlFor="oldPassword">Temporary Password</label>
                         <input
                             type="password"
                             id="oldPassword"
@@ -112,12 +142,51 @@ export default function ChangePassword() {
                         />
                     </div>
 
+                    {isFirstLogin && (
+                        <>
+                            <div className="cp-section-divider" />
+                            <div className="cp-section-label">Account Recovery</div>
+                            <p className="cp-section-hint">
+                                Choose a security question you'll remember. This is used to reset your password if you ever forget it.
+                            </p>
+
+                            <div className="form-group">
+                                <label htmlFor="securityQuestion">Security Question</label>
+                                <select
+                                    id="securityQuestion"
+                                    value={securityQuestion}
+                                    onChange={(e) => setSecurityQuestion(e.target.value)}
+                                    className="security-question-select"
+                                    required
+                                >
+                                    {SECURITY_QUESTIONS.map((q) => (
+                                        <option key={q} value={q}>{q}</option>
+                                    ))}
+                                </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="securityAnswer">Your Answer</label>
+                                <input
+                                    type="text"
+                                    id="securityAnswer"
+                                    value={securityAnswer}
+                                    onChange={(e) => setSecurityAnswer(e.target.value)}
+                                    placeholder="Enter your answer"
+                                    required={isFirstLogin}
+                                    autoComplete="off"
+                                />
+                                <small>Not case-sensitive. Remember this answer!</small>
+                            </div>
+                        </>
+                    )}
+
                     <button
                         type="submit"
                         className="submit-btn"
                         disabled={loading}
                     >
-                        {loading ? 'Changing Password...' : 'Change Password'}
+                        {loading ? 'Saving...' : 'Set Password & Continue'}
                     </button>
                 </form>
             </div>

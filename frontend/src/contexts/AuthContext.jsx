@@ -48,11 +48,11 @@ export const AuthProvider = ({ children }) => {
     const login = async (usernameOrEmail, password) => {
         try {
             const response = await api.login(usernameOrEmail, password);
-            const { token, user: userData, mustChangePassword } = response;
+            const { token, user: userData, mustChangePassword, hasSecurityQuestion } = response;
 
             if (mustChangePassword) {
                 // DON'T persist session yet. Just return the data for the Login component to handle.
-                return { success: true, user: userData, token, mustChangePassword: true };
+                return { success: true, user: userData, token, mustChangePassword: true, hasSecurityQuestion: !!hasSecurityQuestion };
             }
 
             // Normal login: persist token and user info

@@ -33,7 +33,8 @@ function LoginModal({ isOpen, onClose }) {
                 navigate('/change-password', { 
                     state: { 
                         ephemeralToken: result.token, 
-                        ephemeralUser: result.user 
+                        ephemeralUser: result.user,
+                        hasSecurityQuestion: result.hasSecurityQuestion
                     } 
                 });
             } else {

@@ -25,7 +25,8 @@ const Login = () => {
                 navigate('/change-password', { 
                     state: { 
                         ephemeralToken: result.token, 
-                        ephemeralUser: result.user 
+                        ephemeralUser: result.user,
+                        hasSecurityQuestion: result.hasSecurityQuestion
                     } 
                 });
                 return;
