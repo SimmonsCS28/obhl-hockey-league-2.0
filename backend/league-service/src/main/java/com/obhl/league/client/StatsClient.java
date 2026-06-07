@@ -43,4 +43,7 @@ public interface StatsClient {
 
         @DeleteMapping("/api/v1/players/{id}")
         void deletePlayer(@PathVariable("id") Long id);
+
+        @PutMapping("/api/v1/players/deactivate-unregistered")
+        void deactivateUnregisteredPlayers(@RequestBody List<String> registeredEmails);
 }

@@ -36,7 +36,13 @@ public class PlayerController {
             @RequestParam(required = false) Boolean unassigned) {
 
         if (Boolean.TRUE.equals(unassigned)) {
-            return ResponseEntity.ok(playerRepository.findByTeamIdIsNull());
+            if (seasonId != null && Boolean.TRUE.equals(active)) {
+                return ResponseEntity.ok(playerRepository.findBySeasonIdAndTeamIdIsNullAndIsActiveTrue(seasonId));
+            } else if (seasonId != null) {
+                return ResponseEntity.ok(playerRepository.findBySeasonIdAndTeamIdIsNull(seasonId));
+            } else {
+                return ResponseEntity.ok(playerRepository.findByTeamIdIsNull());
+            }
         } else if (seasonId != null && teamId != null) {
             return ResponseEntity.ok(playerRepository.findBySeasonIdAndTeamId(seasonId, teamId));
         } else if (seasonId != null) {
@@ -84,15 +90,36 @@ public class PlayerController {
     }
 
     @PostMapping
-    public ResponseEntity<Player> createPlayer(@RequestBody Player player) {
-        Player created = playerRepository.save(player);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    public ResponseEntity<?> createPlayer(@RequestBody Player player) {
+        try {
+            Player created = playerRepository.save(player);
+            return ResponseEntity.status(HttpStatus.CREATED).body(created);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", "A player with this email is already registered for this season."));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body(java.util.Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/batch")
     public ResponseEntity<List<Player>> createPlayers(@RequestBody List<Player> players) {
         List<Player> created = playerRepository.saveAll(players);
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
+    }
+
+    @PutMapping("/deactivate-unregistered")
+    public ResponseEntity<Void> deactivateUnregisteredPlayers(@RequestBody List<String> registeredEmails) {
+        List<Player> activePlayers = playerRepository.findByIsActiveTrue();
+        int deactivatedCount = 0;
+        for (Player p : activePlayers) {
+            if (p.getEmail() != null && !registeredEmails.contains(p.getEmail())) {
+                p.setIsActive(false);
+                playerRepository.save(p);
+                deactivatedCount++;
+            }
+        }
+        System.out.println("Deactivated " + deactivatedCount + " old player records not in current registration.");
+        return ResponseEntity.ok().build();
     }
 
     @PatchMapping("/{playerId}")

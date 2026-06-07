@@ -424,6 +424,51 @@ function PlayerManagement() {
 
 
 
+    const handleImportToCurrent = async (player) => {
+        const activeSeason = seasons.find(s => s.isActive || s.status === 'active');
+        if (!activeSeason) {
+            alert('No active season found. Cannot import player.');
+            return;
+        }
+
+        if (!player.email) {
+            alert('Player must have an email address to be imported.');
+            return;
+        }
+
+        try {
+            // Check if player already exists in the active season
+            const activeSeasonPlayers = await api.getPlayers({ seasonId: activeSeason.id });
+            const alreadyExists = activeSeasonPlayers.some(p => p.email && p.email.toLowerCase() === player.email.toLowerCase());
+
+            if (alreadyExists) {
+                alert(`${player.firstName} ${player.lastName} is already in the current season!`);
+                return;
+            }
+
+            const playerData = {
+                seasonId: activeSeason.id,
+                teamId: null,
+                firstName: player.firstName,
+                lastName: player.lastName,
+                jerseyNumber: null,
+                position: player.position,
+                shoots: player.shoots || 'L',
+                skillRating: player.skillRating || 5,
+                email: player.email || '',
+                isVeteran: player.isVeteran || false,
+                birthDate: player.birthDate || null,
+                hometown: player.hometown || null,
+                isActive: true
+            };
+            await api.createPlayer(playerData);
+            alert(`Successfully imported ${player.firstName} ${player.lastName} to the current season.`);
+        } catch (error) {
+            console.error('Error importing player:', error);
+            alert(`Failed to import player: ${error.message || 'Unknown error'}`);
+        }
+    };
+
     if (loading) {
         return <div className="loading">Loading players...</div>;
     }
@@ -520,7 +565,7 @@ function PlayerManagement() {
                                         </span>
                                     </td>
                                     <td className="actions">
-                                        {!isHistoricalView && (
+                                        {!isHistoricalView ? (
                                             <>
                                                 <button onClick={() => handleEdit(player)} className="btn-edit-small">
                                                     Edit
@@ -529,6 +574,10 @@ function PlayerManagement() {
                                                     Delete
                                                 </button>
                                             </>
+                                        ) : (
+                                            <button onClick={() => handleImportToCurrent(player)} className="btn-edit-small" style={{ backgroundColor: '#2ecc71', borderColor: '#27ae60' }}>
+                                                Import to Current
+                                            </button>
                                         )}
                                     </td>
                                 </tr>

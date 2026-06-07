@@ -216,8 +216,23 @@ public class DraftService {
                 }
             }
 
-            // Under the per-season model, undrafted players simply have no record for the
-            // new season — we don't need to deactivate historical records.
+            // Deactivate players who didn't register for the new season
+            List<String> registeredEmails = new ArrayList<>();
+            for (DraftTeamDTO draftTeam : draftState.getTeams()) {
+                for (DraftPlayerDTO draftPlayer : draftTeam.getPlayers()) {
+                    if (draftPlayer.getEmail() != null) {
+                        registeredEmails.add(draftPlayer.getEmail());
+                    }
+                }
+            }
+            if (draftState.getPlayerPool() != null) {
+                for (DraftPlayerDTO poolPlayer : draftState.getPlayerPool()) {
+                    if (poolPlayer.getEmail() != null) {
+                        registeredEmails.add(poolPlayer.getEmail());
+                    }
+                }
+            }
+            statsClient.deactivateUnregisteredPlayers(registeredEmails);
 
             // 8. Mark draft as completed
             draft.setStatus("complete");

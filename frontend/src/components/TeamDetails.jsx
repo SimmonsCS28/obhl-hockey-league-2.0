@@ -39,7 +39,7 @@ function TeamDetails({ team: propTeam, onBack }) {
 
                 const [teamPlayers, unassignedPlayers] = await Promise.all([
                     api.getPlayers({ teamId: targetId, active: true }),
-                    api.getPlayers({ unassigned: true })
+                    api.getPlayers({ unassigned: true, active: true, seasonId: currentTeam.seasonId })
                 ]);
 
                 setRoster(teamPlayers.sort((a, b) => {
