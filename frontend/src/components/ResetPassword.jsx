@@ -37,7 +37,7 @@ const ResetPassword = () => {
                 newPassword: formData.newPassword
             });
             setMessage('Password reset successfully! Redirecting to login...');
-            setTimeout(() => navigate('/'), 2000);
+            setTimeout(() => navigate('/', { state: { openLogin: true } }), 2000);
         } catch (err) {
             setError(err.message || 'Failed to reset password. The link may have expired.');
             setLoading(false);
@@ -85,13 +85,25 @@ const ResetPassword = () => {
                     </form>
                 )}
 
+                {!message && (
+                    <div className="login-link">
+                        <button
+                            type="button"
+                            onClick={() => navigate('/forgot-password')}
+                            style={{ background: 'none', border: 'none', padding: 0, color: 'inherit', textDecoration: 'underline', cursor: 'pointer', font: 'inherit' }}
+                        >
+                            Request a new link
+                        </button>
+                    </div>
+                )}
+
                 <div className="login-link">
                     <button
                         type="button"
-                        onClick={() => navigate('/forgot-password')}
+                        onClick={() => navigate('/', { state: { openLogin: true } })}
                         style={{ background: 'none', border: 'none', padding: 0, color: 'inherit', textDecoration: 'underline', cursor: 'pointer', font: 'inherit' }}
                     >
-                        Request a new link
+                        Back to Login
                     </button>
                 </div>
             </div>

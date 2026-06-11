@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, Outlet, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import logo from '../assets/images/obi-logo-nav.png';
 import { useAuth } from '../contexts/AuthContext';
 import DonateButton from './DonateButton';
@@ -7,10 +7,11 @@ import LoginModal from './LoginModal';
 import './PublicLayout.css';
 
 function PublicLayout() {
+    const navigate = useNavigate();
+    const location = useLocation();
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { user, logout, isAuthenticated, isAdmin, isGM, hasAnyRole } = useAuth();
-    const navigate = useNavigate();
     // Close mobile menu on resize to desktop
     useEffect(() => {
         const handleResize = () => {
@@ -21,6 +22,15 @@ function PublicLayout() {
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    // Open the login modal when navigated here with state.openLogin (e.g. from ForgotPassword/ResetPassword)
+    useEffect(() => {
+        if (location.state?.openLogin) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- reacting to navigation state, not derivable during render
+            setIsLoginModalOpen(true);
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location, navigate]);
 
     const handleLogout = () => {
         logout();
