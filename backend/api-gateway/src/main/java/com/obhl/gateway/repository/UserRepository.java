@@ -38,4 +38,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     Boolean existsByEmail(String email);
 
     Optional<User> findByFirstNameIgnoreCaseAndLastNameIgnoreCase(String firstName, String lastName);
+
+    Optional<User> findByPasswordResetTokenHash(String passwordResetTokenHash);
 }

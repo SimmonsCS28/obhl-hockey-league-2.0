@@ -78,6 +78,20 @@ const api = {
         });
     },
 
+    async forgotPassword(email) {
+        return request('/auth/forgot-password', {
+            method: 'POST',
+            body: JSON.stringify({ email })
+        });
+    },
+
+    async resetPasswordWithToken(data) {
+        return request('/auth/reset-password-with-token', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
     async login(usernameOrEmail, password) {
         // Special case for login as we don't want auth headers yet usually, 
         // but the request helper adds them safely if available.
@@ -585,6 +599,8 @@ export const {
     signup,
     getSecurityQuestion,
     resetPassword,
+    forgotPassword,
+    resetPasswordWithToken,
     changePassword,
     getGameEvents,
     getPlayerDashboard,

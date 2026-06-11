@@ -36,6 +36,7 @@ import ScorekeeperSchedulePage from './components/scorekeeper/ScorekeeperSchedul
 
 // User Shift Management Components
 import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 import GoalieShiftSignup from './components/user/GoalieShiftSignup';
 import PlayerDashboard from './components/user/PlayerDashboard';
 import RefereeShiftSignup from './components/user/RefereeShiftSignup';
@@ -62,6 +63,7 @@ const router = createBrowserRouter([
       // Unified Signup
       { path: "signup", element: <Signup /> },
       { path: "forgot-password", element: <ForgotPassword /> },
+      { path: "reset-password", element: <ResetPassword /> },
 
       // Legacy Routes - Redirect to unified signup
       { path: "referee/signup", element: <Signup /> },

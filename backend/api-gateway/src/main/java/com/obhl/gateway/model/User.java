@@ -73,6 +73,12 @@ public class User {
     @Column(name = "security_answer_hash")
     private String securityAnswerHash;
 
+    @Column(name = "password_reset_token_hash")
+    private String passwordResetTokenHash;
+
+    @Column(name = "password_reset_expires_at")
+    private Instant passwordResetExpiresAt;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -195,6 +201,22 @@ public class User {
 
     public void setSecurityAnswerHash(String securityAnswerHash) {
         this.securityAnswerHash = securityAnswerHash;
+    }
+
+    public String getPasswordResetTokenHash() {
+        return passwordResetTokenHash;
+    }
+
+    public void setPasswordResetTokenHash(String passwordResetTokenHash) {
+        this.passwordResetTokenHash = passwordResetTokenHash;
+    }
+
+    public Instant getPasswordResetExpiresAt() {
+        return passwordResetExpiresAt;
+    }
+
+    public void setPasswordResetExpiresAt(Instant passwordResetExpiresAt) {
+        this.passwordResetExpiresAt = passwordResetExpiresAt;
     }
 
     public Instant getCreatedAt() {
