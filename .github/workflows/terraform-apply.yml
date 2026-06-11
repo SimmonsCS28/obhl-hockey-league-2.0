@@ -1,10 +1,16 @@
 name: Terraform Apply
 
 on:
-  push:
-    branches: [main]
-    paths: ['terraform/**']
   workflow_dispatch:
+
+# NOTE: The auto-apply-on-push trigger was intentionally removed.
+# The terraform/environments/dev stack has been deliberately destroyed
+# (see terraform/environments/dev/DESTROYED_STACK_RECORD.md) because
+# production runs on a separate hand-managed EC2 instance via
+# docker-compose, not this Terraform-managed stack. Re-enabling
+# push-based auto-apply would silently recreate that stack and its
+# ~$100/mo cost. Run this workflow manually only if you intend to
+# recreate the dev environment.
 
 env:
   TF_VERSION: 1.6.2
