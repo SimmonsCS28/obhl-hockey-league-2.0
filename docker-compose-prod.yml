@@ -37,6 +37,9 @@ services:
       GAME_SERVICE_URL: http://game-service:8002
       STATS_SERVICE_URL: http://stats-service:8003
       ENVIRONMENT: docker
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-OBHL <onboarding@resend.dev>}
+      FRONTEND_URL: ${FRONTEND_URL:-https://oldbuzzardhockey.com}
     ports:
       - "8000:8000"
     depends_on:

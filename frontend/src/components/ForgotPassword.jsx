@@ -5,8 +5,10 @@ import './ForgotPassword.css'; // New CSS
 
 const ForgotPassword = () => {
     const navigate = useNavigate();
+    const [method, setMethod] = useState(null); // 'question' | 'email'
     const [step, setStep] = useState(1);
     const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [securityQuestion, setSecurityQuestion] = useState('');
     const [formData, setFormData] = useState({
         answer: '',
@@ -55,8 +57,29 @@ const ForgotPassword = () => {
         }
     };
 
+    const handleEmailSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        setLoading(true);
+        try {
+            await api.forgotPassword(email);
+            setMessage('If an account with that email exists, a password reset link has been sent. Please check your inbox.');
+        } catch (err) {
+            setError(err.message || 'Something went wrong. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
+
+    const reset = () => {
+        setMethod(null);
+        setStep(1);
+        setError('');
+        setMessage('');
     };
 
     return (
@@ -66,7 +89,37 @@ const ForgotPassword = () => {
                 {error && <div className="error-message">{error}</div>}
                 {message && <div className="success-message">{message}</div>}
 
-                {step === 1 && (
+                {!method && (
+                    <div className="reset-method-choice">
+                        <p>How would you like to reset your password?</p>
+                        <button type="button" className="reset-btn" onClick={() => setMethod('email')}>
+                            Email Me a Reset Link
+                        </button>
+                        <button type="button" className="reset-btn secondary-btn" onClick={() => setMethod('question')}>
+                            Answer My Security Question
+                        </button>
+                    </div>
+                )}
+
+                {method === 'email' && !message && (
+                    <form onSubmit={handleEmailSubmit}>
+                        <p>Enter your account email and we'll send you a link to reset your password.</p>
+                        <div className="form-group">
+                            <label>Email</label>
+                            <input
+                                type="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <button type="submit" disabled={loading} className="reset-btn">
+                            {loading ? 'Sending...' : 'Send Reset Link'}
+                        </button>
+                    </form>
+                )}
+
+                {method === 'question' && step === 1 && (
                     <form onSubmit={handleUsernameSubmit}>
                         <p>Enter your username to retrieve your security question.</p>
                         <div className="form-group">
@@ -84,7 +137,7 @@ const ForgotPassword = () => {
                     </form>
                 )}
 
-                {step === 2 && !message && (
+                {method === 'question' && step === 2 && !message && (
                     <form onSubmit={handleResetSubmit}>
                         <div className="security-question-display">
                             <strong>Security Question:</strong>
@@ -128,6 +181,18 @@ const ForgotPassword = () => {
                             {loading ? 'Resetting...' : 'Reset Password'}
                         </button>
                     </form>
+                )}
+
+                {method && !message && (
+                    <div className="login-link">
+                        <button
+                            type="button"
+                            onClick={reset}
+                            style={{ background: 'none', border: 'none', padding: 0, color: 'inherit', textDecoration: 'underline', cursor: 'pointer', font: 'inherit' }}
+                        >
+                            Choose a different option
+                        </button>
+                    </div>
                 )}
 
                 <div className="login-link">

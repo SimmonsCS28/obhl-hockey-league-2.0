@@ -38,6 +38,14 @@ public class UserManagementService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private EmailService emailService;
+
+    @org.springframework.beans.factory.annotation.Value("${app.frontend.url:https://oldbuzzardhockey.com}")
+    private String frontendUrl;
+
+    private static final long PASSWORD_RESET_TOKEN_TTL_MINUTES = 60;
+
     /**
      * Get all active users
      */
@@ -283,6 +291,55 @@ public class UserManagementService {
 
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         user.setMustChangePassword(false); // Reset successful, they know the password now
+        userRepository.save(user);
+    }
+
+    /**
+     * Generate a password reset token and email it to the user, if an account
+     * with that email exists. Always succeeds silently if the email is unknown,
+     * so this endpoint can't be used to enumerate registered emails.
+     */
+    @Transactional
+    public void requestPasswordResetEmail(String email) {
+        Optional<User> userOpt = userRepository.findByEmailIgnoreCase(email);
+        if (userOpt.isEmpty()) {
+            return;
+        }
+
+        User user = userOpt.get();
+        String token = java.util.UUID.randomUUID().toString() + java.util.UUID.randomUUID().toString();
+        user.setPasswordResetTokenHash(passwordEncoder.encode(token));
+        user.setPasswordResetExpiresAt(java.time.Instant.now().plus(PASSWORD_RESET_TOKEN_TTL_MINUTES, java.time.temporal.ChronoUnit.MINUTES));
+        userRepository.save(user);
+
+        String resetLink = frontendUrl + "/reset-password?token=" + token + "&email=" + java.net.URLEncoder.encode(user.getEmail(), java.nio.charset.StandardCharsets.UTF_8);
+        emailService.sendPasswordResetEmail(user.getEmail(), resetLink);
+    }
+
+    /**
+     * Reset a user's password using a token emailed to them via requestPasswordResetEmail.
+     */
+    @Transactional
+    public void resetPasswordWithToken(String email, String token, String newPassword) {
+        User user = userRepository.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new RuntimeException("Invalid or expired reset link."));
+
+        if (user.getPasswordResetTokenHash() == null || user.getPasswordResetExpiresAt() == null) {
+            throw new RuntimeException("Invalid or expired reset link.");
+        }
+
+        if (java.time.Instant.now().isAfter(user.getPasswordResetExpiresAt())) {
+            throw new RuntimeException("This reset link has expired. Please request a new one.");
+        }
+
+        if (!passwordEncoder.matches(token, user.getPasswordResetTokenHash())) {
+            throw new RuntimeException("Invalid or expired reset link.");
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(newPassword));
+        user.setMustChangePassword(false);
+        user.setPasswordResetTokenHash(null);
+        user.setPasswordResetExpiresAt(null);
         userRepository.save(user);
     }
 

@@ -45,10 +45,42 @@ public class PasswordResetController {
         }
     }
 
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, String>> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        userManagementService.requestPasswordResetEmail(request.getEmail());
+        // Always return success so this endpoint can't be used to enumerate emails
+        return ResponseEntity.ok(Map.of("message", "If an account with that email exists, a reset link has been sent."));
+    }
+
+    @PostMapping("/reset-password-with-token")
+    public ResponseEntity<Map<String, String>> resetPasswordWithToken(@RequestBody ResetPasswordWithTokenRequest request) {
+        try {
+            userManagementService.resetPasswordWithToken(
+                    request.getEmail(),
+                    request.getToken(),
+                    request.getNewPassword());
+            return ResponseEntity.ok(Map.of("message", "Password reset successfully."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+        }
+    }
+
     @Data
     public static class ResetPasswordRequest {
         private String username;
         private String answer;
+        private String newPassword;
+    }
+
+    @Data
+    public static class ForgotPasswordRequest {
+        private String email;
+    }
+
+    @Data
+    public static class ResetPasswordWithTokenRequest {
+        private String email;
+        private String token;
         private String newPassword;
     }
 }
