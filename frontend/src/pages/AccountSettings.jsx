@@ -15,6 +15,15 @@ const SECURITY_QUESTIONS = [
     "What is your oldest sibling's middle name?",
 ];
 
+// Volunteer roles a user can opt into/out of for themselves. The `value` must match
+// the backend role names; granting one unlocks the corresponding shift sign-up pages.
+const STAFF_ROLES = [
+    { value: 'GOALIE', label: 'Goalie', hint: 'Sign up for goalie shifts' },
+    { value: 'REF', label: 'Referee', hint: 'Sign up for referee shifts' },
+    { value: 'SCOREKEEPER', label: 'Scorekeeper', hint: 'Sign up for scorekeeping shifts' },
+];
+const STAFF_ROLE_VALUES = STAFF_ROLES.map((r) => r.value);
+
 export default function AccountSettings() {
     const navigate = useNavigate();
     const { user, completeLogin } = useAuth();
@@ -27,6 +36,7 @@ export default function AccountSettings() {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [currentPassword, setCurrentPassword] = useState('');
+    const [staffRoles, setStaffRoles] = useState([]);
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -43,6 +53,7 @@ export default function AccountSettings() {
                 setProfile(data);
                 setUsername(data.username);
                 setEmail(data.email);
+                setStaffRoles(data.staffRoles || []);
                 if (data.securityQuestion) {
                     setSecurityQuestion(data.securityQuestion);
                 }
@@ -54,6 +65,12 @@ export default function AccountSettings() {
         };
         loadProfile();
     }, []);
+
+    const toggleStaffRole = (role) => {
+        setStaffRoles((prev) =>
+            prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]
+        );
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -84,15 +101,20 @@ export default function AccountSettings() {
             payload.securityQuestion = securityQuestion;
             payload.securityAnswer = securityAnswer;
         }
+        // Always send the current volunteer-role selection; the server reconciles to it.
+        payload.staffRoles = staffRoles;
 
         setLoading(true);
         try {
             const response = await api.updateProfile(payload);
 
+            const newStaffRoles = (response.user.roles || []).filter((r) => STAFF_ROLE_VALUES.includes(r));
+            setStaffRoles(newStaffRoles);
             setProfile({
                 username: response.user.username,
                 email: response.user.email,
                 securityQuestion: securityAnswer ? securityQuestion : profile?.securityQuestion,
+                staffRoles: newStaffRoles,
             });
 
             // If the username changed, the server issues a new JWT and user record
@@ -242,6 +264,28 @@ export default function AccountSettings() {
                     </div>
 
                     <div className="as-section-divider" />
+                    <div className="as-section-label">Volunteer Roles</div>
+                    <p className="as-section-hint">
+                        Opt in to volunteer as a goalie, referee, or scorekeeper. Enabling a role
+                        unlocks the matching shift sign-up pages; disabling it removes that access.
+                    </p>
+                    <div className="as-role-options">
+                        {STAFF_ROLES.map((role) => (
+                            <label key={role.value} className="as-role-option">
+                                <input
+                                    type="checkbox"
+                                    checked={staffRoles.includes(role.value)}
+                                    onChange={() => toggleStaffRole(role.value)}
+                                />
+                                <span className="as-role-text">
+                                    <span className="as-role-label">{role.label}</span>
+                                    <span className="as-role-hint">{role.hint}</span>
+                                </span>
+                            </label>
+                        ))}
+                    </div>
+
+                    <div className="as-section-divider" />
                     <div className="as-section-label">Confirm Changes</div>
                     <div className="form-group">
                         <label htmlFor="currentPassword">Current Password</label>
@@ -264,6 +308,13 @@ export default function AccountSettings() {
                             </button>
                         </div>
                         <small>Required to save any changes on this page.</small>
+                        <button
+                            type="button"
+                            className="as-forgot-link"
+                            onClick={() => navigate('/forgot-password')}
+                        >
+                            Forgot your password?
+                        </button>
                     </div>
 
                     <button type="submit" className="submit-btn" disabled={loading}>

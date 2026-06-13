@@ -61,6 +61,8 @@ public class AuthDto {
         private String username;
         private String email;
         private String securityQuestion;
+        // The user's current self-service volunteer roles (subset of GOALIE/REF/SCOREKEEPER)
+        private List<String> staffRoles;
     }
 
     @Data
@@ -76,6 +78,9 @@ public class AuthDto {
         private String newPassword;
         private String securityQuestion;
         private String securityAnswer;
+        // Desired self-service volunteer roles (subset of GOALIE/REF/SCOREKEEPER).
+        // When non-null, the user's staff roles are reconciled to exactly this set.
+        private List<String> staffRoles;
     }
 
     @Data

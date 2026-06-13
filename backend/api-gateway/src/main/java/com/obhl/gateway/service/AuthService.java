@@ -6,7 +6,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.obhl.gateway.dto.AuthDto;
+import com.obhl.gateway.model.Role;
 import com.obhl.gateway.model.User;
+import com.obhl.gateway.repository.RoleRepository;
 import com.obhl.gateway.repository.UserRepository;
 import com.obhl.gateway.util.JwtUtil;
 
@@ -18,7 +20,15 @@ public class AuthService {
 
     private static final Logger log = LoggerFactory.getLogger(AuthService.class);
 
+    // Roles a user is allowed to grant/revoke for themselves via Account Settings
+    private static final java.util.Set<String> SELF_SERVICE_ROLES = java.util.Set.of("GOALIE", "REF", "SCOREKEEPER");
+
+    // Priority order for choosing a user's primary (legacy) role, highest first.
+    private static final java.util.List<String> ROLE_PRIORITY = java.util.List.of(
+            "ADMIN", "GM", "USER", "SCOREKEEPER", "REF", "GOALIE");
+
     private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
 
@@ -150,7 +160,28 @@ public class AuthService {
         return new AuthDto.ProfileResponse(
                 user.getUsername(),
                 user.getEmail(),
-                hasSecurityQuestion ? user.getSecurityQuestion() : null);
+                hasSecurityQuestion ? user.getSecurityQuestion() : null,
+                currentStaffRoles(user));
+    }
+
+    private String primaryRole(java.util.Set<String> roleNames) {
+        for (String r : ROLE_PRIORITY) {
+            if (roleNames.contains(r)) {
+                return r;
+            }
+        }
+        return roleNames.stream().findFirst().orElse(null);
+    }
+
+    private java.util.List<String> currentStaffRoles(User user) {
+        if (user.getRoles() == null) {
+            return java.util.Collections.emptyList();
+        }
+        return user.getRoles().stream()
+                .map(Role::getName)
+                .filter(SELF_SERVICE_ROLES::contains)
+                .sorted()
+                .collect(java.util.stream.Collectors.toList());
     }
 
     public AuthDto.UpdateProfileResponse updateProfile(Long userId, AuthDto.UpdateProfileRequest request) {
@@ -200,6 +231,51 @@ public class AuthService {
             user.setSecurityAnswerHash(passwordEncoder.encode(request.getSecurityAnswer().trim().toLowerCase()));
         }
 
+        // Self-service volunteer roles (GOALIE/REF/SCOREKEEPER). When provided, reconcile the
+        // user's staff roles to exactly the requested set while leaving all other roles intact.
+        boolean rolesChanged = false;
+        if (request.getStaffRoles() != null) {
+            java.util.Set<String> desired = request.getStaffRoles().stream()
+                    .filter(java.util.Objects::nonNull)
+                    .map(r -> r.trim().toUpperCase())
+                    .collect(java.util.stream.Collectors.toSet());
+
+            for (String roleName : desired) {
+                if (!SELF_SERVICE_ROLES.contains(roleName)) {
+                    throw new RuntimeException("Role cannot be self-assigned: " + roleName);
+                }
+            }
+
+            java.util.Set<String> before = user.getRoles().stream().map(Role::getName)
+                    .collect(java.util.stream.Collectors.toSet());
+
+            // Keep every non-self-service role the user already has...
+            java.util.Set<Role> newRoles = user.getRoles().stream()
+                    .filter(r -> !SELF_SERVICE_ROLES.contains(r.getName()))
+                    .collect(java.util.stream.Collectors.toSet());
+
+            // ...then add exactly the requested staff roles.
+            for (String roleName : desired) {
+                Role role = roleRepository.findByName(roleName)
+                        .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+                newRoles.add(role);
+            }
+
+            java.util.Set<String> after = newRoles.stream().map(Role::getName)
+                    .collect(java.util.stream.Collectors.toSet());
+
+            if (!before.equals(after)) {
+                user.setRoles(newRoles);
+                // Keep the deprecated single-role column consistent. Legacy checks (including the
+                // frontend's hasAnyRole fallback) still read user.role, so it must not keep pointing
+                // at a staff role the user just gave up.
+                if (user.getRole() == null || !after.contains(user.getRole())) {
+                    user.setRole(primaryRole(after));
+                }
+                rolesChanged = true;
+            }
+        }
+
         userRepository.save(user);
 
         log.info("Profile updated successfully for user: {}", user.getUsername());
@@ -219,7 +295,8 @@ public class AuthService {
                 user.getTeamId(),
                 user.getLastLogin());
 
-        String newToken = usernameChanged ? jwtUtil.generateToken(user) : null;
+        // A stale JWT carries the old username and roles claims, so reissue when either changes.
+        String newToken = (usernameChanged || rolesChanged) ? jwtUtil.generateToken(user) : null;
 
         return new AuthDto.UpdateProfileResponse("Profile updated successfully", userInfo, newToken);
     }
