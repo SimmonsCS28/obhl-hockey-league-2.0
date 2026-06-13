@@ -54,6 +54,9 @@ function GMLayout() {
                         <button className="action-button secondary" onClick={() => { navigate('/'); setMobileMenuOpen(false); }}>
                             OBHL Home
                         </button>
+                        <button className="action-button secondary" onClick={() => { navigate('/account'); setMobileMenuOpen(false); }}>
+                            Account Settings
+                        </button>
                         <button className="action-button logout" onClick={handleLogout}>
                             Logout
                         </button>

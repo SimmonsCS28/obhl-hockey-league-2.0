@@ -112,6 +112,17 @@ const api = {
         });
     },
 
+    async getProfile() {
+        return request('/auth/profile');
+    },
+
+    async updateProfile(data) {
+        return request('/auth/profile', {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    },
+
     async logout() {
         try {
             await request('/auth/logout', { method: 'POST' });
@@ -602,6 +613,8 @@ export const {
     forgotPassword,
     resetPasswordWithToken,
     changePassword,
+    getProfile,
+    updateProfile,
     getGameEvents,
     getPlayerDashboard,
     getUserPublicName,

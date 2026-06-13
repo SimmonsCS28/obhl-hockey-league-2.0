@@ -127,6 +127,15 @@ function PublicLayout() {
                                                 My Dashboard
                                             </button>
                                         )}
+                                        <button
+                                            className="dashboard-link"
+                                            onClick={() => {
+                                                navigate('/account');
+                                                closeMobileMenu();
+                                            }}
+                                        >
+                                            Account Settings
+                                        </button>
                                         <button className="logout-btn" onClick={() => { handleLogout(); closeMobileMenu(); }}>Logout</button>
                                     </>
                                 ) : (
@@ -213,6 +222,15 @@ function PublicLayout() {
                                             My Dashboard
                                         </button>
                                     )}
+                                    <button
+                                        className="dashboard-link"
+                                        onClick={() => {
+                                            navigate('/account');
+                                            closeMobileMenu();
+                                        }}
+                                    >
+                                        Account Settings
+                                    </button>
                                     <button className="logout-btn" onClick={() => { handleLogout(); closeMobileMenu(); }}>Logout</button>
                                 </>
                             ) : (

@@ -17,7 +17,7 @@ const RefereeLayout = () => {
                 <div className="nav-brand">OBHL Referee Portal</div>
                 <div className="nav-links">
                     <Link to="/referee">My Schedule</Link>
-                    {/* Add more links as needed */}
+                    <Link to="/account">Account Settings</Link>
                 </div>
                 <div className="nav-user">
                     <span>{user?.username}</span>
