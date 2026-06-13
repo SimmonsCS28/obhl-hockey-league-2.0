@@ -1,7 +1,9 @@
 package com.obhl.gateway.controller;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -49,6 +51,36 @@ public class AuthController {
 
             authService.changePassword(user.getId(), request);
             return ResponseEntity.ok().body(java.util.Map.of("message", "Password changed successfully"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile(
+            @org.springframework.web.bind.annotation.RequestHeader("Authorization") String authHeader) {
+        try {
+            String token = authHeader.replace("Bearer ", "");
+            String username = jwtUtil.extractUsername(token);
+            com.obhl.gateway.model.User user = authService.getUserByUsername(username);
+
+            return ResponseEntity.ok(authService.getProfile(user.getId()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateProfile(
+            @Valid @RequestBody AuthDto.UpdateProfileRequest request,
+            @org.springframework.web.bind.annotation.RequestHeader("Authorization") String authHeader) {
+        try {
+            String token = authHeader.replace("Bearer ", "");
+            String username = jwtUtil.extractUsername(token);
+            com.obhl.gateway.model.User user = authService.getUserByUsername(username);
+
+            AuthDto.UpdateProfileResponse response = authService.updateProfile(user.getId(), request);
+            return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
         }

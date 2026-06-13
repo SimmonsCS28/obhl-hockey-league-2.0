@@ -53,4 +53,38 @@ public class AuthDto {
         private String securityQuestion;
         private String securityAnswer;
     }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ProfileResponse {
+        private String username;
+        private String email;
+        private String securityQuestion;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UpdateProfileRequest {
+        // Required to authorize any change
+        private String currentPassword;
+
+        // All optional — only provided fields are updated
+        private String username;
+        private String email;
+        private String newPassword;
+        private String securityQuestion;
+        private String securityAnswer;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UpdateProfileResponse {
+        private String message;
+        private UserInfo user;
+        // Present only if the username changed, since existing JWTs key off username
+        private String token;
+    }
 }

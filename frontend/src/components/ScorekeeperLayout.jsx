@@ -17,6 +17,7 @@ const ScorekeeperLayout = () => {
                 <div className="nav-brand">OBHL Scorekeeper Portal</div>
                 <div className="nav-links">
                     <Link to="/scorekeeper">My Schedule</Link>
+                    <Link to="/account">Account Settings</Link>
                 </div>
                 <div className="nav-user">
                     <span>{user?.username}</span>

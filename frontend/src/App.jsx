@@ -24,6 +24,7 @@ import RulesPage from './components/public/RulesPage';
 import { AuthProvider } from './contexts/AuthContext';
 import { SeasonProvider } from './contexts/SeasonContext';
 import ChangePassword from './pages/ChangePassword';
+import AccountSettings from './pages/AccountSettings';
 
 // New Staff Components
 import GoalieLayout from './components/GoalieLayout';
@@ -68,7 +69,10 @@ const router = createBrowserRouter([
       // Legacy Routes - Redirect to unified signup
       { path: "referee/signup", element: <Signup /> },
       { path: "scorekeeper/signup", element: <Signup /> },
-      { path: "goalie/signup", element: <Signup /> }
+      { path: "goalie/signup", element: <Signup /> },
+
+      // Account Settings (any authenticated user) — rendered within the public chrome
+      { path: "account", element: <ProtectedRoute><AccountSettings /></ProtectedRoute> }
     ]
   },
 

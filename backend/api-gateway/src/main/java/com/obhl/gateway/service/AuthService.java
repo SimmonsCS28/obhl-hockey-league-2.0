@@ -143,4 +143,84 @@ public class AuthService {
 
         log.info("Password changed successfully for user: {}", user.getUsername());
     }
+
+    public AuthDto.ProfileResponse getProfile(Long userId) {
+        User user = getUserById(userId);
+        boolean hasSecurityQuestion = user.getSecurityQuestion() != null && !user.getSecurityQuestion().isBlank();
+        return new AuthDto.ProfileResponse(
+                user.getUsername(),
+                user.getEmail(),
+                hasSecurityQuestion ? user.getSecurityQuestion() : null);
+    }
+
+    public AuthDto.UpdateProfileResponse updateProfile(Long userId, AuthDto.UpdateProfileRequest request) {
+        User user = getUserById(userId);
+
+        // Verify current password to authorize any change
+        if (request.getCurrentPassword() == null
+                || !passwordEncoder.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+
+        boolean usernameChanged = false;
+
+        // Username
+        if (request.getUsername() != null && !request.getUsername().isBlank()
+                && !request.getUsername().equalsIgnoreCase(user.getUsername())) {
+            String newUsername = request.getUsername().trim();
+            if (userRepository.findByUsernameIgnoreCase(newUsername).isPresent()) {
+                throw new RuntimeException("Username is already taken");
+            }
+            user.setUsername(newUsername);
+            usernameChanged = true;
+        }
+
+        // Email
+        if (request.getEmail() != null && !request.getEmail().isBlank()
+                && !request.getEmail().equalsIgnoreCase(user.getEmail())) {
+            String newEmail = request.getEmail().trim();
+            if (userRepository.findByEmailIgnoreCase(newEmail).isPresent()) {
+                throw new RuntimeException("Email is already in use");
+            }
+            user.setEmail(newEmail);
+        }
+
+        // Password
+        if (request.getNewPassword() != null && !request.getNewPassword().isBlank()) {
+            if (request.getNewPassword().length() < 8) {
+                throw new RuntimeException("New password must be at least 8 characters");
+            }
+            user.setPasswordHash(passwordEncoder.encode(request.getNewPassword()));
+        }
+
+        // Security question/answer
+        if (request.getSecurityQuestion() != null && !request.getSecurityQuestion().isBlank()
+                && request.getSecurityAnswer() != null && !request.getSecurityAnswer().isBlank()) {
+            user.setSecurityQuestion(request.getSecurityQuestion());
+            user.setSecurityAnswerHash(passwordEncoder.encode(request.getSecurityAnswer().trim().toLowerCase()));
+        }
+
+        userRepository.save(user);
+
+        log.info("Profile updated successfully for user: {}", user.getUsername());
+
+        java.util.List<String> roleNames = user.getRoles() != null
+                ? user.getRoles().stream().map(r -> r.getName()).collect(java.util.stream.Collectors.toList())
+                : java.util.Collections.emptyList();
+
+        AuthDto.UserInfo userInfo = new AuthDto.UserInfo(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.getRole(),
+                roleNames,
+                user.getTeamId(),
+                user.getLastLogin());
+
+        String newToken = usernameChanged ? jwtUtil.generateToken(user) : null;
+
+        return new AuthDto.UpdateProfileResponse("Profile updated successfully", userInfo, newToken);
+    }
 }

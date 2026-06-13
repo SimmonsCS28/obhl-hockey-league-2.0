@@ -185,6 +185,12 @@ const PlayerDashboard = () => {
                         OBHL Home
                     </button>
                     <button
+                        className="action-button secondary"
+                        onClick={() => navigate('/account')}
+                    >
+                        Account Settings
+                    </button>
+                    <button
                         className="action-button logout"
                         onClick={() => { logout(); navigate('/'); }}
                     >

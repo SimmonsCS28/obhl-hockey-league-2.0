@@ -17,6 +17,7 @@ const GoalieLayout = () => {
                 <div className="nav-brand">OBHL Goalie Portal</div>
                 <div className="nav-links">
                     <Link to="/goalie">My Schedule</Link>
+                    <Link to="/account">Account Settings</Link>
                 </div>
                 <div className="nav-user">
                     <span>{user?.username}</span>

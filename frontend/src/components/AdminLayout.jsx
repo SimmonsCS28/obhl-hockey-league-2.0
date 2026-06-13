@@ -100,6 +100,13 @@ function AdminLayout({ children, activeTab }) {
                         >
                             Public Site
                         </button>
+                        <button
+                            onClick={() => navigate('/account')}
+                            className="public-site-btn"
+                            title="Manage your account settings"
+                        >
+                            Account Settings
+                        </button>
                         <button onClick={handleLogout} className="logout-btn">
                             Logout
                         </button>
@@ -190,6 +197,9 @@ function AdminLayout({ children, activeTab }) {
                         )}
                         <button onClick={() => navigate('/')} className="nav-tab action-tab">
                             🌐 Public Site
+                        </button>
+                        <button onClick={() => { navigate('/account'); setMobileMenuOpen(false); }} className="nav-tab action-tab">
+                            ⚙️ Account Settings
                         </button>
                         <button onClick={handleLogout} className="nav-tab logout-tab">
                             🚪 Logout

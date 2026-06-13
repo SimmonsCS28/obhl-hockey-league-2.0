@@ -190,8 +190,16 @@ const UserDashboard = () => {
                     <button
                         className="home-button"
                         onClick={() => navigate('/')}
+                        style={{ marginRight: '1rem' }}
                     >
                         OBHL Home
+                    </button>
+                    <button
+                        className="home-button"
+                        onClick={() => navigate('/account')}
+                        style={{ marginRight: '1rem' }}
+                    >
+                        Account Settings
                     </button>
                     <button
                         className="logout-button"
