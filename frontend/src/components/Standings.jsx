@@ -67,13 +67,13 @@ function Standings({ seasonId }) {
                         <tr>
                             <th>#</th>
                             <th>Team</th>
+                            <th>PTS</th>
                             <th>GP</th>
                             <th>W</th>
                             <th>L</th>
                             <th>T</th>
                             <th>OTW</th>
                             <th>OTL</th>
-                            <th>PTS</th>
                             <th>GF</th>
                             <th>GA</th>
                             <th>DIFF</th>
@@ -115,13 +115,13 @@ function Standings({ seasonId }) {
                                     <td className="team-name">
                                         <strong>{team.name}</strong>
                                     </td>
+                                    <td className="points"><strong>{team.points || 0}</strong></td>
                                     <td>{team.gamesPlayed || 0}</td>
                                     <td>{team.wins || 0}</td>
                                     <td>{team.losses || 0}</td>
                                     <td>{team.ties || 0}</td>
                                     <td>{team.overtimeWins || 0}</td>
                                     <td>{team.overtimeLosses || 0}</td>
-                                    <td className="points"><strong>{team.points || 0}</strong></td>
                                     <td>{team.goalsFor || 0}</td>
                                     <td>{team.goalsAgainst || 0}</td>
                                     <td className={diff >= 0 ? 'positive' : 'negative'}>

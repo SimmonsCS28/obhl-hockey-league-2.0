@@ -138,13 +138,13 @@ function StandingsPage() {
                             <tr>
                                 <th>Rank</th>
                                 <th>Team</th>
+                                <th>Pts</th>
                                 <th>W</th>
                                 <th>L</th>
                                 <th>T</th>
                                 <th>OTL</th>
                                 <th>GF</th>
                                 <th>GA</th>
-                                <th>Pts</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -168,13 +168,13 @@ function StandingsPage() {
                                         <td className="team-name">
                                             <strong>{team.name}</strong>
                                         </td>
+                                        <td className="points"><strong>{team.points}</strong></td>
                                         <td>{team.wins + (team.overtimeWins || 0)}</td>
                                         <td>{team.losses}</td>
                                         <td>{team.ties}</td>
                                         <td>{team.overtimeLosses}</td>
                                         <td>{team.goalsFor}</td>
                                         <td>{team.goalsAgainst}</td>
-                                        <td className="points"><strong>{team.points}</strong></td>
                                     </tr>
                                 );
                             })}

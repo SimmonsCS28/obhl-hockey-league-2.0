@@ -190,7 +190,9 @@
 .announcements-table-container {
     background: white;
     border-radius: 12px;
-    overflow: hidden;
+    /* Allow horizontal scrolling so the Actions column stays reachable on narrow screens */
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
@@ -307,4 +309,16 @@
     text-align: center;
     color: #4a5568;
     font-size: 1.1rem;
+}
+
+/* On narrow screens keep the table from crushing; the container scrolls horizontally
+   so the Status, dates, and Actions (Edit/Delete) columns all stay reachable. */
+@media (max-width: 768px) {
+    .announcements-table {
+        min-width: 640px;
+    }
+
+    .actions-cell {
+        white-space: nowrap;
+    }
 }
