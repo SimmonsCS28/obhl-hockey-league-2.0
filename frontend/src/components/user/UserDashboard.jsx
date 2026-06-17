@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import PendingShifts from './PendingShifts';
 import './UserDashboard.css';
 
 const UserDashboard = () => {
@@ -187,6 +188,15 @@ const UserDashboard = () => {
                     >
                         My Dashboard
                     </button>
+                    {(user?.roles?.includes('GOALIE_COORDINATOR') || user?.roles?.includes('REF_COORDINATOR')) && (
+                        <button
+                            className="home-button"
+                            onClick={() => navigate('/coordinator')}
+                            style={{ marginRight: '1rem' }}
+                        >
+                            Coordinator
+                        </button>
+                    )}
                     <button
                         className="home-button"
                         onClick={() => navigate('/')}
@@ -211,6 +221,8 @@ const UserDashboard = () => {
             </div>
 
             {/* Dashboard Stats / Summary can go here */}
+
+            <PendingShifts />
 
             <div className="dashboard-content">
                 <section className="upcoming-shifts-section">
@@ -346,7 +358,10 @@ const UserDashboard = () => {
                     {hasRole('REF') && (
                         <div className="role-card">
                             <h2>Referee</h2>
-                            <p>View and sign up for referee shifts</p>
+                            <p>Set your availability and sign up for referee shifts</p>
+                            <button onClick={() => navigate('/user/ref-availability')}>
+                                Manage Availability
+                            </button>
                             <button onClick={() => navigate('/user/referee')}>
                                 View & Sign Up for Shifts
                             </button>

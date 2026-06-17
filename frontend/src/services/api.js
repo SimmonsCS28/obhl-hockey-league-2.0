@@ -488,6 +488,74 @@ const api = {
     },
 
     // ============================================
+    // COORDINATOR API
+    // ============================================
+    async getCoordinatorAssignments(seasonId, role) {
+        return request(`/coordinator/assignments?seasonId=${seasonId}&role=${role}`);
+    },
+
+    async getCoordinatorAvailability(role) {
+        return request(`/coordinator/availability?role=${role}`);
+    },
+
+    async proposeShift(data) {
+        return request('/coordinator/propose', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
+    async withdrawShift(id, role) {
+        return request(`/coordinator/assignments/${id}?role=${role}`, { method: 'DELETE' });
+    },
+
+    async publishShiftWeek(seasonId, role, week) {
+        const params = new URLSearchParams({ seasonId, role, ...(week != null && { week }) }).toString();
+        return request(`/coordinator/publish?${params}`, { method: 'POST' });
+    },
+
+    // ============================================
+    // SHIFT CONFIRMATIONS (in-app + public token)
+    // ============================================
+    async getPendingShifts() {
+        return request('/shifts/pending');
+    },
+
+    async respondToShift(id, action, reason) {
+        return request(`/shifts/${id}/respond`, {
+            method: 'POST',
+            body: JSON.stringify({ action, reason })
+        });
+    },
+
+    async getShiftByToken(id, token) {
+        return request(`/auth/shift-confirm?id=${id}&token=${encodeURIComponent(token)}`);
+    },
+
+    async respondToShiftByToken(id, token, action, reason) {
+        return request('/auth/shift-confirm', {
+            method: 'POST',
+            body: JSON.stringify({ id, token, action, reason })
+        });
+    },
+
+    // Staff availability self-service (referees)
+    async getMyStaffAvailability(role) {
+        return request(`/staff/availability?role=${role}`);
+    },
+
+    async markStaffUnavailable(role, dates) {
+        return request(`/staff/availability?role=${role}`, {
+            method: 'POST',
+            body: JSON.stringify({ dates })
+        });
+    },
+
+    async removeStaffUnavailable(role, date) {
+        return request(`/staff/availability?role=${role}&date=${date}`, { method: 'DELETE' });
+    },
+
+    // ============================================
     // PLAYER STATS API
     // ============================================
     async getPlayerStats(seasonId, teamId = null) {
@@ -604,6 +672,18 @@ export const {
     generateUsers,
     importGoalies,
     getAllGoalieUnavailability,
+    getCoordinatorAssignments,
+    getCoordinatorAvailability,
+    proposeShift,
+    withdrawShift,
+    publishShiftWeek,
+    getPendingShifts,
+    respondToShift,
+    getShiftByToken,
+    respondToShiftByToken,
+    getMyStaffAvailability,
+    markStaffUnavailable,
+    removeStaffUnavailable,
     getMyAssignments,
     getMyShifts,
     goalieSignup,

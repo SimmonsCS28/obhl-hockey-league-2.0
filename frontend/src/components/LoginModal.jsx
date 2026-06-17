@@ -47,11 +47,15 @@ function LoginModal({ isOpen, onClose }) {
                     // Check if user has a player profile in the player table
                     const email = result.user?.email || result.user?.username;
                     const hasPlayerProfile = email ? await api.checkPlayerProfileExists(email) : false;
+                    const roles = result.user?.roles || [];
+                    const hasStaffRole = roles.some(r => ['GOALIE', 'REF', 'SCOREKEEPER'].includes(r));
 
-                    if (hasPlayerProfile) {
-                        navigate('/user'); // Player Dashboard
+                    if (hasPlayerProfile || !hasStaffRole) {
+                        // Players, coordinators, and plain users land on their dashboard.
+                        navigate('/user');
                     } else {
-                        navigate('/user/shifts'); // My Shifts (staff without a player profile)
+                        // Staff-only (ref/scorekeeper/goalie without a player profile) → My Shifts.
+                        navigate('/user/shifts');
                     }
                 }
             }

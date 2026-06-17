@@ -25,6 +25,9 @@ import { AuthProvider } from './contexts/AuthContext';
 import { SeasonProvider } from './contexts/SeasonContext';
 import ChangePassword from './pages/ChangePassword';
 import AccountSettings from './pages/AccountSettings';
+import CoordinatorDashboard from './components/coordinator/CoordinatorDashboard';
+import ConfirmShift from './components/ConfirmShift';
+import RefAvailability from './components/user/RefAvailability';
 
 // New Staff Components
 import GoalieLayout from './components/GoalieLayout';
@@ -65,6 +68,7 @@ const router = createBrowserRouter([
       { path: "signup", element: <Signup /> },
       { path: "forgot-password", element: <ForgotPassword /> },
       { path: "reset-password", element: <ResetPassword /> },
+      { path: "shift-confirm", element: <ConfirmShift /> },
 
       // Legacy Routes - Redirect to unified signup
       { path: "referee/signup", element: <Signup /> },
@@ -157,6 +161,14 @@ const router = createBrowserRouter([
     )
   },
   {
+    path: "/user/ref-availability",
+    element: (
+      <ProtectedRoute requiredRoles={['REF', 'ADMIN']}>
+        <RefAvailability />
+      </ProtectedRoute>
+    )
+  },
+  {
     path: "/user/referee",
     element: (
       <ProtectedRoute requiredRoles={['REF']}>
@@ -199,6 +211,16 @@ const router = createBrowserRouter([
         <AdminLayout activeTab="teams">
           <TeamDetails onBack={() => window.history.back()} />
         </AdminLayout>
+      </ProtectedRoute>
+    )
+  },
+
+  // Coordinator Route (goalie/ref coordinators + admin)
+  {
+    path: "/coordinator",
+    element: (
+      <ProtectedRoute requiredRoles={['GOALIE_COORDINATOR', 'REF_COORDINATOR', 'ADMIN']}>
+        <CoordinatorDashboard />
       </ProtectedRoute>
     )
   },
