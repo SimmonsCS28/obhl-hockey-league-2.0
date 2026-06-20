@@ -1,0 +1,55 @@
+/*
+ * OBHL design tokens — from the design handoff (Saira theme, dark UI).
+ * Global CSS variables consumed by the redesigned (obi-*) components.
+ * Defining these on :root is non-invasive: existing components keep their
+ * own colors and are unaffected.
+ */
+:root {
+    /* Backgrounds */
+    --obi-bg: #0b0c0f;
+    --obi-bg-elevated: #0e1014;
+    --obi-bg-card: #13171d;
+    --obi-bg-deep-card: #161b22;
+
+    /* Brand + text */
+    --obi-accent: #F6A91C;
+    --obi-icy: #9DB9CD;
+    --obi-text: #EAEEF2;
+    --obi-text-secondary: #B6C0C9;
+    --obi-text-muted: #7E8A94;
+    --obi-text-dim: #5E6872;
+
+    /* Status */
+    --obi-success: #7FB59A;
+    --obi-error: #E08A8A;
+    --obi-warning: #E8C26A;
+
+    /* Lines */
+    --obi-header-border: rgba(246, 169, 28, 0.28);
+    --obi-card-border: rgba(157, 185, 205, 0.16);
+    --obi-divider: rgba(157, 185, 205, 0.12);
+
+    /* Accent tints */
+    --obi-accent-soft: rgba(246, 169, 28, 0.12);
+    --obi-accent-hover: rgba(246, 169, 28, 0.05);
+
+    /* Typography */
+    --obi-font-display: 'Saira Condensed', system-ui, sans-serif;
+    --obi-font-body: 'Saira', system-ui, sans-serif;
+
+    /* Layout */
+    --obi-page-max: 1240px;
+    --obi-radius-card: 16px;
+    --obi-radius-btn: 8px;
+    --obi-radius-badge: 6px;
+
+    /* Shadows */
+    --obi-shadow-gold: 0 4px 14px rgba(246, 169, 28, 0.3);
+    --obi-ring-light: inset 0 0 0 1.5px rgba(255, 255, 255, 0.45);
+}
+
+/* Pulsing live indicator used across redesigned pages */
+@keyframes obi-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+}

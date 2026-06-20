@@ -1,10 +1,21 @@
 import { useState, useEffect } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import logo from '../assets/images/obi-logo-nav.png';
+import logo from '../assets/images/buzzard-logo.png';
 import { useAuth } from '../contexts/AuthContext';
 import DonateButton from './DonateButton';
+import DonatePopup from './DonatePopup';
 import LoginModal from './LoginModal';
 import './PublicLayout.css';
+
+const NAV_LINKS = [
+    { to: '/', label: 'Home' },
+    { to: '/seasons', label: 'Seasons' },
+    { to: '/teams', label: 'Teams' },
+    { to: '/players', label: 'Players' },
+    { to: '/standings', label: 'Standings' },
+    { to: '/schedule', label: 'Schedule' },
+    { to: '/rules', label: 'Rules' },
+];
 
 function PublicLayout() {
     const navigate = useNavigate();
@@ -12,10 +23,11 @@ function PublicLayout() {
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { user, logout, isAuthenticated, isAdmin, isGM, hasAnyRole } = useAuth();
+
     // Close mobile menu on resize to desktop
     useEffect(() => {
         const handleResize = () => {
-            if (window.innerWidth > 768) {
+            if (window.innerWidth > 760) {
                 setIsMobileMenuOpen(false);
             }
         };
@@ -35,232 +47,144 @@ function PublicLayout() {
     const handleLogout = () => {
         logout();
         navigate('/');
-    };
-
-    const toggleMobileMenu = () => {
-        setIsMobileMenuOpen(!isMobileMenuOpen);
-    };
-
-    const closeMobileMenu = () => {
         setIsMobileMenuOpen(false);
     };
 
+    const closeMobileMenu = () => setIsMobileMenuOpen(false);
+
+    const isActive = (to) =>
+        to === '/' ? location.pathname === '/' : location.pathname.startsWith(to);
+
+    const go = (to) => {
+        navigate(to);
+        closeMobileMenu();
+    };
+
+    // Authenticated dashboard shortcuts, shared by desktop + mobile
+    const dashboardLinks = () => (
+        <>
+            {isGM && <button className="obi-ghost-btn" onClick={() => go('/gm')}>GM Dashboard</button>}
+            {isAdmin && <button className="obi-ghost-btn" onClick={() => go('/admin')}>Admin Dashboard</button>}
+            {hasAnyRole('GOALIE', 'REF', 'SCOREKEEPER') && (
+                <button className="obi-ghost-btn" onClick={() => go('/user/shifts')}>My Shifts</button>
+            )}
+            {hasAnyRole('GOALIE', 'REF', 'SCOREKEEPER', 'PLAYER', 'GM') && (
+                <button className="obi-ghost-btn" onClick={() => go('/user')}>My Dashboard</button>
+            )}
+            <button className="obi-ghost-btn" onClick={() => go('/account')}>Account Settings</button>
+        </>
+    );
+
+    const authActions = () => (
+        isAuthenticated ? (
+            <>
+                <span className="obi-user-greeting">Hi, {user?.username || user?.email}</span>
+                {dashboardLinks()}
+                <button className="obi-logout-btn" onClick={handleLogout}>Log Out</button>
+            </>
+        ) : (
+            <>
+                <Link to="/signup" className="obi-ghost-btn" onClick={closeMobileMenu}>Create Account</Link>
+                <button
+                    className="obi-cta-btn"
+                    onClick={() => { setIsLoginModalOpen(true); closeMobileMenu(); }}
+                >
+                    Log In
+                </button>
+            </>
+        )
+    );
+
     return (
-        <div className="public-layout">
-            <header className="public-header">
-                <div className="header-content">
-                    <Link to="/" className="logo" onClick={closeMobileMenu}>
-                        <img src={logo} alt="OBHL Logo" className="logo-img" />
+        <div className="obi-public-layout">
+            <header className="obi-header">
+                <div className="obi-header-inner">
+                    <Link to="/" className="obi-brand" onClick={closeMobileMenu}>
+                        <img src={logo} alt="OBHL" className="obi-brand-logo" />
+                        <span className="obi-wordmark">
+                            <span className="obi-wordmark-top">OLD BUZZARD</span>
+                            <span className="obi-wordmark-sub">HOCKEY LEAGUE</span>
+                        </span>
                     </Link>
 
-                    {/* Hamburger button for mobile */}
                     <button
-                        className="mobile-menu-toggle"
-                        onClick={toggleMobileMenu}
-                        aria-label="Toggle menu"
+                        className="obi-burger"
+                        onClick={() => setIsMobileMenuOpen(o => !o)}
+                        aria-label="Menu"
                     >
-                        <span></span>
-                        <span></span>
-                        <span></span>
+                        <span></span><span></span><span></span>
                     </button>
 
-                    {/* Mobile menu container */}
-                    {isMobileMenuOpen && (
-                        <div className="mobile-menu-container">
-                            <nav className="main-nav mobile-open">
-                                <Link to="/" onClick={closeMobileMenu}>Home</Link>
-                                <Link to="/seasons" onClick={closeMobileMenu}>Seasons</Link>
-                                <Link to="/teams" onClick={closeMobileMenu}>Teams</Link>
-                                <Link to="/players" onClick={closeMobileMenu}>Players</Link>
-                                <Link to="/standings" onClick={closeMobileMenu}>Standings</Link>
-                                <Link to="/schedule" onClick={closeMobileMenu}>Schedule</Link>
-                                <Link to="/rules" onClick={closeMobileMenu}>Rules</Link>
-                            </nav>
-                            <div className="donate-section mobile-open">
-                                <DonateButton />
-                            </div>
-                            <div className="auth-section mobile-open">
-                                {isAuthenticated ? (
-                                    <>
-                                        <span className="user-greeting">Hi, {user?.username || user?.email}</span>
-                                        {isGM && (
-                                            <button
-                                                className="dashboard-link"
-                                                onClick={() => {
-                                                    navigate('/gm');
-                                                    closeMobileMenu();
-                                                }}
-                                            >
-                                                GM Dashboard
-                                            </button>
-                                        )}
-                                        {isAdmin && (
-                                            <button
-                                                className="dashboard-link"
-                                                onClick={() => {
-                                                    navigate('/admin');
-                                                    closeMobileMenu();
-                                                }}
-                                            >
-                                                Admin Dashboard
-                                            </button>
-                                        )}
-                                        {hasAnyRole('GOALIE', 'REF', 'SCOREKEEPER') && (
-                                            <button
-                                                className="dashboard-link"
-                                                onClick={() => {
-                                                    navigate('/user/shifts');
-                                                    closeMobileMenu();
-                                                }}
-                                            >
-                                                My Shifts
-                                            </button>
-                                        )}
-                                        {hasAnyRole('GOALIE', 'REF', 'SCOREKEEPER', 'PLAYER', 'GM') && (
-                                            <button
-                                                className="dashboard-link"
-                                                onClick={() => {
-                                                    navigate('/user');
-                                                    closeMobileMenu();
-                                                }}
-                                            >
-                                                My Dashboard
-                                            </button>
-                                        )}
-                                        <button
-                                            className="dashboard-link"
-                                            onClick={() => {
-                                                navigate('/account');
-                                                closeMobileMenu();
-                                            }}
-                                        >
-                                            Account Settings
-                                        </button>
-                                        <button className="logout-btn" onClick={() => { handleLogout(); closeMobileMenu(); }}>Logout</button>
-                                    </>
-                                ) : (
-                                    <div className="auth-buttons">
-                                        <button
-                                            className="login-btn"
-                                            onClick={() => { setIsLoginModalOpen(true); closeMobileMenu(); }}
-                                        >
-                                            Login
-                                        </button>
-                                        <Link
-                                            to="/signup"
-                                            className="signup-link-btn"
-                                            onClick={closeMobileMenu}
-                                            style={{ marginLeft: '10px', textDecoration: 'none', color: 'white' }}
-                                        >
-                                            Create Account
-                                        </Link>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Desktop nav */}
-                    <nav className="main-nav">
-                        <Link to="/">Home</Link>
-                        <Link to="/seasons">Seasons</Link>
-                        <Link to="/teams">Teams</Link>
-                        <Link to="/players">Players</Link>
-                        <Link to="/standings">Standings</Link>
-                        <Link to="/schedule">Schedule</Link>
-                        <Link to="/rules">Rules</Link>
-                    </nav>
-                    <div className="header-actions">
-                        <div className="donate-section">
+                    <nav className="obi-nav" data-open={isMobileMenuOpen}>
+                        {NAV_LINKS.map(link => (
+                            <Link
+                                key={link.to}
+                                to={link.to}
+                                className={`obi-nav-link ${isActive(link.to) ? 'is-active' : ''}`}
+                                onClick={closeMobileMenu}
+                            >
+                                {link.label}
+                            </Link>
+                        ))}
+                        <div className="obi-nav-actions">
                             <DonateButton />
+                            {authActions()}
                         </div>
-                        <div className="auth-section">
+                    </nav>
+                </div>
+            </header>
+
+            <main className="obi-public-main">
+                <Outlet />
+            </main>
+
+            <footer className="obi-footer">
+                <div className="obi-footer-top obi-container">
+                    <div className="obi-footer-brand">
+                        <div className="obi-footer-brand-row">
+                            <img src={logo} alt="OBHL" className="obi-footer-logo" />
+                            <span className="obi-footer-wordmark">OLD BUZZARD HOCKEY</span>
+                        </div>
+                        <p className="obi-footer-tagline">
+                            Adult beer-league hockey at the Sun Prairie Ice Arena. Old birds, sharp talons, since 2009.
+                        </p>
+                    </div>
+                    <div className="obi-footer-cols">
+                        <div className="obi-footer-col">
+                            <div className="obi-footer-col-title">League</div>
+                            <Link to="/schedule">Schedule</Link>
+                            <Link to="/standings">Standings</Link>
+                            <Link to="/teams">Teams</Link>
+                            <Link to="/players">Players</Link>
+                        </div>
+                        <div className="obi-footer-col">
+                            <div className="obi-footer-col-title">Season</div>
+                            <Link to="/">Home</Link>
+                            <Link to="/seasons">Seasons</Link>
+                            <Link to="/rules">Rules &amp; Bylaws</Link>
+                        </div>
+                        <div className="obi-footer-col">
+                            <div className="obi-footer-col-title">My Account</div>
                             {isAuthenticated ? (
                                 <>
-                                    <span className="user-greeting">Hi, {user?.username || user?.email}</span>
-                                    {isGM && (
-                                        <button
-                                            className="dashboard-link"
-                                            onClick={() => {
-                                                navigate('/gm');
-                                                closeMobileMenu();
-                                            }}
-                                        >
-                                            GM Dashboard
-                                        </button>
-                                    )}
-                                    {hasAnyRole('GOALIE', 'REF', 'SCOREKEEPER') && (
-                                        <button
-                                            className="dashboard-link"
-                                            onClick={() => {
-                                                navigate('/user/shifts');
-                                                closeMobileMenu();
-                                            }}
-                                        >
-                                            My Shifts
-                                        </button>
-                                    )}
-                                    {isAdmin && (
-                                        <button
-                                            className="dashboard-link"
-                                            onClick={() => {
-                                                navigate('/admin');
-                                                closeMobileMenu();
-                                            }}
-                                        >
-                                            Admin Dashboard
-                                        </button>
-                                    )}
-                                    {hasAnyRole('GOALIE', 'REF', 'SCOREKEEPER', 'PLAYER', 'GM') && (
-                                        <button
-                                            className="dashboard-link"
-                                            onClick={() => {
-                                                navigate('/user');
-                                                closeMobileMenu();
-                                            }}
-                                        >
-                                            My Dashboard
-                                        </button>
-                                    )}
-                                    <button
-                                        className="dashboard-link"
-                                        onClick={() => {
-                                            navigate('/account');
-                                            closeMobileMenu();
-                                        }}
-                                    >
-                                        Account Settings
-                                    </button>
-                                    <button className="logout-btn" onClick={() => { handleLogout(); closeMobileMenu(); }}>Logout</button>
+                                    <Link to="/user">My Dashboard</Link>
+                                    <Link to="/account">Account Settings</Link>
                                 </>
                             ) : (
-                                <div className="auth-buttons">
-                                    <button
-                                        className="login-btn"
-                                        onClick={() => { setIsLoginModalOpen(true); closeMobileMenu(); }}
-                                    >
-                                        Login
-                                    </button>
-                                    <Link
-                                        to="/signup"
-                                        className="signup-link-btn"
-                                        style={{ marginLeft: '10px', textDecoration: 'none', fontWeight: 'bold' }}
-                                    >
-                                        Create Account
-                                    </Link>
-                                </div>
+                                <>
+                                    <button className="obi-footer-linkbtn" onClick={() => setIsLoginModalOpen(true)}>Log In</button>
+                                    <Link to="/signup">Create Account</Link>
+                                </>
                             )}
                         </div>
                     </div>
                 </div>
-            </header>
-
-            <main className="public-main">
-                <Outlet />
-            </main>
-
-            <footer className="public-footer">
-                <p>&copy; {new Date().getFullYear()} Old Buzzard Hockey League. All rights reserved.</p>
+                <div className="obi-footer-bottom">
+                    <div className="obi-container obi-footer-bottom-inner">
+                        <span>© {new Date().getFullYear()} Old Buzzard Hockey League · Sun Prairie, WI</span>
+                        <span>All rights reserved.</span>
+                    </div>
+                </div>
             </footer>
 
             {isLoginModalOpen && (
@@ -269,6 +193,8 @@ function PublicLayout() {
                     onClose={() => setIsLoginModalOpen(false)}
                 />
             )}
+
+            <DonatePopup />
         </div>
     );
 }

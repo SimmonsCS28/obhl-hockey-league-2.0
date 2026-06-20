@@ -1,163 +1,259 @@
-.standings-page {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 2rem;
+/* Standings — redesigned per OBHL design handoff */
+
+.obi-standings-body {
+    background: var(--obi-bg-elevated);
 }
 
-.season-selector {
-    background: white;
-    padding: 1rem 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    margin-bottom: 2rem;
+.obi-standings-body .obi-container {
+    padding-top: 44px;
+    padding-bottom: 70px;
+}
+
+/* Toolbar: legend + season selector */
+.obi-standings-toolbar {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
-    justify-content: center;
-    gap: 1rem;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 20px;
 }
 
-.season-selector label {
-    font-weight: 600;
-    color: #2d3748;
-    font-size: 1.1rem;
+.obi-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 18px;
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    color: var(--obi-text-muted);
 }
 
-.season-dropdown {
-    width: 300px;
-    max-width: 100%;
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
-    color: #2d3748;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    background: white;
+.obi-legend b {
+    color: var(--obi-text);
+}
+
+.obi-legend-cut {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.obi-legend-line {
+    width: 22px;
+    height: 3px;
+    border-radius: 2px;
+    background: var(--obi-accent);
+}
+
+.obi-season-select {
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-text);
+    background: var(--obi-bg-card);
+    border: 1px solid var(--obi-card-border);
+    border-radius: var(--obi-radius-btn);
+    padding: 9px 14px;
     cursor: pointer;
-    transition: border-color 0.2s;
 }
 
-.season-dropdown:hover {
-    border-color: #4a5568;
-}
-
-.season-dropdown:focus {
+.obi-season-select:focus {
     outline: none;
-    border-color: #2d3748;
+    border-color: var(--obi-accent);
 }
 
-.standings-table-container {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+/* Table card */
+.obi-table-card {
+    background: linear-gradient(180deg, #13171d, #10141a);
+    border: 1px solid var(--obi-card-border);
+    border-radius: var(--obi-radius-card);
     overflow: hidden;
 }
 
-.standings-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.standings-table thead {
-    background: #4a5568 !important;
-    color: white;
-}
-
-.standings-table th {
-    padding: 1rem;
-    text-align: left;
-    font-weight: 600;
-    font-size: 0.95rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    background: #4a5568 !important;
-    color: white !important;
-}
-
-.standings-table th:first-child {
-    text-align: center;
-}
-
-.standings-table tbody tr {
-    border-bottom: 1px solid #e2e8f0;
-    transition: background-color 0.2s;
-}
-
-.standings-table tbody tr:hover {
-    background-color: #f7fafc;
-}
-
-.standings-table tbody tr:last-child {
-    border-bottom: none;
-}
-
-.standings-table tbody tr.clickable-row {
+/* Rows are flexbox so columns align between header + body */
+.obi-srow {
+    display: flex;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.08);
+    transition: background 0.12s;
     cursor: pointer;
 }
 
-.standings-table tbody tr.clickable-row:hover {
-    background-color: #f7fafc;
+.obi-srow.is-playoff:hover {
+    background: var(--obi-accent-hover);
 }
 
-.standings-table td {
-    padding: 0.5rem 1rem;
-    color: #2d3748;
+.obi-srow.is-out {
+    opacity: 0.72;
 }
 
-.standings-table td.rank {
+.obi-srow.is-out:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.obi-srow:last-child {
+    border-bottom: none;
+}
+
+/* Header row */
+.obi-srow-head {
+    padding: 14px 20px;
+    background: rgba(0, 0, 0, 0.25);
+    border-bottom: 1px solid rgba(157, 185, 205, 0.18);
+    cursor: default;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+}
+
+.obi-srow-head:hover {
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.obi-pts-head {
+    color: var(--obi-accent);
+}
+
+/* Columns */
+.obi-col-rank {
+    width: 34px;
     text-align: center;
+    flex: none;
+}
+
+.obi-srow:not(.obi-srow-head) .obi-col-rank {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 20px;
+}
+
+.obi-srow.is-playoff .obi-col-rank {
+    color: var(--obi-accent);
+}
+
+.obi-srow.is-out .obi-col-rank {
+    color: var(--obi-text-muted);
+}
+
+.obi-col-team {
+    flex: 1;
+    min-width: 0;
+    padding-left: 10px;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.obi-team-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    flex: none;
+    box-shadow: var(--obi-ring-light);
+}
+
+.obi-team-name {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.obi-srow:not(.obi-srow-head) .obi-team-name {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 0.3px;
+}
+
+.obi-srow.is-playoff .obi-team-name {
+    color: #fff;
+}
+
+.obi-srow.is-out .obi-team-name {
+    color: #D6DCE2;
+}
+
+.obi-col-pts {
+    width: 56px;
+    text-align: center;
+    flex: none;
+}
+
+.obi-srow:not(.obi-srow-head) .obi-col-pts {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 22px;
+    color: #fff;
+}
+
+.obi-srow.is-out .obi-col-pts {
+    color: #D6DCE2;
+}
+
+.obi-col-num {
+    width: 46px;
+    text-align: center;
+    flex: none;
+    font-family: var(--obi-font-body);
+    font-size: 15px;
+    color: var(--obi-text-secondary);
+}
+
+.obi-srow:not(.obi-srow-head) .obi-col-w {
     font-weight: 600;
-    font-size: 1.1rem;
-    color: #4a5568;
+    color: var(--obi-text);
 }
 
-.standings-table td.team-name {
-    min-width: 200px;
-    border: none;
+.obi-pos { color: var(--obi-success); }
+.obi-neg { color: var(--obi-error); }
+.obi-neutral { color: var(--obi-text-secondary); }
+
+/* Playoff cut divider */
+.obi-playoff-cut {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 20px;
+    background: rgba(246, 169, 28, 0.08);
+    border-top: 1px solid var(--obi-accent);
+    border-bottom: 1px solid var(--obi-accent);
 }
 
-.standings-table td.team-name strong {
-    text-decoration: none;
+.obi-playoff-cut-label {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 11.5px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--obi-accent);
 }
 
-.standings-table td.team-name .team-abbr {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 0.875rem;
+.obi-playoff-cut-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(246, 169, 28, 0.5), transparent);
 }
 
-.standings-table td.points {
-    font-size: 1.1rem;
-    color: #2d3748;
-}
-
-.loading,
-.error,
-.no-data {
+.obi-standings-msg {
+    padding: 48px;
     text-align: center;
-    padding: 3rem;
-    font-size: 1.2rem;
+    font-family: var(--obi-font-body);
+    font-size: 16px;
+    color: var(--obi-text-muted);
 }
 
-.error {
-    color: #dc3545;
+/* Responsive: progressively hide secondary columns */
+@media (max-width: 760px) {
+    .obi-col-md { display: none !important; }
 }
 
-.no-data {
-    background: white;
-    border-radius: 12px;
-    padding: 3rem;
-    color: #666;
-}
-
-@media (max-width: 768px) {
-    .season-selector {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .standings-table-container {
-        overflow-x: auto;
-    }
-
-    .standings-table {
-        min-width: 700px;
-    }
+@media (max-width: 620px) {
+    .obi-col-sm { display: none !important; }
 }

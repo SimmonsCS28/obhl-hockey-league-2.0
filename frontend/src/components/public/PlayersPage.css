@@ -1,232 +1,228 @@
-.players-page {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 2rem;
+/* Players — redesigned per OBHL design handoff */
+
+.obi-players-body {
+    background: var(--obi-bg);
 }
 
-.filters-container {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    margin-bottom: 2rem;
+.obi-players-body .obi-container {
+    padding-top: 42px;
+    padding-bottom: 74px;
+}
+
+/* Controls row */
+.obi-players-controls {
     display: flex;
-    gap: 2rem;
     flex-wrap: wrap;
-}
-
-.filter-group {
-    display: flex;
+    gap: 14px;
     align-items: center;
-    gap: 1rem;
-    flex: 1;
-    min-width: 250px;
+    justify-content: space-between;
+    margin-bottom: 18px;
 }
 
-.filter-group label {
-    font-weight: 600;
-    color: #2d3748;
-    font-size: 1.1rem;
-    white-space: nowrap;
-}
-
-.filter-dropdown {
-    flex: 1;
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
-    color: #2d3748;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    background: white;
-    cursor: pointer;
-    transition: border-color 0.2s;
-}
-
-.filter-dropdown:hover {
-    border-color: #4a5568;
-}
-
-.filter-dropdown:focus {
-    outline: none;
-    border-color: #2d3748;
-}
-
-/* Search field */
-.search-group {
-    min-width: 280px;
-}
-
-.search-input-wrapper {
-    flex: 1;
+.obi-search {
     position: relative;
+    flex: 1;
+    min-width: 230px;
+    max-width: 360px;
+}
+
+.obi-search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--obi-text-dim);
+    font-size: 15px;
+}
+
+.obi-search-input {
+    width: 100%;
+    background: var(--obi-bg-card);
+    border: 1px solid rgba(157, 185, 205, 0.2);
+    border-radius: 9px;
+    padding: 11px 14px 11px 36px;
+    color: var(--obi-text);
+    font-family: var(--obi-font-body);
+    font-size: 15px;
+    outline: none;
+}
+
+.obi-search-input:focus {
+    border-color: rgba(246, 169, 28, 0.5);
+}
+
+.obi-players-controls-right {
     display: flex;
     align-items: center;
+    gap: 14px;
 }
 
-.search-icon {
-    position: absolute;
-    left: 0.75rem;
-    font-size: 0.9rem;
-    pointer-events: none;
-    opacity: 0.6;
+.obi-showing {
+    font-family: var(--obi-font-body);
+    font-size: 13.5px;
+    color: var(--obi-text-muted);
 }
 
-.search-input {
-    width: 100%;
-    padding: 0.75rem 2.5rem 0.75rem 2.25rem;
-    font-size: 1rem;
-    color: #2d3748;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    background: white;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    box-sizing: border-box;
+.obi-showing b {
+    color: var(--obi-text);
 }
 
-.search-input:hover {
-    border-color: #4a5568;
+/* Team filter chips */
+.obi-team-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
 }
 
-.search-input:focus {
-    outline: none;
-    border-color: #2d3748;
-    box-shadow: 0 0 0 3px rgba(45, 55, 72, 0.1);
-}
-
-.search-input::placeholder {
-    color: #a0aec0;
-}
-
-.search-clear-btn {
-    position: absolute;
-    right: 0.6rem;
-    background: none;
-    border: none;
-    color: #a0aec0;
-    font-size: 1rem;
-    cursor: pointer;
-    padding: 0.2rem 0.4rem;
-    border-radius: 4px;
-    line-height: 1;
-    transition: color 0.15s, background 0.15s;
-}
-
-.search-clear-btn:hover {
-    color: #2d3748;
-    background: #edf2f7;
-}
-
-
-.players-table-container {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-}
-
-.players-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.players-table thead {
-    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
-    color: white;
-}
-
-.players-table th {
-    padding: 1rem;
-    text-align: left;
-    font-weight: 600;
-    font-size: 0.95rem;
+.obi-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.players-table th.sortable {
     cursor: pointer;
-    user-select: none;
-    transition: background-color 0.2s;
+    color: var(--obi-text-secondary);
+    background: rgba(157, 185, 205, 0.08);
+    border: 1px solid rgba(157, 185, 205, 0.2);
+    padding: 7px 13px;
+    border-radius: 20px;
+    transition: transform 0.1s, color 0.15s, background 0.15s, border-color 0.15s;
 }
 
-.players-table th.sortable:hover {
-    background: linear-gradient(135deg, #5a6678 0%, #3d4758 100%);
+.obi-chip:hover {
+    transform: translateY(-1px);
+    color: #fff;
 }
 
-.players-table tbody tr {
-    border-bottom: 1px solid #e2e8f0;
-    transition: background-color 0.2s;
+.obi-chip.is-active {
+    color: #0b0c0f;
+    background: var(--obi-accent);
+    border-color: var(--obi-accent);
 }
 
-.players-table tbody tr:hover {
-    background-color: #f7fafc;
+.obi-chip-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
 }
 
-.players-table tbody tr:last-child {
+/* Roster table (flex rows) */
+.obi-prow {
+    display: flex;
+    align-items: center;
+    padding: 13px 20px;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.07);
+    transition: background 0.12s;
+}
+
+.obi-prow:last-child {
     border-bottom: none;
 }
 
-.players-table td {
-    padding: 1rem;
-    color: #2d3748;
+.obi-prow:not(.obi-prow-head):hover {
+    background: var(--obi-accent-hover);
 }
 
-.gm-badge {
-    display: inline-block;
-    margin-left: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    background: #fbbf24;
-    color: #000000;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: 4px;
+.obi-prow-head {
+    padding: 13px 20px;
+    background: rgba(0, 0, 0, 0.25);
+    border-bottom: 1px solid rgba(157, 185, 205, 0.18);
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    color: var(--obi-text-muted);
 }
 
-.twogl-badge {
-    display: inline-block;
-    margin-left: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    background: #10b981;
-    color: #ffffff;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.loading,
-.error,
-.no-data {
+.obi-pcol-num {
+    width: 54px;
     text-align: center;
-    padding: 3rem;
-    font-size: 1.2rem;
+    flex: none;
 }
 
-.error {
-    color: #dc3545;
+.obi-prow:not(.obi-prow-head) .obi-pcol-num {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 18px;
+    color: var(--obi-accent);
 }
 
-.no-data {
-    background: white;
-    border-radius: 12px;
-    padding: 3rem;
-    color: #666;
+.obi-pcol-name {
+    flex: 1;
+    min-width: 0;
+    padding-left: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-@media (max-width: 768px) {
-    .season-selector {
-        flex-direction: column;
-        align-items: stretch;
-    }
+.obi-prow:not(.obi-prow-head) .obi-pcol-name {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 18px;
+    color: #fff;
+}
 
-    .players-table-container {
-        overflow-x: auto;
-    }
+.obi-pcol-team {
+    width: 210px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
 
-    .players-table {
-        min-width: 600px;
-    }
+.obi-team-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    flex: none;
+    box-shadow: var(--obi-ring-light);
+}
+
+.obi-pcol-team-name {
+    font-family: var(--obi-font-body);
+    font-size: 14.5px;
+    color: var(--obi-text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.obi-pcol-pos {
+    width: 104px;
+    text-align: center;
+    flex: none;
+}
+
+.obi-pos-badge {
+    display: inline-block;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 1px;
+    color: var(--obi-icy);
+    background: rgba(157, 185, 205, 0.1);
+    border: 1px solid rgba(157, 185, 205, 0.2);
+    padding: 4px 11px;
+    border-radius: 6px;
+}
+
+.obi-players-msg {
+    padding: 46px 20px;
+    text-align: center;
+    font-family: var(--obi-font-body);
+    font-size: 15px;
+    color: var(--obi-text-muted);
+}
+
+.obi-neg { color: var(--obi-error); }
+
+@media (max-width: 620px) {
+    .obi-col-sm { display: none !important; }
 }

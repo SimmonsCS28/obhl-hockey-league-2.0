@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { useSeason } from '../../contexts/SeasonContext';
+import { resolveTeamColor } from '../../constants/teamColors';
+import heroBg from '../../assets/images/buzzard-full.jpg';
 import './PlayersPage.css';
 
 function PlayersPage() {
@@ -9,8 +10,6 @@ function PlayersPage() {
     const [teams, setTeams] = useState([]);
     const [selectedTeam, setSelectedTeam] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
-    const [sortField, setSortField] = useState('lastName');
-    const [sortDirection, setSortDirection] = useState('asc');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -26,9 +25,7 @@ function PlayersPage() {
             setLoading(true);
             const response = await fetch(`/stats-api/players?seasonId=${seasonId}`);
             if (!response.ok) throw new Error('Failed to fetch players');
-
-            const data = await response.json();
-            setPlayers(data);
+            setPlayers(await response.json());
         } catch (err) {
             setError(err.message);
         } finally {
@@ -40,258 +37,132 @@ function PlayersPage() {
         try {
             const response = await fetch(`/api/v1/teams?seasonId=${seasonId}`);
             if (!response.ok) throw new Error('Failed to fetch teams');
-
-            const data = await response.json();
-            setTeams(data);
-            setSelectedTeam('all'); // Reset team filter when season changes
+            setTeams(await response.json());
+            setSelectedTeam('all');
         } catch (err) {
             console.error('Failed to fetch teams:', err);
         }
     };
 
-    const handleSeasonChange = (event) => {
-        setSelectedSeasonId(Number(event.target.value));
-    };
+    const teamById = (id) => teams.find(t => t.id === id);
+    const teamName = (id) => teamById(id)?.name || 'Free Agent';
 
-    const handleTeamChange = (event) => {
-        setSelectedTeam(event.target.value);
-    };
-
-    const getTeamName = (teamId) => {
-        const team = teams.find(t => t.id === teamId);
-        return team ? team.name : 'Free Agent';
-    };
-
-    // Helper to get valid CSS color
-    const getValidColor = (color) => {
-        if (!color) return '#95a5a6'; // Default grey for Free Agent or missing color
-
-        // Map truncated DB values to valid CSS colors
-        const colorMap = {
-            'Lt. Blu': '#87CEEB', // SkyBlue
-            'Dk. Gre': '#006400', // DarkGreen
-            'White': '#FFFFFF',
-            'Yellow': '#FFD700',
-            'Gold': '#FFD700'
-        };
-
-        return colorMap[color] || color;
-    };
-
-    // Helper to determine text color based on background
-    const getTextColor = (bgColor) => {
-        if (!bgColor) return 'white';
-
-        const lightColors = [
-            'White', '#FFFFFF',
-            'Yellow', '#FFD700',
-            'Gold',
-            'Lt. Blu', '#87CEEB', 'LightBlue'
-        ];
-
-        // Check if color is in light list (case insensitive)
-        const isLight = lightColors.some(c =>
-            c.toLowerCase() === bgColor.toLowerCase()
-        );
-
-        return isLight ? '#2c3e50' : 'white';
-    };
-
-    const isGM = (player) => {
-        const team = teams.find(t => t.id === player.teamId);
-        return team && team.gmId === player.id;
-    };
-
-    const handleSort = (field) => {
-        if (sortField === field) {
-            setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-        } else {
-            setSortField(field);
-            setSortDirection('asc');
-        }
-    };
-
-    // Filter players by selected team and search query
-    const filteredPlayers = players
-        .filter(p => {
-            if (selectedTeam === 'free-agent') return !p.teamId;
-            if (selectedTeam !== 'all') return p.teamId === parseInt(selectedTeam);
-            return true;
-        })
+    // Filter by team + search, then sort by last name
+    const filtered = players
+        .filter(p => (selectedTeam === 'all' ? true : p.teamId === Number(selectedTeam)))
         .filter(p => {
             if (!searchQuery.trim()) return true;
-            const full = `${p.firstName} ${p.lastName}`.toLowerCase();
-            return full.includes(searchQuery.trim().toLowerCase());
+            return `${p.firstName} ${p.lastName}`.toLowerCase().includes(searchQuery.trim().toLowerCase());
         });
 
-    // Sort filtered players
-    const sortedPlayers = [...filteredPlayers].sort((a, b) => {
-        let aValue, bValue;
-
-        switch (sortField) {
-            case 'name':
-            case 'lastName':
-                // Sort by last name, then first name
-                aValue = (a.lastName?.toLowerCase() || '') + (a.firstName?.toLowerCase() || '');
-                bValue = (b.lastName?.toLowerCase() || '') + (b.firstName?.toLowerCase() || '');
-                break;
-            case 'position':
-                aValue = a.position?.toLowerCase() || '';
-                bValue = b.position?.toLowerCase() || '';
-                break;
-            case 'team':
-                aValue = getTeamName(a.teamId).toLowerCase();
-                bValue = getTeamName(b.teamId).toLowerCase();
-                break;
-            default:
-                return 0;
-        }
-
-        if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
-        if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
-        return 0;
+    const sorted = [...filtered].sort((a, b) => {
+        const an = (a.lastName?.toLowerCase() || '') + (a.firstName?.toLowerCase() || '');
+        const bn = (b.lastName?.toLowerCase() || '') + (b.firstName?.toLowerCase() || '');
+        return an.localeCompare(bn);
     });
 
-    if (loading) return <div className="loading">Loading players...</div>;
-    if (error) return <div className="error">Error: {error}</div>;
-
     return (
-        <>
-            <div className="page-header-bar">
-                <div className="page-header-inner centered">
-                    <h1>Players</h1>
+        <div className="obi-page obi-players">
+            <section className="obi-page-hero">
+                <img src={heroBg} alt="" className="obi-page-hero-bg" />
+                <div className="obi-page-hero-overlay" />
+                <div className="obi-page-hero-inner">
+                    <div className="obi-eyebrow">Old Buzzard Hockey League</div>
+                    <h1 className="obi-page-title">PLAYERS</h1>
+                    <p className="obi-page-sub">
+                        {selectedSeason?.name || 'This season'} · {players.length} skaters &amp; goaltenders
+                    </p>
                 </div>
-            </div>
-            <div className="players-page">
+            </section>
 
-            <div className="filters-container">
-                {selectedSeason && (
-                    <div className="filter-group">
-                        <label htmlFor="season-select">Season:</label>
-                        <select
-                            id="season-select"
-                            value={String(selectedSeasonId || '')}
-                            onChange={handleSeasonChange}
-                            className="filter-dropdown"
-                        >
-                            {seasons.map(season => (
-                                <option
-                                    key={season.id}
-                                    value={String(season.id)}
+            <section className="obi-players-body">
+                <div className="obi-container">
+                    {/* Controls */}
+                    <div className="obi-players-controls">
+                        <div className="obi-search">
+                            <span className="obi-search-icon">⌕</span>
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search players…"
+                                className="obi-search-input"
+                            />
+                        </div>
+                        <div className="obi-players-controls-right">
+                            {seasons?.length > 0 && (
+                                <select
+                                    className="obi-season-select"
+                                    value={String(selectedSeasonId || '')}
+                                    onChange={(e) => setSelectedSeasonId(Number(e.target.value))}
                                 >
-                                    {season.name} {season.isActive ? '(Active)' : ''}
-                                </option>
-                            ))}
-                        </select>
+                                    {seasons.map(s => (
+                                        <option key={s.id} value={String(s.id)}>
+                                            {s.name}{s.isActive ? ' (Active)' : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                            )}
+                            <span className="obi-showing">
+                                Showing <b>{sorted.length}</b> of {players.length}
+                            </span>
+                        </div>
                     </div>
-                )}
 
-                <div className="filter-group">
-                    <label htmlFor="team-select">Team:</label>
-                    <select
-                        id="team-select"
-                        value={selectedTeam}
-                        onChange={handleTeamChange}
-                        className="filter-dropdown"
-                    >
-                        <option value="all">All Teams</option>
+                    {/* Team filter chips */}
+                    <div className="obi-team-chips">
+                        <button
+                            className={`obi-chip ${selectedTeam === 'all' ? 'is-active' : ''}`}
+                            onClick={() => setSelectedTeam('all')}
+                        >
+                            All Teams
+                        </button>
                         {teams.map(team => (
-                            <option key={team.id} value={String(team.id)}>
-                                {team.name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className="filter-group search-group">
-                    <label htmlFor="player-search">Search:</label>
-                    <div className="search-input-wrapper">
-                        <span className="search-icon">🔍</span>
-                        <input
-                            id="player-search"
-                            type="text"
-                            placeholder="Search by name..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="search-input"
-                        />
-                        {searchQuery && (
                             <button
-                                className="search-clear-btn"
-                                onClick={() => setSearchQuery('')}
-                                title="Clear search"
-                            >✕</button>
+                                key={team.id}
+                                className={`obi-chip ${selectedTeam === String(team.id) ? 'is-active' : ''}`}
+                                onClick={() => setSelectedTeam(String(team.id))}
+                            >
+                                <span className="obi-chip-dot" style={{ background: resolveTeamColor(team.teamColor) }} />
+                                {team.name}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Table */}
+                    <div className="obi-table-card">
+                        <div className="obi-prow obi-prow-head">
+                            <span className="obi-pcol-num">#</span>
+                            <span className="obi-pcol-name">Player</span>
+                            <span className="obi-pcol-team obi-col-sm">Team</span>
+                            <span className="obi-pcol-pos">Position</span>
+                        </div>
+
+                        {loading ? (
+                            <div className="obi-players-msg">Loading players…</div>
+                        ) : error ? (
+                            <div className="obi-players-msg obi-neg">Error: {error}</div>
+                        ) : sorted.length === 0 ? (
+                            <div className="obi-players-msg">No players match your search.</div>
+                        ) : (
+                            sorted.map(player => (
+                                <div key={player.id} className="obi-prow">
+                                    <span className="obi-pcol-num">{player.jerseyNumber ?? '—'}</span>
+                                    <span className="obi-pcol-name">{player.firstName} {player.lastName}</span>
+                                    <span className="obi-pcol-team obi-col-sm">
+                                        <span className="obi-team-dot" style={{ background: resolveTeamColor(teamById(player.teamId)?.teamColor) }} />
+                                        <span className="obi-pcol-team-name">{teamName(player.teamId)}</span>
+                                    </span>
+                                    <span className="obi-pcol-pos">
+                                        <span className="obi-pos-badge">{player.position || 'N/A'}</span>
+                                    </span>
+                                </div>
+                            ))
                         )}
                     </div>
                 </div>
-            </div>
-
-            {sortedPlayers.length === 0 ? (
-                <div className="no-data">No players found for this selection.</div>
-            ) : (
-                <div className="players-table-container">
-                    <table className="players-table">
-                        <thead>
-                            <tr>
-                                <th onClick={() => handleSort('name')} className="sortable">
-                                    Name {(sortField === 'name' || sortField === 'lastName') && (sortDirection === 'asc' ? '▲' : '▼')}
-                                </th>
-                                <th onClick={() => handleSort('position')} className="sortable">
-                                    Position {sortField === 'position' && (sortDirection === 'asc' ? '▲' : '▼')}
-                                </th>
-                                <th onClick={() => handleSort('team')} className="sortable">
-                                    Team {sortField === 'team' && (sortDirection === 'asc' ? '▲' : '▼')}
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {sortedPlayers.map(player => {
-                                const team = teams.find(t => t.id === player.teamId);
-                                const bg = team ? getValidColor(team.teamColor) : null;
-                                const textColor = team ? getTextColor(bg) : 'inherit';
-
-                                return (
-                                    <tr key={player.id}>
-                                        <td>
-                                            {player.firstName} {player.lastName}
-                                            {isGM(player) && <span className="gm-badge">GM</span>}
-                                            {player.skillRating >= 9 && <span className="twogl-badge">2GL</span>}
-                                        </td>
-                                        <td>{player.position || 'N/A'}</td>
-                                        <td>
-                                            {team ? (
-                                                <Link
-                                                    to={`/teams/${team.id}`}
-                                                    style={{
-                                                        backgroundColor: bg,
-                                                        color: textColor,
-                                                        padding: '4px 8px',
-                                                        borderRadius: '4px',
-                                                        display: 'inline-block',
-                                                        fontWeight: '600',
-                                                        minWidth: '100px',
-                                                        textAlign: 'center',
-                                                        textDecoration: 'none',
-                                                        cursor: 'pointer',
-                                                        transition: 'opacity 0.15s ease',
-                                                    }}
-                                                    onMouseEnter={e => e.currentTarget.style.opacity = '0.8'}
-                                                    onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-                                                    title={`View ${team.name} roster`}
-                                                >
-                                                    {team.name}
-                                                </Link>
-                                            ) : 'Free Agent'}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
-            )}
+            </section>
         </div>
-        </>
     );
 }
 

@@ -1,7 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSeason } from '../../contexts/SeasonContext';
+import heroBg from '../../assets/images/buzzard-full.jpg';
 import './StandingsPage.css';
+
+// Top N teams make the playoffs (drawn as a gold cut-line in the table).
+const PLAYOFF_SPOTS = 8;
+
+// Resolve a team's stored color (hex or known name) to a CSS color for the dot.
+const TEAM_COLOR_MAP = {
+    'Red': '#FF0000', 'Blue': '#0000FF', 'Orange': '#FFA500', 'Green': '#008000',
+    'Black': '#000000', 'Maroon': '#800000', 'Gray': '#808080', 'Grey': '#808080',
+    'Lt. Blu': '#ADD8E6', 'Lt. Blue': '#ADD8E6', 'Tan': '#D2B48C', 'White': '#FFFFFF',
+    'Yellow': '#FFD700', 'Gold': '#FFD700', 'Purple': '#800080', 'Navy': '#000080',
+};
+const dotColor = (color) => (color ? (TEAM_COLOR_MAP[color] || color) : '#808080');
 
 function StandingsPage() {
     const navigate = useNavigate();
@@ -16,35 +29,22 @@ function StandingsPage() {
         }
     }, [selectedSeasonId]);
 
-
     const fetchTeams = async (seasonId) => {
         try {
             setLoading(true);
             const response = await fetch(`/api/v1/teams?seasonId=${seasonId}`);
             if (!response.ok) throw new Error('Failed to fetch teams');
-
             const data = await response.json();
 
-            // Sort teams by: 1) points (desc), 2) wins (desc), 3) goals against (asc), 4) goals for (desc)
+            // Sort: points desc, then total wins, then goals against asc, then goals for desc
             const sorted = data.sort((a, b) => {
-                // Primary: Points (highest first)
-                if (b.points !== a.points) {
-                    return b.points - a.points;
-                }
-                // Tiebreaker 1: Wins (highest first)
-                const bTotalWins = (b.wins || 0) + (b.overtimeWins || 0);
-                const aTotalWins = (a.wins || 0) + (a.overtimeWins || 0);
-                if (bTotalWins !== aTotalWins) {
-                    return bTotalWins - aTotalWins;
-                }
-                // Tiebreaker 2: Goals Against (lowest first - fewer goals against is better)
-                if (a.goalsAgainst !== b.goalsAgainst) {
-                    return a.goalsAgainst - b.goalsAgainst;
-                }
-                // Tiebreaker 3: Goals For (highest first)
+                if (b.points !== a.points) return b.points - a.points;
+                const bWins = (b.wins || 0) + (b.overtimeWins || 0);
+                const aWins = (a.wins || 0) + (a.overtimeWins || 0);
+                if (bWins !== aWins) return bWins - aWins;
+                if (a.goalsAgainst !== b.goalsAgainst) return a.goalsAgainst - b.goalsAgainst;
                 return b.goalsFor - a.goalsFor;
             });
-
             setTeams(sorted);
         } catch (err) {
             setError(err.message);
@@ -53,137 +53,122 @@ function StandingsPage() {
         }
     };
 
-    const handleSeasonChange = (event) => {
-        setSelectedSeasonId(Number(event.target.value));
-    };
+    const wins = (t) => (t.wins || 0) + (t.overtimeWins || 0);
+    const gamesPlayed = (t) =>
+        (t.wins || 0) + (t.overtimeWins || 0) + (t.losses || 0) + (t.ties || 0) + (t.overtimeLosses || 0);
+    const goalDiff = (t) => (t.goalsFor || 0) - (t.goalsAgainst || 0);
 
-    const calculateGoalDiff = (team) => {
-        return team.goalsFor - team.goalsAgainst;
-    };
+    const renderRow = (team, index) => {
+        const isPlayoff = index < PLAYOFF_SPOTS;
+        const diff = goalDiff(team);
+        const diffClass = diff > 0 ? 'obi-pos' : diff < 0 ? 'obi-neg' : 'obi-neutral';
 
-    // Helper to get valid CSS color
-    const getValidColor = (color) => {
-        if (!color) return '#95a5a6';
-
-        // Map truncated DB values to valid CSS colors
-        const colorMap = {
-            'Lt. Blu': '#87CEEB', // SkyBlue
-            'Dk. Gre': '#006400', // DarkGreen
-            'White': '#FFFFFF',
-            'Yellow': '#FFD700',
-            'Gold': '#FFD700'
-        };
-
-        return colorMap[color] || color;
-    };
-
-    // Helper to determine text color based on background
-    const getTextColor = (bgColor) => {
-        if (!bgColor) return 'white';
-
-        const lightColors = [
-            'White', '#FFFFFF',
-            'Yellow', '#FFD700',
-            'Gold',
-            'Lt. Blu', '#87CEEB', 'LightBlue'
-        ];
-
-        // Check if color is in light list (case insensitive)
-        const isLight = lightColors.some(c =>
-            c.toLowerCase() === bgColor.toLowerCase()
+        return (
+            <div
+                key={team.id}
+                className={`obi-srow ${isPlayoff ? 'is-playoff' : 'is-out'}`}
+                onClick={() => navigate(`/teams/${team.id}`)}
+                title="View team roster"
+            >
+                <span className="obi-col-rank">{index + 1}</span>
+                <span className="obi-col-team">
+                    <span className="obi-team-dot" style={{ background: dotColor(team.teamColor) }} />
+                    <span className="obi-team-name">{team.name}</span>
+                </span>
+                <span className="obi-col-pts">{team.points || 0}</span>
+                <span className="obi-col-num">{gamesPlayed(team)}</span>
+                <span className="obi-col-num obi-col-w">{wins(team)}</span>
+                <span className="obi-col-num">{team.losses || 0}</span>
+                <span className="obi-col-num obi-col-sm">{team.ties || 0}</span>
+                <span className="obi-col-num obi-col-sm">{team.overtimeLosses || 0}</span>
+                <span className="obi-col-num obi-col-md">{team.goalsFor || 0}</span>
+                <span className="obi-col-num obi-col-md">{team.goalsAgainst || 0}</span>
+                <span className={`obi-col-num obi-col-sm ${diffClass}`}>
+                    {diff > 0 ? '+' : ''}{diff}
+                </span>
+            </div>
         );
-
-        return isLight ? '#2c3e50' : 'white';
     };
-
-    if (loading) return <div className="loading">Loading standings...</div>;
-    if (error) return <div className="error">Error: {error}</div>;
 
     return (
-        <>
-            <div className="page-header-bar">
-                <div className="page-header-inner centered">
-                    <h1>Standings</h1>
+        <div className="obi-page obi-standings">
+            <section className="obi-page-hero">
+                <img src={heroBg} alt="" className="obi-page-hero-bg" />
+                <div className="obi-page-hero-overlay" />
+                <div className="obi-page-hero-inner">
+                    <div className="obi-eyebrow">Old Buzzard Hockey League</div>
+                    <h1 className="obi-page-title">STANDINGS</h1>
+                    <p className="obi-page-sub">
+                        {selectedSeason?.name || 'Season'} · Top {PLAYOFF_SPOTS} advance to playoffs
+                    </p>
                 </div>
-            </div>
-            <div className="standings-page">
+            </section>
 
-            {selectedSeason && (
-                <div className="season-selector">
-
-                    <select
-                        id="season-select"
-                        value={String(selectedSeasonId || '')}
-                        onChange={handleSeasonChange}
-                        className="season-dropdown"
-                    >
-                        {seasons.map(season => (
-                            <option
-                                key={season.id}
-                                value={String(season.id)}
+            <section className="obi-standings-body">
+                <div className="obi-container">
+                    <div className="obi-standings-toolbar">
+                        <div className="obi-legend">
+                            <span><b>PTS</b> = points · Win = 2 · OT Loss = 1 · Loss = 0</span>
+                            <span className="obi-legend-cut">
+                                <span className="obi-legend-line" />Playoff cut line
+                            </span>
+                        </div>
+                        {seasons?.length > 0 && (
+                            <select
+                                className="obi-season-select"
+                                value={String(selectedSeasonId || '')}
+                                onChange={(e) => setSelectedSeasonId(Number(e.target.value))}
                             >
-                                {season.name} {season.isActive ? '(Active)' : ''}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-            )}
+                                {seasons.map(s => (
+                                    <option key={s.id} value={String(s.id)}>
+                                        {s.name}{s.isActive ? ' (Active)' : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
 
-            {teams.length === 0 ? (
-                <div className="no-data">No teams found for this season.</div>
-            ) : (
-                <div className="standings-table-container">
-                    <table className="standings-table">
-                        <thead>
-                            <tr>
-                                <th>Rank</th>
-                                <th>Team</th>
-                                <th>Pts</th>
-                                <th>W</th>
-                                <th>L</th>
-                                <th>T</th>
-                                <th>OTL</th>
-                                <th>GF</th>
-                                <th>GA</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    {loading ? (
+                        <div className="obi-standings-msg">Loading standings…</div>
+                    ) : error ? (
+                        <div className="obi-standings-msg obi-neg">Error: {error}</div>
+                    ) : teams.length === 0 ? (
+                        <div className="obi-standings-msg">No teams found for this season.</div>
+                    ) : (
+                        <div className="obi-table-card">
+                            <div className="obi-srow obi-srow-head">
+                                <span className="obi-col-rank">#</span>
+                                <span className="obi-col-team">Team</span>
+                                <span className="obi-col-pts obi-pts-head">PTS</span>
+                                <span className="obi-col-num">GP</span>
+                                <span className="obi-col-num obi-col-w">W</span>
+                                <span className="obi-col-num">L</span>
+                                <span className="obi-col-num obi-col-sm">T</span>
+                                <span className="obi-col-num obi-col-sm">OTL</span>
+                                <span className="obi-col-num obi-col-md">GF</span>
+                                <span className="obi-col-num obi-col-md">GA</span>
+                                <span className="obi-col-num obi-col-sm">DIFF</span>
+                            </div>
+
                             {teams.map((team, index) => {
-                                const bg = getValidColor(team.teamColor);
-                                const textColor = getTextColor(bg);
-
-                                return (
-                                    <tr
-                                        key={team.id}
-                                        className="clickable-row"
-                                        onClick={() => navigate(`/teams/${team.id}`)}
-                                        title="Click to view team roster"
-                                    >
-                                        <td
-                                            className="rank"
-                                            style={{ backgroundColor: bg, color: textColor }}
-                                        >
-                                            {index + 1}
-                                        </td>
-                                        <td className="team-name">
-                                            <strong>{team.name}</strong>
-                                        </td>
-                                        <td className="points"><strong>{team.points}</strong></td>
-                                        <td>{team.wins + (team.overtimeWins || 0)}</td>
-                                        <td>{team.losses}</td>
-                                        <td>{team.ties}</td>
-                                        <td>{team.overtimeLosses}</td>
-                                        <td>{team.goalsFor}</td>
-                                        <td>{team.goalsAgainst}</td>
-                                    </tr>
-                                );
+                                const row = renderRow(team, index);
+                                // Insert the playoff cut divider right before the first non-playoff team
+                                if (index === PLAYOFF_SPOTS) {
+                                    return [
+                                        <div key="cut" className="obi-playoff-cut">
+                                            <span className="obi-playoff-cut-label">Playoff Cut · Top {PLAYOFF_SPOTS} Advance</span>
+                                            <span className="obi-playoff-cut-line" />
+                                        </div>,
+                                        row,
+                                    ];
+                                }
+                                return row;
                             })}
-                        </tbody>
-                    </table>
+                        </div>
+                    )}
                 </div>
-            )}
+            </section>
         </div>
-        </>
     );
 }
 

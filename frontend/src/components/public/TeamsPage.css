@@ -1,268 +1,201 @@
-.teams-page {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
+/* Teams — redesigned per OBHL design handoff */
+
+.obi-teams-body {
+    background: var(--obi-bg-elevated);
 }
 
-.season-selector {
-    background: white;
-    padding: 1rem 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    margin-bottom: 2rem;
+.obi-teams-body .obi-container {
+    padding-top: 44px;
+    padding-bottom: 72px;
+}
+
+.obi-teams-toolbar {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
+    justify-content: flex-end;
+    margin-bottom: 20px;
 }
 
-.season-selector label {
-    font-weight: 600;
-    color: #2d3748;
-    font-size: 1.1rem;
-}
-
-.season-dropdown {
-    width: 300px;
-    max-width: 100%;
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
-    color: #2d3748;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    background: white;
-    cursor: pointer;
-    transition: border-color 0.2s;
-}
-
-.season-dropdown:hover {
-    border-color: #4a5568;
-}
-
-.season-dropdown:focus {
-    outline: none;
-    border-color: #2d3748;
-}
-
-.teams-grid {
+.obi-teams-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
+    gap: 18px;
 }
 
-.team-card {
-    background: white;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.team-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.team-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 1rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid #e2e8f0;
-}
-
-.team-header h2 {
-    margin: 0;
-    color: inherit;
-    font-size: 1.5rem;
-}
-
-
-.team-info {
+.obi-team-card {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
-}
-
-.info-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.info-row .label {
-    font-weight: 600;
-    color: #4a5568;
-    font-size: 0.9rem;
-}
-
-.info-row .value {
-    color: #2d3748;
-    font-size: 0.95rem;
-}
-
-.loading,
-.error,
-.no-data {
-    text-align: center;
-    padding: 3rem;
-    font-size: 1.2rem;
-}
-
-.error {
-    color: #dc3545;
-}
-
-.no-data {
-    background: white;
-    border-radius: 12px;
-    padding: 3rem;
-    color: #666;
-}
-
-@media (max-width: 768px) {
-    .season-selector {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .teams-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* Clickable Team Cards */
-.team-card.clickable {
-    cursor: pointer;
-}
-
-.team-card.clickable .team-header {
-    padding: 1rem;
-    border-bottom: none;
-    border-radius: 8px;
-    margin-bottom: 1rem;
-}
-
-.click-hint {
-    text-align: center;
-    color: #718096;
-    font-size: 0.875rem;
-    font-style: italic;
-    margin: 0.5rem 0 0 0;
-}
-
-/* Back Button */
-.btn-back {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    font-size: 1rem;
-    cursor: pointer;
-    padding: 0.75rem 1.5rem;
-    margin-bottom: 1.5rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    border-radius: 8px;
-    transition: all 0.2s;
-}
-
-.btn-back:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-/* Team Roster View */
-.team-roster-view {
-    background: white;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.roster-header {
-    padding: 2rem;
-    text-align: center;
-}
-
-.roster-header h1 {
-    margin: 0 0 0.5rem 0;
-    color: inherit;
-}
-
-.gm-info {
-    margin: 0;
-    font-size: 1.1rem;
-    opacity: 0.9;
-}
-
-.roster-content {
-    padding: 2rem;
-}
-
-.roster-content h2 {
-    margin: 0 0 1.5rem 0;
-    color: #2d3748;
-    font-size: 1.5rem;
-}
-
-.roster-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.roster-table th {
     text-align: left;
-    padding: 1rem;
-    background: #f7fafc;
-    color: #4a5568;
-    font-weight: 600;
-    border-bottom: 2px solid #e2e8f0;
+    padding: 0;
+    background: linear-gradient(180deg, #13171d, #10141a);
+    border: 1px solid var(--obi-card-border);
+    border-radius: var(--obi-radius-card);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.14s, border-color 0.14s;
 }
 
-.roster-table td {
-    padding: 1rem;
-    border-bottom: 1px solid #e2e8f0;
-    color: #2d3748;
+.obi-team-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(246, 169, 28, 0.4);
 }
 
-.roster-table tr:last-child td {
-    border-bottom: none;
+.obi-team-card-bar {
+    height: 6px;
 }
 
-.roster-table tr:hover {
-    background: #f7fafc;
+.obi-team-card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1;
+    padding: 20px 22px 22px;
 }
 
-.no-roster {
-    text-align: center;
-    color: #718096;
-    padding: 3rem;
+.obi-team-card-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.obi-team-card-id {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.obi-team-swatch {
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    flex: none;
+    box-shadow: var(--obi-ring-light), 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+
+.obi-team-card-name {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
     font-style: italic;
+    font-size: 25px;
+    line-height: 0.95;
+    letter-spacing: 0.3px;
+    color: #fff;
 }
 
-.gm-badge {
-    display: inline-block;
-    margin-left: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    background: #fbbf24;
-    color: #000000;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: 4px;
+.obi-rank-pill {
+    flex: none;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    color: var(--obi-icy);
+    background: rgba(157, 185, 205, 0.12);
+    border: 1px solid rgba(157, 185, 205, 0.2);
+    padding: 5px 9px;
+    border-radius: 20px;
 }
 
-.twogl-badge {
-    display: inline-block;
-    margin-left: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    background: #10b981;
-    color: #ffffff;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+.obi-team-card-stats {
+    display: flex;
+    align-items: stretch;
+    gap: 10px;
 }
+
+.obi-stat-box {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--obi-divider);
+    border-radius: 10px;
+    padding: 10px 14px;
+}
+
+.obi-stat-box-val {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 22px;
+    color: #fff;
+}
+
+.obi-stat-box-label {
+    font-family: var(--obi-font-display);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    margin-top: 1px;
+}
+
+.obi-stat-box-pts {
+    flex: none;
+    text-align: center;
+    background: rgba(246, 169, 28, 0.1);
+    border-color: rgba(246, 169, 28, 0.3);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.obi-stat-box-pts .obi-stat-box-val {
+    font-size: 24px;
+    color: var(--obi-accent);
+    line-height: 1;
+}
+
+.obi-stat-box-pts .obi-stat-box-label {
+    color: #9A7A2E;
+    margin-top: 2px;
+}
+
+.obi-team-card-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    border-top: 1px solid rgba(157, 185, 205, 0.1);
+    padding-top: 14px;
+}
+
+.obi-meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.obi-meta-label {
+    font-family: var(--obi-font-display);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+}
+
+.obi-meta-val {
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: #D6DCE2;
+}
+
+.obi-team-card-cta {
+    margin-top: auto;
+    padding-top: 6px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-accent);
+}
+
+.obi-teams-msg {
+    padding: 48px;
+    text-align: center;
+    font-family: var(--obi-font-body);
+    font-size: 16px;
+    color: var(--obi-text-muted);
+}
+
+.obi-neg { color: var(--obi-error); }

@@ -1,310 +1,299 @@
-/* Import TeamsPage.css for consistent styling */
-@import './TeamsPage.css';
+/* TeamRoster — redesigned per OBHL design handoff v2.
+   Reuses shared game-row (.obi-game-*), .obi-table-card, .obi-pos-badge,
+   .obi-mini-badge, .obi-ghost-btn, .obi-gd-back, .obi-team-dot. */
 
-.team-roster-page {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
-}
-
-.btn-back {
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    color: white;
-    font-size: 1rem;
-    cursor: pointer;
-    padding: 0.75rem 1.5rem;
-    margin-bottom: 1.5rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    border-radius: 8px;
-    transition: all 0.2s;
-}
-
-.btn-back:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.roster-header {
-    padding: 2rem;
+.obi-tr-msg {
+    padding: 40px 28px;
     text-align: center;
-    border-radius: 12px 12px 0 0;
-    margin-bottom: 0;
+    font-family: var(--obi-font-body);
+    font-size: 16px;
+    color: var(--obi-text-muted);
 }
 
-.roster-header h1 {
-    margin: 0 0 0.5rem 0;
-    color: inherit;
-    font-size: 2.5rem;
+.obi-neg { color: var(--obi-error); }
+
+/* Hero */
+.obi-tr-hero {
+    border-bottom: 3px solid var(--obi-accent);
 }
 
-.gm-info {
-    margin: 0 0 1.5rem 0;
-    font-size: 1.1rem;
-    opacity: 0.9;
+.obi-tr-hero-inner {
+    padding-top: 38px;
+    padding-bottom: 40px;
 }
 
-.team-stats-display {
+.obi-tr-hero-top {
     display: flex;
-    justify-content: center;
-    gap: 2rem;
-    background: #2d3748;
-    color: white;
-    padding: 1rem 1.5rem;
-    border-radius: 8px;
-    max-width: fit-content;
-    margin: 0 auto;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 22px;
 }
 
-.team-stats-display .stat-item {
+.obi-tr-swatch {
+    width: 84px;
+    height: 84px;
+    border-radius: 20px;
+    flex: none;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.4), 0 8px 26px rgba(0, 0, 0, 0.5);
+}
+
+.obi-tr-id {
+    min-width: 240px;
+}
+
+.obi-tr-rank {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    filter: brightness(1.4);
+}
+
+.obi-tr-name {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: clamp(46px, 7vw, 84px);
+    line-height: 0.86;
+    margin: 0;
+    color: #fff;
+    letter-spacing: -0.5px;
+}
+
+.obi-tr-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-left: auto;
+}
+
+.obi-tr-stat {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 12px;
+    padding: 13px 20px;
+    text-align: center;
+    min-width: 96px;
+}
+
+.obi-tr-stat-pts {
+    background: rgba(246, 169, 28, 0.1);
+    border-color: rgba(246, 169, 28, 0.3);
+    min-width: 78px;
+}
+
+.obi-tr-stat-val {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 26px;
+    color: #fff;
+    line-height: 1;
+}
+
+.obi-tr-stat-pts .obi-tr-stat-val {
+    color: var(--obi-accent);
+}
+
+.obi-tr-stat-label {
+    font-family: var(--obi-font-display);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    margin-top: 5px;
+}
+
+.obi-tr-stat-pts .obi-tr-stat-label {
+    color: #9A7A2E;
+}
+
+.obi-tr-gm {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.obi-tr-gm-label {
+    font-family: var(--obi-font-display);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+}
+
+.obi-tr-gm-name {
+    font-family: var(--obi-font-body);
+    font-size: 15px;
+    color: #D6DCE2;
+}
+
+/* Body */
+.obi-tr-body {
+    background: var(--obi-bg-elevated);
+}
+
+.obi-tr-body .obi-container {
+    padding-top: 44px;
+    padding-bottom: 74px;
+}
+
+.obi-tr-section-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.obi-tr-sched-head {
+    margin-top: 44px;
+}
+
+.obi-tr-section-title {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 24px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #fff;
+}
+
+.obi-tr-section-sub {
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-text-muted);
+}
+
+.obi-tr-section-rule {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(157, 185, 205, 0.25), transparent);
+}
+
+/* Roster table */
+.obi-trr-row {
+    display: flex;
+    align-items: center;
+    padding: 13px 22px;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.07);
+    transition: background 0.12s;
+}
+
+.obi-trr-row:last-child { border-bottom: none; }
+.obi-trr-row:not(.obi-trr-head):hover { background: var(--obi-accent-hover); }
+
+.obi-trr-head {
+    background: rgba(0, 0, 0, 0.25);
+    border-bottom: 1px solid rgba(157, 185, 205, 0.18);
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+}
+
+.obi-trr-num {
+    width: 58px;
+    text-align: center;
+    flex: none;
+}
+
+.obi-trr-row:not(.obi-trr-head) .obi-trr-num {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 19px;
+    color: var(--obi-accent);
+}
+
+.obi-trr-name {
+    flex: 1;
+    min-width: 0;
+    padding-left: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.obi-trr-row:not(.obi-trr-head) .obi-trr-name {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 18px;
+    color: #fff;
+}
+
+.obi-trr-pos {
+    width: 130px;
+    text-align: center;
+    flex: none;
+}
+
+/* Schedule rows + result tags */
+.obi-tr-games {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    gap: 11px;
 }
 
-.team-stats-display .stat-value {
-    font-size: 2rem;
-    font-weight: 700;
-    line-height: 1;
-    color: white;
-}
-
-.team-stats-display .stat-label {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    opacity: 0.9;
-    margin-bottom: 0.25rem;
-    color: white;
-}
-
-/* Mobile: stack stats into two rows of 4 */
-@media (max-width: 480px) {
-    .team-stats-display {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 0.75rem;
-        max-width: 100%;
-        padding: 1rem;
-    }
-
-    .team-stats-display .stat-value {
-        font-size: 1.5rem;
-    }
-
-    .team-stats-display .stat-label {
-        font-size: 0.65rem;
-    }
-}
-
-.roster-content {
-    background: white;
-    padding: 2rem;
-    border-radius: 0 0 12px 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.roster-content h2 {
-    margin: 0 0 1.5rem 0;
-    color: #2d3748;
-    font-size: 1.5rem;
-}
-
-.roster-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.roster-table th {
-    text-align: left;
-    padding: 1rem;
-    background: #f7fafc;
-    color: #4a5568;
-    font-weight: 600;
-    border-bottom: 2px solid #e2e8f0;
-}
-
-.roster-table td {
-    padding: 1rem;
-    border-bottom: 1px solid #e2e8f0;
-    color: #2d3748;
-}
-
-.roster-table tr:last-child td {
-    border-bottom: none;
-}
-
-.roster-table tr:hover {
-    background: #f7fafc;
-}
-
-.no-roster {
-    text-align: center;
-    color: #718096;
-    padding: 3rem;
-    font-style: italic;
-}
-
-.loading,
-.error {
-    text-align: center;
-    padding: 3rem;
-    font-size: 1.2rem;
-}
-
-.error {
-    color: #dc3545;
-}
-
-.gm-badge {
-    display: inline-block;
-    margin-left: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    background: #fbbf24;
-    color: #000000;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.twogl-badge {
-    display: inline-block;
-    margin-left: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    background: #10b981;
-    color: #ffffff;
-    font-size: 0.75rem;
-    font-weight: 600;
-    border-radius: 4px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* Schedule Table Custom Styling */
-.team-schedule-content {
-    background: #1e1e1e;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-.team-schedule-content h2 {
-    color: white;
-    margin: 0;
-}
-
-/* Header row: title left, download button right */
-.schedule-section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    margin-bottom: 1.5rem;
-}
-
-.download-calendar-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.4rem;
-    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-    color: white;
-    border: none;
-    padding: 0.55rem 1.1rem;
-    border-radius: 8px;
-    font-size: 0.875rem;
-    font-weight: 600;
+.obi-tr-game {
     cursor: pointer;
-    white-space: nowrap;
-    transition: opacity 0.15s ease, transform 0.1s ease;
-    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
+    transition: transform 0.12s, border-color 0.12s;
 }
 
-.download-calendar-btn:hover {
-    opacity: 0.88;
+.obi-tr-game:hover {
     transform: translateY(-1px);
+    border-color: rgba(246, 169, 28, 0.4);
 }
 
-.download-calendar-btn:active {
-    transform: translateY(0);
-    opacity: 1;
-}
-
-.team-schedule-content .schedule-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: #2c2c2c;
-    color: #e0e0e0;
-    border-radius: 8px;
-    overflow: hidden;
-}
-
-.team-schedule-content .schedule-table th {
-    text-align: left;
-    padding: 1rem;
-    background: #1a1a1a;
-    color: #aaa;
-    font-weight: 600;
-    border-bottom: 2px solid #333;
-    text-transform: uppercase;
-    font-size: 0.85rem;
+.obi-tr-tag {
+    flex: none;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12px;
     letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 5px 12px;
+    border-radius: 20px;
+    min-width: 62px;
+    text-align: center;
+    border: 1px solid transparent;
 }
 
-.team-schedule-content .schedule-table td {
-    padding: 1rem;
-    border-bottom: 1px solid #333;
-    color: #e0e0e0;
+.obi-tr-tag.is-win {
+    color: var(--obi-success);
+    background: rgba(127, 181, 154, 0.12);
+    border-color: rgba(127, 181, 154, 0.3);
 }
 
-.team-schedule-content .schedule-table td a {
-    color: #87CEEB;
-    text-decoration: none;
-    font-weight: 600;
+.obi-tr-tag.is-loss {
+    color: var(--obi-error);
+    background: rgba(224, 138, 138, 0.12);
+    border-color: rgba(224, 138, 138, 0.3);
 }
 
-.team-schedule-content .schedule-table td a:hover {
-    text-decoration: underline;
-    color: #f5c518;
+.obi-tr-tag.is-tie {
+    color: var(--obi-icy);
+    background: rgba(157, 185, 205, 0.1);
+    border-color: rgba(157, 185, 205, 0.25);
 }
 
-.team-schedule-content .schedule-table tr:hover {
-    background: #333;
+.obi-tr-tag.is-sched {
+    color: var(--obi-text-muted);
+    background: rgba(157, 185, 205, 0.08);
+    border-color: rgba(157, 185, 205, 0.2);
 }
 
-.schedule-table-container {
-    width: 100%;
-    overflow-x: auto;
-}
-
-@media (max-width: 768px) {
-    .team-details {
-        padding: 1rem;
-    }
-
-    .team-schedule-content {
-        padding: 1rem;
-    }
-
-    .schedule-section-header {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .download-calendar-btn {
+@media (max-width: 720px) {
+    .obi-tr-stats {
+        margin-left: 0;
         width: 100%;
-        justify-content: center;
     }
-
-    .roster-table {
-        font-size: 0.9rem;
-    }
-
-    .roster-table th,
-    .roster-table td {
-        padding: 0.5rem;
-    }
-}
+}

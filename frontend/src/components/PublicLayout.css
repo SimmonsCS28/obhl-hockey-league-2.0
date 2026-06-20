@@ -1,365 +1,381 @@
-.public-layout {
-    min-height: 100vh;
+/* Public site chrome — redesigned per OBHL design handoff (Saira dark theme) */
+
+.obi-public-layout {
     display: flex;
     flex-direction: column;
-    background-image: url('../assets/images/Hg5oI1.jpg');
-    background-size: cover;
-    background-attachment: fixed;
-    background-position: center;
+    min-height: 100vh;
+    background: var(--obi-bg-elevated);
+    font-family: var(--obi-font-body);
+    color: var(--obi-text);
 }
 
-.public-header {
-    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+/* ---------- Header ---------- */
+.obi-header {
     position: sticky;
     top: 0;
-    z-index: 100;
-    color: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    overflow-x: hidden;
+    z-index: 50;
+    background: rgba(11, 12, 15, 0.92);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--obi-header-border);
 }
 
-.header-content {
-    max-width: 1400px;
+.obi-header-inner {
+    max-width: var(--obi-page-max);
     margin: 0 auto;
-    padding: 1rem 2rem;
-    display: grid;
-    grid-template-columns: auto 1fr;
-    grid-template-rows: auto auto;
-    align-items: center;
-    column-gap: 1rem;
-    row-gap: 0.5rem;
-}
-
-/* Row 1: Logo and Nav */
-.logo {
-    grid-column: 1;
-    grid-row: 1;
-}
-
-.main-nav {
-    grid-column: 2;
-    grid-row: 1;
-    display: flex;
-    gap: 1.5rem;
-    justify-content: center;
-}
-
-/* Row 2: Actions container with donate and auth */
-.public-header .header-actions {
-    grid-column: 2;
-    grid-row: 2;
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-    align-items: center;
-    padding-right: 10rem;
-    /* Shift buttons left so they don't extend past nav */
-}
-
-.donate-section {
+    padding: 0 28px;
+    height: 74px;
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    gap: 24px;
 }
 
-.auth-section {
+.obi-brand {
     display: flex;
-    gap: 1rem;
     align-items: center;
-}
-
-.logo {
+    gap: 13px;
     text-decoration: none;
-    color: white;
-    display: flex;
-    align-items: center;
+    color: inherit;
+    flex: none;
 }
 
-.logo-img {
-    height: 60px;
+.obi-brand-logo {
+    height: 42px;
+    width: auto;
+    display: block;
+}
+
+.obi-wordmark {
+    display: flex;
+    flex-direction: column;
+    line-height: 0.92;
+}
+
+.obi-wordmark-top {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 22px;
+    letter-spacing: 0.5px;
+    color: #fff;
+}
+
+.obi-wordmark-sub {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 4.5px;
+    color: var(--obi-accent);
+}
+
+.obi-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.obi-nav-link {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #C8D0D8;
+    text-decoration: none;
+    padding: 9px 15px;
+    border-radius: 6px;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, background 0.15s;
+    white-space: nowrap;
+}
+
+.obi-nav-link:hover {
+    color: #fff;
+    background: var(--obi-accent-soft);
+}
+
+.obi-nav-link.is-active {
+    color: var(--obi-accent);
+    border-bottom-color: var(--obi-accent);
+}
+
+.obi-nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 10px;
+}
+
+.obi-user-greeting {
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-text-secondary);
+    white-space: nowrap;
+}
+
+/* Ghost button (secondary actions / dashboard links) */
+.obi-ghost-btn {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--obi-text-secondary);
+    background: transparent;
+    border: 1px solid var(--obi-card-border);
+    border-radius: var(--obi-radius-btn);
+    padding: 8px 14px;
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.obi-ghost-btn:hover {
+    color: #fff;
+    border-color: var(--obi-accent);
+    background: var(--obi-accent-hover);
+}
+
+/* Gold CTA (Log In) */
+.obi-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #0b0c0f;
+    background: var(--obi-accent);
+    border: none;
+    text-decoration: none;
+    padding: 10px 20px;
+    border-radius: 7px;
+    box-shadow: var(--obi-shadow-gold);
+    cursor: pointer;
+    transition: transform 0.12s;
+}
+
+.obi-cta-btn:hover {
+    transform: translateY(-1px);
+}
+
+.obi-logout-btn {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--obi-error);
+    background: transparent;
+    border: 1px solid rgba(224, 138, 138, 0.4);
+    border-radius: var(--obi-radius-btn);
+    padding: 8px 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+}
+
+.obi-logout-btn:hover {
+    background: rgba(224, 138, 138, 0.12);
+    color: #fff;
+}
+
+.obi-burger {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(157, 185, 205, 0.3);
+    border-radius: 9px;
+    cursor: pointer;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.obi-burger span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background: #fff;
+    border-radius: 2px;
+}
+
+/* ---------- Main ---------- */
+.obi-public-main {
+    flex: 1;
+}
+
+/* ---------- Footer ---------- */
+.obi-footer {
+    background: #070809;
+    border-top: 3px solid var(--obi-accent);
+}
+
+.obi-footer-top {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 32px;
+    padding-top: 44px;
+    padding-bottom: 38px;
+}
+
+.obi-footer-brand {
+    max-width: 340px;
+}
+
+.obi-footer-brand-row {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 14px;
+}
+
+.obi-footer-logo {
+    height: 38px;
     width: auto;
 }
 
-.logo h1 {
+.obi-footer-wordmark {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 18px;
+    letter-spacing: 0.5px;
+    color: #fff;
+}
+
+.obi-footer-tagline {
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--obi-text-muted);
     margin: 0;
-    font-size: 2rem;
-    font-weight: 700;
 }
 
-.main-nav {
+.obi-footer-cols {
     display: flex;
-    gap: 2rem;
-    flex: 1;
-    justify-content: center;
+    gap: 54px;
+    flex-wrap: wrap;
 }
 
-.main-nav a {
-    color: white;
-    text-decoration: none;
-    font-size: 1.1rem;
-    font-weight: 500;
-    padding: 0.5rem 1rem;
-    border-radius: 6px;
-    transition: background-color 0.2s;
-}
-
-.main-nav a:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-.donate-section {
+.obi-footer-col {
     display: flex;
-    align-items: center;
-}
-
-.auth-section {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-
-.user-greeting {
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 0.9rem;
-}
-
-.login-btn,
-.dashboard-link,
-.logout-btn {
-    color: white;
-    text-decoration: none;
-    padding: 0.5rem 1.25rem;
-    border: 2px solid white;
-    border-radius: 6px;
-    font-weight: 500;
-    background: transparent;
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: background-color 0.2s, color 0.2s;
-}
-
-.login-btn:hover,
-.dashboard-link:hover,
-.logout-btn:hover {
-    background-color: white;
-    color: #4a5568;
-}
-
-.dashboard-link {
-    background-color: rgba(255, 255, 255, 0.15);
-    border-color: transparent;
-}
-
-.dashboard-link:hover {
-    background-color: white;
-    color: #4a5568;
-}
-
-.logout-btn {
-    border-color: #f87171;
-    color: #fecaca;
-}
-
-.logout-btn:hover {
-    background-color: #f87171;
-    color: white;
-}
-
-.public-main {
-    flex: 1;
-    background: transparent;
-}
-
-.public-footer {
-    background: #2d3748;
-    color: white;
-    text-align: center;
-    padding: 2rem;
-    margin-top: auto;
-}
-
-.public-footer p {
-    margin: 0;
-    opacity: 0.8;
-}
-
-/* Hamburger menu button - hidden on desktop */
-.mobile-menu-toggle {
-    display: none;
     flex-direction: column;
-    gap: 4px;
-    background: transparent;
+    gap: 9px;
+}
+
+.obi-footer-col-title {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--obi-accent);
+    margin-bottom: 3px;
+}
+
+.obi-footer-col a,
+.obi-footer-linkbtn {
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-text-secondary);
+    text-decoration: none;
+    background: none;
     border: none;
+    padding: 0;
+    text-align: left;
     cursor: pointer;
-    padding: 8px;
-    z-index: 101;
+    transition: color 0.15s;
 }
 
-.mobile-menu-toggle span {
-    width: 25px;
-    height: 3px;
-    background: white;
-    border-radius: 2px;
-    transition: 0.3s;
+.obi-footer-col a:hover,
+.obi-footer-linkbtn:hover {
+    color: #fff;
 }
 
-/* Desktop-specific: more padding on larger screens */
-@media (min-width: 1200px) {
-    .public-header .header-actions {
-        padding-right: 12.5rem;
-        /* More padding on desktop to align with nav */
-    }
+.obi-footer-bottom {
+    border-top: 1px solid var(--obi-divider);
 }
 
-/* Base style: hide mobile menu container on desktop */
-.mobile-menu-container {
-    display: none;
+.obi-footer-bottom-inner {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+    padding-top: 18px;
+    padding-bottom: 18px;
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    color: var(--obi-text-dim);
 }
 
-@media (max-width: 768px) {
-    .header-content {
-        padding: 0.75rem 1rem;
-        position: relative;
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0;
+/* ---------- Responsive ---------- */
+@media (max-width: 760px) {
+    .obi-burger {
+        display: inline-flex;
     }
 
-    .logo {
-        flex: 0 0 auto;
+    .obi-wordmark-sub {
+        letter-spacing: 3px;
     }
 
-    .logo-img {
-        height: 35px;
+    /* Nav collapses into a dropdown panel below the header */
+    .obi-nav {
+        position: absolute;
+        top: 73px;
+        left: 0;
+        right: 0;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        background: var(--obi-bg);
+        border-bottom: 1px solid var(--obi-header-border);
+        padding: 14px 20px 20px;
+        box-shadow: 0 18px 30px rgba(0, 0, 0, 0.45);
     }
 
-    /* Show hamburger button on mobile */
-    .mobile-menu-toggle {
-        display: flex;
-        margin-left: auto;
-        position: relative;
-        z-index: 102;
-    }
-
-    /* Hide nav, donate, and auth on mobile by default */
-    .main-nav:not(.mobile-open),
-    .public-header .header-actions,
-    .donate-section:not(.mobile-open),
-    .auth-section:not(.mobile-open) {
+    .obi-nav[data-open="false"] {
         display: none;
     }
 
-    /* Mobile menu container - single dropdown */
-    .mobile-menu-container {
-        display: flex;
+    .obi-nav-link {
+        font-size: 18px;
+        padding: 14px;
+        border-bottom: none;
+        text-align: left;
+    }
+
+    .obi-nav-actions {
         flex-direction: column;
-        width: 100%;
-        flex-basis: 100%;
-        position: relative;
-        background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        animation: slideDown 0.3s ease;
-        z-index: 100;
-        margin-top: 0.5rem;
+        align-items: stretch;
+        gap: 10px;
+        margin-left: 0;
+        margin-top: 8px;
+        padding-top: 14px;
+        border-top: 1px solid var(--obi-divider);
     }
 
-    @keyframes slideDown {
-        from {
-            opacity: 0;
-            transform: translateY(-10px);
-        }
-
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    .main-nav.mobile-open {
-        display: flex;
-        flex-direction: column;
-        gap: 0;
-        padding: 0.5rem 0;
-        border-top: 1px solid rgba(255, 255, 255, 0.2);
-        align-items: center;
-    }
-
-    .main-nav.mobile-open:first-child {
-        border-top: none;
-    }
-
-    .main-nav a {
+    .obi-nav-actions .obi-ghost-btn,
+    .obi-nav-actions .obi-cta-btn,
+    .obi-nav-actions .obi-logout-btn {
         text-align: center;
-        padding: 0.65rem 1rem;
-        width: 100%;
-        max-width: 300px;
-        border-radius: 6px;
-    }
-
-    .donate-section.mobile-open {
-        display: flex;
         justify-content: center;
-        padding: 1rem;
-        border-top: 1px solid rgba(255, 255, 255, 0.2);
     }
 
-    .auth-section.mobile-open {
-        display: flex;
-        flex-direction: column;
-        gap: 0.65rem;
-        padding: 0.75rem 0 1rem 0;
-        border-top: 1px solid rgba(255, 255, 255, 0.2);
-        align-items: center;
-    }
-
-    .user-greeting {
+    .obi-user-greeting {
         text-align: center;
-        font-size: 0.95rem;
-        padding: 0.5rem;
-    }
-
-    .login-btn,
-    .dashboard-link,
-    .logout-btn {
-        width: 100%;
-        max-width: 300px;
-        text-align: center;
-        padding: 0.65rem 1.25rem;
+        padding: 4px 0;
     }
 }
 
-/* Shared Public Page Header */
-.page-header-bar {
-    width: 100%;
-    background: rgba(10, 12, 20, 0.88);
-    padding: 2rem 0;
-    text-align: center;
-    margin-bottom: 2rem;
-}
-
-.page-header-inner {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 0 2rem;
-}
-
-.page-header-inner.centered {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.page-header-inner h1 {
-    margin: 0;
-    color: white;
-    font-size: 2.5rem;
-    font-weight: 700;
-}
-
-.page-header-sub {
-    color: white;
-    font-size: 1.5rem;
-    opacity: 0.9;
-    margin: 0.5rem 0 0 0;
+@media (max-width: 540px) {
+    .obi-header-inner {
+        padding: 0 18px;
+    }
 }
