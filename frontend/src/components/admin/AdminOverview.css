@@ -1,0 +1,205 @@
+/* Admin Overview dashboard — OBHL dark theme */
+
+.obi-ov-loading {
+    padding: 48px;
+    text-align: center;
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-text-muted);
+}
+
+/* Stat card grid */
+.obi-ov-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    margin-bottom: 22px;
+    animation: obi-fade .25s ease;
+}
+
+.obi-ov-stat-card {
+    background: linear-gradient(160deg, #161b22, #10141a);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 12px;
+    padding: 18px 20px;
+}
+
+.obi-ov-stat-val {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 38px;
+    line-height: 1;
+}
+
+.obi-ov-stat-label {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-secondary);
+    margin-top: 7px;
+}
+
+.obi-ov-stat-sub {
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    color: var(--obi-text-muted);
+    margin-top: 2px;
+}
+
+/* Two-column panel row */
+.obi-ov-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 18px;
+    animation: obi-fade .25s ease;
+}
+
+@media (max-width: 860px) {
+    .obi-ov-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.obi-ov-panel {
+    background: var(--obi-bg-card);
+    border: 1px solid rgba(157, 185, 205, 0.14);
+    border-radius: 12px;
+    padding: 18px 20px;
+}
+
+.obi-ov-panel-title {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #fff;
+    margin-bottom: 14px;
+}
+
+/* Needs Attention list */
+.obi-ov-attention-list {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.obi-ov-attn-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    background: rgba(246, 169, 28, 0.05);
+    border: 1px solid transparent;
+    border-radius: 9px;
+    padding: 12px 14px;
+    transition: background 0.12s;
+}
+
+.obi-ov-attn-item.is-clickable {
+    cursor: pointer;
+}
+
+.obi-ov-attn-item.is-clickable:hover {
+    background: rgba(246, 169, 28, 0.1);
+}
+
+.obi-ov-attn-left {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.obi-ov-attn-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: none;
+}
+
+.obi-ov-attn-text {
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-text);
+}
+
+.obi-ov-attn-action {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--obi-accent);
+    flex: none;
+}
+
+/* This Week game list */
+.obi-ov-week-empty {
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-text-muted);
+    padding: 12px 0;
+}
+
+.obi-ov-week-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.obi-ov-week-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 4px;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.07);
+}
+
+.obi-ov-week-row:last-child {
+    border-bottom: none;
+}
+
+.obi-ov-week-day {
+    width: 110px;
+    flex: none;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--obi-text-muted);
+}
+
+.obi-ov-week-matchup {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex: 1;
+    min-width: 0;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--obi-text);
+}
+
+.obi-ov-tdot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex: none;
+    box-shadow: var(--obi-ring-light);
+}
+
+.obi-ov-vs {
+    font-family: var(--obi-font-body);
+    font-size: 11px;
+    color: var(--obi-text-dim);
+}
+
+.obi-ov-week-time {
+    font-family: var(--obi-font-body);
+    font-size: 11.5px;
+    color: var(--obi-text-muted);
+    flex: none;
+}
