@@ -216,12 +216,14 @@ function TeamManagement() {
                         <div key={team.id} className="team-card">
                             <div
                                 className="team-card-header"
+                                role="button"
+                                tabIndex={0}
                                 style={{
                                     backgroundColor: bg,
                                     color: textColor,
-                                    cursor: 'pointer'
                                 }}
                                 onClick={() => setSelectedTeam(team)}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setSelectedTeam(team); }}
                                 title="Click to view details"
                             >
                                 <h3>{team.name}</h3>
