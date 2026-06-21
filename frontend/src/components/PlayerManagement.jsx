@@ -575,7 +575,7 @@ function PlayerManagement() {
                                                 </button>
                                             </>
                                         ) : (
-                                            <button onClick={() => handleImportToCurrent(player)} className="btn-edit-small" style={{ backgroundColor: '#2ecc71', borderColor: '#27ae60' }}>
+                                            <button onClick={() => handleImportToCurrent(player)} className="btn-import-small">
                                                 Import to Current
                                             </button>
                                         )}
@@ -753,9 +753,9 @@ function PlayerManagement() {
                             {/* Also Create User - when creating OR editing without a matching user */}
                             {!editingPlayer && (
                                 <>
-                                    <hr style={{ margin: '16px 0', borderColor: '#444' }} />
+                                    <hr className="pm-hr" />
                                     <div className="form-group checkbox-group">
-                                        <label style={{ fontWeight: '600', fontSize: '1rem', color: '#4fc3f7' }}>
+                                        <label className="pm-linked-label">
                                             <input
                                                 type="checkbox"
                                                 checked={alsoCreateUser}
@@ -766,14 +766,8 @@ function PlayerManagement() {
                                     </div>
 
                                     {alsoCreateUser && (
-                                        <div className="linked-form-section" style={{
-                                            border: '1px solid #4fc3f7',
-                                            borderRadius: '8px',
-                                            padding: '16px',
-                                            marginTop: '8px',
-                                            backgroundColor: 'rgba(79, 195, 247, 0.05)'
-                                        }}>
-                                            <h4 style={{ marginTop: 0, color: '#4fc3f7' }}>User Account Details</h4>
+                                        <div className="linked-form-section">
+                                            <h4>User Account Details</h4>
 
                                             <div className="form-group">
                                                 <label>Username *</label>
@@ -803,8 +797,8 @@ function PlayerManagement() {
                                                     onChange={(e) => handleUserChange('password', e.target.value)}
                                                     required
                                                 />
-                                                {userPasswordError && <div className="field-error" style={{ color: '#ff6b6b', fontSize: '0.85rem' }}>{userPasswordError}</div>}
-                                                <small style={{ color: '#aaa' }}>
+                                                {userPasswordError && <div className="field-error">{userPasswordError}</div>}
+                                                <small className="field-hint">
                                                     Min 8 characters, 1 uppercase, 1 special character, no spaces
                                                 </small>
                                             </div>
@@ -835,39 +829,23 @@ function PlayerManagement() {
                             {/* Create User from Player - only in edit mode when no matching user exists */}
                             {editingPlayer && hasMatchingUser === false && !checkingCounterpart && (
                                 <>
-                                    <hr style={{ margin: '16px 0', borderColor: '#444' }} />
+                                    <hr className="pm-hr" />
                                     {!alsoCreateUser ? (
                                         <button
                                             type="button"
                                             onClick={() => setAlsoCreateUser(true)}
-                                            style={{
-                                                width: '100%',
-                                                padding: '10px',
-                                                background: 'linear-gradient(135deg, #4fc3f7, #0288d1)',
-                                                color: 'white',
-                                                border: 'none',
-                                                borderRadius: '6px',
-                                                fontWeight: 600,
-                                                cursor: 'pointer',
-                                                fontSize: '0.9rem'
-                                            }}
+                                            className="pm-create-from-btn"
                                         >
                                             ⚡ Create User from this Player
                                         </button>
                                     ) : (
-                                        <div className="linked-form-section" style={{
-                                            border: '1px solid #4fc3f7',
-                                            borderRadius: '8px',
-                                            padding: '16px',
-                                            marginTop: '8px',
-                                            backgroundColor: 'rgba(79, 195, 247, 0.05)'
-                                        }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                                <h4 style={{ marginTop: 0, color: '#4fc3f7' }}>User Account Details</h4>
+                                        <div className="linked-form-section">
+                                            <div className="pm-linked-section-header">
+                                                <h4>User Account Details</h4>
                                                 <button
                                                     type="button"
                                                     onClick={() => setAlsoCreateUser(false)}
-                                                    style={{ background: 'none', border: 'none', color: '#999', cursor: 'pointer', fontSize: '1.2rem' }}
+                                                    className="pm-linked-close"
                                                 >×</button>
                                             </div>
 
@@ -899,8 +877,8 @@ function PlayerManagement() {
                                                     onChange={(e) => handleUserChange('password', e.target.value)}
                                                     required
                                                 />
-                                                {userPasswordError && <div className="field-error" style={{ color: '#ff6b6b', fontSize: '0.85rem' }}>{userPasswordError}</div>}
-                                                <small style={{ color: '#aaa' }}>
+                                                {userPasswordError && <div className="field-error">{userPasswordError}</div>}
+                                                <small className="field-hint">
                                                     Min 8 characters, 1 uppercase, 1 special character, no spaces
                                                 </small>
                                             </div>

@@ -309,7 +309,7 @@ const UserModal = ({ user, isCreating, onClose }) => {
                         />
                     </div>
 
-                    <div className="form-row" style={{ display: 'flex', gap: '1rem' }}>
+                    <div className="form-row">
                         <div className="form-group" style={{ flex: 1 }}>
                             <label htmlFor="firstName">First Name</label>
                             <input
@@ -459,9 +459,9 @@ const UserModal = ({ user, isCreating, onClose }) => {
                     {/* Also Create Player Checkbox - only when creating */}
                     {isCreating && (
                         <>
-                            <hr style={{ margin: '16px 0', borderColor: '#444' }} />
+                            <hr className="pm-hr" />
                             <div className="form-group checkbox-group">
-                                <label style={{ fontWeight: '600', fontSize: '1rem', color: '#4fc3f7' }}>
+                                <label className="pm-linked-label">
                                     <input
                                         type="checkbox"
                                         checked={alsoCreatePlayer}
@@ -473,14 +473,8 @@ const UserModal = ({ user, isCreating, onClose }) => {
                             </div>
 
                             {alsoCreatePlayer && (
-                                <div className="linked-form-section" style={{
-                                    border: '1px solid #4fc3f7',
-                                    borderRadius: '8px',
-                                    padding: '16px',
-                                    marginTop: '8px',
-                                    backgroundColor: 'rgba(79, 195, 247, 0.05)'
-                                }}>
-                                    <h4 style={{ marginTop: 0, color: '#4fc3f7' }}>Player Details</h4>
+                                <div className="linked-form-section">
+                                    <h4>Player Details</h4>
 
                                     <div className="form-row">
                                         <div className="form-group">
@@ -641,40 +635,24 @@ const UserModal = ({ user, isCreating, onClose }) => {
                     {/* Create Player from User - only in edit mode when no matching player exists */}
                     {!isCreating && hasMatchingPlayer === false && !checkingCounterpart && (
                         <>
-                            <hr style={{ margin: '16px 0', borderColor: '#444' }} />
+                            <hr className="pm-hr" />
                             {!alsoCreatePlayer ? (
                                 <button
                                     type="button"
                                     onClick={() => setAlsoCreatePlayer(true)}
                                     disabled={loading}
-                                    style={{
-                                        width: '100%',
-                                        padding: '10px',
-                                        background: 'linear-gradient(135deg, #4fc3f7, #0288d1)',
-                                        color: 'white',
-                                        border: 'none',
-                                        borderRadius: '6px',
-                                        fontWeight: 600,
-                                        cursor: 'pointer',
-                                        fontSize: '0.9rem'
-                                    }}
+                                    className="pm-create-from-btn"
                                 >
                                     ⚡ Create Player from this User
                                 </button>
                             ) : (
-                                <div className="linked-form-section" style={{
-                                    border: '1px solid #4fc3f7',
-                                    borderRadius: '8px',
-                                    padding: '16px',
-                                    marginTop: '8px',
-                                    backgroundColor: 'rgba(79, 195, 247, 0.05)'
-                                }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <h4 style={{ marginTop: 0, color: '#4fc3f7' }}>Player Details</h4>
+                                <div className="linked-form-section">
+                                    <div className="pm-linked-section-header">
+                                        <h4>Player Details</h4>
                                         <button
                                             type="button"
                                             onClick={() => setAlsoCreatePlayer(false)}
-                                            style={{ background: 'none', border: 'none', color: '#999', cursor: 'pointer', fontSize: '1.2rem' }}
+                                            className="pm-linked-close"
                                         >×</button>
                                     </div>
 
