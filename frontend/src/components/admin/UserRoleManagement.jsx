@@ -3,14 +3,14 @@ import api from '../../services/api';
 import './UserRoleManagement.css';
 
 const AVAILABLE_ROLES = [
-    { name: 'ADMIN', description: 'Full system access', color: '#e53e3e' },
-    { name: 'GM', description: 'Team management', color: '#d69e2e' },
-    { name: 'PLAYER', description: 'Player access', color: '#3182ce' },
-    { name: 'REFEREE', description: 'Referee scheduling', color: '#805ad5' },
-    { name: 'SCOREKEEPER', description: 'Game scoring', color: '#38a169' },
-    { name: 'GOALIE', description: 'Goalie scheduling', color: '#dd6b20' },
-    { name: 'COORDINATOR', description: 'League coordination', color: '#718096' },
-    { name: 'USER', description: 'Basic access', color: '#a0aec0' }
+    { name: 'ADMIN',       description: 'Full system access',    color: '#E08A8A' },
+    { name: 'GM',          description: 'Team management',       color: '#E8C26A' },
+    { name: 'PLAYER',      description: 'Player access',         color: '#9DB9CD' },
+    { name: 'REFEREE',     description: 'Referee scheduling',    color: '#b09ef0' },
+    { name: 'SCOREKEEPER', description: 'Game scoring',          color: '#7FB59A' },
+    { name: 'GOALIE',      description: 'Goalie scheduling',     color: '#e8956a' },
+    { name: 'COORDINATOR', description: 'League coordination',   color: '#7E8A94' },
+    { name: 'USER',        description: 'Basic access',          color: '#5E6872' },
 ];
 
 const UserRoleManagement = () => {
