@@ -56,3 +56,20 @@ SCHEDULING  [v2-GAP group: design folds these into "Assignments"; KEPT until Ass
 - Keep all existing data fetching/props. New modules reuse existing api.js methods.
 - Follow the dark-theme conventions in REDESIGN_HANDOFF.md (obi tokens, clickable cards = div role=button, etc.).
 - Branch: `ui-ux-redesign` (or a child branch for the restructure).
+
+## Follow-ups for the next Claude Design handoff (integration PAUSED 2026-06-21)
+Consistency review passed: AdminOverview / AdminAssignments / GameManagementAdmin are eslint-clean,
+fully dark-themed, and use the obi tokens (no drift from the rethemed modules).
+
+Known rough edges to refine with Claude Design before resuming here:
+- [ ] **Live Score Entry** tab currently renders the OLD `ScorekeeperContent` (Game Schedule list +
+  old Live Score Entry + Standings sub-tabs) as a placeholder. Both the **Live Score Entry** and
+  **Game Management** box-score screens need proper designs — the current pages don't yet have the
+  info/function they need. Get Claude Design mockups for both.
+- [ ] **Admin scheduling pages will be RETIRED.** Goalie/Ref/Scorekeeper Schedule admin screens go
+  away — all *admin* scheduling consolidates into **Assignments**. (Separately, COORDINATOR-specific
+  scheduling pages will exist and are NOT the same as the admin scheduling pages — those come from
+  the coordinator-feature work. Keep that distinction.)
+- [ ] **Assignments** needs filters / usability work (beyond week chips) to be practical at scale.
+- [ ] Resume integration here once the new handoff package is ready.
+
