@@ -816,10 +816,8 @@ const ScheduleManager = () => {
 
                     {/* Week Filter - only show for saved/editing schedules */}
                     {(scheduleMode === 'saved' || scheduleMode === 'editing') && (
-                        <div style={{ marginBottom: '20px' }}>
-                            <label style={{ marginRight: '10px', fontWeight: '600', color: '#2c3e50' }}>
-                                Filter by Week:
-                            </label>
+                        <div className="sm-week-filter">
+                            <label className="sm-filter-label">Filter by Week:</label>
                             <select
                                 value={selectedWeek}
                                 onChange={(e) => setSelectedWeek(e.target.value)}

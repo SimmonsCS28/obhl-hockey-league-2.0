@@ -1,568 +1,665 @@
+/* ScheduleManager — redesigned per OBHL design handoff v2 */
+
 .schedule-manager {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 20px;
+    animation: sm-fade .2s ease;
 }
 
-.page-header {
+@keyframes sm-fade {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Page header — kept small since admin topbar provides context */
+.schedule-manager .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 }
 
 .schedule-manager h1 {
-    color: #2c3e50;
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 22px;
+    color: #fff;
     margin: 0;
 }
 
-.back-to-admin-btn {
-    padding: 10px 20px;
-    background: #6b7280;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
+/* Message banners */
+.schedule-manager .message {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 16px;
+    border-radius: 9px;
+    font-family: var(--obi-font-body);
+    font-size: 13.5px;
+    margin-bottom: 18px;
 }
 
-.back-to-admin-btn:hover {
-    background: #4b5563;
-    transform: translateY(-1px);
+.schedule-manager .message.success {
+    background: rgba(127, 181, 154, 0.1);
+    border: 1px solid rgba(127, 181, 154, 0.35);
+    color: var(--obi-success);
 }
 
-
-.message {
-    padding: 15px;
-    margin-bottom: 20px;
-    border-radius: 4px;
-    font-weight: 500;
+.schedule-manager .message.error {
+    background: rgba(224, 138, 138, 0.1);
+    border: 1px solid rgba(224, 138, 138, 0.35);
+    color: var(--obi-error);
 }
 
-.message.success {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
+/* Card sections */
+.schedule-manager .section {
+    background: linear-gradient(180deg, #13171d, #10141a);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 18px;
 }
 
-.message.error {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
+.schedule-manager .section h2 {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #fff;
+    margin: 0 0 14px;
 }
 
-.section {
-    background: white;
-    padding: 25px;
-    margin-bottom: 25px;
+.schedule-manager .section h3 {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-secondary);
+    margin: 0 0 10px;
+}
+
+/* Season select */
+.schedule-manager .season-select {
+    background: #0e1116;
+    border: 1px solid rgba(157, 185, 205, 0.22);
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.section h2 {
-    color: #34495e;
-    margin-top: 0;
-    margin-bottom: 20px;
-    font-size: 1.3em;
-}
-
-.section h3 {
-    color: #7f8c8d;
-    font-size: 1.1em;
-    margin-bottom: 15px;
-}
-
-/* Season Selection */
-.season-select {
+    padding: 9px 28px 9px 12px;
+    color: var(--obi-text);
+    font-family: var(--obi-font-body);
+    font-size: 14px;
     width: 100%;
     max-width: 400px;
-    padding: 10px;
-    font-size: 16px;
-    border: 2px solid #ddd;
-    border-radius: 4px;
-    color: #2c3e50 !important;
-    background-color: white;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='%239DB9CD' stroke-width='1.6' fill='none'/></svg>");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
 }
 
-.info {
-    margin-top: 10px;
-    color: #7f8c8d;
-    font-style: italic;
+.schedule-manager .info {
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    color: var(--obi-text-muted);
+    margin-top: 8px;
+    font-style: normal;
 }
 
-/* File Upload */
-.upload-area {
+/* Upload area */
+.schedule-manager .upload-area {
     display: flex;
     align-items: center;
-    gap: 15px;
-}
-
-.upload-area input[type="file"] {
-    padding: 10px;
-    border: 2px dashed #3498db;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.file-name {
-    color: #27ae60;
-    font-weight: 500;
-}
-
-/* Slots Preview */
-.slots-preview {
-    margin-top: 20px;
-    padding: 15px;
-    background: #f8f9fa;
-    border-radius: 4px;
-}
-
-.slots-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 10px;
-    margin-top: 10px;
-}
-
-.slot-card {
-    padding: 10px;
-    background: white;
-    border: 1px solid #dee2e6;
-    border-radius: 4px;
-    font-size: 0.9em;
-    color: #2c3e50;
-}
-
-.slot-card.more {
-    background: #e9ecef;
-    text-align: center;
-    font-weight: 500;
-    color: #6c757d;
-}
-
-/* Generate Form */
-.generate-form {
-    display: flex;
-    align-items: center;
-    gap: 20px;
+    gap: 12px;
     flex-wrap: wrap;
 }
 
-.generate-form label {
+.schedule-manager .upload-area input[type="file"] {
+    padding: 10px 13px;
+    border: 2px dashed rgba(157, 185, 205, 0.28);
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--obi-text-secondary);
+    background: rgba(157, 185, 205, 0.03);
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    transition: border-color .15s;
+}
+
+.schedule-manager .upload-area input[type="file"]:hover {
+    border-color: var(--obi-accent);
+}
+
+.schedule-manager .file-name {
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    color: var(--obi-success);
+    font-weight: 500;
+}
+
+/* Slots preview */
+.schedule-manager .slots-preview {
+    margin-top: 16px;
+    padding: 14px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 1px solid var(--obi-divider);
+}
+
+.schedule-manager .slots-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.schedule-manager .slot-card {
+    padding: 8px 11px;
+    background: rgba(157, 185, 205, 0.04);
+    border: 1px solid var(--obi-divider);
+    border-radius: 7px;
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    color: var(--obi-text-secondary);
+}
+
+.schedule-manager .slot-card.more {
+    background: rgba(246, 169, 28, 0.06);
+    border-color: rgba(246, 169, 28, 0.2);
+    text-align: center;
+    color: var(--obi-accent);
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+}
+
+/* Generate form */
+.schedule-manager .generate-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 18px;
+    flex-wrap: wrap;
+}
+
+.schedule-manager .generate-form label {
     display: flex;
     flex-direction: column;
-    gap: 5px;
-    font-weight: 500;
-    color: #2c3e50;
+    gap: 6px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
 }
 
-.generate-form input[type="number"] {
-    padding: 8px;
-    border: 2px solid #ddd;
-    border-radius: 4px;
-    width: 100px;
-    color: #2c3e50 !important;
-    background-color: white;
+.schedule-manager .generate-form input[type="number"] {
+    background: #0e1116;
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    border-radius: 8px;
+    padding: 9px 10px;
+    color: var(--obi-text);
+    font-family: var(--obi-font-display);
+    font-weight: 800;
     font-size: 16px;
+    width: 90px;
+    -moz-appearance: textfield;
 }
 
-.warning {
-    color: #e67e22;
-    font-weight: 500;
+.schedule-manager .generate-form input[type="number"]::-webkit-outer-spin-button,
+.schedule-manager .generate-form input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
     margin: 0;
 }
 
-/* Buttons */
-.btn-primary,
-.btn-danger,
-.btn-secondary {
-    padding: 12px 24px;
-    border: none;
-    border-radius: 4px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
+.schedule-manager .warning {
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    color: var(--obi-warning);
+    margin: 0;
 }
 
-.btn-primary {
-    background-color: #3498db;
-    color: white;
+.schedule-manager .playoff-weeks-hint {
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    color: var(--obi-warning);
+    padding: 8px 12px;
+    background: rgba(232, 194, 106, 0.08);
+    border-left: 3px solid rgba(232, 194, 106, 0.5);
+    border-radius: 0 6px 6px 0;
+    white-space: nowrap;
+    margin-top: 4px;
 }
 
-.btn-primary:hover:not(:disabled) {
-    background-color: #2980b9;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
-}
-
-.btn-secondary {
-    background-color: #95a5a6;
-    color: white;
-}
-
-.btn-secondary:hover:not(:disabled) {
-    background-color: #7f8c8d;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(149, 165, 166, 0.3);
-}
-
-.btn-danger {
-    background-color: #e74c3c;
-    color: white;
-    margin-bottom: 20px;
-}
-
-.btn-danger:hover:not(:disabled) {
-    background-color: #c0392b;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
-}
-
-.btn-primary:disabled,
-.btn-danger:disabled,
-.btn-secondary:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Desktop Table View */
-.schedule-manager .schedule-table-container {
-    background: white;
+/* ─── Shared button base ─── */
+.schedule-manager .btn-primary,
+.schedule-manager .btn-secondary,
+.schedule-manager .btn-danger,
+.schedule-manager .btn-add-week,
+.schedule-manager .btn-bracket-init,
+.schedule-manager .back-to-admin-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 10px 18px;
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: background .15s, border-color .15s, transform .12s, opacity .15s;
+    white-space: nowrap;
+}
+
+.schedule-manager .btn-primary {
+    background: var(--obi-accent);
+    color: #0b0c0f;
+    border: none;
+}
+.schedule-manager .btn-primary:hover:not(:disabled) {
+    background: var(--obi-accent-hover);
+    transform: translateY(-1px);
+}
+
+.schedule-manager .btn-secondary {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--obi-text-secondary);
+    border: 1px solid rgba(157, 185, 205, 0.25);
+}
+.schedule-manager .btn-secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(157, 185, 205, 0.45);
+    transform: translateY(-1px);
+}
+
+.schedule-manager .btn-danger {
+    background: rgba(224, 138, 138, 0.08);
+    color: var(--obi-error);
+    border: 1px solid rgba(224, 138, 138, 0.3);
+    margin-bottom: 0;
+}
+.schedule-manager .btn-danger:hover:not(:disabled) {
+    background: rgba(224, 138, 138, 0.16);
+    border-color: rgba(224, 138, 138, 0.55);
+    transform: translateY(-1px);
+}
+
+.schedule-manager .back-to-admin-btn {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--obi-text-secondary);
+    border: 1px solid rgba(157, 185, 205, 0.25);
+}
+.schedule-manager .back-to-admin-btn:hover {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(157, 185, 205, 0.45);
+    transform: translateY(-1px);
+}
+
+.schedule-manager .btn-add-week {
+    background: rgba(127, 181, 154, 0.08);
+    color: var(--obi-success);
+    border: 1px solid rgba(127, 181, 154, 0.28);
+    margin-top: 16px;
+    width: 100%;
+}
+.schedule-manager .btn-add-week:hover:not(:disabled) {
+    background: rgba(127, 181, 154, 0.15);
+    transform: translateY(-1px);
+}
+
+.schedule-manager .btn-bracket-init {
+    background: rgba(246, 169, 28, 0.08);
+    color: var(--obi-accent);
+    border: 1px solid rgba(246, 169, 28, 0.28);
+    margin-top: 12px;
+    margin-left: 10px;
+}
+.schedule-manager .btn-bracket-init:hover:not(:disabled) {
+    background: rgba(246, 169, 28, 0.15);
+    transform: translateY(-1px);
+}
+
+.schedule-manager .btn-primary:disabled,
+.schedule-manager .btn-secondary:disabled,
+.schedule-manager .btn-danger:disabled,
+.schedule-manager .btn-add-week:disabled,
+.schedule-manager .btn-bracket-init:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Week filter row */
+.schedule-manager .sm-week-filter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.schedule-manager .sm-filter-label {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+}
+
+/* ─── Desktop table view ─── */
+.schedule-manager .schedule-table-container {
+    background: linear-gradient(180deg, #13171d, #10141a);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 12px;
+    overflow: hidden;
     overflow-x: auto;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }
 
 .schedule-manager .schedule-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 900px;
+    min-width: 800px;
 }
 
 .schedule-manager .schedule-table th {
-    background-color: #f7fafc;
-    color: #4a5568;
-    font-weight: 600;
+    background: rgba(0, 0, 0, 0.25);
+    color: var(--obi-text-muted);
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
     text-align: left;
-    padding: 0.5rem 1rem;
-    border-bottom: 2px solid #e2e8f0;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.18);
     white-space: nowrap;
-    font-size: 0.875rem;
-    line-height: 1.2;
 }
 
 .schedule-manager .schedule-table td {
-    padding: 2px 1rem;
-    border-bottom: 1px solid #e2e8f0;
-    color: #2d3748;
+    padding: 9px 16px;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.07);
+    color: var(--obi-text);
     vertical-align: middle;
-    font-size: 0.875rem;
-    line-height: 1.3;
+    font-family: var(--obi-font-body);
+    font-size: 13.5px;
 }
 
 .schedule-manager .schedule-table tr:last-child td {
     border-bottom: none;
 }
 
+.schedule-manager .schedule-table tr.clickable-row {
+    cursor: pointer;
+    transition: background .12s;
+}
+
 .schedule-manager .schedule-table tr.clickable-row:hover td:not(.team-cell) {
-    background-color: #f8fafc;
+    background: rgba(157, 185, 205, 0.04);
 }
 
 .schedule-manager .schedule-table .week-col {
-    font-weight: 600;
-    color: #aa9c00;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--obi-accent);
     white-space: nowrap;
 }
 
 .schedule-manager .schedule-table .time-col {
-    font-weight: 500;
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    color: var(--obi-icy);
     white-space: nowrap;
-}
-
-.schedule-manager .schedule-table .team-cell {
-    font-weight: 600;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-    transition: opacity 0.2s;
-}
-
-.schedule-manager .schedule-table .team-cell:hover {
-    opacity: 0.85;
-}
-
-.schedule-manager .schedule-table .score {
-    font-weight: bold;
-    color: #2d3748;
-    font-size: 0.875rem;
-}
-
-.schedule-manager .schedule-table .upcoming-badge {
-    display: inline-block;
-    padding: 0.125rem 0.5rem;
-    background-color: #e2e8f0;
-    color: #4a5568;
-    border-radius: 9999px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    line-height: 1.2;
-}
-
-.schedule-manager .schedule-table .non-friday-row {
-    background-color: rgba(245, 158, 11, 0.15);
 }
 
 .schedule-manager .schedule-table .date-col {
     white-space: nowrap;
+    color: var(--obi-text-secondary);
 }
 
 .schedule-manager .schedule-table .non-friday-date {
+    color: var(--obi-warning);
     font-weight: 700;
-    color: #c2410c;
+}
+
+.schedule-manager .schedule-table .non-friday-row td:not(.team-cell) {
+    background: rgba(232, 194, 106, 0.04);
+}
+
+.schedule-manager .schedule-table .team-cell {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+.schedule-manager .schedule-table .score {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 15px;
+    color: var(--obi-text);
+}
+
+.schedule-manager .schedule-table .upcoming-badge {
+    display: inline-block;
+    padding: 3px 9px;
+    background: rgba(157, 185, 205, 0.08);
+    color: var(--obi-icy);
+    border: 1px solid rgba(157, 185, 205, 0.2);
+    border-radius: 20px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
 .schedule-manager .schedule-table .day-warning {
     display: inline-block;
     width: 1.2em;
     margin-right: 0.25rem;
-    font-size: 0.875rem;
-    line-height: 1;
     vertical-align: middle;
     cursor: help;
-    text-align: center;
+    font-size: 13px;
+    line-height: 1;
 }
 
-/* Schedule Grid */
-.schedule-grid {
+/* Playoff rows */
+.schedule-manager .schedule-table .playoff-row td:not(.team-cell) {
+    background: rgba(246, 169, 28, 0.04);
+}
+
+.schedule-manager .schedule-table .playoff-row:hover td:not(.team-cell) {
+    background: rgba(246, 169, 28, 0.09);
+}
+
+.schedule-manager .playoff-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--obi-accent) 0%, #c8960d 100%);
+    color: #0b0c0f;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-right: 6px;
+    vertical-align: middle;
+    text-transform: uppercase;
+}
+
+/* ─── Mobile card view ─── */
+.schedule-manager .schedule-grid {
     display: flex;
     flex-direction: column;
-    gap: 25px;
+    gap: 20px;
 }
 
-.week-section {
-    border: 2px solid #ecf0f1;
-    border-radius: 8px;
-    padding: 20px;
-    background: #fafafa;
+.schedule-manager .week-section {
+    background: linear-gradient(180deg, #13171d, #10141a);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 12px;
+    padding: 16px 18px;
 }
 
-.week-section h3 {
-    margin-top: 0;
-    color: #2c3e50;
-    font-size: 1.2em;
-    margin-bottom: 15px;
+.schedule-manager .week-section h3 {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 18px;
+    color: #fff;
+    margin: 0 0 12px;
     padding-bottom: 10px;
-    border-bottom: 2px solid #3498db;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.1);
+    text-transform: uppercase;
 }
 
-.games-list {
+.schedule-manager .games-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 10px;
 }
 
-.game-card {
-    background: #2c3e50 !important;
-    border: 1px solid #dee2e6;
-    border-radius: 6px;
-    padding: 15px;
-    transition: all 0.2s ease;
+.schedule-manager .game-card {
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid rgba(157, 185, 205, 0.1);
+    border-radius: 9px;
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: background .12s, border-color .12s, transform .12s;
     position: relative;
 }
 
-.game-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.schedule-manager .game-card:hover {
+    background: rgba(157, 185, 205, 0.05);
+    border-color: rgba(157, 185, 205, 0.28);
     transform: translateY(-2px);
 }
 
-/* Non-Friday Game Styling for Cards */
-.game-card.non-friday-game {
-    border-color: #f59e0b;
-    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+.schedule-manager .game-card.non-friday-game {
+    border-color: rgba(232, 194, 106, 0.3);
 }
 
-.game-card.non-friday-game:hover {
-    border-color: #f59e0b;
-    box-shadow: 0 6px 16px rgba(245, 158, 11, 0.4);
+.schedule-manager .game-card.non-friday-game:hover {
+    border-color: var(--obi-warning);
+    box-shadow: 0 0 0 2px rgba(232, 194, 106, 0.12);
 }
 
-.day-badge {
+.schedule-manager .day-badge {
     position: absolute;
-    top: -12px;
+    top: -11px;
     right: 10px;
-    background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);
-    color: white;
-    padding: 4px 12px;
-    border-radius: 12px;
-    font-size: 0.75em;
-    font-weight: 700;
+    background: var(--obi-warning);
+    color: #0b0c0f;
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 10px;
     letter-spacing: 0.5px;
-    box-shadow: 0 2px 8px rgba(234, 88, 12, 0.4);
-    animation: pulse 2s ease-in-out infinite;
+    text-transform: uppercase;
 }
 
-@keyframes pulse {
-
-    0%,
-    100% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.05);
-    }
+.schedule-manager .game-time {
+    font-family: var(--obi-font-body);
+    font-size: 12px;
+    color: var(--obi-icy);
+    margin-bottom: 7px;
+    font-weight: 500;
 }
 
-.game-time {
-    font-size: 0.9em;
-    color: white;
-    margin-bottom: 8px;
-    font-weight: 700;
-}
-
-.game-teams {
-    font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 8px;
-    font-size: 1.05em;
+.schedule-manager .game-teams {
     display: flex;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
+    margin-bottom: 7px;
 }
 
-.team-badge {
+.schedule-manager .team-badge {
     display: inline-block;
-    padding: 4px 12px;
-    border-radius: 12px;
-    color: white;
-    font-weight: 600;
-    font-size: 0.9em;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 13px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
-.vs {
-    color: white !important;
-    font-weight: 500;
-    font-size: 0.85em;
+.schedule-manager .vs {
+    font-family: var(--obi-font-body);
+    font-size: 11px;
+    color: var(--obi-text-dim);
 }
 
-.game-rink {
+.schedule-manager .game-rink {
     display: inline-block;
-    padding: 4px 12px;
-    background: #3498db;
-    color: white;
-    border-radius: 12px;
-    font-size: 0.85em;
-    font-weight: 500;
+    padding: 3px 10px;
+    background: rgba(157, 185, 205, 0.07);
+    color: var(--obi-icy);
+    border: 1px solid rgba(157, 185, 205, 0.18);
+    border-radius: 10px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
 }
 
-/* Clickable game cards */
-.game-card.clickable {
-    cursor: pointer;
-}
-
-.game-card.clickable:hover {
-    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
-    transform: translateY(-3px);
-}
-
-.placeholder {
-    color: #95a5a6;
+.schedule-manager .placeholder {
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    color: var(--obi-text-dim);
     font-style: italic;
 }
 
-/* Add Week Button */
-.btn-add-week {
-    margin-top: 20px;
-    padding: 12px 24px;
-    background-color: #27ae60;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: block;
-    width: 100%;
+/* ─── Confirmation modal ─── */
+.schedule-manager .resume-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    backdrop-filter: blur(3px);
 }
 
-.btn-add-week:hover:not(:disabled) {
-    background-color: #229954;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(39, 174, 96, 0.3);
+.schedule-manager .resume-modal-content {
+    background: #13171d;
+    border: 1px solid var(--obi-card-border);
+    border-radius: 14px;
+    padding: 28px 30px;
+    max-width: 440px;
+    width: 90%;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), var(--obi-shadow-gold);
 }
 
-.btn-add-week:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Playoff row styling */
-.schedule-manager .schedule-table .playoff-row {
-    background: linear-gradient(90deg, rgba(180, 130, 0, 0.12) 0%, rgba(180, 130, 0, 0.06) 100%);
-    border-left: 3px solid #d4a017;
-}
-
-.schedule-manager .schedule-table .playoff-row:hover {
-    background: linear-gradient(90deg, rgba(180, 130, 0, 0.22) 0%, rgba(180, 130, 0, 0.12) 100%);
-}
-
-.playoff-badge {
-    display: inline-block;
-    background: linear-gradient(135deg, #d4a017 0%, #b8860b 100%);
+.schedule-manager .resume-modal-content h3 {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 22px;
     color: #fff;
-    font-size: 0.65rem;
-    font-weight: 700;
-    letter-spacing: 0.5px;
-    padding: 2px 6px;
-    border-radius: 10px;
-    margin-right: 6px;
-    vertical-align: middle;
-    text-transform: uppercase;
-    box-shadow: 0 1px 4px rgba(212, 160, 23, 0.5);
+    margin: 0 0 12px;
 }
 
-/* Playoff weeks hint text */
-.playoff-weeks-hint {
-    margin-top: 6px;
-    font-size: 0.8rem;
-    color: #b8860b;
-    font-weight: 500;
-    padding: 6px 10px;
-    background: rgba(212, 160, 23, 0.1);
-    border-radius: 6px;
-    border-left: 3px solid #d4a017;
-    white-space: nowrap;
+.schedule-manager .resume-modal-content p {
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-text-secondary);
+    white-space: pre-wrap;
+    line-height: 1.55;
+    margin: 0 0 20px;
 }
 
-/* Initialize Bracket button */
-.btn-bracket-init {
-    margin-top: 12px;
-    margin-left: 10px;
-    padding: 12px 24px;
-    background: linear-gradient(135deg, #d4a017 0%, #b8860b 100%);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 15px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(212, 160, 23, 0.4);
-    letter-spacing: 0.3px;
+.schedule-manager .resume-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
 }
-
-.btn-bracket-init:hover:not(:disabled) {
-    background: linear-gradient(135deg, #e6b020 0%, #c8960d 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(212, 160, 23, 0.5);
-}
-
-.btn-bracket-init:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
