@@ -3,7 +3,6 @@ import api from '../services/api';
 import GameSchedule from './GameSchedule';
 import LiveScoreEntry from './LiveScoreEntry';
 import './ScorekeeperContent.css';
-import Standings from './Standings';
 
 function ScorekeeperContent() {
     const [currentView, setCurrentView] = useState('schedule');
@@ -182,10 +181,6 @@ function ScorekeeperContent() {
         requestAction({ type: 'SEASON', value: seasonId });
     };
 
-    const handleWeekChange = (week) => {
-        requestAction({ type: 'WEEK', value: week });
-    };
-
     if (loading) {
         return <div className="loading">Loading...</div>;
     }
@@ -206,12 +201,6 @@ function ScorekeeperContent() {
                         disabled={!selectedGame}
                     >
                         Live Score Entry
-                    </button>
-                    <button
-                        className={`nav-btn ${currentView === 'standings' ? 'active' : ''}`}
-                        onClick={() => handleViewChange('standings')}
-                    >
-                        Standings
                     </button>
                 </div>
                 <div className="nav-right">
@@ -263,9 +252,6 @@ function ScorekeeperContent() {
                     />
                 )}
 
-                {currentView === 'standings' && (
-                    <Standings seasonId={selectedSeasonId} />
-                )}
             </div>
         </div>
     );

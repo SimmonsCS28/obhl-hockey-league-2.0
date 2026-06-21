@@ -1,8 +1,10 @@
-import { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import GoalieSchedule from './admin/GoalieSchedule';
 import RefereeSchedule from './admin/RefereeSchedule';
 import ScorekeeperSchedule from './admin/ScorekeeperSchedule';
+import AdminOverview from './admin/AdminOverview';
+import AdminAssignments from './admin/AdminAssignments';
+import GameManagementAdmin from './admin/GameManagementAdmin';
 import AdminLayout from './AdminLayout';
 import DraftDashboard from './DraftDashboard';
 import PlayerManagement from './PlayerManagement';
@@ -16,21 +18,19 @@ import LeagueRulesAdmin from './LeagueRulesAdmin';
 function AdminDashboard() {
     const [searchParams] = useSearchParams();
     const tabFromUrl = searchParams.get('tab');
-    const [activeTab, setActiveTab] = useState(tabFromUrl || 'teams');
-
-    useEffect(() => {
-        if (tabFromUrl) {
-            setActiveTab(tabFromUrl);
-        }
-    }, [tabFromUrl]);
+    // Map legacy tab id to new equivalent; derive directly from URL (no intermediate state)
+    const activeTab = tabFromUrl === 'gameManagement' ? 'livescore' : (tabFromUrl || 'overview');
 
     return (
         <AdminLayout activeTab={activeTab}>
+            {activeTab === 'overview' && <AdminOverview />}
+            {activeTab === 'livescore' && <ScorekeeperContent />}
+            {activeTab === 'gamemgmt' && <GameManagementAdmin />}
+            {activeTab === 'assignments' && <AdminAssignments />}
             {activeTab === 'teams' && <TeamManagement />}
             {activeTab === 'players' && <PlayerManagement />}
             {activeTab === 'seasons' && <SeasonManagement />}
             {activeTab === 'draft' && <DraftDashboard />}
-            {activeTab === 'gameManagement' && <ScorekeeperContent />}
             {activeTab === 'users' && <UserManagement />}
             {activeTab === 'announcements' && <AnnouncementsManagement />}
             {activeTab === 'rules' && <LeagueRulesAdmin />}

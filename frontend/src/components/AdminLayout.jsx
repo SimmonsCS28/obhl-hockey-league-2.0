@@ -8,21 +8,24 @@ import './AdminLayout.css';
 // Sidebar nav. Items use ?tab= except Schedule which is its own route.
 const NAV = [
     { group: 'Operations' },
-    { id: 'gameManagement', label: 'Game Management' },
-    { group: 'Scheduling' },
-    { route: '/admin/schedule', label: 'Schedule' },
-    { id: 'goalies', label: 'Goalie Schedule' },
-    { id: 'referees', label: 'Referee Schedule' },
-    { id: 'scorekeepers', label: 'Scorekeeper Schedule' },
+    { id: 'overview', label: 'Overview' },
+    { id: 'livescore', label: 'Live Score Entry' },
+    { id: 'gamemgmt', label: 'Game Management' },
+    { id: 'assignments', label: 'Assignments' },
     { group: 'League Setup' },
+    { route: '/admin/schedule', label: 'Schedule' },
+    { id: 'seasons', label: 'Seasons' },
     { id: 'teams', label: 'Teams' },
     { id: 'players', label: 'Players' },
-    { id: 'seasons', label: 'Seasons' },
-    { id: 'draft', label: 'Draft Tool' },
+    { id: 'draft', label: 'Draft Tool', badge: true },
     { group: 'People' },
     { id: 'users', label: 'Users & Roles' },
     { id: 'announcements', label: 'Announcements' },
-    { id: 'rules', label: 'League Rules' },
+    { id: 'rules', label: 'Rules Editor' },
+    { group: 'Scheduling' },
+    { id: 'goalies', label: 'Goalie Schedule' },
+    { id: 'referees', label: 'Referee Schedule' },
+    { id: 'scorekeepers', label: 'Scorekeeper Schedule' },
 ];
 
 function AdminLayout({ children, activeTab }) {
@@ -34,8 +37,11 @@ function AdminLayout({ children, activeTab }) {
 
     const isScheduleRoute = location.pathname === '/admin/schedule';
 
+    // Map legacy tab id to current equivalent for highlighting
+    const resolvedTab = activeTab === 'gameManagement' ? 'livescore' : activeTab;
+
     const isActive = (item) =>
-        item.route ? location.pathname === item.route : (activeTab === item.id && !isScheduleRoute);
+        item.route ? location.pathname === item.route : (resolvedTab === item.id && !isScheduleRoute);
 
     const handleNav = (item) => {
         navigate(item.route ? item.route : `/admin?tab=${item.id}`);
@@ -49,6 +55,11 @@ function AdminLayout({ children, activeTab }) {
 
     const activeItem = NAV.find(i => i.id && isActive(i)) || (isScheduleRoute ? NAV.find(i => i.route) : null);
     const pageTitle = activeItem?.label || 'Admin Console';
+    const pageSub = activeItem?.id === 'overview' ? 'League snapshot and action items'
+        : activeItem?.id === 'livescore' ? 'Live game scoring'
+        : activeItem?.id === 'gamemgmt' ? 'Box-score editor for completed games'
+        : activeItem?.id === 'assignments' ? 'Assign goalies, referees and scorekeepers'
+        : 'OBHL administration';
 
     const initials = (() => {
         if (user?.firstName || user?.lastName) {
@@ -84,6 +95,7 @@ function AdminLayout({ children, activeTab }) {
                                 onClick={() => handleNav(item)}
                             >
                                 {item.label}
+                                {item.badge && <span className="obi-side-item-badge">Soon</span>}
                             </button>
                         )
                     ))}
@@ -105,7 +117,7 @@ function AdminLayout({ children, activeTab }) {
                     </button>
                     <div className="obi-admin-titles">
                         <div className="obi-admin-title">{pageTitle}</div>
-                        <div className="obi-admin-sub">OBHL administration</div>
+                        <div className="obi-admin-sub">{pageSub}</div>
                     </div>
                     <div className="obi-admin-topbar-right">
                         {seasons?.length > 0 ? (

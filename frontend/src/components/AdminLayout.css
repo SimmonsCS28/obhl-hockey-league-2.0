@@ -269,6 +269,21 @@
 .obi-admin-content {
     flex: 1;
     padding: 24px 26px 60px;
+    background: var(--obi-bg);
+}
+
+/* "Soon" badge on sidebar nav items */
+.obi-side-item-badge {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 9px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
+    background: rgba(157, 185, 205, 0.14);
+    padding: 2px 7px;
+    border-radius: 10px;
+    margin-left: auto;
 }
 
 .obi-admin-historical {
