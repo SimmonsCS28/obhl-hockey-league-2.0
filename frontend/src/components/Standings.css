@@ -1,42 +1,56 @@
+/* Standings (admin, embedded in Game Management) — OBHL dark theme */
+
 .standings {
-    padding: 20px;
+    padding: 0;
+    font-family: var(--obi-font-body);
+    color: var(--obi-text);
+    -webkit-font-smoothing: antialiased;
 }
 
+/* ── Header ── */
 .standings-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    margin-bottom: 18px;
 }
 
 .standings-header h2 {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
     font-size: 24px;
-    color: #1e293b;
+    color: #fff;
     margin: 0;
 }
 
 .btn-refresh {
-    padding: 10px 20px;
-    background: #1e40af;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--obi-text-secondary);
+    border: 1px solid var(--obi-card-border);
+    border-radius: var(--obi-radius-btn);
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.5px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: border-color 0.15s, color 0.15s;
 }
 
 .btn-refresh:hover {
-    background: #1e3a8a;
+    border-color: var(--obi-accent);
+    color: var(--obi-accent);
 }
 
+/* ── Table card ── */
 .standings-table {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    background: linear-gradient(180deg, #13171d, #10141a);
+    border: 1px solid var(--obi-card-border);
+    border-radius: var(--obi-radius-card);
     overflow: hidden;
-    margin-bottom: 24px;
+    overflow-x: auto;
+    margin-bottom: 20px;
 }
 
 .standings-table table {
@@ -45,145 +59,177 @@
 }
 
 .standings-table th {
-    background: #1e40af;
-    color: white;
-    padding: 14px 12px;
+    padding: 12px 12px;
     text-align: left;
-    font-weight: 600;
-    font-size: 13px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
+    color: var(--obi-text-muted);
+    background: rgba(0, 0, 0, 0.25);
+    border-bottom: 1px solid rgba(157, 185, 205, 0.18);
+    white-space: nowrap;
 }
 
 .standings-table th:first-child {
-    width: 50px;
+    width: 42px;
     text-align: center;
 }
 
+/* PTS column gold accent (3rd th) */
+.standings-table th:nth-child(3) {
+    color: var(--obi-accent);
+}
+
 .standings-table td {
-    padding: 14px 12px;
-    border-bottom: 1px solid #e2e8f0;
+    padding: 12px 12px;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.07);
     font-size: 14px;
-    color: #1e293b;
+    color: var(--obi-text-secondary);
 }
 
 .standings-table tr:last-child td {
     border-bottom: none;
 }
 
+.standings-table tbody tr {
+    transition: background 0.12s;
+    cursor: pointer;
+}
+
 .standings-table tbody tr:hover {
-    background: #f8fafc;
+    background: var(--obi-accent-hover);
 }
 
-.playoff-position {
-    background: #eff6ff !important;
-}
-
+/* ── Columns ── */
 .rank {
     text-align: center;
-    font-weight: 700;
-    color: #64748b;
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 15px;
+    /* text-shadow improves legibility on colored backgrounds from inline style */
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .team-name {
-    font-weight: 600;
-    border: none;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 16px;
+    color: #fff;
 }
 
 .team-name strong {
-    text-decoration: none;
+    font-weight: 700;
 }
 
 .team-abbr {
     display: inline-block;
     margin-left: 8px;
     padding: 2px 6px;
-    background: #e2e8f0;
-    color: #64748b;
+    background: rgba(157, 185, 205, 0.1);
+    color: var(--obi-text-muted);
     border-radius: 4px;
     font-size: 11px;
     font-weight: 600;
 }
 
 .points {
-    font-weight: 700;
-    color: #1e40af;
-    font-size: 16px;
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 18px;
+    color: #fff;
 }
 
 .positive {
-    color: #10b981;
+    color: var(--obi-success);
     font-weight: 600;
 }
 
 .negative {
-    color: #ef4444;
+    color: var(--obi-error);
     font-weight: 600;
 }
 
+/* ── Legend / scoring rules ── */
 .standings-legend {
-    background: white;
-    padding: 24px;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    background: var(--obi-bg-card);
+    border: 1px solid var(--obi-card-border);
+    border-radius: var(--obi-radius-card);
+    padding: 20px 22px;
 }
 
 .standings-legend h3 {
-    font-size: 16px;
-    color: #1e293b;
-    margin: 0 0 16px 0;
-    font-weight: 700;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #fff;
+    margin: 0 0 14px;
+}
+
+.standings-legend h3:not(:first-child) {
+    margin-top: 22px;
 }
 
 .scoring-rules {
     display: flex;
-    gap: 16px;
-    margin-bottom: 32px;
+    gap: 12px;
     flex-wrap: wrap;
 }
 
 .rule-item {
     flex: 1;
-    min-width: 150px;
-    background: #f8fafc;
-    padding: 16px;
+    min-width: 130px;
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid var(--obi-card-border);
+    border-left: 3px solid var(--obi-accent);
+    padding: 12px 14px;
     border-radius: 8px;
-    border-left: 4px solid #1e40af;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
 .rule-value {
-    font-size: 20px;
-    font-weight: 700;
-    color: #1e40af;
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 18px;
+    color: var(--obi-accent);
 }
 
 .rule-desc {
+    font-family: var(--obi-font-body);
     font-size: 13px;
-    color: #64748b;
+    color: var(--obi-text-muted);
 }
 
 .column-definitions {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 8px;
+    margin-top: 14px;
 }
 
 .legend-item {
+    font-family: var(--obi-font-body);
     font-size: 13px;
-    color: #64748b;
+    color: var(--obi-text-muted);
 }
 
 .legend-label {
+    font-family: var(--obi-font-display);
     font-weight: 700;
-    color: #1e293b;
+    color: var(--obi-text);
     margin-right: 4px;
 }
 
+/* ── Loading ── */
 .loading {
     text-align: center;
-    padding: 60px 20px;
-    color: #94a3b8;
-    font-size: 16px;
+    padding: 48px 20px;
+    font-family: var(--obi-font-body);
+    font-size: 15px;
+    color: var(--obi-text-muted);
 }
