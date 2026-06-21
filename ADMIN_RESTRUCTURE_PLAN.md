@@ -41,15 +41,15 @@ SCHEDULING  [v2-GAP group: design folds these into "Assignments"; KEPT until Ass
 - Add `Overview` and `Assignments` as new modules + routes (`?tab=overview`, `?tab=assignments`, `?tab=livescore`, `?tab=gamemgmt`).
 
 ## Placeholders / track for Claude Design (functionality the v2 admin drops or doesn't cover)
-- [ ] **Admin Standings**: v2 admin has no standings module (standings exist on the redesigned PUBLIC site). Action: removed from admin nav; if an admin standings view is still wanted, ask Claude Design for one. (Public `/standings` still covers viewing.)
+- [x] **Admin Standings**: REMOVED from admin nav (fb3abc3). Standings remain on the public site. If an admin view is still wanted, ask Claude Design for one.
 - [ ] **Teams / Players admin**: not in the v2 admin design at all — KEPT in our sidebar (League Setup). Ask Claude Design to design these admin screens so they match.
 - [ ] **Goalie / Referee / Scorekeeper Schedule** admin screens: not in v2 (folded into Assignments). KEPT for now. Revisit once Assignments covers their use.
-- [ ] **Draft Tool**: no v2 design yet (marked "soon" in design). KEPT functional + unstyled. Ask Claude Design for a Draft mockup.
+- [ ] **Draft Tool**: no v2 design yet (marked "soon" in design, badge added). KEPT functional + unstyled. Ask Claude Design for a Draft mockup.
 
 ## New features to build now (UI), plumb later
-- [ ] **Overview** dashboard: 4 stat cards + "Needs Attention" panel + "This Week" game list (v2 Admin.dc.html "Overview"). Wire stats/attention to real data incrementally; OK to start with computed-where-easy + clearly-marked placeholders.
-- [ ] **Assignments**: table of games with Goalie/Ref/Scorekeeper dropdowns (pools = users holding those roles) + week filter chips. Save via existing game-update (goalie1Id, referee1Id, referee2Id, scorekeeperId). The confirm/publish coordinator workflow is a PLACEHOLDER (real impl on `coordinator-feature`).
-- [ ] **Game Management** box-score editor: list/select game → show goals & penalties (from game events) with add/remove + Edit Game/finalize. Reuse LiveScoreEntry's data layer.
+- [x] **Overview** dashboard: built in `admin/AdminOverview.jsx` (fb3abc3). 4 stat cards wired to real game/team data; Needs Attention wired to in-progress + unassigned counts; This Week panel shows upcoming week's games.
+- [x] **Assignments**: built in `admin/AdminAssignments.jsx` (fb3abc3). Week chips, games × Goalie/Ref/Scorekeeper dropdowns, optimistic save via api.updateGame. Coordinator confirm/publish = PLACEHOLDER (coordinator-feature branch).
+- [x] **Game Management** box-score editor: built in `admin/GameManagementAdmin.jsx` (fb3abc3). Week chips + game dropdown → delegates to LiveScoreEntry for goals/penalties/finalize. Full v2 two-column box-score UI is a future upgrade.
 
 ## Execution notes
 - `AdminLayout` + `AdminDashboard` are the structural core — restructure them CENTRALLY (not in parallel worktrees) since everything routes through them.
