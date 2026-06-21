@@ -788,16 +788,9 @@ function LiveScoreEntry(props) {
                 <h2>Live Score Entry</h2>
                 {!gameFinalized && (
                     <button
-                        className="btn-action"
+                        className={`btn-save${isDirty ? '' : ' btn-save-inactive'}`}
                         onClick={handleManualSave}
                         disabled={!isDirty || savingDraft}
-                        style={{
-                            marginLeft: 'auto',
-                            backgroundColor: isDirty ? '#2ecc71' : '#bdc3c7',
-                            color: 'white',
-                            opacity: isDirty ? 1 : 0.7,
-                            cursor: isDirty ? 'pointer' : 'default'
-                        }}
                     >
                         {savingDraft ? 'Saving...' : '💾 Save Changes'}
                     </button>
@@ -879,7 +872,7 @@ function LiveScoreEntry(props) {
                     This game has been finalized. Score entry is locked.
                     {isAdmin && (
                         <div style={{ marginTop: '15px' }}>
-                            <button className="btn-action" onClick={handleUnfinalizeClick} style={{ backgroundColor: '#e67e22', color: 'white' }}>
+                            <button className="btn-unfinalize" onClick={handleUnfinalizeClick}>
                                 🔓 Unfinalize Game to Edit
                             </button>
                         </div>
@@ -1220,7 +1213,7 @@ function LiveScoreEntry(props) {
                             <p className="confirm-question">You MUST re-finalize the game after making edits to ensure stats are accurate.</p>
                         </div>
                         <div className="modal-actions">
-                            <button className="btn-confirm" onClick={confirmUnfinalize} disabled={isUnfinalizing} style={{ backgroundColor: '#e67e22' }}>
+                            <button className="btn-confirm btn-warn" onClick={confirmUnfinalize} disabled={isUnfinalizing}>
                                 {isUnfinalizing ? 'Unfinalizing...' : 'Yes, Unfinalize Game'}
                             </button>
                             <button className="btn-cancel-modal" onClick={cancelUnfinalize} disabled={isUnfinalizing}>
@@ -1310,7 +1303,7 @@ function LiveScoreEntry(props) {
             )}
 
             {showSaveSuccess && (
-                <div className="success-toast" style={{ backgroundColor: '#2ecc71' }}>
+                <div className="success-toast save-toast">
                     <div className="success-icon">💾</div>
                     <div className="success-text">
                         <strong>Saved!</strong>
@@ -1357,7 +1350,7 @@ function LiveScoreEntry(props) {
                             <button className="btn-confirm" onClick={handleSaveAndLeave} disabled={savingDraft}>
                                 {savingDraft ? 'Saving...' : '💾 Save & Leave'}
                             </button>
-                            <button className="btn-cancel-modal" style={{ backgroundColor: '#e74c3c', color: 'white', marginRight: '10px' }} onClick={handleDiscardChanges}>
+                            <button className="btn-cancel-modal btn-danger" onClick={handleDiscardChanges}>
                                 🗑️ Discard Changes
                             </button>
                             <button className="btn-cancel-modal" onClick={handleCancelUnsaved}>
