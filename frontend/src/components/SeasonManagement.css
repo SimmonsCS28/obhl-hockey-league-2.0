@@ -1,190 +1,244 @@
+/* SeasonManagement — OBHL dark theme */
+
+@keyframes sm-fade {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
 .season-management {
-    animation: fadeIn 0.3s ease-in;
+    animation: sm-fade 0.25s ease;
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* ── Module Header ── */
+.season-management .management-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--obi-divider);
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
+.season-management .management-header h2 {
+    margin: 0;
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 26px;
+    color: #fff;
+}
+
+/* ── Grid ── */
 .seasons-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 16px;
 }
 
+/* ── Season Card ── */
 .season-card {
-    background: white;
-    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(180deg, #13171d, #10141a);
+    border: 1px solid var(--obi-card-border);
+    border-radius: var(--obi-radius-card);
     overflow: hidden;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: transform 0.3s, box-shadow 0.3s;
+    transition: transform 0.14s, border-color 0.14s;
 }
 
 .season-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px);
+    border-color: rgba(246, 169, 28, 0.35);
 }
 
+/* Status-coloured top bar */
 .season-card-header {
-    padding: 1.5rem;
-    color: white;
+    padding: 18px 22px 16px;
+    color: #fff;
     position: relative;
 }
 
 .season-card-header h3 {
     margin: 0;
-    font-size: 1.5rem;
-    font-weight: 700;
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 22px;
+    line-height: 1.1;
+    color: inherit;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 .active-badge {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: rgba(255, 255, 255, 0.3);
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    backdrop-filter: blur(10px);
+    top: 14px;
+    right: 16px;
+    background: rgba(255, 255, 255, 0.22);
+    backdrop-filter: blur(8px);
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-family: var(--obi-font-display);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .season-card-body {
-    padding: 1.5rem;
+    flex: 1;
+    padding: 16px 22px;
 }
 
+/* ── Date boxes ── */
 .season-dates {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 1rem;
+    gap: 10px;
+    margin-bottom: 14px;
 }
 
 .date-item {
     text-align: center;
-    padding: 1rem;
-    background: #f7fafc;
-    border-radius: 8px;
+    padding: 10px 12px;
+    background: rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--obi-divider);
+    border-radius: 10px;
 }
 
 .date-label {
     display: block;
-    font-size: 0.75rem;
-    color: #718096;
-    margin-bottom: 0.5rem;
+    font-family: var(--obi-font-display);
+    font-weight: 600;
+    font-size: 10px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    color: var(--obi-text-muted);
+    margin-bottom: 4px;
 }
 
 .date-value {
     display: block;
-    font-size: 1rem;
-    font-weight: 700;
-    color: #2d3748;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 15px;
+    color: #fff;
 }
 
+/* ── Status badge ── */
 .season-status {
-    text-align: center;
+    text-align: left;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: var(--obi-radius-badge);
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
 }
 
 .status-badge.upcoming {
-    background: #bee3f8;
-    color: #2c5282;
+    background: rgba(157, 185, 205, 0.12);
+    color: var(--obi-icy);
+    border: 1px solid rgba(157, 185, 205, 0.28);
 }
 
 .status-badge.active {
-    background: #c6f6d5;
-    color: #22543d;
+    background: rgba(127, 181, 154, 0.15);
+    color: var(--obi-success);
+    border: 1px solid rgba(127, 181, 154, 0.35);
 }
 
 .status-badge.completed {
-    background: #e2e8f0;
-    color: #2d3748;
+    background: rgba(157, 185, 205, 0.07);
+    color: var(--obi-text-muted);
+    border: 1px solid var(--obi-divider);
 }
 
+/* ── Card Actions ── */
 .season-card-actions {
     display: flex;
-    gap: 0.75rem;
-    padding: 1rem 1.5rem;
-    background: #f7fafc;
-    border-top: 1px solid #e2e8f0;
-}
-
-.season-card-actions .btn-edit,
-.season-card-actions .btn-delete {
-    flex: 1;
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
+    gap: 8px;
+    padding: 12px 22px;
+    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid var(--obi-divider);
 }
 
 .season-card-actions .btn-edit {
-    background: #4299e1;
-    color: white;
+    flex: 1;
+    background: rgba(157, 185, 205, 0.08);
+    color: var(--obi-icy);
+    border: 1px solid rgba(157, 185, 205, 0.2);
+    border-radius: var(--obi-radius-btn);
+    padding: 8px 14px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
 }
 
 .season-card-actions .btn-edit:hover {
-    background: #3182ce;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(66, 153, 225, 0.3);
+    background: rgba(157, 185, 205, 0.16);
+    color: #fff;
+    transform: none;
+    box-shadow: none;
 }
 
 .season-card-actions .btn-delete {
-    background: #fc8181;
-    color: white;
+    flex: 1;
+    background: rgba(224, 138, 138, 0.08);
+    color: var(--obi-error);
+    border: 1px solid rgba(224, 138, 138, 0.28);
+    border-radius: var(--obi-radius-btn);
+    padding: 8px 14px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
 }
 
 .season-card-actions .btn-delete:hover {
-    background: #f56565;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(252, 129, 129, 0.3);
+    background: rgba(224, 138, 138, 0.16);
+    color: #fff;
+    transform: none;
+    box-shadow: none;
 }
 
+/* ── Season form ── */
 .season-form {
-    padding: 1.5rem;
+    padding: 20px 24px;
 }
 
-.delete-modal .modal-body {
-    padding: 2rem 1.5rem;
-    text-align: center;
-}
-
-.delete-modal .modal-body p {
-    margin: 0.5rem 0;
-    font-size: 1.1rem;
-    color: #2d3748;
-}
-
-.delete-modal .modal-body .warning-text {
-    color: #e53e3e;
-    font-weight: 600;
-    font-size: 0.95rem;
-}
-
-.form-row {
+.season-management .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin-bottom: 1.5rem;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+/* ── Loading / msg ── */
+.season-management .loading {
+    text-align: center;
+    padding: 48px;
+    font-family: var(--obi-font-body);
+    font-size: 16px;
+    color: var(--obi-text-muted);
 }
 
 @media (max-width: 768px) {
-    .seasons-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .form-row {
-        grid-template-columns: 1fr;
-    }
+    .seasons-grid { grid-template-columns: 1fr; }
+    .season-management .form-row { grid-template-columns: 1fr; }
 }
