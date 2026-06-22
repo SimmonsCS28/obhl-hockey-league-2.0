@@ -42,7 +42,13 @@ const request = async (url, options = {}) => {
             }
 
             const errorBody = await response.text();
-            throw new Error(errorBody || `Request failed with status ${response.status}`);
+            // Surface the server's message (JSON {error|message} or plain text) cleanly.
+            let message = errorBody;
+            try {
+                const parsed = JSON.parse(errorBody);
+                message = parsed.error || parsed.message || errorBody;
+            } catch { /* not JSON — use raw text */ }
+            throw new Error(message || `Request failed with status ${response.status}`);
         }
 
         const text = await response.text();
