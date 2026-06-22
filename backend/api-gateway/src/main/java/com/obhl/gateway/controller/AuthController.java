@@ -23,12 +23,13 @@ public class AuthController {
     private final com.obhl.gateway.util.JwtUtil jwtUtil;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthDto.LoginResponse> login(@Valid @RequestBody AuthDto.LoginRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody AuthDto.LoginRequest request) {
         try {
             AuthDto.LoginResponse response = authService.login(request);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
-            return ResponseEntity.status(401).body(null);
+            return ResponseEntity.status(401)
+                    .body(java.util.Map.of("error", "Username or password is incorrect"));
         }
     }
 
