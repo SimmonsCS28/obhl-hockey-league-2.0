@@ -57,6 +57,18 @@ public class EmailService {
         send(toEmail, subject, html);
     }
 
+    /** Courtesy confirmation when a coordinator confirms a shift the official signed up for (no action needed). */
+    public void sendShiftConfirmedEmail(String toEmail, String name, String roleLabel, String gameDescription) {
+        String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";
+        String subject = "OBHL " + roleLabel + " shift — confirmed";
+        String html = "<p>" + greeting + "</p>"
+                + "<p>Your " + roleLabel + " shift is confirmed:</p>"
+                + "<p><strong>" + gameDescription + "</strong></p>"
+                + "<p>Thanks for signing up — no further action is needed.</p>";
+
+        send(toEmail, subject, html);
+    }
+
     private void send(String toEmail, String subject, String html) {
         if (resendApiKey == null || resendApiKey.isBlank()) {
             logger.warn("RESEND_API_KEY is not configured; skipping email send to {}", toEmail);

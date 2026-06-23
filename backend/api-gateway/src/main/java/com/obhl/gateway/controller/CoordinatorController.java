@@ -21,6 +21,7 @@ import com.obhl.gateway.dto.GoalieUnavailabilityDTO;
 import com.obhl.gateway.model.User;
 import com.obhl.gateway.repository.UserRepository;
 import com.obhl.gateway.service.CoordinatorService;
+import com.obhl.gateway.service.GoalieAvailabilityService;
 import com.obhl.gateway.service.StaffAvailabilityService;
 
 @RestController
@@ -35,16 +36,19 @@ public class CoordinatorController {
     private StaffAvailabilityService availabilityService;
 
     @Autowired
+    private GoalieAvailabilityService goalieAvailabilityService;
+
+    @Autowired
     private UserRepository userRepository;
 
     @GetMapping("/assignments")
     public ResponseEntity<?> getAssignments(@RequestParam Long seasonId, @RequestParam String role,
-            Authentication auth) {
+            @RequestParam(required = false) Integer week, Authentication auth) {
         String r = role.trim().toUpperCase();
         if (!canActOn(auth, r)) {
             return forbidden(r);
         }
-        return ResponseEntity.ok(coordinatorService.getAssignments(seasonId, r));
+        return ResponseEntity.ok(coordinatorService.getAssignments(seasonId, r, week));
     }
 
     @GetMapping("/availability")
@@ -55,6 +59,16 @@ public class CoordinatorController {
         }
         List<GoalieUnavailabilityDTO> data = availabilityService.getAllUnavailability(r);
         return ResponseEntity.ok(data);
+    }
+
+    /** Coordinator goalie pool: each goalie's positive availability for a given week (v3). */
+    @GetMapping("/goalie-availability")
+    public ResponseEntity<?> getGoalieAvailability(@RequestParam Long seasonId, @RequestParam Integer week,
+            Authentication auth) {
+        if (!canActOn(auth, "GOALIE")) {
+            return forbidden("GOALIE");
+        }
+        return ResponseEntity.ok(goalieAvailabilityService.getForWeek(seasonId, week));
     }
 
     @PostMapping("/propose")
@@ -79,6 +93,19 @@ public class CoordinatorController {
         }
         coordinatorService.withdraw(id);
         return ResponseEntity.ok().body(java.util.Map.of("message", "Assignment withdrawn"));
+    }
+
+    @PostMapping("/assignments/{id}/confirm")
+    public ResponseEntity<?> confirmSignup(@PathVariable Long id, @RequestParam String role, Authentication auth) {
+        String r = role.trim().toUpperCase();
+        if (!canActOn(auth, r)) {
+            return forbidden(r);
+        }
+        try {
+            return ResponseEntity.ok(coordinatorService.confirmSignup(id, currentUserId(auth)));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
     }
 
     @PostMapping("/publish")
@@ -107,6 +134,12 @@ public class CoordinatorController {
         }
         if ("REF".equals(role)) {
             return hasAuthority(auth, "ROLE_REF_COORDINATOR");
+        }
+        if ("SCOREKEEPER".equals(role)) {
+            // Scorekeepers are officials like refs; the ref coordinator manages them too.
+            // (Swap to a dedicated ROLE_SCOREKEEPER_COORDINATOR here if one is added.)
+            return hasAuthority(auth, "ROLE_REF_COORDINATOR")
+                    || hasAuthority(auth, "ROLE_SCOREKEEPER_COORDINATOR");
         }
         return false;
     }

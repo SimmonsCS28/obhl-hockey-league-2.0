@@ -54,9 +54,17 @@ public class CoordinatorService {
 
     /** All proposals for a season + role, enriched for the coordinator board. */
     public List<CoordinatorDto.AssignmentView> getAssignments(Long seasonId, String role) {
+        return getAssignments(seasonId, role, null);
+    }
+
+    /** As above, optionally filtered to a single week. */
+    public List<CoordinatorDto.AssignmentView> getAssignments(Long seasonId, String role, Integer week) {
         List<ShiftAssignment> rows = assignmentRepository.findBySeasonIdAndRole(seasonId, role);
         Map<Long, GameResponseDTO> games = gamesById(seasonId);
-        return rows.stream().map(a -> toView(a, games.get(a.getGameId()))).collect(Collectors.toList());
+        return rows.stream()
+                .map(a -> toView(a, games.get(a.getGameId())))
+                .filter(v -> week == null || week.equals(v.getWeek()))
+                .collect(Collectors.toList());
     }
 
     /** Propose (or re-propose) a staff member for a game slot; notifies them. */
@@ -64,8 +72,9 @@ public class CoordinatorService {
     public CoordinatorDto.AssignmentView propose(CoordinatorDto.ProposeRequest req, Long coordinatorUserId) {
         String role = normalizeRole(req.getRole());
         int slot = req.getSlot() == null ? 0 : req.getSlot();
-        if (slot != 1 && slot != 2) {
-            throw new RuntimeException("Slot must be 1 or 2");
+        int maxSlot = slotsForRole(role);
+        if (slot < 1 || slot > maxSlot) {
+            throw new RuntimeException(maxSlot == 1 ? "Slot must be 1" : "Slot must be 1 or 2");
         }
         if (req.getGameId() == null || req.getUserId() == null) {
             throw new RuntimeException("gameId and userId are required");
@@ -106,6 +115,39 @@ public class CoordinatorService {
     @Transactional
     public void withdraw(Long assignmentId) {
         assignmentRepository.deleteById(assignmentId);
+    }
+
+    /**
+     * Coordinator confirms a slot an official signed up for: SIGNED_UP -> CONFIRMED directly
+     * (no accept loop — the official already opted in). Sends a courtesy "you're confirmed" email.
+     */
+    @Transactional
+    public CoordinatorDto.AssignmentView confirmSignup(Long assignmentId, Long coordinatorUserId) {
+        ShiftAssignment a = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new RuntimeException("Assignment not found"));
+        if (!ShiftAssignment.STATUS_SIGNED_UP.equals(a.getStatus())) {
+            throw new RuntimeException("Only a signed-up shift can be confirmed this way");
+        }
+        a.setStatus(ShiftAssignment.STATUS_CONFIRMED);
+        a.setRespondedAt(LocalDateTime.now());
+        a.setAssignedBy(coordinatorUserId);
+        a.setConfirmTokenHash(null);
+        a.setTokenExpiresAt(null);
+        a.setDeclineReason(null);
+        a = assignmentRepository.save(a);
+
+        GameResponseDTO game = gameProxyService.getGameById(a.getGameId());
+        try {
+            Optional<User> userOpt = userRepository.findById(a.getUserId());
+            if (userOpt.isPresent() && userOpt.get().getEmail() != null) {
+                User u = userOpt.get();
+                String name = (u.getFirstName() != null && !u.getFirstName().isBlank()) ? u.getFirstName() : u.getUsername();
+                emailService.sendShiftConfirmedEmail(u.getEmail(), name, roleLabel(a.getRole()), describeGame(game));
+            }
+        } catch (RuntimeException e) {
+            // Courtesy email is best-effort; confirmation already persisted.
+        }
+        return toView(a, game);
     }
 
     /** Write all CONFIRMED, not-yet-published assignments for a week onto the games. */
@@ -149,7 +191,7 @@ public class CoordinatorService {
         String name = (user.getFirstName() != null && !user.getFirstName().isBlank())
                 ? user.getFirstName()
                 : user.getUsername();
-        String roleLabel = "REF".equals(a.getRole()) ? "referee" : "goalie";
+        String roleLabel = roleLabel(a.getRole());
         String link = frontendUrl + "/shift-confirm?id=" + a.getId() + "&token=" + rawToken;
         emailService.sendShiftProposalEmail(user.getEmail(), name, roleLabel, describeGame(game), link);
     }
@@ -218,13 +260,31 @@ public class CoordinatorService {
             throw new RuntimeException("role is required");
         }
         String r = role.trim().toUpperCase();
-        if (!r.equals("GOALIE") && !r.equals("REF")) {
+        if (!r.equals("GOALIE") && !r.equals("REF") && !r.equals("SCOREKEEPER")) {
             throw new RuntimeException("Unsupported coordinator role: " + role);
         }
         return r;
     }
 
+    /** Number of staff slots a role has per game: goalie/ref = 2, scorekeeper = 1. */
+    static int slotsForRole(String role) {
+        return "SCOREKEEPER".equals(role) ? 1 : 2;
+    }
+
+    private String roleLabel(String role) {
+        if ("REF".equals(role)) {
+            return "referee";
+        }
+        if ("SCOREKEEPER".equals(role)) {
+            return "scorekeeper";
+        }
+        return "goalie";
+    }
+
     private String slotColumn(String role, int slot) {
+        if ("SCOREKEEPER".equals(role)) {
+            return "scorekeeperId";
+        }
         if ("REF".equals(role)) {
             return slot == 2 ? "referee2Id" : "referee1Id";
         }

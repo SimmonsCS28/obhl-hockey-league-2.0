@@ -496,12 +496,18 @@ const api = {
     // ============================================
     // COORDINATOR API
     // ============================================
-    async getCoordinatorAssignments(seasonId, role) {
-        return request(`/coordinator/assignments?seasonId=${seasonId}&role=${role}`);
+    async getCoordinatorAssignments(seasonId, role, week) {
+        const params = new URLSearchParams({ seasonId, role, ...(week != null && { week }) }).toString();
+        return request(`/coordinator/assignments?${params}`);
     },
 
     async getCoordinatorAvailability(role) {
         return request(`/coordinator/availability?role=${role}`);
+    },
+
+    // v3 goalie pool: each goalie's positive availability for a week
+    async getCoordinatorGoalieAvailability(seasonId, week) {
+        return request(`/coordinator/goalie-availability?seasonId=${seasonId}&week=${week}`);
     },
 
     async proposeShift(data) {
@@ -515,9 +521,44 @@ const api = {
         return request(`/coordinator/assignments/${id}?role=${role}`, { method: 'DELETE' });
     },
 
+    // Coordinator confirms an official's self-signup (SIGNED_UP -> CONFIRMED)
+    async confirmSignup(id, role) {
+        return request(`/coordinator/assignments/${id}/confirm?role=${role}`, { method: 'POST' });
+    },
+
     async publishShiftWeek(seasonId, role, week) {
         const params = new URLSearchParams({ seasonId, role, ...(week != null && { week }) }).toString();
         return request(`/coordinator/publish?${params}`, { method: 'POST' });
+    },
+
+    // ============================================
+    // OPEN SLOTS (ref/scorekeeper self sign-up)
+    // ============================================
+    async getOpenSlots(role, seasonId, week) {
+        const params = new URLSearchParams({ role, seasonId, ...(week != null && { week }) }).toString();
+        return request(`/open-slots?${params}`);
+    },
+
+    async signupForSlot(slotId) {
+        return request(`/slots/${slotId}/signup`, { method: 'POST' });
+    },
+
+    async dropSlotSignup(slotId) {
+        return request(`/slots/${slotId}/signup`, { method: 'DELETE' });
+    },
+
+    // ============================================
+    // GOALIE WEEKLY AVAILABILITY (v3, positive)
+    // ============================================
+    async getGoalieAvailability(seasonId) {
+        return request(`/goalie/availability?seasonId=${seasonId}`);
+    },
+
+    async setGoalieAvailability(seasonId, week, status) {
+        return request('/goalie/availability', {
+            method: 'PUT',
+            body: JSON.stringify({ seasonId, week, status })
+        });
     },
 
     // ============================================
@@ -680,9 +721,16 @@ export const {
     getAllGoalieUnavailability,
     getCoordinatorAssignments,
     getCoordinatorAvailability,
+    getCoordinatorGoalieAvailability,
     proposeShift,
     withdrawShift,
+    confirmSignup,
     publishShiftWeek,
+    getOpenSlots,
+    signupForSlot,
+    dropSlotSignup,
+    getGoalieAvailability,
+    setGoalieAvailability,
     getPendingShifts,
     respondToShift,
     getShiftByToken,

@@ -27,7 +27,8 @@ Game-level badges: `N OPEN`, `X / Y SET`.
 
 ## Backend gaps to build (v3 needs these)
 1. **Status: add `SIGNED_UP`.** Map to v3 vocab in the API: no row = `open`; `SIGNED_UP` = `signed-up`; `PROPOSED` = `pending`; `CONFIRMED` = `confirmed`. (status col is varchar — no migration needed for the new value.)
-2. **SCOREKEEPER as an assignable slot.** Role is varchar; allow `SCOREKEEPER` (1 slot, slot=1). Extend `getAssignments` + publish to write `game.scorekeeperId`. Goalie slots map to teams: slot 1 = home goalie, slot 2 = away goalie (label by team name in the API/UI).
+2. **SCOREKEEPER as an assignable slot — mirrors REF exactly** (self-signup → coordinator Confirm/Reassign; goalies are coordinator-assign only, no self-signup). Role is varchar; allow `SCOREKEEPER` (1 slot, slot=1). Extend `getAssignments` + publish to write `game.scorekeeperId`. Goalie slots map to teams: slot 1 = home goalie, slot 2 = away goalie (label by team name in the API/UI).
+   - **Publish requirement:** a `CONFIRMED` goalie/ref/scorekeeper must land on the game's slot columns (`goalie1/2Id`, `referee1/2Id`, `scorekeeperId`) so it shows on ALL game pages that display staff (Game Preview, Game Recap, schedule, dashboards). Verify scorekeeper surfaces alongside goalie/ref after publish.
 3. **Open Slots (self-service)** — new `OpenSlotsController/Service`:
    - `GET /open-slots?role=&week=` → unfilled REF/SCOREKEEPER slots across the season (a slot is open when it has no signed-up/pending/confirmed row). Synthetic slot id = `${gameId}-${role}-${slot}`.
    - `POST /slots/:id/signup` (creates a `SIGNED_UP` row) / `DELETE /slots/:id/signup` (undo). Ref/scorekeeper only — never goalie.
