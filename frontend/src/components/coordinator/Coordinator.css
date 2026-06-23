@@ -1,0 +1,164 @@
+.coordinator-layout {
+    min-height: 100vh;
+    background: #f1f5f9;
+}
+
+.coordinator-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+    color: white;
+}
+
+.coordinator-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.coordinator-logo {
+    height: 40px;
+}
+
+.coordinator-header h1 {
+    margin: 0;
+    font-size: 1.4rem;
+}
+
+.coordinator-user {
+    opacity: 0.85;
+    font-size: 0.95rem;
+}
+
+.coordinator-header-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.coordinator-header-actions .action-button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.coordinator-header-actions .action-button.secondary {
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+}
+
+.coordinator-header-actions .action-button.secondary:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.coordinator-header-actions .action-button.logout {
+    background: #f87171;
+    color: white;
+}
+
+.coordinator-main {
+    padding: 1.5rem;
+}
+
+.coordinator-role-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.coordinator-role-tab {
+    padding: 0.6rem 1.4rem;
+    border: 2px solid #cbd5e0;
+    background: white;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    color: #4a5568;
+}
+
+.coordinator-role-tab.active {
+    background: #667eea;
+    border-color: #667eea;
+    color: white;
+}
+
+/* Slot status chips */
+.slot-status {
+    margin-top: 0.35rem;
+    min-height: 1.2rem;
+}
+
+.shift-chip {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: 12px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.chip-pending {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.chip-confirmed {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.chip-declined {
+    background: #fed7d7;
+    color: #c53030;
+    cursor: help;
+}
+
+/* Publish button + result */
+.publish-btn {
+    padding: 0.55rem 1.1rem;
+    background: #48bb78;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.9rem;
+}
+
+.publish-btn:hover:not(:disabled) {
+    background: #38a169;
+}
+
+.publish-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.publish-result {
+    padding: 0.85rem 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.publish-result.all-clear {
+    background: #c6f6d5;
+    color: #22543d;
+    border-left: 4px solid #22543d;
+}
+
+.publish-result.has-warnings {
+    background: #fef3c7;
+    color: #92400e;
+    border-left: 4px solid #d69e2e;
+}
+
+.publish-result ul {
+    margin: 0.5rem 0 0;
+    padding-left: 1.25rem;
+}

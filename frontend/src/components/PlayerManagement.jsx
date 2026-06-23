@@ -2,20 +2,13 @@ import { useEffect, useState } from 'react';
 import * as api from '../services/api';
 import { getPlayerStatsBulk } from '../services/api';
 import { useSeason } from '../contexts/SeasonContext';
+import { FALLBACK_ROLES, toRoleOptions } from '../constants/roles';
 import './PlayerManagement.css';
 import './UserManagement.css';
 
-const AVAILABLE_ROLES = [
-    { name: 'ADMIN', description: 'Full system access' },
-    { name: 'GM', description: 'Team management' },
-    { name: 'REF', description: 'Referee scheduling' },
-    { name: 'SCOREKEEPER', description: 'Game scoring' },
-    { name: 'GOALIE', description: 'Goalie scheduling' },
-    { name: 'USER', description: 'Basic access' }
-];
-
 function PlayerManagement() {
     const { selectedSeasonId, isHistoricalView } = useSeason();
+    const [availableRoles, setAvailableRoles] = useState(FALLBACK_ROLES);
     const [players, setPlayers] = useState([]);
     const [teams, setTeams] = useState([]);
     const [seasons, setSeasons] = useState([]);
@@ -58,6 +51,12 @@ function PlayerManagement() {
     useEffect(() => {
         loadData();
     }, [selectedSeasonId]);
+
+    useEffect(() => {
+        api.getRoles()
+            .then(roles => setAvailableRoles(toRoleOptions(roles)))
+            .catch(() => { /* keep fallback list */ });
+    }, []);
 
     const loadData = async () => {
         try {
@@ -806,7 +805,7 @@ function PlayerManagement() {
                                             <div className="form-group">
                                                 <label>Roles * (Select at least one)</label>
                                                 <div className="roles-checkbox-grid">
-                                                    {AVAILABLE_ROLES.map(role => (
+                                                    {availableRoles.map(role => (
                                                         <label key={role.name} className="role-checkbox-item">
                                                             <input
                                                                 type="checkbox"
@@ -886,7 +885,7 @@ function PlayerManagement() {
                                             <div className="form-group">
                                                 <label>Roles * (Select at least one)</label>
                                                 <div className="roles-checkbox-grid">
-                                                    {AVAILABLE_ROLES.map(role => (
+                                                    {availableRoles.map(role => (
                                                         <label key={role.name} className="role-checkbox-item">
                                                             <input
                                                                 type="checkbox"

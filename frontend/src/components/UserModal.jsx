@@ -1,18 +1,11 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
+import { FALLBACK_ROLES, toRoleOptions } from '../constants/roles';
 import './PlayerManagement.css';
 import './UserManagement.css';
 
-const AVAILABLE_ROLES = [
-    { name: 'ADMIN', description: 'Full system access' },
-    { name: 'GM', description: 'Team management' },
-    { name: 'REF', description: 'Referee scheduling' },
-    { name: 'SCOREKEEPER', description: 'Game scoring' },
-    { name: 'GOALIE', description: 'Goalie scheduling' },
-    { name: 'USER', description: 'Basic access' }
-];
-
 const UserModal = ({ user, isCreating, onClose }) => {
+    const [availableRoles, setAvailableRoles] = useState(FALLBACK_ROLES);
     const [formData, setFormData] = useState({
         username: '',
         firstName: '',
@@ -47,6 +40,12 @@ const UserModal = ({ user, isCreating, onClose }) => {
     const [passwordError, setPasswordError] = useState('');
     const [hasMatchingPlayer, setHasMatchingPlayer] = useState(null); // null = not checked, true/false = result
     const [checkingCounterpart, setCheckingCounterpart] = useState(false);
+
+    useEffect(() => {
+        api.getRoles()
+            .then(roles => setAvailableRoles(toRoleOptions(roles)))
+            .catch(() => { /* keep fallback list */ });
+    }, []);
 
     useEffect(() => {
         if (user && !isCreating) {
@@ -350,7 +349,7 @@ const UserModal = ({ user, isCreating, onClose }) => {
                     <div className="form-group">
                         <label>Roles * (Select at least one)</label>
                         <div className="roles-checkbox-grid">
-                            {AVAILABLE_ROLES.map(role => (
+                            {availableRoles.map(role => (
                                 <label key={role.name} className="role-checkbox-item">
                                     <input
                                         type="checkbox"

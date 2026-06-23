@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import TeamBadge from '../common/TeamBadge';
+import PendingShifts from './PendingShifts';
 import './PlayerDashboard.css'; // Will create this next
 
 const PlayerDashboard = () => {
@@ -178,6 +179,14 @@ const PlayerDashboard = () => {
                             My Shifts
                         </button>
                     )}
+                    {(user?.roles?.includes('GOALIE_COORDINATOR') || user?.roles?.includes('REF_COORDINATOR')) && (
+                        <button
+                            className="action-button secondary"
+                            onClick={() => navigate('/coordinator')}
+                        >
+                            Coordinator
+                        </button>
+                    )}
                     <button
                         className="action-button secondary"
                         onClick={() => navigate('/')}
@@ -198,6 +207,8 @@ const PlayerDashboard = () => {
                     </button>
                 </div>
             </header>
+
+            <PendingShifts />
 
             <div className="dashboard-grid">
                 {/* Team Card */}

@@ -1,20 +1,11 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api';
+import { FALLBACK_ROLES, roleColor, toRoleOptions } from '../../constants/roles';
 import './UserRoleManagement.css';
-
-const AVAILABLE_ROLES = [
-    { name: 'ADMIN',       description: 'Full system access',    color: '#E08A8A' },
-    { name: 'GM',          description: 'Team management',       color: '#E8C26A' },
-    { name: 'PLAYER',      description: 'Player access',         color: '#9DB9CD' },
-    { name: 'REFEREE',     description: 'Referee scheduling',    color: '#b09ef0' },
-    { name: 'SCOREKEEPER', description: 'Game scoring',          color: '#7FB59A' },
-    { name: 'GOALIE',      description: 'Goalie scheduling',     color: '#e8956a' },
-    { name: 'COORDINATOR', description: 'League coordination',   color: '#7E8A94' },
-    { name: 'USER',        description: 'Basic access',          color: '#5E6872' },
-];
 
 const UserRoleManagement = () => {
     const [users, setUsers] = useState([]);
+    const [availableRoles, setAvailableRoles] = useState(FALLBACK_ROLES);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState('');
     const [selectedUser, setSelectedUser] = useState(null);
@@ -24,6 +15,9 @@ const UserRoleManagement = () => {
 
     useEffect(() => {
         loadUsers();
+        api.getRoles()
+            .then(roles => setAvailableRoles(toRoleOptions(roles)))
+            .catch(() => { /* keep fallback list */ });
     }, []);
 
     const loadUsers = async () => {
@@ -131,7 +125,7 @@ const UserRoleManagement = () => {
                                 </div>
                                 <div className="user-roles-preview">
                                     {(user.roles || [user.role]).map(r => (
-                                        <span key={r} className="role-badge-mini" style={{ backgroundColor: AVAILABLE_ROLES.find(ar => ar.name === r)?.color || '#ccc' }}>
+                                        <span key={r} className="role-badge-mini" style={{ backgroundColor: roleColor(r) }}>
                                             {r}
                                         </span>
                                     ))}
@@ -153,14 +147,14 @@ const UserRoleManagement = () => {
                             )}
 
                             <div className="roles-grid">
-                                {AVAILABLE_ROLES.map(role => (
+                                {availableRoles.map(role => (
                                     <label key={role.name} className={`role-card ${editingRoles.includes(role.name) ? 'active' : ''}`}>
                                         <input
                                             type="checkbox"
                                             checked={editingRoles.includes(role.name)}
                                             onChange={() => handleRoleToggle(role.name)}
                                         />
-                                        <span className="role-name" style={{ color: role.color }}>{role.name}</span>
+                                        <span className="role-name" style={{ color: roleColor(role.name) }}>{role.name}</span>
                                         <span className="role-desc">{role.description}</span>
                                     </label>
                                 ))}
