@@ -42,6 +42,8 @@ import ScorekeeperSchedulePage from './components/scorekeeper/ScorekeeperSchedul
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import GoalieShiftSignup from './components/user/GoalieShiftSignup';
+import OpenSlots from './components/user/OpenSlots';
+import GoalieAvailability from './components/user/GoalieAvailability';
 import PlayerDashboard from './components/user/PlayerDashboard';
 import RefereeShiftSignup from './components/user/RefereeShiftSignup';
 import ScorekeeperShiftSignup from './components/user/ScorekeeperShiftSignup';
@@ -157,6 +159,24 @@ const router = createBrowserRouter([
     element: (
       <ProtectedRoute requiredRoles={['GOALIE']}>
         <GoalieShiftSignup />
+      </ProtectedRoute>
+    )
+  },
+  // v3: positive weekly goalie availability (replaces the date-based GoalieShiftSignup UI)
+  {
+    path: "/user/goalie-availability",
+    element: (
+      <ProtectedRoute requiredRoles={['GOALIE']}>
+        <GoalieAvailability />
+      </ProtectedRoute>
+    )
+  },
+  // v3: ref/scorekeeper self sign-up for open shifts
+  {
+    path: "/user/open-slots",
+    element: (
+      <ProtectedRoute requiredRoles={['REF', 'SCOREKEEPER']}>
+        <OpenSlots />
       </ProtectedRoute>
     )
   },
