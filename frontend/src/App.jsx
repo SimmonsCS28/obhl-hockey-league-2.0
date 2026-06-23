@@ -215,11 +215,11 @@ const router = createBrowserRouter([
     )
   },
 
-  // Coordinator Route (goalie/ref coordinators + admin)
+  // Coordinator Route (goalie/ref/scorekeeper coordinators + admin)
   {
     path: "/coordinator",
     element: (
-      <ProtectedRoute requiredRoles={['GOALIE_COORDINATOR', 'REF_COORDINATOR', 'ADMIN']}>
+      <ProtectedRoute requiredRoles={['GOALIE_COORDINATOR', 'REF_COORDINATOR', 'SCOREKEEPER_COORDINATOR', 'ADMIN']}>
         <CoordinatorDashboard />
       </ProtectedRoute>
     )

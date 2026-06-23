@@ -65,7 +65,7 @@ function PublicLayout() {
         <>
             {isGM && <button className="obi-ghost-btn" onClick={() => go('/gm')}>GM Dashboard</button>}
             {isAdmin && <button className="obi-ghost-btn" onClick={() => go('/admin')}>Admin Dashboard</button>}
-            {hasAnyRole('GOALIE_COORDINATOR', 'REF_COORDINATOR') && (
+            {hasAnyRole('GOALIE_COORDINATOR', 'REF_COORDINATOR', 'SCOREKEEPER_COORDINATOR') && (
                 <button className="obi-ghost-btn" onClick={() => go('/coordinator')}>Coordinator</button>
             )}
             {hasAnyRole('GOALIE', 'REF', 'SCOREKEEPER') && (

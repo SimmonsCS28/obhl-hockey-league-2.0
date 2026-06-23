@@ -9,6 +9,7 @@ export const FALLBACK_ROLES = [
     { name: 'GOALIE', description: 'Goalie scheduling' },
     { name: 'GOALIE_COORDINATOR', description: 'Assigns & confirms goalie shifts' },
     { name: 'REF_COORDINATOR', description: 'Assigns & confirms referee shifts' },
+    { name: 'SCOREKEEPER_COORDINATOR', description: 'Assigns & confirms scorekeeper shifts' },
     { name: 'USER', description: 'Basic access' },
 ];
 
@@ -23,6 +24,7 @@ const ROLE_COLORS = {
     GOALIE: '#e8956a',
     GOALIE_COORDINATOR: '#5fb3b3',
     REF_COORDINATOR: '#b09ef0',
+    SCOREKEEPER_COORDINATOR: '#7FB59A',
     COORDINATOR: '#7E8A94',
     USER: '#5E6872',
 };

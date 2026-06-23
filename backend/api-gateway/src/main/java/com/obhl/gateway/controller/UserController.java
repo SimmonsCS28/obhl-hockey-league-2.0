@@ -39,7 +39,7 @@ public class UserController {
      * Get all active users, optionally filtered by role
      */
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'GM', 'REF', 'SCOREKEEPER', 'GOALIE', 'GOALIE_COORDINATOR', 'REF_COORDINATOR')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'GM', 'REF', 'SCOREKEEPER', 'GOALIE', 'GOALIE_COORDINATOR', 'REF_COORDINATOR', 'SCOREKEEPER_COORDINATOR')")
     public ResponseEntity<List<UserDTO>> getAllUsers(@RequestParam(required = false) String role) {
         List<UserDTO> users;
         if (role != null && !role.isBlank()) {

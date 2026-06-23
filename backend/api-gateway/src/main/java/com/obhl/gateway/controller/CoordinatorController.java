@@ -26,7 +26,7 @@ import com.obhl.gateway.service.StaffAvailabilityService;
 
 @RestController
 @RequestMapping("/api/v1/coordinator")
-@PreAuthorize("hasAnyRole('GOALIE_COORDINATOR', 'REF_COORDINATOR', 'ADMIN')")
+@PreAuthorize("hasAnyRole('GOALIE_COORDINATOR', 'REF_COORDINATOR', 'SCOREKEEPER_COORDINATOR', 'ADMIN')")
 public class CoordinatorController {
 
     @Autowired
@@ -136,10 +136,7 @@ public class CoordinatorController {
             return hasAuthority(auth, "ROLE_REF_COORDINATOR");
         }
         if ("SCOREKEEPER".equals(role)) {
-            // Scorekeepers are officials like refs; the ref coordinator manages them too.
-            // (Swap to a dedicated ROLE_SCOREKEEPER_COORDINATOR here if one is added.)
-            return hasAuthority(auth, "ROLE_REF_COORDINATOR")
-                    || hasAuthority(auth, "ROLE_SCOREKEEPER_COORDINATOR");
+            return hasAuthority(auth, "ROLE_SCOREKEEPER_COORDINATOR");
         }
         return false;
     }

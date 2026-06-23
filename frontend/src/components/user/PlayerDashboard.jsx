@@ -179,7 +179,7 @@ const PlayerDashboard = () => {
                             My Shifts
                         </button>
                     )}
-                    {(user?.roles?.includes('GOALIE_COORDINATOR') || user?.roles?.includes('REF_COORDINATOR')) && (
+                    {(user?.roles?.includes('GOALIE_COORDINATOR') || user?.roles?.includes('REF_COORDINATOR') || user?.roles?.includes('SCOREKEEPER_COORDINATOR')) && (
                         <button
                             className="action-button secondary"
                             onClick={() => navigate('/coordinator')}

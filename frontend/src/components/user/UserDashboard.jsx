@@ -188,7 +188,7 @@ const UserDashboard = () => {
                     >
                         My Dashboard
                     </button>
-                    {(user?.roles?.includes('GOALIE_COORDINATOR') || user?.roles?.includes('REF_COORDINATOR')) && (
+                    {(user?.roles?.includes('GOALIE_COORDINATOR') || user?.roles?.includes('REF_COORDINATOR') || user?.roles?.includes('SCOREKEEPER_COORDINATOR')) && (
                         <button
                             className="home-button"
                             onClick={() => navigate('/coordinator')}

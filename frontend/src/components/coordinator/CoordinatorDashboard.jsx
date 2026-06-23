@@ -11,10 +11,12 @@ function CoordinatorDashboard() {
 
     const canGoalie = isAdmin || hasRole('GOALIE_COORDINATOR');
     const canRef = isAdmin || hasRole('REF_COORDINATOR');
+    const canScorekeeper = isAdmin || hasRole('SCOREKEEPER_COORDINATOR');
 
     const roleTabs = [];
     if (canGoalie) roleTabs.push({ key: 'GOALIE', label: 'Goalie' });
     if (canRef) roleTabs.push({ key: 'REF', label: 'Referee' });
+    if (canScorekeeper) roleTabs.push({ key: 'SCOREKEEPER', label: 'Scorekeeper' });
 
     const [activeRole, setActiveRole] = useState(roleTabs[0]?.key || 'GOALIE');
 
