@@ -70,7 +70,7 @@ const GoalieAvailability = () => {
         try {
             const updated = await api.setGoalieAvailability(seasonId, week, next);
             setWeeks(updated);
-        } catch (_err) {
+        } catch {
             setWeeks(snapshot);
         } finally {
             setPending(p => { const n = new Set(p); n.delete(week); return n; });
@@ -86,7 +86,7 @@ const GoalieAvailability = () => {
                 result = await api.setGoalieAvailability(seasonId, w.week, 'AVAILABLE');
             }
             if (result) setWeeks(result);
-        } catch (_err) {
+        } catch {
             setWeeks(snapshot);
         }
     };
@@ -100,7 +100,7 @@ const GoalieAvailability = () => {
                 result = await api.setGoalieAvailability(seasonId, w.week, null);
             }
             if (result) setWeeks(result);
-        } catch (_err) {
+        } catch {
             setWeeks(snapshot);
         }
     };
