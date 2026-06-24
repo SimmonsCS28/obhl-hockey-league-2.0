@@ -73,12 +73,15 @@
     letter-spacing: 2px;
     text-transform: uppercase;
     color: var(--obi-text-dim);
+    text-align: left;
     padding: 14px 12px 6px;
 }
 
 .obi-side-item {
     display: flex;
+    flex-direction: row;
     align-items: center;
+    justify-content: flex-start;
     width: 100%;
     cursor: pointer;
     text-align: left;
