@@ -2,7 +2,7 @@
 -- This migration is SAFE and backward-compatible
 -- Existing users will continue to work without any changes
 
--- Step 1: Create roles table
+-- Step 1: Create roles table (may already exist from 013_create_user_roles)
 CREATE TABLE IF NOT EXISTS roles (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(50) UNIQUE NOT NULL,
@@ -11,6 +11,13 @@ CREATE TABLE IF NOT EXISTS roles (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Add columns introduced in this migration that 013 may have omitted
+ALTER TABLE roles ADD COLUMN IF NOT EXISTS is_system_role BOOLEAN DEFAULT false;
+ALTER TABLE roles ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+ALTER TABLE roles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
+-- Widen name column to accommodate longer role names (e.g. SCOREKEEPER_COORDINATOR)
+ALTER TABLE roles ALTER COLUMN name TYPE VARCHAR(50);
 
 -- Step 2: Insert all existing distinct roles from users table
 -- This ensures we have entries for every role currently in use

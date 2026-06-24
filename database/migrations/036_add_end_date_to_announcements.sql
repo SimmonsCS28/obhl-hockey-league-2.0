@@ -1,0 +1,2 @@
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS start_date DATE;
+ALTER TABLE announcements ADD COLUMN IF NOT EXISTS end_date DATE;

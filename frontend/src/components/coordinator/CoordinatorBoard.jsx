@@ -1,124 +1,153 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api';
-import '../admin/StaffSchedule.css';
+import { useSeason } from '../../contexts/SeasonContext';
+import { resolveTeamColor } from '../../constants/teamColors';
 import './Coordinator.css';
 
-// role: 'GOALIE' | 'REF'
-function CoordinatorBoard({ role }) {
-    const roleLabel = role === 'REF' ? 'Referee' : 'Goalie';
-    const staffRole = role; // getUsers role filter matches the role name
+const SLOTS_PER_ROLE = { GOALIE: 2, REF: 2, SCOREKEEPER: 1 };
 
-    const [seasons, setSeasons] = useState([]);
-    const [selectedSeason, setSelectedSeason] = useState(null);
+// Status → visual config
+const STATUS_STYLE = {
+    OPEN:      { label: 'Open',          color: 'var(--obi-icy)',     bg: 'rgba(157,185,205,0.1)',  border: 'rgba(157,185,205,0.28)' },
+    SIGNED_UP: { label: 'Signed Up',     color: '#0b0c0f',            bg: 'var(--obi-accent)',       border: 'var(--obi-accent)' },
+    PROPOSED:  { label: 'Awaiting',      color: 'var(--obi-icy)',     bg: 'rgba(157,185,205,0.12)', border: 'rgba(157,185,205,0.32)' },
+    CONFIRMED: { label: 'Set · Confirmed',color:'var(--obi-success)', bg: 'rgba(127,181,154,0.14)', border: 'rgba(127,181,154,0.32)' },
+};
+
+function getName(u) {
+    return u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.username || `User ${u.id}`;
+}
+
+function initials(name) {
+    return name.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+}
+
+function toChicago(dateStr) {
+    const d = new Date(dateStr.endsWith('Z') ? dateStr : dateStr + 'Z');
+    return d;
+}
+
+function formatDay(d) {
+    return d.toLocaleDateString('en-US', { timeZone: 'America/Chicago', weekday: 'short' }).toUpperCase();
+}
+
+function formatDateShort(d) {
+    return d.toLocaleDateString('en-US', { timeZone: 'America/Chicago', month: 'short', day: 'numeric' });
+}
+
+function formatTime(d) {
+    return d.toLocaleTimeString('en-US', { timeZone: 'America/Chicago', hour: 'numeric', minute: '2-digit' });
+}
+
+function formatMonthName(d) {
+    return d.toLocaleDateString('en-US', { timeZone: 'America/Chicago', month: 'long' });
+}
+
+function formatWeekRange(dates) {
+    if (!dates.length) return '';
+    const sorted = [...dates].sort();
+    const first = toChicago(sorted[0]);
+    const last = toChicago(sorted[sorted.length - 1]);
+    const firstStr = formatDateShort(first);
+    const lastStr = formatDateShort(last);
+    return firstStr === lastStr ? firstStr : `${firstStr} – ${lastStr}`;
+}
+
+function CoordinatorBoard({ role }) {
+    const { selectedSeasonId } = useSeason();
+    const seasonId = selectedSeasonId ?? 13;
+
     const [games, setGames] = useState([]);
-    const [staff, setStaff] = useState([]);
     const [teams, setTeams] = useState([]);
-    const [unavailability, setUnavailability] = useState([]);
+    const [staff, setStaff] = useState([]);
     const [assignments, setAssignments] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [goaliePool, setGoaliePool] = useState([]);
     const [weekFilter, setWeekFilter] = useState('all');
+    const [openPicker, setOpenPicker] = useState(null); // "gameId:slot"
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     const [publishing, setPublishing] = useState(false);
     const [publishResult, setPublishResult] = useState(null);
-    const [error, setError] = useState('');
 
-    useEffect(() => {
-        (async () => {
-            try {
-                const seasonsData = await api.getSeasons();
-                setSeasons(seasonsData);
-                const active = seasonsData.find(s => s.isActive) || seasonsData[0];
-                if (active) setSelectedSeason(active.id);
-            } catch {
-                setError('Failed to load seasons');
-            }
-        })();
-    }, []);
-
-    useEffect(() => {
-        if (selectedSeason) loadSeasonData(selectedSeason);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedSeason, role]);
-
-    const loadSeasonData = async (seasonId) => {
+    const load = useCallback(async () => {
         setLoading(true);
         setError('');
+        setPublishResult(null);
         try {
-            const [gamesData, staffData, teamsData, availData, assignData] = await Promise.all([
+            const [gamesData, teamsData, staffData, assignData] = await Promise.all([
                 api.getGames(seasonId),
-                api.getUsers({ role: staffRole }),
-                api.getTeams({ seasonId }),
-                api.getCoordinatorAvailability(role),
+                api.getTeams(),
+                api.getUsers({ role }),
                 api.getCoordinatorAssignments(seasonId, role),
             ]);
             setGames(gamesData || []);
-            const sorted = (staffData || []).sort((a, b) => getName(a).toLowerCase().localeCompare(getName(b).toLowerCase()));
-            setStaff(sorted);
             setTeams(teamsData || []);
-            setUnavailability(availData || []);
+            setStaff([...(staffData || [])].sort((a, b) => getName(a).localeCompare(getName(b))));
             setAssignments(assignData || []);
         } catch {
-            setError('Failed to load schedule data');
+            setError('Failed to load data');
         } finally {
             setLoading(false);
         }
-    };
+    }, [seasonId, role]);
+
+    useEffect(() => { load(); }, [load]);
+
+    useEffect(() => {
+        if (role !== 'GOALIE' || weekFilter === 'all') { setGoaliePool([]); return; }
+        api.getCoordinatorGoalieAvailability(seasonId, parseInt(weekFilter))
+            .then(data => setGoaliePool(data || []))
+            .catch(() => setGoaliePool([]));
+    }, [role, seasonId, weekFilter]);
 
     const reloadAssignments = async () => {
-        const data = await api.getCoordinatorAssignments(selectedSeason, role);
+        const data = await api.getCoordinatorAssignments(seasonId, role);
         setAssignments(data || []);
     };
 
-    const getName = (u) => (u.firstName && u.lastName) ? `${u.firstName} ${u.lastName}` : (u.username || `User ${u.id}`);
-    const getTeamById = (id) => teams.find(t => t.id === id);
+    const teamById = (id) => teams.find(t => t.id === id);
 
-    const getValidColor = (color) => {
-        if (!color) return '#95a5a6';
-        const map = { 'Lt. Blu': '#87CEEB', 'Dk. Gre': '#006400', 'White': '#FFFFFF', 'Yellow': '#FFD700', 'Gold': '#FFD700' };
-        return map[color] || color;
-    };
-    const getTextColor = (bg) => {
-        if (!bg) return 'white';
-        const light = ['White', '#FFFFFF', 'Yellow', '#FFD700', 'Gold', 'Lt. Blu', '#87CEEB', 'LightBlue'];
-        return light.some(c => c.toLowerCase() === bg.toLowerCase()) ? '#2c3e50' : 'white';
-    };
+    const assignmentFor = (gameId, slot) =>
+        assignments.find(a => a.gameId === gameId && a.slot === slot);
 
-    const getLocalDateStr = (gameDateStr) => {
-        const d = new Date(gameDateStr.endsWith('Z') ? gameDateStr : gameDateStr + 'Z');
-        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    };
-
-    const isUnavailable = (userId, gameDateStr) => {
-        const dateStr = getLocalDateStr(gameDateStr);
-        return unavailability.some(u => u.userId === userId && u.date === dateStr);
-    };
-
-    const assignmentFor = (gameId, slot) => assignments.find(a => a.gameId === gameId && a.slot === slot);
-
-    const handleAssign = async (game, slot, userId) => {
+    const handleAssign = async (gameId, slot, userId) => {
         setError('');
+        setOpenPicker(null);
         try {
-            const existing = assignmentFor(game.id, slot);
-            if (!userId) {
-                if (existing) {
-                    await api.withdrawShift(existing.id, role);
-                }
-            } else {
-                await api.proposeShift({ gameId: game.id, seasonId: selectedSeason, role, slot, userId: parseInt(userId) });
-            }
+            await api.proposeShift({ gameId, seasonId, role, slot, userId });
             await reloadAssignments();
         } catch (e) {
-            setError(e.message || 'Failed to update assignment');
+            setError(e.message || 'Failed to assign');
         }
     };
 
-    const handlePublish = async () => {
-        if (weekFilter === 'all') return;
+    const handleConfirm = async (assignmentId) => {
+        setError('');
+        try {
+            await api.confirmSignup(assignmentId, role);
+            await reloadAssignments();
+        } catch (e) {
+            setError(e.message || 'Failed to confirm');
+        }
+    };
+
+    const handleClear = async (assignmentId) => {
+        setError('');
+        try {
+            await api.withdrawShift(assignmentId, role);
+            await reloadAssignments();
+        } catch (e) {
+            setError(e.message || 'Failed to clear');
+        }
+    };
+
+    const handlePublish = async (week) => {
         setPublishing(true);
         setPublishResult(null);
         setError('');
         try {
-            const result = await api.publishShiftWeek(selectedSeason, role, parseInt(weekFilter));
-            setPublishResult(result);
+            const result = await api.publishShiftWeek(seasonId, role, week);
+            setPublishResult({ week, ...result });
         } catch (e) {
             setError(e.message || 'Failed to publish');
         } finally {
@@ -126,166 +155,416 @@ function CoordinatorBoard({ role }) {
         }
     };
 
-    const availableWeeks = [...new Set(games.map(g => g.week).filter(w => w != null))].sort((a, b) => a - b);
+    // ---- Derived data ----
+
+    const weeks = [...new Set(games.map(g => g.week).filter(w => w != null))].sort((a, b) => a - b);
+
+    const weekDates = weeks.reduce((acc, w) => {
+        acc[w] = games.filter(g => g.week === w).map(g => g.gameDate);
+        return acc;
+    }, {});
+
+    const weekChips = [
+        { key: 'all', label: 'All Weeks', range: 'Full Season' },
+        ...weeks.map(w => ({ key: w, label: `Week ${w}`, range: formatWeekRange(weekDates[w] || []) })),
+    ];
+
     const filteredGames = games.filter(g => weekFilter === 'all' || g.week === parseInt(weekFilter));
 
-    const weekGameDates = weekFilter !== 'all'
-        ? [...new Set(games.filter(g => g.week === parseInt(weekFilter)).map(g => getLocalDateStr(g.gameDate)))].sort()
-        : [];
+    const filteredAssignments = assignments.filter(a => {
+        if (weekFilter === 'all') return true;
+        const g = games.find(g => g.id === a.gameId);
+        return g && g.week === parseInt(weekFilter);
+    });
 
-    const formatPanelDate = (dateStr) => new Date(dateStr + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const slotsPerGame = SLOTS_PER_ROLE[role] ?? 1;
+    const totalSlots = filteredGames.length * slotsPerGame;
+    const openCount = totalSlots - filteredAssignments.length;
+    const signedUpCount = filteredAssignments.filter(a => a.status === 'SIGNED_UP').length;
+    const proposedCount = filteredAssignments.filter(a => a.status === 'PROPOSED').length;
+    const confirmedCount = filteredAssignments.filter(a => a.status === 'CONFIRMED').length;
 
-    const StatusChip = ({ a }) => {
-        if (!a) return null;
-        if (a.status === 'CONFIRMED') return <span className="shift-chip chip-confirmed">✓ Confirmed{a.published ? ' · Published' : ''}</span>;
-        if (a.status === 'DECLINED') return <span className="shift-chip chip-declined" title={a.declineReason || ''}>✗ Declined</span>;
-        return <span className="shift-chip chip-pending">⏳ Pending</span>;
-    };
+    const summary = [
+        { label: 'Open', value: Math.max(0, openCount), color: 'var(--obi-icy)', border: 'rgba(157,185,205,0.2)' },
+        { label: 'Signups to Confirm', value: signedUpCount, color: 'var(--obi-accent)', border: 'rgba(246,169,28,0.35)' },
+        { label: 'Awaiting Player', value: proposedCount, color: 'var(--obi-icy)', border: 'rgba(157,185,205,0.2)' },
+        { label: 'Set', value: confirmedCount, color: 'var(--obi-success)', border: 'rgba(127,181,154,0.3)' },
+    ];
 
-    const renderSlot = (game, slot) => {
-        const a = assignmentFor(game.id, slot);
-        return (
-            <td>
-                <select
-                    value={a?.userId || ''}
-                    onChange={(e) => handleAssign(game, slot, e.target.value)}
-                    className="goalie-select"
-                >
-                    <option value="">-- Select {roleLabel} {slot} --</option>
-                    {staff
-                        .filter(s => (a && s.id === a.userId) || !isUnavailable(s.id, game.gameDate))
-                        .map(s => <option key={s.id} value={s.id}>{getName(s)}</option>)}
-                </select>
-                <div className="slot-status"><StatusChip a={a} /></div>
-            </td>
-        );
-    };
+    // Group games by month → week
+    const monthGroups = (() => {
+        const byWeek = {};
+        const byMonth = {};
+        const monthOrder = [];
 
-    if (loading) return <div className="loading">Loading...</div>;
+        filteredGames.forEach(g => {
+            const d = toChicago(g.gameDate);
+            const month = formatMonthName(d);
+            if (!byWeek[g.week]) byWeek[g.week] = { month, games: [] };
+            byWeek[g.week].games.push(g);
+        });
 
-    const confirmedCount = assignments.filter(a => a.status === 'CONFIRMED').length;
-    const pendingCount = assignments.filter(a => a.status === 'PROPOSED').length;
-    const declinedCount = assignments.filter(a => a.status === 'DECLINED').length;
+        Object.entries(byWeek).forEach(([week, { month, games: wGames }]) => {
+            const wNum = parseInt(week);
+            const wAssign = assignments.filter(a => wGames.some(g => g.id === a.gameId));
+            const wSlots = wGames.length * slotsPerGame;
+            const wOpen = Math.max(0, wSlots - wAssign.length);
+            const entry = { week: wNum, label: `Week ${wNum}`, range: formatWeekRange(weekDates[wNum] || []), games: wGames, openCount: wOpen };
+            if (!byMonth[month]) { byMonth[month] = []; monthOrder.push(month); }
+            byMonth[month].push(entry);
+        });
+
+        return monthOrder.map(name => ({ name, weeks: byMonth[name] }));
+    })();
+
+    const roleLabel = role === 'GOALIE' ? 'Goalie' : role === 'REF' ? 'Referee' : 'Scorekeeper';
+    const scopeLabel = weekFilter === 'all' ? 'Full Season' : `Week ${weekFilter}`;
+
+    if (loading) return <div className="cc-loading">Loading…</div>;
 
     return (
-        <div className="staff-schedule">
-            <div className="schedule-header">
-                <h2>{role === 'REF' ? '👔' : '🥅'} {roleLabel} Coordinator</h2>
-                <div className="header-controls">
-                    <div className="filter-group">
-                        <label>Season:</label>
-                        <select value={selectedSeason || ''} onChange={(e) => setSelectedSeason(parseInt(e.target.value))} className="season-select">
-                            {seasons.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                        </select>
-                    </div>
-                    <div className="filter-group">
-                        <label>Week:</label>
-                        <select value={weekFilter} onChange={(e) => { setWeekFilter(e.target.value); setPublishResult(null); }} className="filter-select">
-                            <option value="all">All Weeks</option>
-                            {availableWeeks.map(w => <option key={w} value={w}>Week {w}</option>)}
-                        </select>
-                    </div>
-                    {weekFilter !== 'all' && (
-                        <button className="publish-btn" onClick={handlePublish} disabled={publishing}>
-                            {publishing ? 'Publishing...' : `Publish Week ${weekFilter}`}
-                        </button>
-                    )}
+        <>
+            {/* Week chips */}
+            <div className="cc-week-bar">
+                <span className="cc-week-bar-label">Schedule</span>
+                <div className="cc-week-chips">
+                    {weekChips.map(c => (
+                        <div
+                            key={c.key}
+                            role="button"
+                            tabIndex={0}
+                            className={`cc-week-chip${weekFilter === c.key ? ' is-active' : ''}`}
+                            onClick={() => { setWeekFilter(c.key); setOpenPicker(null); setPublishResult(null); }}
+                            onKeyDown={e => e.key === 'Enter' && (() => { setWeekFilter(c.key); setOpenPicker(null); setPublishResult(null); })()}
+                        >
+                            {c.label}
+                            <span className="cc-week-chip-range">{c.range}</span>
+                        </div>
+                    ))}
                 </div>
             </div>
 
-            {error && <div className="error-message">{error}</div>}
+            {/* Summary */}
+            <div className="cc-summary-grid">
+                {summary.map(m => (
+                    <div key={m.label} className="cc-summary-card" style={{ border: `1px solid ${m.border}` }}>
+                        <div className="cc-summary-value" style={{ color: m.color }}>{m.value}</div>
+                        <div className="cc-summary-label">{m.label}</div>
+                    </div>
+                ))}
+            </div>
 
+            {/* Publish result */}
             {publishResult && (
-                <div className={`publish-result ${publishResult.unconfirmedSlots.length ? 'has-warnings' : 'all-clear'}`}>
-                    <strong>Published {publishResult.publishedCount} confirmed assignment(s).</strong>
-                    {publishResult.unconfirmedSlots.length > 0 && (
-                        <ul>
-                            {publishResult.unconfirmedSlots.map((s, i) => <li key={i}>{s}</li>)}
-                        </ul>
+                <div className={`cc-publish-result ${publishResult.unconfirmedSlots?.length ? 'has-warnings' : 'is-ok'}`}>
+                    <strong>Published {publishResult.publishedCount} confirmed assignment(s) for Week {publishResult.week}.</strong>
+                    {publishResult.unconfirmedSlots?.length > 0 && (
+                        <ul>{publishResult.unconfirmedSlots.map((s, i) => <li key={i}>{s}</li>)}</ul>
                     )}
                 </div>
             )}
 
-            <div className="schedule-stats">
-                <div className="stat-card"><div className="stat-value">{pendingCount}</div><div className="stat-label">Pending</div></div>
-                <div className="stat-card"><div className="stat-value">{confirmedCount}</div><div className="stat-label">Confirmed</div></div>
-                <div className="stat-card"><div className="stat-value">{declinedCount}</div><div className="stat-label">Declined</div></div>
-            </div>
-
-            <div className="games-table-container">
-                {filteredGames.length === 0 ? (
-                    <div className="empty-state">No games found</div>
-                ) : (
-                    <table className="games-table">
-                        <thead>
-                            <tr>
-                                <th>Week</th>
-                                <th>Date & Time</th>
-                                <th>Home</th>
-                                <th>Away</th>
-                                <th>Location</th>
-                                <th>{roleLabel} 1</th>
-                                <th>{roleLabel} 2</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredGames.map((game, index) => {
-                                const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
-                                const prev = index > 0 ? filteredGames[index - 1] : null;
-                                const newWeek = prev && prev.week !== game.week;
-                                return (
-                                    <tr key={game.id} className={newWeek ? 'week-separator' : ''}>
-                                        <td>Week {game.week}</td>
-                                        <td>{gameDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} {gameDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</td>
-                                        <td><span className="team-badge" style={{ backgroundColor: getValidColor(getTeamById(game.homeTeamId)?.teamColor), color: getTextColor(getTeamById(game.homeTeamId)?.teamColor) }}>{getTeamById(game.homeTeamId)?.name || `Team ${game.homeTeamId}`}</span></td>
-                                        <td><span className="team-badge" style={{ backgroundColor: getValidColor(getTeamById(game.awayTeamId)?.teamColor), color: getTextColor(getTeamById(game.awayTeamId)?.teamColor) }}>{getTeamById(game.awayTeamId)?.name || `Team ${game.awayTeamId}`}</span></td>
-                                        <td>{game.rink || 'TBD'}</td>
-                                        {renderSlot(game, 1)}
-                                        {renderSlot(game, 2)}
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                )}
-            </div>
-
-            {weekFilter !== 'all' && weekGameDates.length > 0 && (
-                <div className="availability-panel">
-                    <h3 className="availability-panel-title">{roleLabel} Availability — Week {weekFilter}</h3>
-                    <div className="goalie-avail-table-wrapper">
-                        <table className="goalie-avail-table">
-                            <thead>
-                                <tr>
-                                    <th className="goalie-avail-name-col">{roleLabel}</th>
-                                    {weekGameDates.map(d => <th key={d} className="goalie-avail-date-col">{formatPanelDate(d)}</th>)}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {staff.length === 0 ? (
-                                    <tr><td colSpan={weekGameDates.length + 1} className="goalie-avail-empty">No {roleLabel.toLowerCase()}s found.</td></tr>
-                                ) : staff.map(s => (
-                                    <tr key={s.id}>
-                                        <td className="goalie-avail-name-cell">{getName(s)}</td>
-                                        {weekGameDates.map(d => {
-                                            const unavail = unavailability.some(u => u.userId === s.id && u.date === d);
-                                            return (
-                                                <td key={d} className="availability-cell">
-                                                    <span className={`availability-badge ${unavail ? 'badge-unavailable' : 'badge-available'}`}>
-                                                        {unavail ? '✗ Unavailable' : '✓ Available'}
-                                                    </span>
-                                                </td>
-                                            );
-                                        })}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+            {/* Goalie pool */}
+            {role === 'GOALIE' && weekFilter !== 'all' && goaliePool.length > 0 && (
+                <div className="cc-goalie-pool">
+                    <div className="cc-goalie-pool-hd">
+                        <span className="cc-goalie-pool-title">Available Goalie Pool</span>
+                        <span className="cc-goalie-pool-sub">Goalies mark availability — they don&apos;t sign up. Assign one to each team&apos;s slot to keep matchups balanced.</span>
                     </div>
+                    <div className="cc-goalie-pool-list">
+                        {goaliePool.map(g => {
+                            const avail = g.status === 'AVAILABLE';
+                            return (
+                                <div
+                                    key={g.userId}
+                                    className="cc-goalie-chip"
+                                    style={{ border: `1px solid ${avail ? 'rgba(127,181,154,0.32)' : 'rgba(157,185,205,0.16)'}` }}
+                                >
+                                    <div
+                                        className="cc-goalie-chip-dot"
+                                        style={{ background: avail ? 'var(--obi-success)' : 'rgba(157,185,205,0.18)', color: avail ? '#0b0c0f' : '#fff' }}
+                                    >
+                                        {initials(g.userName)}
+                                    </div>
+                                    <div>
+                                        <div className="cc-goalie-chip-name">{g.userName}</div>
+                                        <div className="cc-goalie-chip-status" style={{ color: avail ? 'var(--obi-success)' : 'var(--obi-text-muted)' }}>
+                                            {avail ? 'Available this week' : 'Not available'}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {/* Error */}
+            {error && <div className="cc-error">{error}</div>}
+
+            {/* Section heading */}
+            <div className="cc-section-hd">{roleLabel} Assignments · {scopeLabel}</div>
+
+            {/* Game groups */}
+            {filteredGames.length === 0 ? (
+                <div className="cc-empty">No games found for this filter.</div>
+            ) : (
+                <div className="cc-months">
+                    {monthGroups.map(mo => (
+                        <div key={mo.name}>
+                            <div className="cc-month-hd">
+                                {mo.name}
+                                <span className="cc-month-rule" />
+                            </div>
+                            <div className="cc-weeks">
+                                {mo.weeks.map(wg => (
+                                    <div key={wg.week}>
+                                        <div className="cc-week-hd">
+                                            <span className="cc-week-hd-label">{wg.label}</span>
+                                            <span className="cc-week-hd-range">{wg.range}</span>
+                                            <div className="cc-week-hd-actions">
+                                                <span className="cc-week-scope-note">
+                                                    {wg.openCount > 0 ? `${wg.openCount} open` : 'All assigned'}
+                                                </span>
+                                                <button
+                                                    className="cc-publish-btn"
+                                                    onClick={() => handlePublish(wg.week)}
+                                                    disabled={publishing}
+                                                >
+                                                    {publishing ? 'Publishing…' : `Publish Week ${wg.week}`}
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="cc-games">
+                                            {wg.games.map(g => (
+                                                <GameCard
+                                                    key={g.id}
+                                                    game={g}
+                                                    role={role}
+                                                    teamById={teamById}
+                                                    assignmentFor={assignmentFor}
+                                                    staff={staff}
+                                                    goaliePool={goaliePool}
+                                                    weekFilter={weekFilter}
+                                                    openPicker={openPicker}
+                                                    setOpenPicker={setOpenPicker}
+                                                    onAssign={handleAssign}
+                                                    onConfirm={handleConfirm}
+                                                    onClear={handleClear}
+                                                    slotsPerGame={slotsPerGame}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <p className="cc-footer-note">
+                Confirmed assignments appear on the public schedule, live score entry, and game management pages.
+            </p>
+        </>
+    );
+}
+
+function GameCard({ game, role, teamById, assignmentFor, staff, goaliePool, weekFilter, openPicker, setOpenPicker, onAssign, onConfirm, onClear, slotsPerGame }) {
+    const homeTeam = teamById(game.homeTeamId);
+    const awayTeam = teamById(game.awayTeamId);
+    const d = toChicago(game.gameDate);
+
+    const slots = buildSlots(game, role, homeTeam, awayTeam);
+    const totalSlots = slotsPerGame;
+    const gameAssignments = slots.map(s => assignmentFor(game.id, s.slot)).filter(Boolean);
+    const confirmedCount = gameAssignments.filter(a => a.status === 'CONFIRMED').length;
+    const openCount = totalSlots - gameAssignments.length;
+    const allSet = confirmedCount === totalSlots && openCount === 0;
+
+    const fillLabel = allSet ? 'All Set' : openCount > 0 ? `${openCount} Open` : `${confirmedCount} / ${totalSlots} Set`;
+    const fillColor = allSet ? 'var(--obi-success)' : openCount > 0 ? 'var(--obi-icy)' : 'var(--obi-accent)';
+    const fillBg = allSet ? 'rgba(127,181,154,0.14)' : openCount > 0 ? 'rgba(157,185,205,0.1)' : 'rgba(246,169,28,0.12)';
+    const fillBorder = allSet ? 'rgba(127,181,154,0.32)' : openCount > 0 ? 'rgba(157,185,205,0.25)' : 'rgba(246,169,28,0.32)';
+
+    return (
+        <div className="cc-game-card">
+            <div className="cc-game-hd">
+                <div className="cc-game-date-block">
+                    <div className="cc-game-day">{formatDay(d)}</div>
+                    <div className="cc-game-date">{formatDateShort(d)}</div>
+                </div>
+                <div className="cc-game-matchup">
+                    <div className="cc-game-teams">
+                        <span className="cc-team-dot" style={{ background: resolveTeamColor(homeTeam?.teamColor) }} />
+                        <span className="cc-team-name">{homeTeam?.name || `Team ${game.homeTeamId}`}</span>
+                        <span className="cc-vs">vs</span>
+                        <span className="cc-team-name">{awayTeam?.name || `Team ${game.awayTeamId}`}</span>
+                        <span className="cc-team-dot" style={{ background: resolveTeamColor(awayTeam?.teamColor) }} />
+                    </div>
+                    <div className="cc-game-meta">{formatTime(d)} · {game.rink || 'TBD'}</div>
+                </div>
+                <span className="cc-fill-badge" style={{ color: fillColor, background: fillBg, border: `1px solid ${fillBorder}` }}>
+                    {fillLabel}
+                </span>
+            </div>
+
+            {slots.map(s => {
+                const assignment = assignmentFor(game.id, s.slot);
+                const pickerKey = `${game.id}:${s.slot}`;
+                return (
+                    <SlotRow
+                        key={s.slot}
+                        slotDef={s}
+                        assignment={assignment}
+                        pickerOpen={openPicker === pickerKey}
+                        onOpenPicker={() => setOpenPicker(pickerKey)}
+                        onClosePicker={() => setOpenPicker(null)}
+                        onAssign={(userId) => onAssign(game.id, s.slot, userId)}
+                        onConfirm={() => onConfirm(assignment?.id)}
+                        onClear={() => onClear(assignment?.id)}
+                        staff={staff}
+                        role={role}
+                        goaliePool={goaliePool}
+                        weekFilter={weekFilter}
+                    />
+                );
+            })}
+        </div>
+    );
+}
+
+function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker, onAssign, onConfirm, onClear, staff, role, goaliePool, weekFilter }) {
+    const status = assignment?.status ?? 'OPEN';
+    const style = STATUS_STYLE[status] ?? STATUS_STYLE.OPEN;
+    const playerName = assignment?.userName ?? null;
+
+    const statusLabel = (() => {
+        if (status === 'PROPOSED' && playerName) return `Awaiting ${playerName.split(' ')[0]}`;
+        return style.label;
+    })();
+
+    const actions = [];
+    if (status === 'OPEN') {
+        actions.push({ label: 'Assign', color: '#0b0c0f', bg: 'var(--obi-accent)', border: 'var(--obi-accent)', onClick: onOpenPicker });
+    } else if (status === 'SIGNED_UP') {
+        actions.push({ label: 'Confirm', color: '#0b0c0f', bg: 'var(--obi-accent)', border: 'var(--obi-accent)', onClick: onConfirm });
+        actions.push({ label: 'Reassign', color: '#C8D0D8', bg: 'rgba(255,255,255,0.05)', border: 'rgba(157,185,205,0.25)', onClick: onOpenPicker });
+    } else if (status === 'PROPOSED') {
+        actions.push({ label: 'Reassign', color: '#C8D0D8', bg: 'rgba(255,255,255,0.05)', border: 'rgba(157,185,205,0.25)', onClick: onOpenPicker });
+        actions.push({ label: 'Clear', color: 'var(--obi-error)', bg: 'rgba(224,138,138,0.1)', border: 'rgba(224,138,138,0.3)', onClick: onClear });
+    } else if (status === 'CONFIRMED') {
+        actions.push({ label: 'Reassign', color: '#C8D0D8', bg: 'rgba(255,255,255,0.05)', border: 'rgba(157,185,205,0.25)', onClick: onOpenPicker });
+    }
+
+    const pickerTitle = (() => {
+        const verb = status === 'OPEN' ? 'Assign' : 'Reassign';
+        const who = role === 'GOALIE' ? `${slotDef.label} goalie` : role === 'REF' ? `Ref ${slotDef.slot}` : 'scorekeeper';
+        return `${verb} ${who} — they'll get an email to confirm`;
+    })();
+
+    // Candidates: for goalie, disable unavailable goalies (not in available pool this week)
+    const availableGoalieIds = new Set(
+        role === 'GOALIE' && weekFilter !== 'all'
+            ? goaliePool.filter(g => g.status === 'AVAILABLE').map(g => g.userId)
+            : []
+    );
+
+    const candidates = staff.map(u => {
+        const name = getName(u);
+        const unavailable = role === 'GOALIE' && weekFilter !== 'all' && !availableGoalieIds.has(u.id);
+        const poolEntry = role === 'GOALIE' && weekFilter !== 'all' ? goaliePool.find(g => g.userId === u.id) : null;
+        const sub = role === 'GOALIE'
+            ? (poolEntry ? (poolEntry.status === 'AVAILABLE' ? 'Available this week' : 'Not available') : 'Availability unknown')
+            : `Eligible ${role.toLowerCase()}`;
+        const subColor = role === 'GOALIE'
+            ? (poolEntry?.status === 'AVAILABLE' ? 'var(--obi-success)' : 'var(--obi-text-muted)')
+            : 'var(--obi-icy)';
+        return { id: u.id, name, unavailable, sub, subColor };
+    });
+
+    return (
+        <div className="cc-slot-row">
+            <div className="cc-slot-inner">
+                <div className="cc-slot-label-col">
+                    {slotDef.showDot && (
+                        <span className="cc-slot-dot" style={{ background: slotDef.teamColor }} />
+                    )}
+                    <span className="cc-slot-label">{slotDef.label}</span>
+                </div>
+
+                <div className="cc-slot-player-col">
+                    {playerName ? (
+                        <div className="cc-slot-player">
+                            <span className="cc-player-avatar">{initials(playerName)}</span>
+                            <span className="cc-player-name">{playerName}</span>
+                        </div>
+                    ) : (
+                        <span className="cc-slot-empty">Unassigned</span>
+                    )}
+                </div>
+
+                <span
+                    className="cc-status-chip"
+                    style={{ color: style.color, background: style.bg, border: `1px solid ${style.border}` }}
+                >
+                    {statusLabel}
+                </span>
+
+                <div className="cc-slot-actions">
+                    {actions.map(a => (
+                        <button
+                            key={a.label}
+                            className="cc-action-btn"
+                            style={{ color: a.color, background: a.bg, border: `1px solid ${a.border}` }}
+                            onClick={a.onClick}
+                        >
+                            {a.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {pickerOpen && (
+                <div className="cc-picker">
+                    <div className="cc-picker-title">{pickerTitle}</div>
+                    <div className="cc-picker-candidates">
+                        {candidates.map(c => (
+                            <button
+                                key={c.id}
+                                className="cc-candidate-btn"
+                                disabled={c.unavailable}
+                                onClick={() => !c.unavailable && onAssign(c.id)}
+                            >
+                                <span className="cc-candidate-avatar">{initials(c.name)}</span>
+                                <span>
+                                    <span className="cc-candidate-name">{c.name}</span>
+                                    <span className="cc-candidate-sub" style={{ color: c.subColor }}>{c.sub}</span>
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                    <button className="cc-picker-cancel" onClick={onClosePicker}>Cancel</button>
                 </div>
             )}
         </div>
     );
+}
+
+function buildSlots(game, role, homeTeam, awayTeam) {
+    if (role === 'GOALIE') {
+        return [
+            { slot: 1, label: homeTeam?.name || 'Home', teamColor: resolveTeamColor(homeTeam?.teamColor), showDot: true },
+            { slot: 2, label: awayTeam?.name || 'Away', teamColor: resolveTeamColor(awayTeam?.teamColor), showDot: true },
+        ];
+    }
+    if (role === 'REF') {
+        return [
+            { slot: 1, label: 'Ref 1', showDot: false },
+            { slot: 2, label: 'Ref 2', showDot: false },
+        ];
+    }
+    return [{ slot: 1, label: 'Scorekeeper', showDot: false }];
 }
 
 export default CoordinatorBoard;
