@@ -1,11 +1,261 @@
-// v3 Phase 2 — Goalie Availability (positive, per-week). STUB: to be built by the v3-goalieavail session.
-// Design: design_handoff_obhl_v3/GoalieAvailability.dc.html. Data: api.getGoalieAvailability(seasonId),
-// api.setGoalieAvailability(seasonId, week, status). See V3_PHASE2_HANDOFF.md.
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSeason } from '../../contexts/SeasonContext';
+import api from '../../services/api';
+import './GoalieAvailability.css';
+
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'];
+const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+    'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function splitDate(str) {
+    const [y, m, d] = str.split('-').map(Number);
+    return { y, m, d };
+}
+
+function getMonthName(dateStr) {
+    return MONTHS[splitDate(dateStr).m - 1];
+}
+
+function formatRange(start, end) {
+    const s = splitDate(start);
+    const e = splitDate(end);
+    const sm = MONTHS_SHORT[s.m - 1];
+    const em = MONTHS_SHORT[e.m - 1];
+    return s.m === e.m
+        ? `${sm} ${s.d} – ${e.d}`
+        : `${sm} ${s.d} – ${em} ${e.d}`;
+}
+
+function dateVal(str) {
+    const { y, m, d } = splitDate(str);
+    return y * 10000 + m * 100 + d;
+}
+
+function isCurrentWeek(start, end) {
+    const now = new Date();
+    const today = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
+    return today >= dateVal(start) && today <= dateVal(end);
+}
+
+function getWeekLabel(start, end) {
+    if (isCurrentWeek(start, end)) return 'This Week';
+    const s = splitDate(start);
+    return `Week of ${MONTHS_SHORT[s.m - 1]} ${s.d}`;
+}
+
 const GoalieAvailability = () => {
+    const navigate = useNavigate();
+    const { selectedSeasonId } = useSeason();
+    const seasonId = selectedSeasonId ?? 13;
+
+    const [weeks, setWeeks] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [monthFilter, setMonthFilter] = useState('all');
+    const [pending, setPending] = useState(new Set());
+
+    useEffect(() => {
+        api.getGoalieAvailability(seasonId)
+            .then(setWeeks)
+            .catch(() => setError('Failed to load availability.'))
+            .finally(() => setLoading(false));
+    }, [seasonId]);
+
+    const toggleStatus = async (week, next) => {
+        const snapshot = weeks;
+        setWeeks(ws => ws.map(w => w.week === week ? { ...w, status: next } : w));
+        setPending(p => new Set(p).add(week));
+        try {
+            const updated = await api.setGoalieAvailability(seasonId, week, next);
+            setWeeks(updated);
+        } catch (_err) {
+            setWeeks(snapshot);
+        } finally {
+            setPending(p => { const n = new Set(p); n.delete(week); return n; });
+        }
+    };
+
+    const markAllAvailable = async () => {
+        const snapshot = weeks;
+        setWeeks(ws => ws.map(w => ({ ...w, status: 'AVAILABLE' })));
+        try {
+            let result;
+            for (const w of snapshot) {
+                result = await api.setGoalieAvailability(seasonId, w.week, 'AVAILABLE');
+            }
+            if (result) setWeeks(result);
+        } catch (_err) {
+            setWeeks(snapshot);
+        }
+    };
+
+    const clearAll = async () => {
+        const snapshot = weeks;
+        setWeeks(ws => ws.map(w => ({ ...w, status: null })));
+        try {
+            let result;
+            for (const w of snapshot) {
+                result = await api.setGoalieAvailability(seasonId, w.week, null);
+            }
+            if (result) setWeeks(result);
+        } catch (_err) {
+            setWeeks(snapshot);
+        }
+    };
+
+    if (loading) return <div className="ga-state">Loading availability…</div>;
+    if (error) return <div className="ga-state ga-state--err">{error}</div>;
+
+    const countAvailable = weeks.filter(w => w.status === 'AVAILABLE').length;
+    const countUnavailable = weeks.filter(w => w.status === 'UNAVAILABLE').length;
+    const countUnset = weeks.filter(w => !w.status).length;
+
+    // Month chips derived from actual data
+    const seenMonths = [];
+    weeks.forEach(w => {
+        const m = getMonthName(w.startDate);
+        if (!seenMonths.includes(m)) seenMonths.push(m);
+    });
+    const monthChips = [
+        { key: 'all', label: 'All Weeks' },
+        ...seenMonths.map(m => ({ key: m, label: m })),
+    ];
+
+    // Filter then group by month
+    const filtered = monthFilter === 'all'
+        ? weeks
+        : weeks.filter(w => getMonthName(w.startDate) === monthFilter);
+    const groups = [];
+    const byMonth = {};
+    filtered.forEach(w => {
+        const m = getMonthName(w.startDate);
+        if (!byMonth[m]) { byMonth[m] = []; groups.push({ name: m, weeks: byMonth[m] }); }
+        byMonth[m].push(w);
+    });
+
     return (
-        <div className="obi-container" style={{ padding: '2rem 0' }}>
-            <h1 className="obi-page-title">Goalie Availability</h1>
-            <p style={{ color: 'var(--obi-text-muted)' }}>Coming soon — mark which weeks you&apos;re available to play goalie.</p>
+        <div className="ga-page">
+
+            {/* ── Banner ── */}
+            <section className="ga-banner">
+                <div className="ga-banner-overlay" />
+                <div className="ga-banner-inner obi-container">
+                    <button className="ga-back-link" onClick={() => navigate('/user')}>
+                        ← Back to Dashboard
+                    </button>
+                    <div className="ga-eyebrow-row">
+                        <span className="ga-eyebrow-badge">Gated · Goalie</span>
+                    </div>
+                    <h1 className="ga-title">My Availability</h1>
+                    <p className="ga-subtitle">
+                        Mark each week of the season so the goalie coordinator can build balanced matchups.
+                        You don&apos;t pick games — the coordinator schedules you from the available pool and you confirm.
+                    </p>
+                </div>
+            </section>
+
+            {/* ── Sticky bar ── */}
+            <div className="ga-sticky-bar">
+                {/* Month filter */}
+                <div className="ga-filter-row obi-container">
+                    <span className="ga-filter-label">Show</span>
+                    <div className="ga-month-chips">
+                        {monthChips.map(c => (
+                            <button
+                                key={c.key}
+                                className={`ga-month-chip${monthFilter === c.key ? ' is-active' : ''}`}
+                                onClick={() => setMonthFilter(c.key)}
+                            >
+                                {c.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+                {/* Summary + bulk actions */}
+                <div className="ga-summary-row obi-container">
+                    <div className="ga-summary-stats">
+                        <span className="ga-stat ga-stat--avail">
+                            <span className="ga-dot ga-dot--avail" />
+                            {countAvailable} Available
+                        </span>
+                        <span className="ga-stat ga-stat--unavail">
+                            <span className="ga-dot ga-dot--unavail" />
+                            {countUnavailable} Out
+                        </span>
+                        <span className="ga-stat ga-stat--unset">
+                            <span className="ga-dot ga-dot--unset" />
+                            {countUnset} Not Set
+                        </span>
+                    </div>
+                    <div className="ga-bulk-actions">
+                        <button className="ga-bulk-btn ga-bulk-btn--mark-all" onClick={markAllAvailable}>
+                            Mark All Available
+                        </button>
+                        <button className="ga-bulk-btn ga-bulk-btn--clear" onClick={clearAll}>
+                            Clear
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Week list ── */}
+            <div className="obi-container ga-list">
+                {groups.map(({ name, weeks: gWeeks }) => (
+                    <div key={name} className="ga-month-group">
+                        <h2 className="ga-month-heading">{name}</h2>
+                        <div className="ga-week-rows">
+                            {gWeeks.map(w => {
+                                const isAvail = w.status === 'AVAILABLE';
+                                const isUnavail = w.status === 'UNAVAILABLE';
+                                const mod = isAvail ? 'avail' : isUnavail ? 'unavail' : 'unset';
+                                const thisWeek = isCurrentWeek(w.startDate, w.endDate);
+                                const isPending = pending.has(w.week);
+
+                                return (
+                                    <div
+                                        key={w.week}
+                                        className={`ga-row ga-row--${mod}${thisWeek ? ' ga-row--current' : ''}`}
+                                    >
+                                        <div className="ga-row-info">
+                                            <div className="ga-row-top">
+                                                <span className="ga-week-label">
+                                                    {getWeekLabel(w.startDate, w.endDate)}
+                                                </span>
+                                                <span className={`ga-tag ga-tag--${mod}`}>
+                                                    {isAvail ? 'Available' : isUnavail ? 'Out' : 'Not Set'}
+                                                </span>
+                                            </div>
+                                            <div className="ga-row-meta">
+                                                {formatRange(w.startDate, w.endDate)} · {w.gamesCount}{' '}
+                                                {w.gamesCount === 1 ? 'game' : 'games'} scheduled
+                                            </div>
+                                        </div>
+                                        <div className="ga-row-btns">
+                                            <button
+                                                className={`ga-toggle ga-toggle--avail${isAvail ? ' is-active' : ''}`}
+                                                onClick={() => toggleStatus(w.week, isAvail ? null : 'AVAILABLE')}
+                                                disabled={isPending}
+                                            >
+                                                Available
+                                            </button>
+                                            <button
+                                                className={`ga-toggle ga-toggle--unavail${isUnavail ? ' is-active' : ''}`}
+                                                onClick={() => toggleStatus(w.week, isUnavail ? null : 'UNAVAILABLE')}
+                                                disabled={isPending}
+                                            >
+                                                Unavailable
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
         </div>
     );
 };
