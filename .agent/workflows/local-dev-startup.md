@@ -51,3 +51,4 @@ docker compose -f docker-compose.yml ps
 - Frontend changes hot-reload automatically — no restart needed
 - To stop everything: `docker compose down` and kill the Vite terminal
 - If you need a full backend rebuild (e.g. after schema changes): `docker compose up -d --build postgres api-gateway league-service game-service stats-service`
+- **Git worktrees:** do NOT run this workflow from a secondary worktree. `docker compose` names its project after the directory, so a worktree spins up a *separate* stack with a fresh, EMPTY database. When working in a worktree, leave the backend running from the main checkout and start only Vite (`npm run dev`) — it proxies to the shared `localhost:8000`. If you must have a worktree-local backend, seed it (`database/migrations/*` then `database/seeds/*`) before testing.

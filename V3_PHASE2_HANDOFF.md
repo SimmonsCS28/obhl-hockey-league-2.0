@@ -12,7 +12,7 @@ Design source (read your page's `.dc.html` — inline styles + `{{ }}`/`<sc-for>
 | B | `../obhl-v3-goalieavail` | `v3-goalieavail` | Goalie Availability page |
 | C | `../obhl-v3-console` | `v3-console` | Coordinator Console |
 
-Dev backend runs on `:8000` (shared); each session runs its own Vite (`npm run dev` in `frontend/`) — Vite will pick 5174+ if 5173 is taken. Login `simmonscs28` / `Welcome1!` (ADMIN — sees all coordinator tabs). Active season id is **13**.
+**Backend is SHARED on `:8000` (already running from the main worktree, with seeded data). Do NOT run `docker compose` or `/dev-up` from your worktree** — that spins up a *separate* compose project with its own fresh, EMPTY Postgres volume, and every query will return no data. Run ONLY `npm run dev` in `frontend/`; Vite proxies to `localhost:8000` automatically and will pick 5174+ if 5173 is taken. (If you ever genuinely need your own backend, you must seed it from `database/migrations/*` + `database/seeds/*` first — never test against an empty DB.) Login `simmonscs28` / `Welcome1!` (ADMIN — sees all coordinator tabs). Active season id is **13**.
 
 ## Conventions (all sessions)
 - **Theme tokens** in `src/styles/theme.css` (CSS vars: `--obi-bg`, `--obi-bg-card #13171d`, `--obi-accent #F6A91C`, `--obi-icy #9DB9CD`, `--obi-text #EAEEF2`, `--obi-text-secondary/-muted`, `--obi-success #7FB59A`, `--obi-error #E08A8A`, `--obi-font-display` Saira Condensed, `--obi-font-body` Saira, `--obi-card-border`, `--obi-divider`). Shared primitives in `src/styles/obi.css` (`.obi-container`, `.obi-page-title`, `.obi-eyebrow`, `.obi-chip`, `.obi-season-select`, `.obi-ghost-btn`, `.obi-cta-btn`). Use vars, never hardcode hex.
