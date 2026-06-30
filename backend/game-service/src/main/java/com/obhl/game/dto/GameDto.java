@@ -98,6 +98,9 @@ public class GameDto {
         @NotNull
         private Integer awayScore;
         private Boolean endedInOT;
+        // If set, must equal this game's homeTeamId or awayTeamId. The opposing team
+        // is recorded as the winner and homeScore/awayScore above are overridden to a 1-0 forfeit score.
+        private Long forfeitTeamId;
     }
 
     @Data
@@ -133,6 +136,7 @@ public class GameDto {
         private Boolean shootout;
         private Integer period;
         private Boolean endedInOT;
+        private Long forfeitTeamId;
         private Integer homeTeamPoints;
         private Integer awayTeamPoints;
         private Integer week;

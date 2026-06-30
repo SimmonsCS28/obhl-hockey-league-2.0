@@ -183,10 +183,24 @@ public class GameService {
         Game game = gameRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Game not found"));
 
-        // Update scores
-        game.setHomeScore(finalizeRequest.getHomeScore());
-        game.setAwayScore(finalizeRequest.getAwayScore());
-        game.setEndedInOT(finalizeRequest.getEndedInOT());
+        Long forfeitTeamId = finalizeRequest.getForfeitTeamId();
+        if (forfeitTeamId != null && !forfeitTeamId.equals(game.getHomeTeamId())
+                && !forfeitTeamId.equals(game.getAwayTeamId())) {
+            throw new RuntimeException("Forfeiting team must be the home or away team for this game");
+        }
+
+        if (forfeitTeamId != null) {
+            // Standard forfeit score: the non-forfeiting team is recorded as the 1-0 winner
+            boolean homeForfeited = forfeitTeamId.equals(game.getHomeTeamId());
+            game.setHomeScore(homeForfeited ? 0 : 1);
+            game.setAwayScore(homeForfeited ? 1 : 0);
+            game.setEndedInOT(false);
+        } else {
+            game.setHomeScore(finalizeRequest.getHomeScore());
+            game.setAwayScore(finalizeRequest.getAwayScore());
+            game.setEndedInOT(finalizeRequest.getEndedInOT());
+        }
+        game.setForfeitTeamId(forfeitTeamId);
         game.setStatus("completed");
 
         // Calculate points using PointsCalculator
@@ -198,8 +212,10 @@ public class GameService {
         // Update team standings (skips PLAYOFF games automatically)
         teamStatsUpdater.updateTeamStats(savedGame);
 
-        // Aggregate and update player stats
-        playerStatsAggregator.aggregateAndUpdateStats(savedGame);
+        // Aggregate and update player stats — skipped for forfeits since the game wasn't actually played
+        if (forfeitTeamId == null) {
+            playerStatsAggregator.aggregateAndUpdateStats(savedGame);
+        }
 
         // Auto-advance the playoff bracket if this was a playoff game
         if ("PLAYOFF".equals(savedGame.getGameType())) {
@@ -220,13 +236,30 @@ public class GameService {
 
         // Revert stats first using the OLD completed values
         teamStatsUpdater.revertTeamStats(game);
-        playerStatsAggregator.revertPlayerStats(game);
+        if (game.getForfeitTeamId() == null) {
+            playerStatsAggregator.revertPlayerStats(game);
+        }
 
         // Reset points and status
         game.setHomeTeamPoints(0);
         game.setAwayTeamPoints(0);
         // Leave scores as is, so they can be edited or left alone
         game.setStatus("in_progress");
+
+        return toResponse(gameRepository.save(game));
+    }
+
+    @Transactional
+    public GameDto.Response revertToScheduled(Long id) {
+        Game game = gameRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Game not found"));
+
+        if (!"in_progress".equals(game.getStatus())) {
+            throw new RuntimeException("Game must be In Progress to revert to Scheduled");
+        }
+
+        // Leave scores/events as is, so they can be edited or left alone
+        game.setStatus("scheduled");
 
         return toResponse(gameRepository.save(game));
     }
@@ -247,6 +280,7 @@ public class GameService {
         dto.setShootout(game.getShootout());
         dto.setPeriod(game.getPeriod());
         dto.setEndedInOT(game.getEndedInOT());
+        dto.setForfeitTeamId(game.getForfeitTeamId());
         dto.setHomeTeamPoints(game.getHomeTeamPoints());
         dto.setAwayTeamPoints(game.getAwayTeamPoints());
         dto.setWeek(game.getWeek());

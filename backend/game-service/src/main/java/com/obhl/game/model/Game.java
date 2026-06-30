@@ -80,6 +80,9 @@ public class Game {
     @Column(name = "ended_in_ot")
     private Boolean endedInOT = false;
 
+    @Column(name = "forfeit_team_id")
+    private Long forfeitTeamId;
+
     @Column(name = "home_team_points")
     private Integer homeTeamPoints = 0;
 
