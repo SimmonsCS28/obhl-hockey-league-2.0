@@ -1,6 +1,8 @@
 package com.obhl.gateway.service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +31,8 @@ import com.obhl.gateway.repository.UserRepository;
 public class CoordinatorService {
 
     private static final DateTimeFormatter GAME_FMT = DateTimeFormatter.ofPattern("EEE MMM d, h:mm a");
+    // Game times are stored as UTC LocalDateTime; render them in league-local time for humans.
+    private static final ZoneId LEAGUE_TZ = ZoneId.of("America/Chicago");
     private static final int TOKEN_TTL_DAYS = 7;
 
     @Autowired
@@ -234,7 +238,9 @@ public class CoordinatorService {
         if (game == null) {
             return "Game";
         }
-        String when = game.getGameDate() != null ? game.getGameDate().format(GAME_FMT) : "TBD";
+        String when = game.getGameDate() != null
+                ? game.getGameDate().atZone(ZoneOffset.UTC).withZoneSameInstant(LEAGUE_TZ).format(GAME_FMT)
+                : "TBD";
         String matchup = teamName(game.getHomeTeamId()) + " vs " + teamName(game.getAwayTeamId());
         String where = game.getRink() != null ? (" at " + game.getRink()) : "";
         return when + " — " + matchup + where;
