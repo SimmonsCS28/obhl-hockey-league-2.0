@@ -58,6 +58,44 @@ public class GameEventDto {
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
+    public static class Update {
+        @NotNull(message = "Team ID is required")
+        @Positive
+        private Long teamId;
+
+        @Positive
+        private Long playerId;
+
+        @NotNull(message = "Period is required")
+        @Min(1)
+        @Max(5)
+        private Integer period;
+
+        @NotNull(message = "Time minutes is required")
+        @Min(0)
+        @Max(59)
+        private Integer timeMinutes;
+
+        @NotNull(message = "Time seconds is required")
+        @Min(0)
+        @Max(59)
+        private Integer timeSeconds;
+
+        private String description;
+
+        @Positive
+        private Long assist1PlayerId;
+
+        @Positive
+        private Long assist2PlayerId;
+
+        @Positive
+        private Integer penaltyMinutes;
+    }
+
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class Response {
         private Long id;
         private Long gameId;

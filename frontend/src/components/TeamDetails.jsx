@@ -38,7 +38,7 @@ function TeamDetails({ team: propTeam, onBack }) {
                 }
 
                 const [teamPlayers, unassignedPlayers] = await Promise.all([
-                    api.getPlayers({ teamId: targetId, active: true }),
+                    api.getPlayers({ teamId: targetId, active: true, seasonId: currentTeam.seasonId }),
                     api.getPlayers({ unassigned: true, active: true, seasonId: currentTeam.seasonId })
                 ]);
 

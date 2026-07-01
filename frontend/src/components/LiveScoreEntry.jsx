@@ -84,6 +84,9 @@ function LiveScoreEntry(props) {
     // OT tracking for tied games
     const [endedInOT, setEndedInOT] = useState(false);
 
+    // Forfeit tracking — id of the team that forfeited, or null if no forfeit
+    const [forfeitTeamId, setForfeitTeamId] = useState(game?.forfeitTeamId || null);
+
     // Unsaved changes tracking
     const [isDirty, setIsDirty] = useState(false);
     const [showUnsavedModal, setShowUnsavedModal] = useState(false);
@@ -144,6 +147,7 @@ function LiveScoreEntry(props) {
                     setHomeScore(enrichedGame.homeScore || 0);
                     setAwayScore(enrichedGame.awayScore || 0);
                     setGameFinalized(enrichedGame.status === 'completed');
+                    setForfeitTeamId(enrichedGame.forfeitTeamId || null);
                 } catch (error) {
                     console.error('Error loading game:', error);
                 } finally {
@@ -178,9 +182,9 @@ function LiveScoreEntry(props) {
                         ? players.find(p => Number(p.id) === Number(event.assist2PlayerId))
                         : null;
 
-                    const playerName = player ? `#${player.jerseyNumber} ${player.name}` : event.description || 'Unknown';
-                    const assist1Name = assist1 ? `#${assist1.jerseyNumber} ${assist1.name}` : '';
-                    const assist2Name = assist2 ? `#${assist2.jerseyNumber} ${assist2.name}` : '';
+                    const playerName = player ? formatPlayerLabel(player) : event.description || 'Unknown';
+                    const assist1Name = formatPlayerLabel(assist1);
+                    const assist2Name = formatPlayerLabel(assist2);
 
                     const assists = [assist1Name, assist2Name].filter(Boolean);
 
@@ -234,12 +238,18 @@ function LiveScoreEntry(props) {
         return isLight ? '#2c3e50' : 'white';
     };
 
+    // Shared so freshly-added events and events reloaded from the backend render identically
+    const formatPlayerLabel = (player) => {
+        if (!player) return '';
+        return player.jerseyNumber ? `#${player.jerseyNumber} ${player.name}` : player.name;
+    };
+
     const loadPlayers = async () => {
         try {
             // Fetch players for both teams in the game
             const [homePlayers, awayPlayers] = await Promise.all([
-                api.getPlayers({ teamId: game.homeTeamId }),
-                api.getPlayers({ teamId: game.awayTeamId })
+                api.getPlayers({ teamId: game.homeTeamId, seasonId: game.seasonId }),
+                api.getPlayers({ teamId: game.awayTeamId, seasonId: game.seasonId })
             ]);
 
             const mappedHome = homePlayers.map(p => ({ ...p, teamId: game.homeTeamId }));
@@ -390,13 +400,14 @@ function LiveScoreEntry(props) {
 
         const newEvent = {
             id: editingEvent ? editingEvent.id : Date.now(),
+            backendId: editingEvent ? editingEvent.backendId : undefined,
             type: 'goal',
             team: goalTeam,
             period: goalPeriod,
             time: formatTime(goalMinutes, goalSeconds),
-            scorer: scorer.name,
+            scorer: formatPlayerLabel(scorer),
             scorerId: scorer.id,
-            assists: [assist1?.name, assist2?.name].filter(Boolean),
+            assists: [formatPlayerLabel(assist1), formatPlayerLabel(assist2)].filter(Boolean),
             assist1Id: assist1?.id || null,
             assist2Id: assist2?.id || null
         };
@@ -412,7 +423,11 @@ function LiveScoreEntry(props) {
             setHomeScore(homeGoals);
             setAwayScore(awayGoals);
 
+            // Score may have changed (e.g. team was corrected) — needs a manual "Save Changes" to persist
+            setIsDirty(true);
+
             setEditingEvent(null);
+            await updateEventOnBackend(newEvent);
         } else {
             // Add new event
             setEvents([...events, newEvent]);
@@ -477,11 +492,12 @@ function LiveScoreEntry(props) {
 
         const newEvent = {
             id: editingEvent ? editingEvent.id : Date.now(),
+            backendId: editingEvent ? editingEvent.backendId : undefined,
             type: 'penalty',
             team: penaltyTeam,
             period: penaltyPeriod,
             time: formatTime(penaltyTimeMinutes, penaltyTimeSeconds),
-            player: player.name,
+            player: formatPlayerLabel(player),
             playerId: player.id,
             minutes: penaltyMinutes,
             description: finalDescription
@@ -491,6 +507,7 @@ function LiveScoreEntry(props) {
             const updatedEvents = events.map(e => e.id === editingEvent.id ? newEvent : e);
             setEvents(updatedEvents);
             setEditingEvent(null);
+            await updateEventOnBackend(newEvent);
         } else {
             setEvents([...events, newEvent]);
             // Mark as dirty (new event added)
@@ -502,33 +519,49 @@ function LiveScoreEntry(props) {
         resetPenaltyForm();
     };
 
+    // Shared DTO shape for both creating and updating a backend game event
+    const buildEventDto = (event) => {
+        const [minutes, seconds] = event.time.split(':').map(Number);
+        const periodMap = { '1': 1, '2': 2, '3': 3, 'OT': 4 };
+
+        return {
+            teamId: event.team === 'home' ? game.homeTeamId : game.awayTeamId,
+            eventType: event.type,
+            period: periodMap[event.period] || 3, // Default to 3 if unknown, or handle error
+            timeMinutes: minutes,
+            timeSeconds: seconds,
+            description: event.description || null,
+            // Map fields based on event type
+            playerId: event.type === 'goal' ? event.scorerId : event.playerId,
+            assist1PlayerId: event.type === 'goal' ? event.assist1Id : null,
+            assist2PlayerId: event.type === 'goal' ? event.assist2Id : null,
+            penaltyMinutes: event.type === 'penalty' ? event.minutes : null
+        };
+    };
+
     const saveEventToBackend = async (event) => {
         try {
-            // Construct DTO matching backend GameEventDto.Create requirements
-            const [minutes, seconds] = event.time.split(':').map(Number);
-            const periodMap = { '1': 1, '2': 2, '3': 3, 'OT': 4 };
-
-            const eventDto = {
-                gameId: game.id,
-                teamId: event.team === 'home' ? game.homeTeamId : game.awayTeamId,
-                eventType: event.type,
-                period: periodMap[event.period] || 3, // Default to 3 if unknown, or handle error
-                timeMinutes: minutes,
-                timeSeconds: seconds,
-                description: event.description || null,
-                // Map fields based on event type
-                playerId: event.type === 'goal' ? event.scorerId : event.playerId,
-                assist1PlayerId: event.type === 'goal' ? event.assist1Id : null,
-                assist2PlayerId: event.type === 'goal' ? event.assist2Id : null,
-                penaltyMinutes: event.type === 'penalty' ? event.minutes : null
-            };
-
-            await api.saveGameEvent(game.id, eventDto);
+            const eventDto = { gameId: game.id, ...buildEventDto(event) };
+            const created = await api.saveGameEvent(game.id, eventDto);
+            // Attach the real backend id so this event can be updated/deleted without a reload
+            if (created && created.id) {
+                setEvents(prev => prev.map(e => e.id === event.id ? { ...e, backendId: created.id } : e));
+            }
         } catch (error) {
             console.error('Error saving event:', error);
             alert('Failed to save event to backend. It will remain locally until page refresh.');
             // Note: We don't remove it from local state so user doesn't lose data
             // In a real app we might mark it as "unsaved" in UI
+        }
+    };
+
+    const updateEventOnBackend = async (event) => {
+        if (!event.backendId) return; // never made it to the backend in the first place — nothing to update there
+        try {
+            await api.updateGameEvent(game.id, event.backendId, buildEventDto(event));
+        } catch (error) {
+            console.error('Error updating event:', error);
+            alert('Failed to save your changes to the server. Please try again.');
         }
     };
 
@@ -547,12 +580,17 @@ function LiveScoreEntry(props) {
             setGoalMinutes(mins);
             setGoalSeconds(secs);
             // Restore player IDs
-            setGoalScorer(event.scorerId?.toString() || '');
-            setGoalAssist1(event.assist1Id?.toString() || '');
-            setGoalAssist2(event.assist2Id?.toString() || '');
+            // Locally-added events use scorerId/assist1Id/assist2Id; events loaded from the
+            // backend use playerId/assist1PlayerId/assist2PlayerId — accept either shape.
+            const eventScorerId = event.scorerId ?? event.playerId;
+            const eventAssist1Id = event.assist1Id ?? event.assist1PlayerId;
+            const eventAssist2Id = event.assist2Id ?? event.assist2PlayerId;
+            setGoalScorer(eventScorerId?.toString() || '');
+            setGoalAssist1(eventAssist1Id?.toString() || '');
+            setGoalAssist2(eventAssist2Id?.toString() || '');
             // Check goal limit for the scorer
-            if (event.scorerId) {
-                const validation = checkGoalLimit(event.scorerId);
+            if (eventScorerId) {
+                const validation = checkGoalLimit(eventScorerId);
                 setGoalLimitWarning(validation);
             }
             setShowGoalForm(true);
@@ -579,6 +617,39 @@ function LiveScoreEntry(props) {
         }
     };
 
+    const handleDeleteEvent = async (event, domEvent) => {
+        domEvent.stopPropagation();
+
+        if (gameFinalized) {
+            alert('Game is finalized. Cannot delete events.');
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `Delete this ${event.type === 'goal' ? 'goal' : 'penalty'}? This cannot be undone.`
+        );
+        if (!confirmed) return;
+
+        try {
+            if (event.backendId) {
+                await api.deleteGameEvent(game.id, event.backendId);
+                // Reload from backend so score, goal counts, and jersey labels stay in sync
+                await loadEvents();
+                setIsDirty(true);
+            } else {
+                // Event never made it to the backend (failed auto-save) — just drop it locally
+                setEvents(prev => prev.filter(e => e.id !== event.id));
+                if (event.type === 'goal') {
+                    if (event.team === 'home') setHomeScore(prev => Math.max(0, prev - 1));
+                    else setAwayScore(prev => Math.max(0, prev - 1));
+                }
+            }
+        } catch (error) {
+            console.error('Error deleting event:', error);
+            alert('Failed to delete event. Please try again.');
+        }
+    };
+
     const handleFinalizeGame = () => {
         // Check if there are any OT goals in the events
         const hasOTGoal = events.some(event => event.type === 'goal' && event.period === 'OT');
@@ -598,19 +669,27 @@ function LiveScoreEntry(props) {
         setShowFinalizeModal(false);
 
         try {
-            // Save final score to backend with OT flag
-            await api.finalizeGame(game.id, homeScore, awayScore, endedInOT);
+            // Save final score to backend with OT flag (forfeits override the score server-side)
+            const finalized = await api.finalizeGame(game.id, homeScore, awayScore, endedInOT, forfeitTeamId);
             setGameFinalized(true);
             setIsDirty(false); // No longer dirty after finalize
             setShowSuccessMessage(true);
+
+            // Reflect the authoritative score (forfeits are recorded as 1-0, not whatever was on the board)
+            if (finalized) {
+                setHomeScore(finalized.homeScore);
+                setAwayScore(finalized.awayScore);
+                setEndedInOT(finalized.endedInOT);
+            }
 
             // Update parent component with finalized game data
             if (onGameUpdated) {
                 onGameUpdated({
                     ...game,
-                    homeScore,
-                    awayScore,
-                    endedInOT,
+                    homeScore: finalized?.homeScore ?? homeScore,
+                    awayScore: finalized?.awayScore ?? awayScore,
+                    endedInOT: finalized?.endedInOT ?? endedInOT,
+                    forfeitTeamId: finalized?.forfeitTeamId ?? forfeitTeamId,
                     status: 'completed'
                 });
             }
@@ -803,6 +882,11 @@ function LiveScoreEntry(props) {
                     </button>
                 )}
                 {gameFinalized && <span className="finalized-badge">✓ Finalized</span>}
+                {gameFinalized && forfeitTeamId && (
+                    <span className="forfeit-tag">
+                        Forfeit win for {forfeitTeamId === game.homeTeamId ? game.awayTeamName : game.homeTeamName}
+                    </span>
+                )}
             </div>
 
             {/* Scoreboard */}
@@ -1140,6 +1224,7 @@ function LiveScoreEntry(props) {
                                     <th>Type</th>
                                     <th>Details</th>
                                     <th>Team</th>
+                                    {!gameFinalized && <th className="actions-col-header">Actions</th>}
                                 </tr>
                             </thead>
                             <tbody>
@@ -1187,12 +1272,24 @@ function LiveScoreEntry(props) {
                                             )}
                                         </td>
                                         <td className="team-col">
-                                            <TeamBadge 
+                                            <TeamBadge
                                                 teamId={event.team === 'home' ? game.homeTeamId : game.awayTeamId}
                                                 teamName={event.team === 'home' ? game.homeTeamName : game.awayTeamName}
                                                 teamColor={event.team === 'home' ? game.homeTeamColor : game.awayTeamColor}
                                             />
                                         </td>
+                                        {!gameFinalized && (
+                                            <td className="actions-col">
+                                                <button
+                                                    type="button"
+                                                    className="btn-delete-event"
+                                                    title="Delete this event"
+                                                    onClick={(domEvent) => handleDeleteEvent(event, domEvent)}
+                                                >
+                                                    🗑️
+                                                </button>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))}
                             </tbody>
@@ -1237,13 +1334,56 @@ function LiveScoreEntry(props) {
                     <div className="modal-content" onClick={(e) => e.stopPropagation()}>
                         <h3>⚠️ Finalize Game</h3>
                         <div className="modal-body">
-                            <div className="final-score">
-                                <strong>Final Score:</strong>
-                                <div className="score-display-large">
-                                    {game.homeTeamName} <span className="score-num">{homeScore}</span> - <span className="score-num">{awayScore}</span> {game.awayTeamName}
+                            <div className="forfeit-selection">
+                                <p><strong>Did either team forfeit?</strong></p>
+                                <div className="forfeit-options">
+                                    <label className="forfeit-option">
+                                        <input
+                                            type="radio"
+                                            name="forfeit"
+                                            checked={forfeitTeamId === null}
+                                            onChange={() => setForfeitTeamId(null)}
+                                        />
+                                        <span>No forfeit</span>
+                                    </label>
+                                    <label className="forfeit-option">
+                                        <input
+                                            type="radio"
+                                            name="forfeit"
+                                            checked={forfeitTeamId === game.homeTeamId}
+                                            onChange={() => setForfeitTeamId(game.homeTeamId)}
+                                        />
+                                        <span>{game.homeTeamName} forfeits</span>
+                                    </label>
+                                    <label className="forfeit-option">
+                                        <input
+                                            type="radio"
+                                            name="forfeit"
+                                            checked={forfeitTeamId === game.awayTeamId}
+                                            onChange={() => setForfeitTeamId(game.awayTeamId)}
+                                        />
+                                        <span>{game.awayTeamName} forfeits</span>
+                                    </label>
                                 </div>
                             </div>
 
+                            <div className="final-score">
+                                <strong>Final Score:</strong>
+                                {forfeitTeamId ? (
+                                    <div className="score-display-large">
+                                        {forfeitTeamId === game.homeTeamId
+                                            ? <>{game.homeTeamName} <span className="score-num">0</span> - <span className="score-num">1</span> {game.awayTeamName}</>
+                                            : <>{game.homeTeamName} <span className="score-num">1</span> - <span className="score-num">0</span> {game.awayTeamName}</>}
+                                        <span className="forfeit-tag"> (forfeit)</span>
+                                    </div>
+                                ) : (
+                                    <div className="score-display-large">
+                                        {game.homeTeamName} <span className="score-num">{homeScore}</span> - <span className="score-num">{awayScore}</span> {game.awayTeamName}
+                                    </div>
+                                )}
+                            </div>
+
+                            {!forfeitTeamId && (
                                 <div className="ot-selection">
                                     {events.some(e => e.type === 'goal' && e.period === 'OT') ? (
                                         <p><strong>✓ OT goal detected - Game ended in overtime</strong></p>
@@ -1275,6 +1415,7 @@ function LiveScoreEntry(props) {
                                         </>
                                     )}
                                 </div>
+                            )}
 
                             <div className="warning-list">
                                 <p><strong>This will:</strong></p>
@@ -1282,6 +1423,12 @@ function LiveScoreEntry(props) {
                                     <li>Lock the game and prevent any further edits</li>
                                     <li>Save the final score to the database</li>
                                     <li>Mark the game as completed</li>
+                                    {forfeitTeamId && (
+                                        <li>
+                                            Award the win and 2 points to {forfeitTeamId === game.homeTeamId ? game.awayTeamName : game.homeTeamName}
+                                            {events.length > 0 && ' (any goals/penalties already logged will not count toward player stats)'}
+                                        </li>
+                                    )}
                                 </ul>
                             </div>
                             <p className="confirm-question">Are you sure you want to finalize this game?</p>

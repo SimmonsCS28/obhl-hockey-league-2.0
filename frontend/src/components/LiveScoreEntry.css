@@ -522,6 +522,28 @@
     font-weight: 500;
 }
 
+.actions-col,
+.actions-col-header {
+    width: 50px;
+    text-align: center;
+}
+
+.btn-delete-event {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    line-height: 1;
+    opacity: 0.7;
+}
+
+.btn-delete-event:hover {
+    opacity: 1;
+    background: #fee2e2;
+}
+
 .edit-hint-table {
     font-size: 11px;
     color: #94a3b8;
@@ -854,6 +876,66 @@
     color: #1e293b;
 }
 
+.forfeit-selection {
+    background: #fffbeb;
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border: 2px solid #fde68a;
+}
+
+.forfeit-selection p {
+    color: #92400e;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.forfeit-options {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.forfeit-option {
+    flex: 1;
+    min-width: 140px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.forfeit-option:hover {
+    border-color: #92400e;
+    background: #f8fafc;
+}
+
+.forfeit-option input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.forfeit-option input[type="radio"]:checked+span {
+    font-weight: 700;
+    color: #92400e;
+}
+
+.forfeit-option span {
+    font-size: 14px;
+    color: #1e293b;
+}
+
+.forfeit-tag {
+    font-size: 14px;
+    font-weight: 600;
+    color: #92400e;
+}
+
 /* OT Badge for Game Cards */
 .ot-badge {
     display: inline-block;
@@ -1015,6 +1097,11 @@
 
     /* OT Options - Stack on mobile */
     .ot-options {
+        flex-direction: column;
+    }
+
+    /* Forfeit Options - Stack on mobile */
+    .forfeit-options {
         flex-direction: column;
     }
 

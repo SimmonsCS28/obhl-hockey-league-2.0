@@ -50,8 +50,8 @@ function GameRecap() {
 
             // Fetch players to map event IDs
             const [homePlayers, awayPlayers] = await Promise.all([
-                api.getPlayers({ teamId: gameData.homeTeamId }),
-                api.getPlayers({ teamId: gameData.awayTeamId })
+                api.getPlayers({ teamId: gameData.homeTeamId, seasonId: gameData.seasonId }),
+                api.getPlayers({ teamId: gameData.awayTeamId, seasonId: gameData.seasonId })
             ]);
             const allPlayers = [...homePlayers, ...awayPlayers];
 

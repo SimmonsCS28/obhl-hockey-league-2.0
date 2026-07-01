@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import './GameEditModal.css';
 
-const GameEditModal = ({ game, teams, onClose, onSave, onDelete }) => {
+const GameEditModal = ({ game, teams, onClose, onSave, onDelete, onRevertToScheduled }) => {
     // Helper function to convert UTC date to local datetime-local format
     const toLocalDateTimeString = (utcDateString) => {
         if (!utcDateString) return '';
@@ -52,6 +52,16 @@ const GameEditModal = ({ game, teams, onClose, onSave, onDelete }) => {
 
         if (confirmed && onDelete) {
             onDelete(game.id);
+        }
+    };
+
+    const handleRevertToScheduled = () => {
+        const confirmed = window.confirm(
+            'Revert this game\'s status from In Progress to Scheduled?\n\nScores and logged events will be left as-is.'
+        );
+
+        if (confirmed && onRevertToScheduled) {
+            onRevertToScheduled(game.id);
         }
     };
 
@@ -143,6 +153,11 @@ const GameEditModal = ({ game, teams, onClose, onSave, onDelete }) => {
                         {game?.id && onDelete && (
                             <button type="button" onClick={handleDelete} className="btn-danger" style={{ marginRight: 'auto' }}>
                                 🗑️ Delete Game
+                            </button>
+                        )}
+                        {game?.id && game?.status === 'in_progress' && onRevertToScheduled && (
+                            <button type="button" onClick={handleRevertToScheduled} className="btn-secondary">
+                                ↩ Revert to Scheduled
                             </button>
                         )}
                         <button type="button" onClick={onClose} className="btn-secondary">

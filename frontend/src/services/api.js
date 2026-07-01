@@ -251,10 +251,23 @@ const api = {
         return request(`/games/${gameId}/events`);
     },
 
-    async finalizeGame(gameId, homeScore, awayScore, endedInOT = false) {
+    async deleteGameEvent(gameId, eventId) {
+        return request(`/games/${gameId}/events/${eventId}`, {
+            method: 'DELETE'
+        });
+    },
+
+    async updateGameEvent(gameId, eventId, event) {
+        return request(`/games/${gameId}/events/${eventId}`, {
+            method: 'PATCH',
+            body: JSON.stringify(event)
+        });
+    },
+
+    async finalizeGame(gameId, homeScore, awayScore, endedInOT = false, forfeitTeamId = null) {
         return request(`/games/${gameId}/finalize`, {
             method: 'POST',
-            body: JSON.stringify({ homeScore, awayScore, endedInOT })
+            body: JSON.stringify({ homeScore, awayScore, endedInOT, forfeitTeamId })
         });
     },
 

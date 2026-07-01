@@ -23,6 +23,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class StaffSignupController {
 
+    // This endpoint is public/unauthenticated, so it must never allow a caller to grant
+    // themselves a privileged role. ADMIN/GM accounts can only be created by an existing
+    // admin via the authenticated UserController.createUser endpoint.
+    private static final Set<String> ALLOWED_SELF_SIGNUP_ROLES = Set.of("GOALIE", "REF", "SCOREKEEPER");
+
     private final UserManagementService userManagementService;
 
     @PostMapping("/signup")
@@ -41,6 +46,11 @@ public class StaffSignupController {
                 upperRoles.add(r.toUpperCase());
             }
             request.setRoles(upperRoles);
+        }
+
+        if (!ALLOWED_SELF_SIGNUP_ROLES.containsAll(request.getRoles())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Self-signup only allows these roles: " + ALLOWED_SELF_SIGNUP_ROLES));
         }
 
         try {

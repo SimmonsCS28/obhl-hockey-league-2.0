@@ -1,6 +1,7 @@
 package com.obhl.game.controller;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -149,6 +150,16 @@ public class GameController {
         }
     }
 
+    @PostMapping("/{gameId}/revert-to-scheduled")
+    public ResponseEntity<?> revertToScheduled(@PathVariable Long gameId) {
+        try {
+            GameDto.Response reverted = gameService.revertToScheduled(gameId);
+            return ResponseEntity.ok(reverted);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @PostMapping("/generate")
     public ResponseEntity<?> generateSchedule(@Valid @RequestBody com.obhl.game.dto.ScheduleGenerateRequest request) {
         try {
@@ -213,6 +224,31 @@ public class GameController {
     @GetMapping("/{gameId}/events")
     public ResponseEntity<List<GameEventDto.Response>> getGameEvents(@PathVariable Long gameId) {
         return ResponseEntity.ok(gameEventService.getEventsByGame(gameId));
+    }
+
+    @PatchMapping("/{gameId}/events/{eventId}")
+    public ResponseEntity<?> updateGameEvent(
+            @PathVariable Long gameId,
+            @PathVariable Long eventId,
+            @Valid @RequestBody GameEventDto.Update updateDto) {
+        Optional<GameEventDto.Response> existing = gameEventService.getEventById(eventId);
+        if (existing.isEmpty() || !existing.get().getGameId().equals(gameId)) {
+            return ResponseEntity.notFound().build();
+        }
+        GameEventDto.Response updated = gameEventService.updateEvent(eventId, updateDto);
+        return ResponseEntity.ok(updated);
+    }
+
+    @DeleteMapping("/{gameId}/events/{eventId}")
+    public ResponseEntity<Void> deleteGameEvent(
+            @PathVariable Long gameId,
+            @PathVariable Long eventId) {
+        Optional<GameEventDto.Response> event = gameEventService.getEventById(eventId);
+        if (event.isEmpty() || !event.get().getGameId().equals(gameId)) {
+            return ResponseEntity.notFound().build();
+        }
+        gameEventService.deleteEvent(eventId);
+        return ResponseEntity.noContent().build();
     }
 
     // Penalty Validation Endpoint (nested under games)

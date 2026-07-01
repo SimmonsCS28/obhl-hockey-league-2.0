@@ -43,6 +43,8 @@ public class PlayerController {
             } else {
                 return ResponseEntity.ok(playerRepository.findByTeamIdIsNull());
             }
+        } else if (seasonId != null && teamId != null && Boolean.TRUE.equals(active)) {
+            return ResponseEntity.ok(playerRepository.findBySeasonIdAndTeamIdAndIsActiveTrue(seasonId, teamId));
         } else if (seasonId != null && teamId != null) {
             return ResponseEntity.ok(playerRepository.findBySeasonIdAndTeamId(seasonId, teamId));
         } else if (seasonId != null) {

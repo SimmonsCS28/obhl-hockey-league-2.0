@@ -441,6 +441,17 @@ const ScheduleManager = () => {
         showMessage('success', 'Game deleted. Click "Save Schedule" to persist changes.');
     };
 
+    const handleRevertToScheduled = async (gameId) => {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/games/${gameId}/revert-to-scheduled`);
+            setGames(games.map(g => g.id === gameId ? { ...g, ...response.data } : g));
+            setEditingGame(null);
+            showMessage('success', 'Game status reverted to Scheduled.');
+        } catch (error) {
+            showMessage('error', error.response?.data || 'Failed to revert game status.');
+        }
+    };
+
     const handleClearChanges = async () => {
         setConfirmModal({
             show: true,
@@ -1062,6 +1073,7 @@ const ScheduleManager = () => {
                         onClose={() => setEditingGame(null)}
                         onSave={handleSaveGame}
                         onDelete={handleDeleteGame}
+                        onRevertToScheduled={handleRevertToScheduled}
                     />
                 )
             }
