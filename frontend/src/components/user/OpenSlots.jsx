@@ -358,7 +358,13 @@ const OpenSlots = () => {
                                                         </div>
 
                                                         <div className="os-slot-action">
-                                                            {isMine && (
+                                                            {isMine && s.rowStatus === 'CONFIRMED' && (
+                                                                <span className="os-confirmed-badge">✓ Confirmed</span>
+                                                            )}
+                                                            {isMine && s.rowStatus === 'PROPOSED' && (
+                                                                <span className="os-awaiting-badge">Awaiting Your Confirmation</span>
+                                                            )}
+                                                            {isMine && s.rowStatus !== 'CONFIRMED' && s.rowStatus !== 'PROPOSED' && (
                                                                 <>
                                                                     <span className="os-awaiting-badge">Awaiting Coordinator</span>
                                                                     <div
