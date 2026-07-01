@@ -21,6 +21,7 @@ services:
       retries: 5
     networks:
       - obhl-network
+    restart: unless-stopped
 
   # API Gateway Service
   api-gateway:
