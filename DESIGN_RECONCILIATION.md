@@ -34,6 +34,19 @@ Once I can read the current design, I'll fill in the design column and finalize 
 2. **Sectioned Rules Editor** (confirmed via screenshot). Admin SECTIONS list + per-section title/rich-text + Edit/Preview/Publish; public Rules page renders grouped sections with a proper ToC. Replaces the single-blob rules model. (Also tracked in memory `v3-claude-design-followups`.)
 3. **[unknown]** other pages may have evolved since the v1/v2/v3 handoffs — pending a full design read.
 
+## Next handoff — request checklist (relay to Claude Design)
+Because this is a reconciliation (diff both directions + wire data), ask the handoff to include:
+1. **Coverage** — every current screen (not just new ones), OR an explicit "what's new/changed since the v3 handoff" list, so drift on already-built pages is caught.
+2. **Manifest/README** — each file: screen name, intended route, one-line purpose (like the v1/v2/v3 packages).
+3. **Unified Dashboard in full** — every state: each "Preview Your Access" role view (Player / Goalie·Official / GM), each tab (My Week / Officiating / Team Management), the Action Needed card states, and empty/loading states.
+4. **Sectioned Rules Editor** — admin editor (sections list, add/edit/reorder/delete, preview, publish) AND the public Rules render (grouped ToC + sections).
+5. **Navigation / IA** — the public header **logged-in** state (user pill + its menu contents), the admin left-nav module list/order, and any global nav changes. (Needed to reconcile our impl-only header buttons.)
+6. **Data contracts** — what each dynamic element binds to (endpoints/fields), like the v3 README. Critical for wiring (dashboard Next Game / Action Needed / stats, etc.).
+7. **Role & permission model** — which roles see which screens/tabs/actions; and confirm whether scorekeeper coordination is **its own role** or under the ref coordinator (we built `SCOREKEEPER_COORDINATOR` as its own role).
+8. **Theme/token changes** — any color/font/spacing changes since v3.
+9. **Shared components** — header, footer, buttons, cards, chips, badges, form controls (for chrome consistency).
+10. **Interaction notes** — what controls do, and flows/transitions between screens (+ modals/toasts).
+
 ## Deltas to verify against a fresh design read
 - Public header logged-in state (design's user pill vs our button row).
 - Whether the admin nav / module set matches the latest design.
