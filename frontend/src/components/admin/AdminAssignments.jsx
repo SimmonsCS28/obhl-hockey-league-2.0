@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useSeason } from '../../contexts/SeasonContext';
 import { resolveTeamColor } from '../../constants/teamColors';
 import api from '../../services/api';
@@ -117,9 +118,11 @@ function AdminAssignments() {
                 ))}
             </div>
 
-            {/* Coordinator publish workflow placeholder */}
+            {/* This grid is the admin direct-assign override; the sign-up → confirm → publish
+                workflow lives in the Coordinator Console. */}
             <div className="obi-asgn-placeholder-note">
-                Confirm / publish workflow is on the <code>coordinator-feature</code> branch — placeholder until merged.
+                Direct admin override — changes save straight to each game. For the self sign-up →
+                confirm → publish workflow, use the <Link to="/coordinator">Coordinator Console</Link>.
             </div>
 
             {filteredGames.length === 0 ? (
