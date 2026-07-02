@@ -44,12 +44,14 @@ function PendingShifts() {
         }
     };
 
-    const roleLabel = (role) => (role === 'REF' ? 'Referee' : 'Goalie');
+    const roleLabel = (role) =>
+        role === 'REF' ? 'Referee' : role === 'SCOREKEEPER' ? 'Scorekeeper' : 'Goalie';
     const formatDate = (s) => {
         if (!s) return 'TBD';
         const d = new Date(s.endsWith && s.endsWith('Z') ? s : s + 'Z');
-        return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-            + ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        const TZ = 'America/Chicago';
+        return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: TZ })
+            + ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: TZ });
     };
 
     if (loading || shifts.length === 0) return null;

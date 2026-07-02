@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import * as api from '../services/api';
-import './ForgotPassword.css';
+import './ConfirmShift.css';
+
+const TZ = 'America/Chicago';
 
 const ConfirmShift = () => {
     const navigate = useNavigate();
@@ -51,75 +53,73 @@ const ConfirmShift = () => {
         }
     };
 
-    const roleLabel = (role) => (role === 'REF' ? 'Referee' : 'Goalie');
+    const roleLabel = (role) =>
+        role === 'REF' ? 'Referee' : role === 'SCOREKEEPER' ? 'Scorekeeper' : 'Goalie';
     const formatDate = (s) => {
         if (!s) return 'TBD';
         const d = new Date(s.endsWith && s.endsWith('Z') ? s : s + 'Z');
-        return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
-            + ' at ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', timeZone: TZ })
+            + ' at ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: TZ });
     };
 
     return (
-        <div className="forgot-password-container">
-            <div className="forgot-password-card">
-                <h2>Shift Confirmation</h2>
-                {error && <div className="error-message">{error}</div>}
-                {message && <div className="success-message">{message}</div>}
+        <div className="cs-page">
+            <div className="cs-card">
+                <div className="cs-eyebrow">Old Buzzard Hockey League</div>
+                <h2 className="cs-title">Shift Confirmation</h2>
+
+                {error && <div className="cs-alert cs-alert--error">{error}</div>}
+                {message && <div className="cs-alert cs-alert--success">{message}</div>}
 
                 {loading ? (
-                    <p>Loading…</p>
+                    <p className="cs-loading">Loading…</p>
                 ) : shift ? (
                     <>
-                        <div className="security-question-display">
-                            <strong>{roleLabel(shift.role)} — {shift.homeTeam} vs {shift.awayTeam}</strong>
-                            <p>{formatDate(shift.gameDate)}{shift.rink ? ` · ${shift.rink}` : ''}</p>
-                            <p>Status: <strong>{shift.status}</strong></p>
+                        <div className="cs-detail">
+                            <span className="cs-detail-role">{roleLabel(shift.role)} · Slot {shift.slot}</span>
+                            <span className="cs-detail-matchup">{shift.homeTeam} vs {shift.awayTeam}</span>
+                            <span className="cs-detail-meta">{formatDate(shift.gameDate)}{shift.rink ? ` · ${shift.rink}` : ''}</span>
+                            <span className={`cs-detail-status cs-detail-status--${(shift.status || '').toLowerCase()}`}>
+                                {shift.status}
+                            </span>
                         </div>
 
                         {!message && (
-                            <>
-                                {!showDecline ? (
-                                    <>
-                                        <button className="reset-btn" disabled={submitting} onClick={() => respond('confirm')}>
-                                            {submitting ? 'Saving…' : '✓ Confirm I can make it'}
-                                        </button>
-                                        <button className="reset-btn secondary-btn" disabled={submitting} onClick={() => setShowDecline(true)}>
-                                            ✗ I can't make it
-                                        </button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className="form-group">
-                                            <label>Reason (optional)</label>
-                                            <input
-                                                type="text"
-                                                value={reason}
-                                                onChange={(e) => setReason(e.target.value)}
-                                                placeholder="e.g. Out of town that weekend"
-                                            />
-                                        </div>
-                                        <button className="reset-btn" disabled={submitting} onClick={() => respond('decline')}>
-                                            {submitting ? 'Saving…' : 'Submit decline'}
-                                        </button>
-                                        <button className="reset-btn secondary-btn" disabled={submitting} onClick={() => setShowDecline(false)}>
-                                            Back
-                                        </button>
-                                    </>
-                                )}
-                            </>
+                            !showDecline ? (
+                                <div className="cs-actions">
+                                    <button className="cs-btn cs-btn--confirm" disabled={submitting} onClick={() => respond('confirm')}>
+                                        {submitting ? 'Saving…' : '✓ Confirm I can make it'}
+                                    </button>
+                                    <button className="cs-btn cs-btn--ghost" disabled={submitting} onClick={() => setShowDecline(true)}>
+                                        ✗ I can't make it
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="cs-actions">
+                                    <label className="cs-field-label" htmlFor="cs-reason">Reason (optional)</label>
+                                    <input
+                                        id="cs-reason"
+                                        className="cs-input"
+                                        type="text"
+                                        value={reason}
+                                        onChange={(e) => setReason(e.target.value)}
+                                        placeholder="e.g. Out of town that weekend"
+                                    />
+                                    <button className="cs-btn cs-btn--confirm" disabled={submitting} onClick={() => respond('decline')}>
+                                        {submitting ? 'Saving…' : 'Submit decline'}
+                                    </button>
+                                    <button className="cs-btn cs-btn--ghost" disabled={submitting} onClick={() => setShowDecline(false)}>
+                                        Back
+                                    </button>
+                                </div>
+                            )
                         )}
                     </>
                 ) : null}
 
-                <div className="login-link">
-                    <button
-                        type="button"
-                        onClick={() => navigate('/')}
-                        style={{ background: 'none', border: 'none', padding: 0, color: 'inherit', textDecoration: 'underline', cursor: 'pointer', font: 'inherit' }}
-                    >
-                        Go to OBHL Home
-                    </button>
-                </div>
+                <button type="button" className="cs-home-link" onClick={() => navigate('/')}>
+                    Go to OBHL Home
+                </button>
             </div>
         </div>
     );

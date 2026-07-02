@@ -1,28 +1,33 @@
 .pending-shifts {
-    background: #fffbeb;
-    border: 2px solid #fcd34d;
+    background: var(--obi-bg-card);
+    border: 1px solid var(--obi-card-border);
+    border-left: 3px solid var(--obi-accent);
     border-radius: 12px;
     padding: 1.25rem 1.5rem;
     margin-bottom: 1.5rem;
+    font-family: var(--obi-font-body);
 }
 
 .pending-shifts-title {
     margin: 0 0 0.25rem;
-    font-size: 1.25rem;
-    color: #92400e;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: var(--obi-accent);
 }
 
 .pending-shifts-sub {
     margin: 0 0 1rem;
-    color: #78350f;
+    color: var(--obi-text-secondary);
     font-size: 0.9rem;
 }
 
 .pending-shifts-error {
-    background: #fed7d7;
-    color: #c53030;
+    background: rgba(224, 138, 138, 0.12);
+    border: 1px solid rgba(224, 138, 138, 0.35);
+    color: var(--obi-error);
     padding: 0.5rem 0.75rem;
-    border-radius: 6px;
+    border-radius: 8px;
     margin-bottom: 0.75rem;
     font-size: 0.9rem;
 }
@@ -39,33 +44,35 @@
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 0.75rem;
-    background: white;
-    border-radius: 8px;
+    background: var(--obi-bg-elevated);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 10px;
     padding: 0.85rem 1rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .pending-shift-info {
     display: flex;
     flex-direction: column;
-    gap: 0.15rem;
+    gap: 0.2rem;
 }
 
 .pending-shift-role {
+    font-family: var(--obi-font-display);
     font-weight: 700;
-    color: #667eea;
-    font-size: 0.8rem;
+    color: var(--obi-accent);
+    font-size: 0.78rem;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.06em;
 }
 
 .pending-shift-matchup {
-    font-weight: 600;
-    color: #2d3748;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    color: var(--obi-text);
 }
 
 .pending-shift-meta {
-    color: #718096;
+    color: var(--obi-text-muted);
     font-size: 0.85rem;
 }
 
@@ -76,34 +83,39 @@
 
 .btn-confirm,
 .btn-decline {
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 6px;
-    font-weight: 600;
+    padding: 0.5rem 1.1rem;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
 }
 
 .btn-confirm {
-    background: #48bb78;
-    color: white;
+    background: var(--obi-accent);
+    color: #10131a;
 }
 
 .btn-confirm:hover:not(:disabled) {
-    background: #38a169;
+    background: var(--obi-accent-hover, #ffbf3f);
 }
 
 .btn-decline {
-    background: #e2e8f0;
-    color: #4a5568;
+    background: transparent;
+    border-color: var(--obi-card-border);
+    color: var(--obi-text-secondary);
 }
 
 .btn-decline:hover:not(:disabled) {
-    background: #cbd5e0;
+    background: rgba(157, 185, 205, 0.08);
+    color: var(--obi-text);
 }
 
 .btn-confirm:disabled,
 .btn-decline:disabled {
-    opacity: 0.6;
+    opacity: 0.55;
     cursor: not-allowed;
 }
