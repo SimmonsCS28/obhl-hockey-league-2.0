@@ -52,3 +52,39 @@ Because this is a reconciliation (diff both directions + wire data), ask the han
 - Whether the admin nav / module set matches the latest design.
 - Any already-restyled pages that changed in the design since their handoff.
 - The three visual polish items in memory `v3-claude-design-followups` (role-picker contrast, Goalie Availability meta row, Rules page sectioning).
+
+---
+
+# v4 reconciliation — findings & build plan
+Source: `C:\Users\Simmo\Downloads\Website theme integration (4)\design_handoff_obhl_v4` (full snapshot: 16 screens + README + screenshots). Read each `.dc.html` at build time; README is the contract.
+
+## Resolved / confirmed
+- **`SCOREKEEPER_COORDINATOR` is its own role** — v4 §3 confirms three separate coordinator roles. Our migration 035 is correct. (A3 closed.)
+- **Public header logged-in state** — design uses a compact **user pill** (avatar · name/team · Admin link if admin · Log Out), NOT our row of dashboard buttons. (A1 → back-port.)
+- **Two dashboards → one** — design has a single unified **Dashboard**; our PlayerDashboard + UserDashboard are superseded. (A2 → B1.)
+- **Both polish items are now in the design:** role/name chips brightened (§8a) and Goalie Availability date/count split to two lines (§8b).
+
+## Build/back-port plan (prioritized)
+
+### Tier 1 — quick polish / back-port (small, mostly frontend)
+1. **Goalie Availability** — split date-range and games-count onto two lines (§8b). *[resolves polish #2]*
+2. **Role-name chip contrast** — brighten role chip text (`#D4DCE3`–`#CBD6DE` on `rgba(157,185,205,.16–.18)`) in the Users table + role picker (§8a). *[resolves polish #1]*
+3. **Public header** — replace the logged-in dashboard-button row with the **user pill** (§2b). *[A1]*
+4. **Admin nav** — add **Standings** module (design lists it in OPERATIONS); verify module set/order vs §2c; add the sidebar **Coordinator Console** launcher link.
+5. **Rink vocabulary** — sheets = **Cardinal / Eagle** (Tubbs→Eagle), venue = **Sun Prairie Ice Arena** (§8). Confirm sheet names with owner.
+
+### Tier 2 — Unified Dashboard (LARGE — frontend + backend)
+New `/dashboard` replacing `/user` + `/user/shifts`. Zones: My Week (`USER`), Officiating (`GOALIE`/`REF`/`SCOREKEEPER` tabs), Team Management (`GM`) — gated by real roles (drop the "Preview your access" toggles).
+- **Backend:** `GET /me/dashboard` aggregation (nextGame, lastGame+stats, mySchedule w/ per-game rsvp, actionNeeded); **`POST /games/:id/rsvp {in|out}`** — genuinely NEW (player self-RSVP per game); reuse v3 (`/shifts/pending`→Action Needed, `/me/assignments`, `/open-slots`, `/goalie/availability`); GM roster `PATCH /players/:id {num?,skill?}`.
+- **Frontend:** build the 3 zones + Action Needed + Next/Last game + My Schedule + officiating role tabs (reusing v3 data) + GM roster editor.
+- **Cleanup:** retire PlayerDashboard + UserDashboard; repoint My Shifts / My Dashboard links → `/dashboard`.
+
+### Tier 3 — Sectioned Rules (NET-NEW — backend + admin + public)
+- **Backend:** rules `sections[]` model (migration: `id, group ∈ {gen,game,mou}, title, content HTML, order`) + `GET/PUT /admin/rules`, `POST /admin/rules/publish`, `GET /rules`; migrate the existing single blob into seed sections; sanitize HTML on write.
+- **Admin Rules Editor** module: sections list + ▲▼ reorder + rich-text body editor (block style/B·I·U/lists/clear) + Add/Delete (min 1) + Edit/Preview toggle + Publish.
+- **Public Rules page:** render grouped ToC (by `group`) + section bodies from `sections[]` (replaces the blob + auto-heading ToC). *[resolves polish #3]*
+
+### Notes
+- **RSVP** (player marks in/out for their own games) is a new backend concept — not in the current schema; needs a table + endpoint.
+- The Dashboard **Officiating** zone is a new UI surface over EXISTING v3 data — mostly wiring, not new backend.
+- Minor: `accentColor` is a per-page prop in the design; keep it single-sourced in `theme.css` (no change needed).
