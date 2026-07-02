@@ -36,19 +36,21 @@ function formatRange(start, end) {
         : `${sm} ${s.d} – ${em} ${e.d}`;
 }
 
-function dateVal(str) {
-    const { y, m, d } = splitDate(str);
-    return y * 10000 + m * 100 + d;
-}
-
-function isCurrentWeek(start, end) {
+// "Current" if today falls in the Mon–Sun calendar week that contains the week's games
+// (the games themselves may only be on one day, e.g. Thursday).
+function isCurrentWeek(start) {
+    const { y, m, d } = splitDate(start);
+    const monday = new Date(y, m - 1, d);
+    monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
     const now = new Date();
-    const today = now.getFullYear() * 10000 + (now.getMonth() + 1) * 100 + now.getDate();
-    return today >= dateVal(start) && today <= dateVal(end);
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return today >= monday && today <= sunday;
 }
 
-function getWeekLabel(start, end) {
-    if (isCurrentWeek(start, end)) return 'This Week';
+function getWeekLabel(start) {
+    if (isCurrentWeek(start)) return 'This Week';
     const s = splitDate(start);
     return `Week of ${MONTHS_SHORT[s.m - 1]} ${s.d}`;
 }
@@ -218,7 +220,7 @@ const GoalieAvailability = () => {
                                 const isAvail = w.status === 'AVAILABLE';
                                 const isUnavail = w.status === 'UNAVAILABLE';
                                 const mod = isAvail ? 'avail' : isUnavail ? 'unavail' : 'unset';
-                                const thisWeek = isCurrentWeek(w.startDate, w.endDate);
+                                const thisWeek = isCurrentWeek(w.startDate);
                                 const isPending = pending.has(w.week);
 
                                 return (
@@ -229,7 +231,7 @@ const GoalieAvailability = () => {
                                         <div className="ga-row-info">
                                             <div className="ga-row-top">
                                                 <span className="ga-week-label">
-                                                    {getWeekLabel(w.startDate, w.endDate)}
+                                                    {getWeekLabel(w.startDate)}
                                                 </span>
                                                 <span className={`ga-tag ga-tag--${mod}`}>
                                                     {isAvail ? 'Available' : isUnavail ? 'Out' : 'Not Set'}
