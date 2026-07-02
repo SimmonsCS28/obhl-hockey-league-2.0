@@ -9,9 +9,17 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+// Backend sends game datetimes as UTC without a zone suffix, e.g. "2026-08-06T02:15:00".
+// Convert to league-local (America/Chicago) and return the calendar Y/M/D.
 function splitDate(str) {
-    const [y, m, d] = str.split('-').map(Number);
-    return { y, m, d };
+    if (!str) return { y: NaN, m: NaN, d: NaN };
+    const hasTime = str.includes('T');
+    const dt = new Date(hasTime && !str.endsWith('Z') ? `${str}Z` : str);
+    if (isNaN(dt)) return { y: NaN, m: NaN, d: NaN };
+    const [mm, dd, yy] = dt.toLocaleDateString('en-US', {
+        timeZone: 'America/Chicago', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).split('/');
+    return { y: +yy, m: +mm, d: +dd };
 }
 
 function getMonthName(dateStr) {
