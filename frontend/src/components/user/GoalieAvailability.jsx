@@ -22,37 +22,54 @@ function splitDate(str) {
     return { y: +yy, m: +mm, d: +dd };
 }
 
-function getMonthName(dateStr) {
-    return MONTHS[splitDate(dateStr).m - 1];
-}
-
-function formatRange(start, end) {
-    const s = splitDate(start);
-    const e = splitDate(end);
-    const sm = MONTHS_SHORT[s.m - 1];
-    const em = MONTHS_SHORT[e.m - 1];
-    return s.m === e.m
-        ? `${sm} ${s.d} – ${e.d}`
-        : `${sm} ${s.d} – ${em} ${e.d}`;
-}
-
-// "Current" if today falls in the Mon–Sun calendar week that contains the week's games
-// (the games themselves may only be on one day, e.g. Thursday).
-function isCurrentWeek(start) {
+// Monday (local Date) of the Mon–Sun calendar week that contains the week's games.
+// Weeks are labelled/ranged/grouped by this Monday to match the design + Open Slots page,
+// even when the games themselves fall on a single day (e.g. Thursday).
+function mondayOf(start) {
     const { y, m, d } = splitDate(start);
-    const monday = new Date(y, m - 1, d);
-    monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
-    const sunday = new Date(monday);
-    sunday.setDate(monday.getDate() + 6);
+    const ref = new Date(y, m - 1, d);
+    ref.setDate(ref.getDate() - ((ref.getDay() + 6) % 7));
+    return ref;
+}
+
+function sundayOf(start) {
+    const sunday = new Date(mondayOf(start));
+    sunday.setDate(sunday.getDate() + 6);
+    return sunday;
+}
+
+function getMonthName(dateStr) {
+    return MONTHS[mondayOf(dateStr).getMonth()];
+}
+
+// Full calendar-week span, e.g. "Jun 30 – Jul 6".
+function formatRange(start) {
+    const monday = mondayOf(start);
+    const sunday = sundayOf(start);
+    const sm = MONTHS_SHORT[monday.getMonth()];
+    return monday.getMonth() === sunday.getMonth()
+        ? `${sm} ${monday.getDate()} – ${sunday.getDate()}`
+        : `${sm} ${monday.getDate()} – ${MONTHS_SHORT[sunday.getMonth()]} ${sunday.getDate()}`;
+}
+
+function isCurrentWeek(start) {
+    const monday = mondayOf(start);
+    const sunday = sundayOf(start);
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     return today >= monday && today <= sunday;
 }
 
 function getWeekLabel(start) {
-    if (isCurrentWeek(start)) return 'This Week';
-    const s = splitDate(start);
-    return `Week of ${MONTHS_SHORT[s.m - 1]} ${s.d}`;
+    const monday = mondayOf(start);
+    const now = new Date();
+    const thisMon = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    thisMon.setDate(thisMon.getDate() - ((thisMon.getDay() + 6) % 7));
+    const nextMon = new Date(thisMon);
+    nextMon.setDate(thisMon.getDate() + 7);
+    if (monday.getTime() === thisMon.getTime()) return 'This Week';
+    if (monday.getTime() === nextMon.getTime()) return 'Next Week';
+    return `Week of ${MONTHS_SHORT[monday.getMonth()]} ${monday.getDate()}`;
 }
 
 const GoalieAvailability = () => {
@@ -238,7 +255,7 @@ const GoalieAvailability = () => {
                                                 </span>
                                             </div>
                                             <div className="ga-row-meta">
-                                                {formatRange(w.startDate, w.endDate)} · {w.gamesCount}{' '}
+                                                {formatRange(w.startDate)} · {w.gamesCount}{' '}
                                                 {w.gamesCount === 1 ? 'game' : 'games'} scheduled
                                             </div>
                                         </div>
