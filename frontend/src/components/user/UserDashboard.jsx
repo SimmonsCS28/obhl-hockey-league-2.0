@@ -348,8 +348,8 @@ const UserDashboard = () => {
                     {hasRole('GOALIE') && (
                         <div className="role-card">
                             <h2>Goalie</h2>
-                            <p>Manage your goalie availability for upcoming games</p>
-                            <button onClick={() => navigate('/user/goalie')}>
+                            <p>Mark which weeks you're available so the coordinator can schedule you</p>
+                            <button onClick={() => navigate('/user/goalie-availability')}>
                                 Manage Availability
                             </button>
                         </div>
@@ -358,11 +358,8 @@ const UserDashboard = () => {
                     {hasRole('REF') && (
                         <div className="role-card">
                             <h2>Referee</h2>
-                            <p>Set your availability and sign up for referee shifts</p>
-                            <button onClick={() => navigate('/user/ref-availability')}>
-                                Manage Availability
-                            </button>
-                            <button onClick={() => navigate('/user/referee')}>
+                            <p>Browse open referee slots and sign up for the games you want</p>
+                            <button onClick={() => navigate('/user/open-slots')}>
                                 View & Sign Up for Shifts
                             </button>
                         </div>
@@ -371,8 +368,8 @@ const UserDashboard = () => {
                     {hasRole('SCOREKEEPER') && (
                         <div className="role-card">
                             <h2>Scorekeeper</h2>
-                            <p>View and sign up for scorekeeper shifts</p>
-                            <button onClick={() => navigate('/user/scorekeeper')}>
+                            <p>Browse open scorekeeper slots and sign up for the games you want</p>
+                            <button onClick={() => navigate('/user/open-slots')}>
                                 View & Sign Up for Shifts
                             </button>
                         </div>

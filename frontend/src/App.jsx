@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
 import './App.css';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLayout from './components/AdminLayout';
@@ -27,7 +27,6 @@ import ChangePassword from './pages/ChangePassword';
 import AccountSettings from './pages/AccountSettings';
 import CoordinatorDashboard from './components/coordinator/CoordinatorDashboard';
 import ConfirmShift from './components/ConfirmShift';
-import RefAvailability from './components/user/RefAvailability';
 
 // New Staff Components
 import GoalieLayout from './components/GoalieLayout';
@@ -181,12 +180,9 @@ const router = createBrowserRouter([
     )
   },
   {
+    // Retired: refs now self-sign-up via Open Slots (v3). Redirect any old links/bookmarks.
     path: "/user/ref-availability",
-    element: (
-      <ProtectedRoute requiredRoles={['REF', 'ADMIN']}>
-        <RefAvailability />
-      </ProtectedRoute>
-    )
+    element: <Navigate to="/user/open-slots" replace />
   },
   {
     path: "/user/referee",
