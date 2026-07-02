@@ -8,6 +8,7 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'];
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 // Backend sends game datetimes as UTC without a zone suffix, e.g. "2026-08-06T02:15:00".
 // Convert to league-local (America/Chicago) and return the calendar Y/M/D.
@@ -38,18 +39,16 @@ function sundayOf(start) {
     return sunday;
 }
 
+// Group by the month the games actually fall in.
 function getMonthName(dateStr) {
-    return MONTHS[mondayOf(dateStr).getMonth()];
+    return MONTHS[splitDate(dateStr).m - 1];
 }
 
-// Full calendar-week span, e.g. "Jun 30 – Jul 6".
-function formatRange(start) {
-    const monday = mondayOf(start);
-    const sunday = sundayOf(start);
-    const sm = MONTHS_SHORT[monday.getMonth()];
-    return monday.getMonth() === sunday.getMonth()
-        ? `${sm} ${monday.getDate()} – ${sunday.getDate()}`
-        : `${sm} ${monday.getDate()} – ${MONTHS_SHORT[sunday.getMonth()]} ${sunday.getDate()}`;
+// The actual game date, e.g. "Thu, Jul 2".
+function formatGameDate(start) {
+    const { y, m, d } = splitDate(start);
+    const dow = new Date(y, m - 1, d).getDay();
+    return `${WEEKDAYS_SHORT[dow]}, ${MONTHS_SHORT[m - 1]} ${d}`;
 }
 
 function isCurrentWeek(start) {
@@ -69,7 +68,8 @@ function getWeekLabel(start) {
     nextMon.setDate(thisMon.getDate() + 7);
     if (monday.getTime() === thisMon.getTime()) return 'This Week';
     if (monday.getTime() === nextMon.getTime()) return 'Next Week';
-    return `Week of ${MONTHS_SHORT[monday.getMonth()]} ${monday.getDate()}`;
+    const s = splitDate(start);
+    return `Week of ${MONTHS_SHORT[s.m - 1]} ${s.d}`;
 }
 
 const GoalieAvailability = () => {
@@ -255,7 +255,7 @@ const GoalieAvailability = () => {
                                                 </span>
                                             </div>
                                             <div className="ga-row-meta">
-                                                {formatRange(w.startDate)} · {w.gamesCount}{' '}
+                                                {formatGameDate(w.startDate)} · {w.gamesCount}{' '}
                                                 {w.gamesCount === 1 ? 'game' : 'games'} scheduled
                                             </div>
                                         </div>
