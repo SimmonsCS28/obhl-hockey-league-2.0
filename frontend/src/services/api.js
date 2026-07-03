@@ -676,15 +676,27 @@ const api = {
     // ============================================
     // LEAGUE RULES API
     // ============================================
+    // Public: { sections:[{id,group,title,content,order}], publishedAt, publishedBy }
     async getRules() {
         return request('/rules');
     },
 
-    async updateRules(content) {
-        return request('/rules', {
+    // Admin editing view (same shape as getRules)
+    async getAdminRules() {
+        return request('/admin/rules');
+    },
+
+    // Admin: replace the full ordered section list
+    async saveRules(sections) {
+        return request('/admin/rules', {
             method: 'PUT',
-            body: JSON.stringify({ content })
+            body: JSON.stringify({ sections })
         });
+    },
+
+    // Admin: stamp published_at / published_by
+    async publishRules() {
+        return request('/admin/rules/publish', { method: 'POST' });
     }
 };
 
@@ -773,7 +785,9 @@ export const {
     toggleAnnouncementActive,
     deleteAnnouncement,
     getRules,
-    updateRules
+    getAdminRules,
+    saveRules,
+    publishRules
 } = api;
 
 export default api;
