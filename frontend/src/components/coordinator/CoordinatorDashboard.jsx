@@ -1,16 +1,16 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSeason } from '../../contexts/SeasonContext';
 import api from '../../services/api';
 import logo from '../../assets/images/buzzard-logo.png';
 import bannerBg from '../../assets/images/buzzard-banner.png';
 import CoordinatorBoard from './CoordinatorBoard';
+import UserPill from '../common/UserPill';
 import './Coordinator.css';
 
 function CoordinatorDashboard() {
-    const navigate = useNavigate();
-    const { user, logout, hasRole, isAdmin } = useAuth();
+    const { hasRole, isAdmin } = useAuth();
     const { selectedSeasonId } = useSeason();
     const seasonId = selectedSeasonId ?? 13;
 
@@ -45,11 +45,6 @@ function CoordinatorDashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const handleLogout = () => { logout(); navigate('/'); };
-
-    const displayName = user ? (user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.username) : '';
-    const userInitials = displayName.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
-
     if (roleTabs.length === 0) {
         return (
             <div className="cc-page">
@@ -75,15 +70,7 @@ function CoordinatorDashboard() {
                         </span>
                     </Link>
                     <nav className="cc-header-nav">
-                        <Link to="/user" className="cc-nav-link">Dashboard</Link>
-                        {isAdmin && <Link to="/admin" className="cc-nav-link">Admin</Link>}
-                        <div className="cc-user-pill" onClick={handleLogout} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && handleLogout()} title="Logout">
-                            <span className="cc-user-avatar">{userInitials}</span>
-                            <span className="cc-user-info">
-                                <span className="cc-user-name">{displayName}</span>
-                                <span className="cc-user-role">Coordinator</span>
-                            </span>
-                        </div>
+                        <UserPill />
                     </nav>
                 </div>
             </header>
@@ -135,7 +122,7 @@ function CoordinatorDashboard() {
             <footer className="cc-footer">
                 <div className="cc-footer-inner">
                     <span className="cc-footer-copy">© 2026 Old Buzzard Hockey League · Sun Prairie, WI</span>
-                    <Link to="/user" className="cc-footer-link">Back to Dashboard</Link>
+                    <Link to="/dashboard" className="cc-footer-link">Back to Dashboard</Link>
                 </div>
             </footer>
         </div>

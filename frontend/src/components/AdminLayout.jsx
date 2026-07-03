@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../assets/images/buzzard-logo.png';
 import { useAuth } from '../contexts/AuthContext';
 import { useSeason } from '../contexts/SeasonContext';
+import UserPill from './common/UserPill';
 import './AdminLayout.css';
 
 // Sidebar nav. Items use ?tab= except Schedule which is its own route.
@@ -33,7 +34,7 @@ const NAV = [
 
 function AdminLayout({ children, activeTab }) {
     const [mobileOpen, setMobileOpen] = useState(false);
-    const { user, logout, hasAnyRole } = useAuth();
+    const { user } = useAuth();
     const { seasons, selectedSeasonId, setSelectedSeasonId, isHistoricalView } = useSeason();
     const navigate = useNavigate();
     const location = useLocation();
@@ -49,11 +50,6 @@ function AdminLayout({ children, activeTab }) {
     const handleNav = (item) => {
         navigate(item.route ? item.route : `/admin?tab=${item.id}`);
         setMobileOpen(false);
-    };
-
-    const handleLogout = () => {
-        logout();
-        navigate('/');
     };
 
     const activeItem = NAV.find(i => i.id && isActive(i)) || (isScheduleRoute ? NAV.find(i => i.route) : null);
@@ -137,11 +133,7 @@ function AdminLayout({ children, activeTab }) {
                         ) : (
                             <span className="obi-admin-season-badge">{activeSeasonName}</span>
                         )}
-                        <button className="obi-admin-dash-btn" onClick={() => navigate('/user')}>My Dashboard</button>
-                        {hasAnyRole('GOALIE', 'REF', 'SCOREKEEPER') && (
-                            <button className="obi-admin-dash-btn" onClick={() => navigate('/user/shifts')}>My Shifts</button>
-                        )}
-                        <button className="obi-admin-logout" onClick={handleLogout}>Log Out</button>
+                        <UserPill />
                     </div>
                 </div>
 

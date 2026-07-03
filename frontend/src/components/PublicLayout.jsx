@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import logo from '../assets/images/buzzard-logo.png';
-import { resolveTeamColor, textOn } from '../constants/teamColors';
 import { useAuth } from '../contexts/AuthContext';
+import UserPill from './common/UserPill';
 import DonateButton from './DonateButton';
 import DonatePopup from './DonatePopup';
 import LoginModal from './LoginModal';
@@ -23,7 +23,7 @@ function PublicLayout() {
     const location = useLocation();
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const { user, logout, isAuthenticated, isAdmin, hasAnyRole } = useAuth();
+    const { isAuthenticated } = useAuth();
 
     // Close mobile menu on resize to desktop
     useEffect(() => {
@@ -45,46 +45,13 @@ function PublicLayout() {
         }
     }, [location, navigate]);
 
-    const handleLogout = () => {
-        logout();
-        navigate('/');
-        setIsMobileMenuOpen(false);
-    };
-
     const closeMobileMenu = () => setIsMobileMenuOpen(false);
 
     const isActive = (to) =>
         to === '/' ? location.pathname === '/' : location.pathname.startsWith(to);
 
-    const go = (to) => {
-        navigate(to);
-        closeMobileMenu();
-    };
-
-    // Compact user pill (v4 §2b). Role access lives in /dashboard now; avatar/name → the dashboard.
-    const teamHex = user?.teamColor ? resolveTeamColor(user.teamColor) : '#F6A91C';
-    const userInitials = () => {
-        const n = user?.firstName || user?.username || user?.email || 'Account';
-        return n.split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase();
-    };
-
     const authActions = () => (
-        isAuthenticated ? (
-            <div className="obi-user-pill">
-                <button className="obi-pill-id" onClick={() => go('/dashboard')} title="My dashboard">
-                    <span className="obi-pill-avatar" style={{ background: teamHex, color: textOn(teamHex) }}>{userInitials()}</span>
-                    <span className="obi-pill-name">
-                        <span className="obi-pill-first">{user?.firstName || user?.username || 'Account'}</span>
-                        {user?.teamName && <span className="obi-pill-team">{user.teamName}</span>}
-                    </span>
-                </button>
-                {hasAnyRole('GOALIE_COORDINATOR', 'REF_COORDINATOR', 'SCOREKEEPER_COORDINATOR') && (
-                    <button className="obi-pill-link" onClick={() => go('/coordinator')}>Coordinator</button>
-                )}
-                {isAdmin && <button className="obi-pill-link obi-pill-link--admin" onClick={() => go('/admin')}>Admin</button>}
-                <button className="obi-pill-link obi-pill-link--logout" onClick={handleLogout}>Log Out</button>
-            </div>
-        ) : (
+        isAuthenticated ? <UserPill /> : (
             <>
                 <Link to="/signup" className="obi-ghost-btn" onClick={closeMobileMenu}>Create Account</Link>
                 <button
@@ -169,7 +136,7 @@ function PublicLayout() {
                             <div className="obi-footer-col-title">My Account</div>
                             {isAuthenticated ? (
                                 <>
-                                    <Link to="/user">My Dashboard</Link>
+                                    <Link to="/dashboard">My Dashboard</Link>
                                     <Link to="/account">Account Settings</Link>
                                 </>
                             ) : (
