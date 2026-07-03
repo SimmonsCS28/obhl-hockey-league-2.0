@@ -23,4 +23,6 @@
     padding-left: 8px; border-left: 1px solid rgba(157, 185, 205, 0.2);
 }
 .obi-pill-link:hover { color: #fff; }
-.obi-pill-link--admin { color: var(--obi-accent); }
+/* Active page → gold */
+.obi-pill-link.is-active { color: var(--obi-accent); }
+.obi-pill-id.is-active .obi-pill-first { color: var(--obi-accent); }

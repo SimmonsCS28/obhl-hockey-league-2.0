@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { resolveTeamColor, textOn } from '../../constants/teamColors';
 import './UserPill.css';
@@ -10,8 +10,13 @@ import './UserPill.css';
  */
 function UserPill() {
     const navigate = useNavigate();
+    const { pathname } = useLocation();
     const { user, logout, isAdmin, hasAnyRole } = useAuth();
     if (!user) return null;
+
+    const onCoordinator = pathname.startsWith('/coordinator');
+    const onAdmin = pathname.startsWith('/admin');
+    const onDashboard = pathname === '/dashboard';
 
     const teamHex = user?.teamColor ? resolveTeamColor(user.teamColor) : '#F6A91C';
     const nameSource = user?.firstName || user?.username || user?.email || 'Account';
@@ -22,15 +27,15 @@ function UserPill() {
 
     return (
         <div className="obi-user-pill">
-            <button className="obi-pill-id" onClick={() => navigate('/dashboard')} title="My dashboard">
+            <button className={`obi-pill-id${onDashboard ? ' is-active' : ''}`} onClick={() => navigate('/dashboard')} title="My dashboard">
                 <span className="obi-pill-avatar" style={{ background: teamHex, color: textOn(teamHex) }}>{initials}</span>
                 <span className="obi-pill-name">
                     <span className="obi-pill-first">{user?.firstName || user?.username || 'Account'}</span>
                     {user?.teamName && <span className="obi-pill-team">{user.teamName}</span>}
                 </span>
             </button>
-            {isCoord && <button className="obi-pill-link" onClick={() => navigate('/coordinator')}>Coordinator</button>}
-            {isAdmin && <button className="obi-pill-link obi-pill-link--admin" onClick={() => navigate('/admin')}>Admin</button>}
+            {isCoord && <button className={`obi-pill-link${onCoordinator ? ' is-active' : ''}`} onClick={() => navigate('/coordinator')}>Coordinator</button>}
+            {isAdmin && <button className={`obi-pill-link${onAdmin ? ' is-active' : ''}`} onClick={() => navigate('/admin')}>Admin</button>}
             <button className="obi-pill-link obi-pill-link--logout" onClick={handleLogout}>Log Out</button>
         </div>
     );
