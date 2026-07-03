@@ -271,7 +271,11 @@ function Dashboard() {
                             <div>
                                 <div className="dash-col-title">My {ROLE_LABEL[activeRole]} Schedule</div>
                                 {myCommitments.length === 0 ? (
-                                    <div className="dash-empty-dashed">No {ROLE_LABEL[activeRole]} commitments yet — grab an open slot.</div>
+                                    <div className="dash-empty-dashed">
+                                        {activeRole === 'GOALIE'
+                                            ? 'No goalie assignments yet — mark your availability and the coordinator will schedule you.'
+                                            : `No ${ROLE_LABEL[activeRole]} commitments yet — grab an open slot.`}
+                                    </div>
                                 ) : (
                                     <div className="dash-commit-list">
                                         {myCommitments.map((a, i) => {
