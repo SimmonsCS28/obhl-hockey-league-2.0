@@ -4,6 +4,7 @@ import RefereeSchedule from './admin/RefereeSchedule';
 import ScorekeeperSchedule from './admin/ScorekeeperSchedule';
 import AdminOverview from './admin/AdminOverview';
 import AdminAssignments from './admin/AdminAssignments';
+import AdminStandings from './admin/AdminStandings';
 import GameManagementAdmin from './admin/GameManagementAdmin';
 import AdminLayout from './AdminLayout';
 import DraftDashboard from './DraftDashboard';
@@ -27,6 +28,7 @@ function AdminDashboard() {
             {activeTab === 'livescore' && <ScorekeeperContent />}
             {activeTab === 'gamemgmt' && <GameManagementAdmin />}
             {activeTab === 'assignments' && <AdminAssignments />}
+            {activeTab === 'standings' && <AdminStandings />}
             {activeTab === 'teams' && <TeamManagement />}
             {activeTab === 'players' && <PlayerManagement />}
             {activeTab === 'seasons' && <SeasonManagement />}

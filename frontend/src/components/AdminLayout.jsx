@@ -12,6 +12,7 @@ const NAV = [
     { id: 'livescore', label: 'Live Score Entry' },
     { id: 'gamemgmt', label: 'Game Management' },
     { id: 'assignments', label: 'Assignments' },
+    { id: 'standings', label: 'Standings' },
     { group: 'League Setup' },
     { route: '/admin/schedule', label: 'Schedule' },
     { id: 'seasons', label: 'Seasons' },
