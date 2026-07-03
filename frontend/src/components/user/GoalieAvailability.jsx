@@ -8,7 +8,6 @@ const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'];
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const WEEKDAYS_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 // Backend sends game datetimes as UTC without a zone suffix, e.g. "2026-08-06T02:15:00".
 // Convert to league-local (America/Chicago) and return the calendar Y/M/D.
@@ -39,16 +38,19 @@ function sundayOf(start) {
     return sunday;
 }
 
-// Group by the month the games actually fall in.
+// Group by the Monday-of-week's month (matches the Monday-based week labels).
 function getMonthName(dateStr) {
-    return MONTHS[splitDate(dateStr).m - 1];
+    return MONTHS[mondayOf(dateStr).getMonth()];
 }
 
-// The actual game date, e.g. "Thu, Jul 2".
-function formatGameDate(start) {
-    const { y, m, d } = splitDate(start);
-    const dow = new Date(y, m - 1, d).getDay();
-    return `${WEEKDAYS_SHORT[dow]}, ${MONTHS_SHORT[m - 1]} ${d}`;
+// Full calendar-week span, e.g. "Jun 30 – Jul 6" (v4 design).
+function formatRange(start) {
+    const monday = mondayOf(start);
+    const sunday = sundayOf(start);
+    const sm = MONTHS_SHORT[monday.getMonth()];
+    return monday.getMonth() === sunday.getMonth()
+        ? `${sm} ${monday.getDate()} – ${sunday.getDate()}`
+        : `${sm} ${monday.getDate()} – ${MONTHS_SHORT[sunday.getMonth()]} ${sunday.getDate()}`;
 }
 
 function isCurrentWeek(start) {
@@ -68,8 +70,7 @@ function getWeekLabel(start) {
     nextMon.setDate(thisMon.getDate() + 7);
     if (monday.getTime() === thisMon.getTime()) return 'This Week';
     if (monday.getTime() === nextMon.getTime()) return 'Next Week';
-    const s = splitDate(start);
-    return `Week of ${MONTHS_SHORT[s.m - 1]} ${s.d}`;
+    return `Week of ${MONTHS_SHORT[monday.getMonth()]} ${monday.getDate()}`;
 }
 
 const GoalieAvailability = () => {
@@ -254,9 +255,9 @@ const GoalieAvailability = () => {
                                                     {isAvail ? 'Available' : isUnavail ? 'Out' : 'Not Set'}
                                                 </span>
                                             </div>
-                                            <div className="ga-row-meta">
-                                                {formatGameDate(w.startDate)} · {w.gamesCount}{' '}
-                                                {w.gamesCount === 1 ? 'game' : 'games'} scheduled
+                                            <div className="ga-row-range">{formatRange(w.startDate)}</div>
+                                            <div className="ga-row-games">
+                                                {w.gamesCount} {w.gamesCount === 1 ? 'game' : 'games'} scheduled
                                             </div>
                                         </div>
                                         <div className="ga-row-btns">
