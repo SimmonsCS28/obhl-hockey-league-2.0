@@ -41,12 +41,11 @@ import ScorekeeperSchedulePage from './components/scorekeeper/ScorekeeperSchedul
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import GoalieShiftSignup from './components/user/GoalieShiftSignup';
+import Dashboard from './components/user/Dashboard';
 import OpenSlots from './components/user/OpenSlots';
 import GoalieAvailability from './components/user/GoalieAvailability';
-import PlayerDashboard from './components/user/PlayerDashboard';
 import RefereeShiftSignup from './components/user/RefereeShiftSignup';
 import ScorekeeperShiftSignup from './components/user/ScorekeeperShiftSignup';
-import UserDashboard from './components/user/UserDashboard';
 
 const router = createBrowserRouter([
   {
@@ -75,6 +74,9 @@ const router = createBrowserRouter([
       { path: "referee/signup", element: <Signup /> },
       { path: "scorekeeper/signup", element: <Signup /> },
       { path: "goalie/signup", element: <Signup /> },
+
+      // Unified Dashboard (any authenticated user) — rendered within the public chrome
+      { path: "dashboard", element: <ProtectedRoute><Dashboard /></ProtectedRoute> },
 
       // Account Settings (any authenticated user) — rendered within the public chrome
       { path: "account", element: <ProtectedRoute><AccountSettings /></ProtectedRoute> }
@@ -136,23 +138,9 @@ const router = createBrowserRouter([
     ]
   },
 
-  // User Shift Management Routes
-  {
-    path: "/user",
-    element: (
-      <ProtectedRoute requiredRoles={['USER', 'GOALIE', 'REF', 'SCOREKEEPER']}>
-        <PlayerDashboard />
-      </ProtectedRoute>
-    )
-  },
-  {
-    path: "/user/shifts",
-    element: (
-      <ProtectedRoute requiredRoles={['GOALIE', 'REF', 'SCOREKEEPER']}>
-        <UserDashboard />
-      </ProtectedRoute>
-    )
-  },
+  // Retired: PlayerDashboard + UserDashboard are superseded by the unified /dashboard (v4).
+  { path: "/user", element: <Navigate to="/dashboard" replace /> },
+  { path: "/user/shifts", element: <Navigate to="/dashboard" replace /> },
   {
     path: "/user/goalie",
     element: (

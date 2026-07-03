@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import logo from '../assets/images/buzzard-logo.png';
+import { resolveTeamColor, textOn } from '../constants/teamColors';
 import { useAuth } from '../contexts/AuthContext';
 import DonateButton from './DonateButton';
 import DonatePopup from './DonatePopup';
@@ -22,7 +23,7 @@ function PublicLayout() {
     const location = useLocation();
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const { user, logout, isAuthenticated, isAdmin, isGM, hasAnyRole } = useAuth();
+    const { user, logout, isAuthenticated, isAdmin, hasAnyRole } = useAuth();
 
     // Close mobile menu on resize to desktop
     useEffect(() => {
@@ -60,31 +61,29 @@ function PublicLayout() {
         closeMobileMenu();
     };
 
-    // Authenticated dashboard shortcuts, shared by desktop + mobile
-    const dashboardLinks = () => (
-        <>
-            {isGM && <button className="obi-ghost-btn" onClick={() => go('/gm')}>GM Dashboard</button>}
-            {isAdmin && <button className="obi-ghost-btn" onClick={() => go('/admin')}>Admin Dashboard</button>}
-            {hasAnyRole('GOALIE_COORDINATOR', 'REF_COORDINATOR', 'SCOREKEEPER_COORDINATOR') && (
-                <button className="obi-ghost-btn" onClick={() => go('/coordinator')}>Coordinator</button>
-            )}
-            {hasAnyRole('GOALIE', 'REF', 'SCOREKEEPER') && (
-                <button className="obi-ghost-btn" onClick={() => go('/user/shifts')}>My Shifts</button>
-            )}
-            {hasAnyRole('GOALIE', 'REF', 'SCOREKEEPER', 'PLAYER', 'GM') && (
-                <button className="obi-ghost-btn" onClick={() => go('/user')}>My Dashboard</button>
-            )}
-            <button className="obi-ghost-btn" onClick={() => go('/account')}>Account Settings</button>
-        </>
-    );
+    // Compact user pill (v4 §2b). Role access lives in /dashboard now; avatar/name → the dashboard.
+    const teamHex = user?.teamColor ? resolveTeamColor(user.teamColor) : '#F6A91C';
+    const userInitials = () => {
+        const n = user?.firstName || user?.username || user?.email || 'Account';
+        return n.split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    };
 
     const authActions = () => (
         isAuthenticated ? (
-            <>
-                <span className="obi-user-greeting">Hi, {user?.username || user?.email}</span>
-                {dashboardLinks()}
-                <button className="obi-logout-btn" onClick={handleLogout}>Log Out</button>
-            </>
+            <div className="obi-user-pill">
+                <button className="obi-pill-id" onClick={() => go('/dashboard')} title="My dashboard">
+                    <span className="obi-pill-avatar" style={{ background: teamHex, color: textOn(teamHex) }}>{userInitials()}</span>
+                    <span className="obi-pill-name">
+                        <span className="obi-pill-first">{user?.firstName || user?.username || 'Account'}</span>
+                        {user?.teamName && <span className="obi-pill-team">{user.teamName}</span>}
+                    </span>
+                </button>
+                {hasAnyRole('GOALIE_COORDINATOR', 'REF_COORDINATOR', 'SCOREKEEPER_COORDINATOR') && (
+                    <button className="obi-pill-link" onClick={() => go('/coordinator')}>Coordinator</button>
+                )}
+                {isAdmin && <button className="obi-pill-link obi-pill-link--admin" onClick={() => go('/admin')}>Admin</button>}
+                <button className="obi-pill-link obi-pill-link--logout" onClick={handleLogout}>Log Out</button>
+            </div>
         ) : (
             <>
                 <Link to="/signup" className="obi-ghost-btn" onClick={closeMobileMenu}>Create Account</Link>
