@@ -267,7 +267,8 @@
 .role-gm       { color: var(--obi-warning); background: rgba(232, 194, 106, 0.14); }
 .role-ref      { color: #b09ef0;            background: rgba(176, 158, 240, 0.14); }
 .role-scorekeeper { color: var(--obi-icy);  background: rgba(157, 185, 205, 0.12); }
-.role-user     { color: var(--obi-text-muted); background: rgba(157, 185, 205, 0.08); }
+/* USER + any custom/unmapped role (goalie, coordinators) — brightened for legibility (v4 §8a) */
+.role-user     { color: #D4DCE3; background: rgba(157, 185, 205, 0.16); }
 
 /* ── Status badges ─────────────────────────────────────── */
 .status-badge {
