@@ -294,6 +294,11 @@ function Dashboard() {
                                                             <button className="dash-btn dash-btn--ghost" disabled={busy === a.id} onClick={() => respondPending(a.id, 'decline')}>Decline</button>
                                                         </div>
                                                     )}
+                                                    {activeRole === 'SCOREKEEPER' && s.cls === 'confirmed' && a.gameId && (
+                                                        <div className="dash-action-btns" style={{ marginTop: 12 }}>
+                                                            <button className="dash-btn dash-btn--gold" onClick={() => navigate(`/scorekeeper/game/${a.gameId}`)}>Score Game →</button>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             );
                                         })}
