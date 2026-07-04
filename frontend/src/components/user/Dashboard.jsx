@@ -162,7 +162,7 @@ function Dashboard() {
             <div className="dash-subnav">
                 <div className="obi-container dash-subnav-inner">
                     <a href="#my-week" className="dash-subnav-link">My Week</a>
-                    {isOfficial && <a href="#officiating" className="dash-subnav-link">Officiating</a>}
+                    {isOfficial && <a href="#signups" className="dash-subnav-link">Signups</a>}
                     {isGM && <a href="#team" className="dash-subnav-link">Team Management</a>}
                 </div>
             </div>
@@ -256,9 +256,8 @@ function Dashboard() {
 
             {/* ── OFFICIATING ── */}
             {isOfficial && (
-                <section id="officiating" className="dash-zone dash-zone--alt">
+                <section id="signups" className="dash-zone dash-zone--alt">
                     <div className="obi-container">
-                        <span className="dash-gated-badge">Gated · Goalie / Official</span>
                         <h2 className="dash-zone-h2">Signups</h2>
                         <p className="dash-zone-intro">
                             Goalies mark weekly availability so the coordinator can schedule balanced matchups. Refs and scorekeepers
@@ -370,7 +369,6 @@ function Dashboard() {
             {isGM && (
                 <section id="team" className="dash-zone">
                     <div className="obi-container">
-                        <span className="dash-gated-badge">Gated · General Manager</span>
                         <h2 className="dash-zone-h2">Team Management</h2>
                         <p className="dash-zone-intro">Manage your roster — set jersey numbers and skill ratings in the full team editor.</p>
                         <button className="dash-preview-btn" onClick={() => navigate('/gm/team')}>Open Team Editor →</button>
