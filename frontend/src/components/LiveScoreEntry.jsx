@@ -324,15 +324,17 @@ function LiveScoreEntry(props) {
 
         const goalLimit = player.skillRating >= 9 ? 2 : 3;
         const goalsScored = player.goalsInGame;
-        const scoreDiff = Math.abs(homeScore - awayScore);
-        const isMercyRule = scoreDiff >= 4;
-        const losingTeam = homeScore < awayScore ? 'home' : 'away';
-        const mercyRuleActive = isMercyRule && goalTeam === losingTeam;
+        // Free-goal exception: a team trailing by 3+ has its skill caps lifted
+        // ("Limits Suspended") until it climbs back within 2.
+        const ownScore = goalTeam === 'home' ? homeScore : awayScore;
+        const oppScore = goalTeam === 'home' ? awayScore : homeScore;
+        const deficit = oppScore - ownScore;
+        const limitsSuspended = deficit >= 3;
 
-        if (mercyRuleActive) {
+        if (limitsSuspended) {
             return {
                 allowed: true,
-                message: '✅ Mercy Rule Active - No goal limits',
+                message: `✅ Limits Suspended — team trails by ${deficit}, goal caps lifted`,
                 type: 'success'
             };
         }
@@ -340,7 +342,7 @@ function LiveScoreEntry(props) {
         if (goalsScored >= goalLimit) {
             return {
                 allowed: false,
-                message: `❌ Player has reached goal limit (${goalsScored}/${goalLimit} goals)`,
+                message: `❌ #${player.jerseyNumber || ''} ${player.name} (skill ${player.skillRating}) is capped at ${goalLimit} goals. Team must trail by 3+ to exceed.`,
                 type: 'error'
             };
         }
@@ -784,8 +786,11 @@ function LiveScoreEntry(props) {
     return (
         <div className="live-score-entry">
             <div className="entry-header">
-                <button className="btn-back" onClick={handleBack}>← Back to Schedule</button>
-                <h2>Live Score Entry</h2>
+                <button className="btn-back" onClick={handleBack}>← Signups · Dashboard</button>
+                <h2>
+                    <span className="matchup-title">{game.homeTeamName} <span className="matchup-vs">vs</span> {game.awayTeamName}</span>
+                    <span className="entry-subtitle">Live Score Entry</span>
+                </h2>
                 {!gameFinalized && (
                     <button
                         className={`btn-save${isDirty ? '' : ' btn-save-inactive'}`}
@@ -845,10 +850,10 @@ function LiveScoreEntry(props) {
                 </div>
             </div>
 
-            {/* Mercy Rule Indicator */}
-            {Math.abs(homeScore - awayScore) >= 4 && !gameFinalized && (
+            {/* Limits Suspended Indicator — a team trailing by 3+ has goal caps lifted until within 2 */}
+            {Math.abs(homeScore - awayScore) >= 3 && !gameFinalized && (
                 <div className="mercy-rule-alert">
-                    🏒 Mercy Rule Active - Goal limits removed for {homeScore < awayScore ? game.homeTeamName : game.awayTeamName}
+                    <strong>Limits Suspended</strong> — {homeScore < awayScore ? game.homeTeamName : game.awayTeamName} trail by {Math.abs(homeScore - awayScore)}; their goal caps are lifted until within 2.
                 </div>
             )}
 

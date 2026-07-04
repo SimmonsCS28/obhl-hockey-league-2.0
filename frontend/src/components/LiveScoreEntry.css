@@ -25,14 +25,38 @@
 
 .entry-header h2 {
     grid-column: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    margin: 0;
+    text-align: center;
+}
+
+.entry-header h2 .matchup-title {
     font-family: var(--obi-font-display);
     font-weight: 900;
     font-style: italic;
     font-size: 26px;
     color: #fff;
-    margin: 0;
-    text-align: center;
+    line-height: 1;
     white-space: nowrap;
+}
+
+.entry-header h2 .matchup-vs {
+    color: #5E6872;
+    font-size: 0.62em;
+    font-style: italic;
+}
+
+.entry-header h2 .entry-subtitle {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-style: normal;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
 }
 
 .entry-header .btn-save,
