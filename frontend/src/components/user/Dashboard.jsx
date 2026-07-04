@@ -29,7 +29,7 @@ function Dashboard() {
     const { selectedSeasonId } = useSeason();
 
     const roles = useMemo(() => user?.roles || (user?.role ? [user.role] : []), [user]);
-    const officialRoles = roles.filter(r => OFFICIAL_ROLES.includes(r));
+    const officialRoles = useMemo(() => roles.filter(r => OFFICIAL_ROLES.includes(r)), [roles]);
     const isOfficial = officialRoles.length > 0;
     const isGM = roles.includes('GM');
 
@@ -40,8 +40,8 @@ function Dashboard() {
 
     // Officiating
     const [activeRole, setActiveRole] = useState(officialRoles[0] || null);
-    const [openSlots, setOpenSlots] = useState([]);      // for active REF/SCOREKEEPER role
-    const [goalieWeeks, setGoalieWeeks] = useState([]);  // for GOALIE
+    const [openSlotsByRole, setOpenSlotsByRole] = useState({}); // { REF: [...], SCOREKEEPER: [...] }
+    const [goalieWeeks, setGoalieWeeks] = useState([]);          // for GOALIE
     const [busy, setBusy] = useState(null);
 
     const teamById = useCallback((id) => teams.find(t => t.id === id), [teams]);
@@ -64,16 +64,20 @@ function Dashboard() {
 
     useEffect(() => { load(); }, [load]);
 
-    // Officiating data for the active role
-    const loadRoleData = useCallback(async () => {
-        if (!activeRole || !selectedSeasonId) return;
-        if (activeRole === 'GOALIE') {
+    // Officiating data — load open slots for every ref/scorekeeper role (for the per-tab
+    // "N open" counts) and goalie availability if applicable.
+    const loadOfficiating = useCallback(async () => {
+        if (!selectedSeasonId) return;
+        const slotRoles = officialRoles.filter(r => r === 'REF' || r === 'SCOREKEEPER');
+        const entries = await Promise.all(
+            slotRoles.map(async r => [r, await api.getOpenSlots(r, selectedSeasonId).catch(() => [])])
+        );
+        setOpenSlotsByRole(Object.fromEntries(entries));
+        if (officialRoles.includes('GOALIE')) {
             api.getGoalieAvailability(selectedSeasonId).then(setGoalieWeeks).catch(() => setGoalieWeeks([]));
-        } else {
-            api.getOpenSlots(activeRole, selectedSeasonId).then(setOpenSlots).catch(() => setOpenSlots([]));
         }
-    }, [activeRole, selectedSeasonId]);
-    useEffect(() => { loadRoleData(); }, [loadRoleData]);
+    }, [selectedSeasonId, officialRoles]);
+    useEffect(() => { loadOfficiating(); }, [loadOfficiating]);
 
     if (loading) return <div className="dash-state">Loading your dashboard…</div>;
 
@@ -101,22 +105,25 @@ function Dashboard() {
     })();
 
     // ── Officiating derived ──
+    const activeSlots = openSlotsByRole[activeRole] || [];
     const myCommitments = activeRole === 'GOALIE'
         ? pending.filter(p => p.role === 'GOALIE')
         : [
             ...pending.filter(p => p.role === activeRole),
-            ...openSlots.filter(s => s.state === 'MINE'),
+            ...activeSlots.filter(s => s.state === 'MINE'),
         ];
-    const availableOpen = openSlots.filter(s => s.state === 'OPEN').slice(0, 3);
+    const availableOpen = activeSlots.filter(s => s.state === 'OPEN').slice(0, 3);
+    const openCount = (r) => (openSlotsByRole[r] || []).filter(s => s.state === 'OPEN').length;
+    const tabCountLabel = (r) => (r === 'GOALIE' ? 'Set availability' : `${openCount(r)} open`);
 
     const respondPending = async (id, action) => {
         setBusy(id);
-        try { await api.respondToShift(id, action, null); await load(); await loadRoleData(); }
+        try { await api.respondToShift(id, action, null); await load(); await loadOfficiating(); }
         catch { /* ignore */ } finally { setBusy(null); }
     };
     const signup = async (slotId) => {
         setBusy(slotId);
-        try { await api.signupForSlot(slotId); await loadRoleData(); }
+        try { await api.signupForSlot(slotId); await loadOfficiating(); }
         catch { /* ignore */ } finally { setBusy(null); }
     };
     const setAvail = async (week, status) => {
@@ -262,6 +269,7 @@ function Dashboard() {
                             {officialRoles.map(r => (
                                 <button key={r} className={`dash-role-tab${activeRole === r ? ' is-active' : ''}`} onClick={() => setActiveRole(r)}>
                                     {ROLE_LABEL[r]}
+                                    <span className="dash-role-tab-count">{tabCountLabel(r)}</span>
                                 </button>
                             ))}
                         </div>
