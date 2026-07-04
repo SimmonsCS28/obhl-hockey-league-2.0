@@ -663,3 +663,127 @@
     justify-content: flex-end;
     gap: 10px;
 }
+
+/* ============================================================
+   v5 layout — Import Schedule (left) / Generated Schedule (right)
+   ============================================================ */
+.schedule-manager .sched-page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 22px;
+}
+
+.schedule-manager .sched-subtitle {
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-text-secondary);
+    margin: 4px 0 0;
+}
+
+.schedule-manager .sched-season-badge {
+    flex: none;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text);
+    background: rgba(157, 185, 205, 0.08);
+    border: 1px solid rgba(157, 185, 205, 0.3);
+    padding: 8px 16px;
+    border-radius: 8px;
+}
+
+.schedule-manager .sched-cols {
+    display: grid;
+    grid-template-columns: minmax(360px, 430px) 1fr;
+    align-items: start;
+    gap: 20px;
+}
+
+@media (max-width: 900px) {
+    .schedule-manager .sched-cols {
+        grid-template-columns: 1fr;
+    }
+}
+
+.schedule-manager .sched-panel {
+    min-width: 0;
+    background: linear-gradient(180deg, #13171d, #10141a);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 14px;
+    padding: 22px 22px 24px;
+}
+
+.schedule-manager .sched-panel-title {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #fff;
+    margin: 0 0 6px;
+}
+
+.schedule-manager .sched-panel-intro {
+    font-family: var(--obi-font-body);
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--obi-text-secondary);
+    margin: 0 0 20px;
+}
+
+.schedule-manager .sched-panel-intro strong {
+    color: var(--obi-text);
+}
+
+/* Steps within the import panel — no card chrome, just a labelled block */
+.schedule-manager .sched-step {
+    margin-bottom: 20px;
+}
+
+.schedule-manager .sched-step:last-child {
+    margin-bottom: 0;
+}
+
+.schedule-manager .sched-step-label {
+    display: block;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-accent);
+    margin-bottom: 10px;
+}
+
+.schedule-manager .btn-block {
+    width: 100%;
+    justify-content: center;
+}
+
+/* Generated Schedule panel */
+.schedule-manager .sched-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 220px;
+    padding: 30px;
+    font-family: var(--obi-font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--obi-text-muted);
+}
+
+.schedule-manager .sched-generated-status {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-secondary);
+    margin: 0 0 14px;
+}

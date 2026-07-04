@@ -621,14 +621,16 @@ const ScheduleManager = () => {
 
     return (
         <div className="schedule-manager">
-            <div className="page-header">
-                <h1>Schedule Manager</h1>
-                <button
-                    className="back-to-admin-btn"
-                    onClick={() => window.location.href = '/admin'}
-                >
-                    ← Back to Admin
-                </button>
+            <div className="sched-page-header">
+                <div>
+                    <h1>Schedule</h1>
+                    <p className="sched-subtitle">Import the rink report &amp; generate the season</p>
+                </div>
+                {seasons.find(s => s.id === selectedSeason) && (
+                    <span className="sched-season-badge">
+                        {seasons.find(s => s.id === selectedSeason)?.name}
+                    </span>
+                )}
             </div>
 
             {message.text && (
@@ -637,9 +639,18 @@ const ScheduleManager = () => {
                 </div>
             )}
 
+            <div className="sched-cols">
+            {/* LEFT: Import Schedule */}
+            <div className="sched-panel sched-import">
+                <h2 className="sched-panel-title">Import Schedule</h2>
+                <p className="sched-panel-intro">
+                    Upload the rink&apos;s ice-time CSV to generate a balanced season.
+                    Columns: <strong>Week, Date, Rink, Time</strong>. Rinks: Cardinal / Tubbs.
+                </p>
+
             {/* Season Selection */}
-            <div className="section">
-                <h2>1. Select Season</h2>
+            <div className="sched-step">
+                <span className="sched-step-label">Step 1 · Season</span>
                 <select
                     id="seasonSelect"
                     name="seasonSelect"
@@ -663,14 +674,14 @@ const ScheduleManager = () => {
 
             {/* File Upload */}
             {selectedSeason && isActiveSeason && (
-                <div className="section">
-                    <h2>2. Upload Game Slots (CSV)</h2>
+                <div className="sched-step">
+                    <span className="sched-step-label">Step 2 · Template &amp; Upload</span>
                     <button
                         onClick={downloadTemplate}
-                        className="btn-secondary"
+                        className="btn-secondary btn-block"
                         style={{ marginBottom: '15px' }}
                     >
-                        📥 Download Template
+                        📥 Download CSV Template
                     </button>
                     <div className="upload-area">
                         <input
@@ -706,8 +717,8 @@ const ScheduleManager = () => {
 
             {/* Generate Schedule */}
             {selectedSeason && isActiveSeason && parsedSlots.length > 0 && (
-                <div className="section">
-                    <h2>3. Generate Schedule</h2>
+                <div className="sched-step">
+                    <span className="sched-step-label">Step 3 · Generate</span>
                     <div className="generate-form">
                         <label>
                             Max Weeks (Regular Season):
@@ -755,17 +766,29 @@ const ScheduleManager = () => {
                     </div>
                 </div>
             )}
+            </div>{/* /.sched-import */}
+
+            {/* RIGHT: Generated Schedule */}
+            <div className="sched-panel sched-generated">
+                <h2 className="sched-panel-title">Generated Schedule</h2>
+
+                {(!selectedSeason || games.length === 0) && (
+                    <div className="sched-empty">
+                        Upload your rink CSV, then Generate to build a balanced season.
+                        The final 3 weeks are reserved for playoffs automatically.
+                    </div>
+                )}
 
             {/* Schedule Display */}
             {selectedSeason && games.length > 0 && (
-                <div className="section">
-                    <h2>
+                <div className="sched-generated-body">
+                    <div className="sched-generated-status">
                         {scheduleMode === 'draft' && '📝 Draft Schedule'}
                         {scheduleMode === 'saved' && '✅ Season Schedule'}
                         {scheduleMode === 'editing' && '✏️ Season Schedule (Editing)'}
                         {scheduleMode === 'none' && 'Generated Schedule'}
                         {' '}({games.length} games)
-                    </h2>
+                    </div>
 
                     {/* Show Reset button only in draft mode */}
                     {scheduleMode === 'draft' && (
@@ -1021,6 +1044,8 @@ const ScheduleManager = () => {
                     )}
                 </div >
             )}
+            </div>{/* /.sched-generated */}
+            </div>{/* /.sched-cols */}
 
             {/* Confirmation Modal */}
             {
