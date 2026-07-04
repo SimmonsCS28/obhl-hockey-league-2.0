@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import api from '../services/api';
 import './LoginModal.css';
 
 
@@ -38,26 +37,9 @@ function LoginModal({ isOpen, onClose }) {
                     } 
                 });
             } else {
-                // Role-based redirect (priority: ADMIN > GM > staff roles > default)
-                if (result.user?.roles?.includes('ADMIN')) {
-                    navigate('/admin');
-                } else if (result.user?.roles?.includes('GM')) {
-                    navigate('/gm');
-                } else {
-                    // Check if user has a player profile in the player table
-                    const email = result.user?.email || result.user?.username;
-                    const hasPlayerProfile = email ? await api.checkPlayerProfileExists(email) : false;
-                    const roles = result.user?.roles || [];
-                    const hasStaffRole = roles.some(r => ['GOALIE', 'REF', 'SCOREKEEPER'].includes(r));
-
-                    if (hasPlayerProfile || !hasStaffRole) {
-                        // Players, coordinators, and plain users land on their dashboard.
-                        navigate('/user');
-                    } else {
-                        // Staff-only (ref/scorekeeper/goalie without a player profile) → My Shifts.
-                        navigate('/user/shifts');
-                    }
-                }
+                // Everyone lands on the unified dashboard (v5). The Admin/Coordinator consoles
+                // are reachable from the user pill; no more role-specific stale dashboards.
+                navigate('/dashboard');
             }
         } else {
             setError(result.error || 'Login failed. Please check your credentials.');
