@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useSeason } from '../../contexts/SeasonContext';
 import { resolveTeamColor, textOn } from '../../constants/teamColors';
 import api from '../../services/api';
+import GMTeam from '../gm/GMTeam';
 import './Dashboard.css';
 
 const TZ = 'America/Chicago';
@@ -370,8 +371,10 @@ function Dashboard() {
                 <section id="team" className="dash-zone">
                     <div className="obi-container">
                         <h2 className="dash-zone-h2">Team Management</h2>
-                        <p className="dash-zone-intro">Manage your roster — set jersey numbers and skill ratings in the full team editor.</p>
-                        <button className="dash-preview-btn" onClick={() => navigate('/gm/team')}>Open Team Editor →</button>
+                        <p className="dash-zone-intro">Set jersey numbers and skill ratings inline, and copy your roster&apos;s emails to invite them.</p>
+                        <div className="dash-team-editor">
+                            <GMTeam />
+                        </div>
                     </div>
                 </section>
             )}

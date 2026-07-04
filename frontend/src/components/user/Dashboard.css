@@ -84,6 +84,9 @@
 .dash-preview-btn:hover { background: rgba(246, 169, 28, 0.18); }
 .dash-preview-btn--sm { margin-top: 0; padding: 7px 13px; font-size: 11px; }
 
+/* Inline GM roster editor embedded in the Team Management zone */
+.dash-team-editor { margin-top: 6px; }
+
 /* ── My Schedule ── */
 .dash-sched-head { display: flex; align-items: center; margin: 18px 0 14px; }
 .dash-sched-card { background: linear-gradient(180deg, var(--obi-bg-card), #10141a); border: 1px solid var(--obi-card-border); border-radius: 14px; overflow: hidden; }
