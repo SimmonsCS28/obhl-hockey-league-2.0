@@ -456,6 +456,102 @@ const ScheduleManager = () => {
         showMessage('success', 'Game deleted. Click "Save Schedule" to persist changes.');
     };
 
+    // ── Inline editing (design's per-week editor) ──────────────────────────
+    // Split a stored (UTC, no-Z) gameDate into local date + time parts for the
+    // two inline inputs, mirroring GameEditModal's toLocalDateTimeString.
+    const toLocalParts = (utcDateString) => {
+        if (!utcDateString) return { date: '', time: '' };
+        const s = utcDateString.endsWith('Z') ? utcDateString : utcDateString + 'Z';
+        const d = new Date(s);
+        const p = (n) => String(n).padStart(2, '0');
+        return {
+            date: `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`,
+            time: `${p(d.getHours())}:${p(d.getMinutes())}`
+        };
+    };
+
+    // Recombine local date + time back to the stored ISO (no trailing Z),
+    // matching GameEditModal's handleSubmit conversion.
+    const partsToStored = (date, time) => {
+        if (!date || !time) return null;
+        let iso = new Date(`${date}T${time}`).toISOString();
+        return iso.endsWith('Z') ? iso.slice(0, -1) : iso;
+    };
+
+    // Apply a field patch to a game, updating local state + pending changes
+    // using the same shapes handleSaveGame/handleSaveSchedule expect.
+    const applyInlineEdit = (game, patch) => {
+        const updated = { ...game, ...patch };
+        setGames(prev => prev.map(g => (g.id === game.id ? updated : g)));
+
+        const isNewGame = String(game.id).startsWith('temp-');
+        if (isNewGame) {
+            setPendingChanges(prev => ({
+                ...prev,
+                addedGames: prev.addedGames.map(g => (g.id === game.id ? updated : g))
+            }));
+        } else {
+            setPendingChanges(prev => ({
+                ...prev,
+                editedGames: {
+                    ...prev.editedGames,
+                    [game.id]: {
+                        homeTeamId: updated.homeTeamId,
+                        awayTeamId: updated.awayTeamId,
+                        gameDate: updated.gameDate,
+                        rink: updated.rink,
+                        week: updated.week
+                    }
+                }
+            }));
+        }
+
+        if (scheduleMode === 'saved') setScheduleMode('editing');
+        setHasPendingChanges(true);
+    };
+
+    const handleInlineDateChange = (game, newDate) => {
+        const { time } = toLocalParts(game.gameDate);
+        const stored = partsToStored(newDate, time || '00:00');
+        if (stored) applyInlineEdit(game, { gameDate: stored });
+    };
+
+    const handleInlineTimeChange = (game, newTime) => {
+        const { date } = toLocalParts(game.gameDate);
+        const stored = partsToStored(date, newTime);
+        if (stored) applyInlineEdit(game, { gameDate: stored });
+    };
+
+    const handleRemoveWeek = (week) => {
+        const weekGames = gamesByWeek[week] || [];
+        setConfirmModal({
+            show: true,
+            title: `Remove Week ${week}?`,
+            message: `This removes all ${weekGames.length} game(s) in Week ${week}. Click "Save Schedule" afterward to persist.`,
+            confirmText: 'Remove Week',
+            isDestructive: true,
+            onConfirm: () => {
+                const ids = weekGames.map(g => g.id);
+                const idStrs = ids.map(String);
+                setGames(prev => prev.filter(g => !ids.includes(g.id)));
+                setPendingChanges(prev => ({
+                    ...prev,
+                    addedGames: prev.addedGames.filter(g => !ids.includes(g.id)),
+                    deletedGameIds: [
+                        ...prev.deletedGameIds,
+                        ...ids.filter(id => !String(id).startsWith('temp-'))
+                    ],
+                    editedGames: Object.fromEntries(
+                        Object.entries(prev.editedGames).filter(([id]) => !idStrs.includes(id))
+                    )
+                }));
+                if (scheduleMode === 'saved') setScheduleMode('editing');
+                setHasPendingChanges(true);
+                showMessage('success', `Week ${week} removed. Click "Save Schedule" to persist.`);
+            }
+        });
+    };
+
     const handleClearChanges = async () => {
         setConfirmModal({
             show: true,
@@ -614,22 +710,6 @@ const ScheduleManager = () => {
         if (b === 'Unassigned') return -1;
         return parseInt(a) - parseInt(b);
     });
-
-    // Sort and filter games for table view
-    const sortedAndFilteredGames = games
-        .filter(game => {
-            if (selectedWeek === 'all') return true;
-            return game.week === parseInt(selectedWeek);
-        })
-        .sort((a, b) => {
-            // Sort by week first, then by date
-            if (a.week !== b.week) {
-                return a.week - b.week;
-            }
-            const dateA = new Date(a.gameDate.endsWith('Z') ? a.gameDate : a.gameDate + 'Z');
-            const dateB = new Date(b.gameDate.endsWith('Z') ? b.gameDate : b.gameDate + 'Z');
-            return dateA - dateB;
-        });
 
     // Check if selected season is active
     const isActiveSeason = seasons.find(s => s.id === selectedSeason)?.isActive || false;
@@ -905,93 +985,117 @@ const ScheduleManager = () => {
 
                     {/* Responsive Schedule Display */}
                     {isDesktop ? (
-                        // Desktop: Table View
-                        <div className="schedule-table-container">
-                            <table className="schedule-table">
-                                <thead>
-                                    <tr>
-                                        <th>Week</th>
-                                        <th>Date</th>
-                                        <th>Time</th>
-                                        <th>Home Team</th>
-                                        <th>Away Team</th>
-                                        <th>Location</th>
-                                        <th>Score/Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {sortedAndFilteredGames.map(game => {
-                                        const homeTeam = getTeamById(game.homeTeamId);
-                                        const awayTeam = getTeamById(game.awayTeamId);
-                                        const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
-                                        const dayOfWeek = gameDate.getDay();
-                                        const isNotFriday = dayOfWeek !== 5;
-                                        const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
-                                        const isCompleted = game.status === 'completed';
-
-                                        const homeBg = getValidColor(homeTeam?.teamColor);
-                                        const awayBg = getValidColor(awayTeam?.teamColor);
-
-                                        const isPlayoff = game.gameType === 'PLAYOFF';
-                                        const isTbd = !game.homeTeamId || !game.awayTeamId;
-                                        return (
-                                            <tr
-                                                key={game.id}
-                                                className={`clickable-row ${isNotFriday ? 'non-friday-row' : ''} ${isPlayoff ? 'playoff-row' : ''}`}
-                                                onClick={() => setEditingGame(game)}
-                                                style={{ cursor: 'pointer' }}
-                                            >
-                                                <td className="week-col">
-                                                    {isPlayoff && <span className="playoff-badge">{game.playoffRound?.replace('QUARTERFINAL', 'QF').replace('SEMIFINAL', 'SF').replace('FINAL', '🏆') || '🏆'}</span>}
-                                                    Week {game.week}
-                                                </td>
-                                                <td className={isNotFriday ? 'date-col non-friday-date' : 'date-col'}>
-                                                    <span className="day-warning" title={isNotFriday ? `Game on ${dayName}` : ''}>
-                                                        {isNotFriday ? '⚠️' : ''}
-                                                    </span>
-                                                    {gameDate.toLocaleDateString('en-US', {
-                                                        weekday: 'short',
-                                                        month: 'short',
-                                                        day: 'numeric'
-                                                    })}
-                                                </td>
-                                                <td className="time-col">
-                                                    {gameDate.toLocaleTimeString('en-US', {
-                                                        hour: 'numeric',
-                                                        minute: '2-digit'
-                                                    })}
-                                                </td>
-                                                <td
-                                                    className="team-cell"
-                                                    style={isTbd ? { backgroundColor: '#555', color: '#aaa' } : {
-                                                        backgroundColor: homeBg,
-                                                        color: getTextColor(homeBg)
-                                                    }}
-                                                >
-                                                    {isTbd ? 'TBD' : (homeTeam?.name || `Team ${game.homeTeamId}`)}
-                                                </td>
-                                                <td
-                                                    className="team-cell"
-                                                    style={isTbd ? { backgroundColor: '#555', color: '#aaa' } : {
-                                                        backgroundColor: awayBg,
-                                                        color: getTextColor(awayBg)
-                                                    }}
-                                                >
-                                                    {isTbd ? 'TBD' : (awayTeam?.name || `Team ${game.awayTeamId}`)}
-                                                </td>
-                                                <td>{game.rink}</td>
-                                                <td>
-                                                    {isCompleted ? (
-                                                        <span className="score">{game.homeScore} - {game.awayScore}</span>
-                                                    ) : (
-                                                        <span className="upcoming-badge">Scheduled</span>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                        // Desktop: Inline per-week editor (design)
+                        <div className="sched-weeks">
+                            {weeks
+                                .filter(week => selectedWeek === 'all' || week === String(selectedWeek))
+                                .map(week => {
+                                    const weekGames = gamesByWeek[week] || [];
+                                    const isPlayoffWeek = weekGames.some(g => g.gameType === 'PLAYOFF');
+                                    return (
+                                        <div key={week} className="sched-week">
+                                            <div className="sched-week-head">
+                                                <span className="sched-week-title">
+                                                    {week === 'Unassigned' ? 'Unassigned' : `Week ${week}`}
+                                                </span>
+                                                <span className={`sched-week-tag${isPlayoffWeek ? ' is-playoff' : ''}`}>
+                                                    {isPlayoffWeek ? 'Playoff' : 'Regular'}
+                                                </span>
+                                                <span className="sched-week-count">
+                                                    {weekGames.length} game{weekGames.length === 1 ? '' : 's'}
+                                                </span>
+                                                {week !== 'Unassigned' && (
+                                                    <button
+                                                        className="sched-week-remove"
+                                                        onClick={() => handleRemoveWeek(week)}
+                                                        disabled={loading}
+                                                    >
+                                                        Remove
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <div className="sched-week-games">
+                                                {weekGames.map(game => {
+                                                    const { date, time } = toLocalParts(game.gameDate);
+                                                    const homeColor = getValidColor(getTeamById(game.homeTeamId)?.teamColor);
+                                                    const awayColor = getValidColor(getTeamById(game.awayTeamId)?.teamColor);
+                                                    const isCompleted = game.status === 'completed';
+                                                    const gd = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
+                                                    const isNotFriday = gd.getDay() !== 5;
+                                                    const isPlayoff = game.gameType === 'PLAYOFF';
+                                                    return (
+                                                        <div key={game.id} className="sched-game-row">
+                                                            <div className="sched-game-when">
+                                                                <input
+                                                                    type="date"
+                                                                    className="sched-inline-input"
+                                                                    value={date}
+                                                                    onChange={(e) => handleInlineDateChange(game, e.target.value)}
+                                                                />
+                                                                <input
+                                                                    type="time"
+                                                                    className="sched-inline-input"
+                                                                    value={time}
+                                                                    onChange={(e) => handleInlineTimeChange(game, e.target.value)}
+                                                                />
+                                                                <select
+                                                                    className="sched-inline-input sched-rink-select"
+                                                                    value={game.rink || 'Tubbs'}
+                                                                    onChange={(e) => applyInlineEdit(game, { rink: e.target.value })}
+                                                                >
+                                                                    <option value="Tubbs">Tubbs</option>
+                                                                    <option value="Cardinal">Cardinal</option>
+                                                                </select>
+                                                                {isNotFriday && (
+                                                                    <span className="sched-day-warn" title="Not a Friday game">⚠️</span>
+                                                                )}
+                                                                {isPlayoff && (
+                                                                    <span className="sched-playoff-chip">
+                                                                        {game.playoffRound?.replace('QUARTERFINAL', 'QF').replace('SEMIFINAL', 'SF').replace('FINAL', 'Final') || 'Playoff'}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <div className="sched-game-teams">
+                                                                <span className="sched-team-dot" style={{ background: homeColor }} />
+                                                                <select
+                                                                    className="sched-inline-input sched-team-select"
+                                                                    value={game.homeTeamId || ''}
+                                                                    onChange={(e) => applyInlineEdit(game, { homeTeamId: e.target.value ? parseInt(e.target.value) : null })}
+                                                                >
+                                                                    <option value="">TBD</option>
+                                                                    {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                                                </select>
+                                                                <span className="sched-vs">vs</span>
+                                                                <select
+                                                                    className="sched-inline-input sched-team-select"
+                                                                    value={game.awayTeamId || ''}
+                                                                    onChange={(e) => applyInlineEdit(game, { awayTeamId: e.target.value ? parseInt(e.target.value) : null })}
+                                                                >
+                                                                    <option value="">TBD</option>
+                                                                    {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                                                </select>
+                                                                <span className="sched-team-dot" style={{ background: awayColor }} />
+                                                            </div>
+                                                            <div className="sched-game-end">
+                                                                {isCompleted
+                                                                    ? <span className="score">{game.homeScore} - {game.awayScore}</span>
+                                                                    : <span className="upcoming-badge">Scheduled</span>}
+                                                                <button
+                                                                    className="sched-game-remove"
+                                                                    title="Remove game"
+                                                                    onClick={() => handleDeleteGame(game.id)}
+                                                                    disabled={loading}
+                                                                >
+                                                                    ×
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                         </div>
                     ) : (
                         // Mobile: Card View
