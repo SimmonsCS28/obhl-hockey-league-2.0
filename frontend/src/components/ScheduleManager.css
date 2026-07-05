@@ -787,3 +787,83 @@
     color: var(--obi-text-secondary);
     margin: 0 0 14px;
 }
+
+/* Inline icon inside buttons (e.g. Download CSV Template) */
+.schedule-manager .btn-icon {
+    flex: none;
+    margin-right: 2px;
+    vertical-align: middle;
+}
+
+/* Step 3 · Upload — drag & drop dropzone */
+.schedule-manager .sched-dropzone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    text-align: center;
+    padding: 26px 18px;
+    border: 2px dashed rgba(157, 185, 205, 0.3);
+    border-radius: 12px;
+    background: rgba(157, 185, 205, 0.03);
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+}
+
+.schedule-manager .sched-dropzone:hover,
+.schedule-manager .sched-dropzone.is-dragging {
+    border-color: var(--obi-accent);
+    background: rgba(246, 169, 28, 0.06);
+}
+
+.schedule-manager .sched-dropzone.is-loading {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+.schedule-manager .sched-dropzone-icon {
+    color: var(--obi-icy);
+    margin-bottom: 2px;
+}
+
+.schedule-manager .sched-dropzone:hover .sched-dropzone-icon,
+.schedule-manager .sched-dropzone.is-dragging .sched-dropzone-icon {
+    color: var(--obi-accent);
+}
+
+.schedule-manager .sched-dropzone-title {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #fff;
+}
+
+.schedule-manager .sched-dropzone-sub {
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    color: var(--obi-text-muted);
+}
+
+.schedule-manager .sched-file-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 10px 14px;
+    border: 1px solid rgba(127, 181, 154, 0.35);
+    background: rgba(127, 181, 154, 0.1);
+    border-radius: 9px;
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    color: var(--obi-text);
+    word-break: break-all;
+}
+
+.schedule-manager .sched-file-check {
+    color: var(--obi-success);
+    font-weight: 700;
+    flex: none;
+}

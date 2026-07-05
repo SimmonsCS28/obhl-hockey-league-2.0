@@ -23,6 +23,7 @@ const ScheduleManager = () => {
     const [maxWeeks, setMaxWeeks] = useState(10);
     const [playoffWeeks, setPlayoffWeeks] = useState(3);
     const [csvFile, setCsvFile] = useState(null);
+    const [isDragging, setIsDragging] = useState(false);
     const [parsedSlots, setParsedSlots] = useState([]);
     const [games, setGames] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -113,8 +114,7 @@ const ScheduleManager = () => {
         }
     };
 
-    const handleFileUpload = async (e) => {
-        const file = e.target.files[0];
+    const processFile = async (file) => {
         if (!file) return;
 
         setCsvFile(file);
@@ -139,6 +139,21 @@ const ScheduleManager = () => {
             }
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleFileUpload = (e) => processFile(e.target.files[0]);
+
+    const handleFileDrop = (e) => {
+        e.preventDefault();
+        setIsDragging(false);
+        if (loading) return;
+        const file = e.dataTransfer.files?.[0];
+        if (!file) return;
+        if (file.name.toLowerCase().endsWith('.csv')) {
+            processFile(file);
+        } else {
+            showMessage('error', 'Please drop a .csv file');
         }
     };
 
@@ -672,18 +687,44 @@ const ScheduleManager = () => {
                 )}
             </div>
 
-            {/* File Upload */}
+            {/* Template */}
             {selectedSeason && isActiveSeason && (
                 <div className="sched-step">
-                    <span className="sched-step-label">Step 2 · Template &amp; Upload</span>
+                    <span className="sched-step-label">Step 2 · Template</span>
                     <button
                         onClick={downloadTemplate}
                         className="btn-secondary btn-block"
-                        style={{ marginBottom: '15px' }}
                     >
-                        📥 Download CSV Template
+                        <svg className="btn-icon" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                        </svg>
+                        Download CSV Template
                     </button>
-                    <div className="upload-area">
+                </div>
+            )}
+
+            {/* File Upload */}
+            {selectedSeason && isActiveSeason && (
+                <div className="sched-step">
+                    <span className="sched-step-label">Step 3 · Upload</span>
+                    <label
+                        htmlFor="csvUpload"
+                        className={`sched-dropzone${isDragging ? ' is-dragging' : ''}${loading ? ' is-loading' : ''}`}
+                        onDragOver={(e) => { e.preventDefault(); if (!loading) setIsDragging(true); }}
+                        onDragLeave={() => setIsDragging(false)}
+                        onDrop={handleFileDrop}
+                    >
+                        <svg className="sched-dropzone-icon" width="30" height="30" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="17 8 12 3 7 8" />
+                            <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        <span className="sched-dropzone-title">Choose File</span>
+                        <span className="sched-dropzone-sub">CSV export from the rink · drag &amp; drop or click</span>
                         <input
                             id="csvUpload"
                             name="csvUpload"
@@ -692,9 +733,14 @@ const ScheduleManager = () => {
                             accept=".csv"
                             onChange={handleFileUpload}
                             disabled={loading}
+                            hidden
                         />
-                        {csvFile && <span className="file-name">{csvFile.name}</span>}
-                    </div>
+                    </label>
+                    {csvFile && (
+                        <div className="sched-file-chip">
+                            <span className="sched-file-check">✓</span> {csvFile.name}
+                        </div>
+                    )}
                     {parsedSlots.length > 0 && (
                         <div className="slots-preview">
                             <h3>Parsed Slots ({parsedSlots.length})</h3>
