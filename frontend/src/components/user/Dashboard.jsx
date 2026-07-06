@@ -370,8 +370,6 @@ function Dashboard() {
             {isGM && (
                 <section id="team" className="dash-zone">
                     <div className="obi-container">
-                        <h2 className="dash-zone-h2">Team Management</h2>
-                        <p className="dash-zone-intro">Set jersey numbers and skill ratings inline, and copy your roster&apos;s emails to invite them.</p>
                         <div className="dash-team-editor">
                             <GMTeam />
                         </div>

@@ -1,240 +1,315 @@
+/* GM Team Management — Claude Design v6 roster table */
 .gm-team {
     padding: 0;
 }
 
-.team-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 2rem;
-    padding: 0;
-    background: transparent;
+.gm-team-loading,
+.gm-no-data {
+    padding: 30px;
+    text-align: center;
+    color: var(--obi-text-muted);
+    font-family: var(--obi-font-body);
+    font-size: 14px;
 }
 
-.gm-team .team-header h1 {
-    color: #ffffff !important;
-    font-size: 2rem;
-    font-weight: 700;
+/* ── Header ── */
+.gm-team-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin: 6px 0 22px;
+}
+
+.gm-team-title {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: clamp(26px, 4vw, 38px);
+    line-height: 0.95;
+    margin: 0 0 6px;
+    color: #fff;
+}
+
+.gm-team-name {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: color .15s;
+}
+
+.gm-team-name:hover {
+    color: var(--obi-accent);
+}
+
+.gm-team-name-input {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: clamp(24px, 3.5vw, 34px);
+    background: #0e1116;
+    border: 1px solid rgba(246, 169, 28, 0.5);
+    border-radius: 8px;
+    padding: 2px 10px;
+    color: #fff;
+    outline: none;
+    max-width: 320px;
+}
+
+.gm-team-sub {
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-icy);
     margin: 0;
 }
 
-.btn-save {
-    padding: 0.75rem 1.5rem;
-    background: #48bb78;
-    color: white;
-    border: none;
-    border-radius: 6px;
+.gm-team-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: none;
+}
+
+.gm-save-btn {
     cursor: pointer;
-    font-weight: 600;
-    font-size: 1rem;
-    transition: background-color 0.2s;
-}
-
-.btn-save:hover:not(:disabled) {
-    background: #38a169;
-}
-
-.btn-save:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.message {
-    padding: 1rem;
-    border-radius: 6px;
-    margin-bottom: 1.5rem;
-    font-weight: 500;
-}
-
-.message-success {
-    background: #c6f6d5;
-    color: #22543d;
-    border: 1px solid #9ae6b4;
-}
-
-.message-error {
-    background: #fed7d7;
-    color: #742a2a;
-    border: 1px solid #fc8181;
-}
-
-.team-roster-card {
-    background: #1e1e1e;
-    /* dark background */
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #0b0c0f;
+    background: var(--obi-success);
+    border: none;
+    padding: 9px 16px;
     border-radius: 8px;
-    padding: 2rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    transition: filter .15s;
 }
 
-.team-roster-table {
-    width: 100%;
-    border-collapse: collapse;
+.gm-save-btn:hover:not(:disabled) {
+    filter: brightness(1.06);
 }
 
-.team-roster-table thead {
-    background: transparent;
+.gm-save-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
 }
 
-.team-roster-table th {
-    padding: 1rem;
-    text-align: left;
-    font-weight: 600;
-    color: #aaa;
-    background-color: #2c2c2c;
-    border-bottom: 2px solid #333;
+/* Copy Emails button + green "Copied!" flash */
+.gm-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    flex: none;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--obi-subtle-btn-text, #C8D0D8);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(157, 185, 205, 0.25);
+    padding: 9px 15px;
+    border-radius: 8px;
+    transition: color .25s ease, background .25s ease, border-color .25s ease;
 }
 
-.team-roster-table td {
-    padding: 1rem;
-    border-bottom: 1px solid #333;
-    color: #e0e0e0;
+.gm-copy-btn:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.09);
 }
 
-.team-roster-table tbody tr:hover {
-    background-color: #333;
+.gm-copy-btn.is-copied {
+    color: var(--obi-success);
+    background: rgba(127, 181, 154, 0.16);
+    border-color: rgba(127, 181, 154, 0.5);
 }
 
-.jersey-input {
-    width: 60px;
-    padding: 0.5rem;
-    border: 1px solid #444;
-    border-radius: 6px;
-    font-size: 1rem;
-    background-color: #2c2c2c;
-    color: white;
-    transition: border-color 0.2s;
+.gm-copy-btn.is-copied:hover {
+    color: #8FCBAA;
+    background: rgba(127, 181, 154, 0.22);
 }
 
-.jersey-input:focus {
-    outline: none;
-    border-color: #4299e1;
+/* ── Messages ── */
+.gm-msg {
+    padding: 10px 15px;
+    border-radius: 9px;
+    font-family: var(--obi-font-body);
+    font-size: 13.5px;
+    margin-bottom: 14px;
 }
 
-.jersey-input:hover {
-    border-color: #666;
+.gm-msg-success {
+    color: var(--obi-success);
+    background: rgba(127, 181, 154, 0.1);
+    border: 1px solid rgba(127, 181, 154, 0.35);
 }
 
-.skill-input {
-    width: 52px;
-    padding: 0.5rem;
-    border: 1px solid #444;
-    border-radius: 6px;
-    font-size: 1rem;
-    background-color: #2c2c2c;
-    color: white;
-    transition: border-color 0.2s;
-    text-align: center;
+.gm-msg-error {
+    color: var(--obi-error);
+    background: rgba(224, 138, 138, 0.1);
+    border: 1px solid rgba(224, 138, 138, 0.3);
 }
 
-.skill-input:focus {
-    outline: none;
-    border-color: #f6c90e;
-}
-
-.skill-input:hover {
-    border-color: #666;
-}
-
-.player-name {
-    font-weight: 500;
-}
-
-.player-email {
-    color: #888;
-    font-size: 0.9rem;
-}
-
-.no-data {
-    text-align: center;
-    color: #aaa;
-    padding: 3rem;
-    font-style: italic;
-}
-
-.loading {
-    text-align: center;
-    padding: 3rem;
-    font-size: 1.2rem;
-}
-
-.table-container {
-    width: 100%;
+/* ── Roster table (flex-based) ── */
+.gm-roster {
+    background: linear-gradient(180deg, #13171d, #10141a);
+    border: 1px solid rgba(157, 185, 205, 0.16);
+    border-radius: 16px;
+    overflow: hidden;
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
 }
 
-/* Team name + copy emails stacked column */
-.team-name-section {
+.gm-roster-scroll {
+    min-width: 960px;
+}
+
+.gm-roster-head,
+.gm-roster-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 11px 20px;
+}
+
+.gm-roster-head {
+    padding: 13px 20px;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.18);
+    background: rgba(0, 0, 0, 0.25);
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+}
+
+.gm-roster-row {
+    border-bottom: 1px solid rgba(157, 185, 205, 0.07);
+}
+
+.gm-roster-row:last-child {
+    border-bottom: none;
+}
+
+/* Column widths — head + rows must match exactly */
+.gm-col-jersey { width: 84px; display: flex; align-items: center; gap: 6px; }
+.gm-col-player { flex: 1; padding-left: 8px; min-width: 120px; font-family: var(--obi-font-display); font-weight: 700; font-size: 17px; color: #fff; }
+.gm-col-email { width: 200px; }
+.gm-col-pos { width: 56px; text-align: center; justify-content: center; display: flex; }
+.gm-col-stat { width: 38px; text-align: center; justify-content: center; font-family: var(--obi-font-display); font-weight: 700; font-size: 15px; color: var(--obi-text); }
+.gm-col-pim { width: 48px; text-align: center; justify-content: center; font-family: var(--obi-font-display); font-weight: 700; font-size: 15px; color: var(--obi-icy); }
+.gm-col-skill { width: 200px; display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+
+/* header labels keep alignment */
+.gm-roster-head .gm-col-player { color: var(--obi-text-muted); font-family: var(--obi-font-display); font-weight: 700; font-size: 12.5px; }
+.gm-roster-head .gm-col-stat,
+.gm-roster-head .gm-col-pim { color: var(--obi-text-muted); font-size: 12.5px; }
+.gm-roster-head .gm-col-skill { justify-content: center; }
+
+.gm-col-points { font-weight: 900 !important; color: var(--obi-accent) !important; }
+
+.gm-hash {
+    font-family: var(--obi-font-body);
+    font-size: 15px;
+    color: #5E6872;
+}
+
+.gm-jersey-input {
+    width: 54px;
+    background: #0e1116;
+    border: 1px solid rgba(157, 185, 205, 0.25);
+    border-radius: 8px;
+    padding: 7px 8px;
+    color: #fff;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 16px;
+    text-align: center;
+    outline: none;
+}
+
+.gm-jersey-input:focus {
+    border-color: rgba(246, 169, 28, 0.6);
+}
+
+.gm-email-input {
+    width: 100%;
+    background: #0e1116;
+    border: 1px solid rgba(157, 185, 205, 0.25);
+    border-radius: 8px;
+    padding: 7px 9px;
+    color: var(--obi-text);
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    outline: none;
+    cursor: default;
+}
+
+.gm-pos-chip {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    color: var(--obi-icy);
+    background: rgba(157, 185, 205, 0.1);
+    border: 1px solid rgba(157, 185, 205, 0.2);
+    padding: 3px 9px;
+    border-radius: 5px;
+}
+
+/* Skill rating stepper + bar */
+.gm-step {
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(157, 185, 205, 0.25);
+    color: #fff;
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    transition: background .15s;
+}
+
+.gm-step:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.gm-skill-meter {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.75rem;
-    flex: 1;
+    width: 74px;
 }
 
-/* Remove old pencil icon rule */
-.team-name-display {
-    display: flex;
-    align-items: center;
+.gm-skill-num {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 18px;
+    color: var(--obi-accent);
+    line-height: 1;
 }
 
-/* Inline name edit row */
-.team-name-edit {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+.gm-skill-bar {
+    width: 100%;
+    height: 5px;
+    border-radius: 3px;
+    background: rgba(157, 185, 205, 0.15);
+    margin-top: 5px;
+    overflow: hidden;
 }
 
-.team-name-input {
-    padding: 0.5rem 0.9rem;
-    font-size: 1.3rem;
-    font-weight: 700;
-    border: 2px solid #4299e1;
-    border-radius: 6px;
-    background: #2c2c2c;
-    color: #fff;
-    outline: none;
-    min-width: 220px;
+.gm-skill-fill {
+    display: block;
+    height: 100%;
+    background: var(--obi-accent);
 }
-
-.btn-cancel {
-    padding: 0.6rem 1.1rem;
-    background: #555;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 0.95rem;
-    transition: background 0.2s;
-}
-
-.btn-cancel:hover:not(:disabled) {
-    background: #444;
-}
-
-/* Header action buttons group (right side) */
-.header-actions {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-}
-
-/* Copy emails button — matches table header gray */
-.btn-copy-emails {
-    padding: 0.5rem 1.2rem;
-    background: #2c2c2c;
-    color: #ccc;
-    border: 1px solid #444;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 0.9rem;
-    transition: background 0.2s, color 0.2s;
-    white-space: nowrap;
-}
-
-.btn-copy-emails:hover {
-    background: #3a3a3a;
-    color: #fff;
-}
