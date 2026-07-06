@@ -18,6 +18,19 @@ const normStatus = (s) => {
     return 'scheduled';
 };
 
+// Default the week filter to the "current" week — the soonest week with an upcoming
+// game, or the most recent week if the whole season is in the past.
+const defaultWeek = (list) => {
+    const dated = list
+        .filter(g => g.week != null && g.gameDate)
+        .map(g => ({ week: g.week, t: (toDate(g.gameDate) || new Date(0)).getTime() }));
+    if (!dated.length) return 'all';
+    const now = Date.now();
+    const upcoming = dated.filter(g => g.t >= now).sort((a, b) => a.t - b.t);
+    if (upcoming.length) return String(upcoming[0].week);
+    return String(dated.sort((a, b) => b.t - a.t)[0].week);
+};
+
 function ScorekeeperContent() {
     const { selectedSeasonId } = useSeason();
     const [selectedGameId, setSelectedGameId] = useState(null);
@@ -41,8 +54,8 @@ function ScorekeeperContent() {
             ...game,
             homeTeam,
             awayTeam,
-            homeTeamName: homeTeam?.name || `Team ${game.homeTeamId}`,
-            awayTeamName: awayTeam?.name || `Team ${game.awayTeamId}`,
+            homeTeamName: homeTeam?.name || (game.homeTeamId ? `Team ${game.homeTeamId}` : 'TBD'),
+            awayTeamName: awayTeam?.name || (game.awayTeamId ? `Team ${game.awayTeamId}` : 'TBD'),
             homeTeamColor: homeTeam?.teamColor || '#6b7280',
             awayTeamColor: awayTeam?.teamColor || '#6b7280',
         };
@@ -55,8 +68,9 @@ function ScorekeeperContent() {
         api.getGames(selectedSeasonId)
             .then(data => {
                 if (cancelled) return;
-                setGames(enrichGames(data));
-                setSelectedWeek('all');
+                const enriched = enrichGames(data);
+                setGames(enriched);
+                setSelectedWeek(defaultWeek(enriched));
                 setSelectedGameId(null);
             })
             .catch(() => { if (!cancelled) setGames([]); })
@@ -162,8 +176,13 @@ function ScorekeeperContent() {
                                 className={`sk-live-gamechip status-${status}${active ? ' is-active' : ''}`}
                                 onClick={() => requestAction({ type: 'GAME', value: g.id })}
                             >
-                                <span className={`sk-live-statusdot status-${status}`} />
-                                {g.homeTeamName} vs {g.awayTeamName}
+                                <span className="sk-live-teamdot" style={{ background: dot(g.homeTeamColor) }} />
+                                {g.homeTeamName}
+                                <span className="sk-live-vsdim">vs</span>
+                                {g.awayTeamName}
+                                <span className="sk-live-teamdot" style={{ background: dot(g.awayTeamColor) }} />
+                                {status === 'final' && <span className="sk-live-chip-status">Final</span>}
+                                {status === 'live' && <span className="sk-live-chip-status is-live">Live</span>}
                             </button>
                         );
                     })}
