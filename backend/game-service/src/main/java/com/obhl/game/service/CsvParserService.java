@@ -5,9 +5,11 @@ import java.io.InputStreamReader;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -20,13 +22,27 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class CsvParserService {
 
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
+    // Accept the common date shapes coordinators export (ISO + US M/D/YYYY).
+    private static final List<DateTimeFormatter> DATE_FORMATTERS = List.of(
+            DateTimeFormatter.ofPattern("yyyy-MM-dd"),
+            DateTimeFormatter.ofPattern("M/d/yyyy"),
+            DateTimeFormatter.ofPattern("M/d/yy"));
+
+    // Accept both 24-hour (19:00) and 12-hour (7:00 PM / 07:00 PM) clock times.
+    private static final List<DateTimeFormatter> TIME_FORMATTERS = List.of(
+            DateTimeFormatter.ofPattern("HH:mm"),
+            DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH),
+            DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH));
 
     /**
-     * Parse CSV file into list of GameSlots
-     * Expected CSV format: week,date,time,rink
-     * Example: 1,2024-01-15,19:00,Tubbs
+     * Parse a schedule CSV into ice-time GameSlots.
+     * <p>
+     * Columns are resolved by header name (case-insensitive) so the file may be
+     * either the 4-column slots template ({@code Week,Date,Rink,Time}) or a fuller
+     * export ({@code Week,Date,Time,Home Team,Away Team,Rink}); any extra columns
+     * (e.g. team matchups) are ignored — the Generate step assigns teams. If no
+     * recognizable header is present the columns are read positionally as
+     * {@code week,date,time,rink}.
      */
     public List<GameSlot> parseGameSlots(MultipartFile file) {
         List<GameSlot> slots = new ArrayList<>();
@@ -34,23 +50,27 @@ public class CsvParserService {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream()))) {
             String line;
             int lineNumber = 0;
+            Map<String, Integer> cols = null;
 
             while ((line = reader.readLine()) != null) {
                 lineNumber++;
 
-                // Skip header row
-                if (lineNumber == 1 && line.toLowerCase().contains("week")) {
-                    continue;
-                }
-
-                // Skip empty lines
                 if (line.trim().isEmpty()) {
                     continue;
                 }
 
+                // The first non-empty row establishes the column layout.
+                if (cols == null) {
+                    if (looksLikeHeader(line)) {
+                        cols = parseHeader(line);
+                        continue;
+                    }
+                    // No header — fall back to the documented positional order.
+                    cols = defaultColumns();
+                }
+
                 try {
-                    GameSlot slot = parseLine(line, lineNumber);
-                    slots.add(slot);
+                    slots.add(parseLine(line, cols));
                 } catch (Exception e) {
                     throw new RuntimeException("Error parsing line " + lineNumber + ": " + e.getMessage());
                 }
@@ -65,38 +85,94 @@ public class CsvParserService {
         }
     }
 
-    private GameSlot parseLine(String line, int lineNumber) {
+    private boolean looksLikeHeader(String line) {
+        String lower = line.toLowerCase();
+        return lower.contains("week") && lower.contains("date");
+    }
+
+    private Map<String, Integer> parseHeader(String line) {
+        String[] parts = line.split(",");
+        Map<String, Integer> cols = new HashMap<>();
+        for (int i = 0; i < parts.length; i++) {
+            cols.put(parts[i].trim().toLowerCase(), i);
+        }
+        for (String required : new String[] { "week", "date", "time", "rink" }) {
+            if (!cols.containsKey(required)) {
+                throw new RuntimeException(
+                        "CSV header is missing the '" + required + "' column. Expected columns: Week, Date, Time, Rink.");
+            }
+        }
+        return cols;
+    }
+
+    private Map<String, Integer> defaultColumns() {
+        Map<String, Integer> cols = new HashMap<>();
+        cols.put("week", 0);
+        cols.put("date", 1);
+        cols.put("time", 2);
+        cols.put("rink", 3);
+        return cols;
+    }
+
+    private GameSlot parseLine(String line, Map<String, Integer> cols) {
         String[] parts = line.split(",");
 
-        if (parts.length != 4) {
-            throw new RuntimeException("Expected 4 columns (week,date,time,rink) but found " + parts.length);
+        int maxIndex = 0;
+        for (int idx : cols.values()) {
+            maxIndex = Math.max(maxIndex, idx);
+        }
+        if (parts.length <= maxIndex) {
+            throw new RuntimeException("Expected at least " + (maxIndex + 1) + " columns but found " + parts.length);
         }
 
+        String weekStr = parts[cols.get("week")].trim();
+        String dateStr = parts[cols.get("date")].trim();
+        String timeStr = parts[cols.get("time")].trim();
+        String rinkStr = parts[cols.get("rink")].trim();
+
+        Integer week;
         try {
-            Integer week = Integer.parseInt(parts[0].trim());
-            LocalDate date = LocalDate.parse(parts[1].trim(), DATE_FORMATTER);
-            LocalTime time = LocalTime.parse(parts[2].trim(), TIME_FORMATTER);
-            String rink = parts[3].trim();
-
-            // Validate week is positive
-            if (week <= 0) {
-                throw new RuntimeException("Week must be positive");
-            }
-
-            // Normalize rink name - accept variations like "Cardinal Rink", "Tubbs Rink",
-            // etc.
-            String normalizedRink = normalizeRinkName(rink);
-            if (normalizedRink == null) {
-                throw new RuntimeException("Rink must contain 'Tubbs' or 'Cardinal', found: " + rink);
-            }
-
-            return new GameSlot(week, date, time, normalizedRink);
-
+            week = Integer.parseInt(weekStr);
         } catch (NumberFormatException e) {
-            throw new RuntimeException("Invalid week number: " + parts[0]);
-        } catch (DateTimeParseException e) {
-            throw new RuntimeException("Invalid date format (expected yyyy-MM-dd): " + parts[1]);
+            throw new RuntimeException("Invalid week number: " + weekStr);
         }
+        if (week <= 0) {
+            throw new RuntimeException("Week must be positive");
+        }
+
+        LocalDate date = parseDate(dateStr);
+        LocalTime time = parseTime(timeStr);
+
+        String normalizedRink = normalizeRinkName(rinkStr);
+        if (normalizedRink == null) {
+            throw new RuntimeException("Rink must contain 'Tubbs' or 'Cardinal', found: " + rinkStr);
+        }
+
+        return new GameSlot(week, date, time, normalizedRink);
+    }
+
+    private LocalDate parseDate(String value) {
+        for (DateTimeFormatter fmt : DATE_FORMATTERS) {
+            try {
+                return LocalDate.parse(value, fmt);
+            } catch (Exception ignored) {
+                // try the next format
+            }
+        }
+        throw new RuntimeException("Invalid date format (expected e.g. 2026-06-04 or 6/4/2026): " + value);
+    }
+
+    private LocalTime parseTime(String value) {
+        // Normalize whitespace so "06:30  PM" or non-breaking spaces still parse.
+        String cleaned = value.trim().replaceAll("\s+", " ").toUpperCase(Locale.ENGLISH);
+        for (DateTimeFormatter fmt : TIME_FORMATTERS) {
+            try {
+                return LocalTime.parse(cleaned, fmt);
+            } catch (Exception ignored) {
+                // try the next format
+            }
+        }
+        throw new RuntimeException("Invalid time format (expected e.g. 19:00 or 7:00 PM): " + value);
     }
 
     /**
