@@ -418,6 +418,47 @@
     color: var(--obi-text-muted);
 }
 
+/* Clock-time field (MM:SS countdown) */
+.clock-hint {
+    font-family: var(--obi-font-body);
+    font-weight: 400;
+    font-size: 12px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--obi-text-muted);
+    margin-left: 4px;
+}
+
+.clock-input {
+    width: 120px;
+    max-width: 100%;
+    text-align: center;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 18px;
+    letter-spacing: 1px;
+}
+
+.clock-input.clock-input-error {
+    border-color: var(--obi-error) !important;
+}
+
+.clock-error {
+    margin-top: 6px;
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    color: var(--obi-error);
+}
+
+.form-group label.label-disabled {
+    color: var(--obi-text-muted);
+}
+
+.form-group select:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* Goal Limit Alert */
 .goal-limit-alert {
     padding: 10px 14px;

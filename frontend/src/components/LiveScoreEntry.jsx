@@ -55,8 +55,8 @@ function LiveScoreEntry(props) {
     const [goalAssist1, setGoalAssist1] = useState('');
     const [goalAssist2, setGoalAssist2] = useState('');
     const [goalPeriod, setGoalPeriod] = useState('1');
-    const [goalMinutes, setGoalMinutes] = useState('');
-    const [goalSeconds, setGoalSeconds] = useState('');
+    const [goalClock, setGoalClock] = useState('');
+    const [goalTimeError, setGoalTimeError] = useState('');
     const [goalLimitWarning, setGoalLimitWarning] = useState(null);
 
     // Penalty form state
@@ -66,8 +66,8 @@ function LiveScoreEntry(props) {
     const [penaltyDescription, setPenaltyDescription] = useState('');
     const [penaltyOtherDescription, setPenaltyOtherDescription] = useState('');
     const [penaltyPeriod, setPenaltyPeriod] = useState('1');
-    const [penaltyTimeMinutes, setPenaltyTimeMinutes] = useState('');
-    const [penaltyTimeSeconds, setPenaltyTimeSeconds] = useState('');
+    const [penaltyClock, setPenaltyClock] = useState('');
+    const [penaltyTimeError, setPenaltyTimeError] = useState('');
 
     const [showFinalizeModal, setShowFinalizeModal] = useState(false);
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -372,17 +372,38 @@ function LiveScoreEntry(props) {
         }
     };
 
-    const formatTime = (minutes, seconds) => {
-        const m = minutes || '0';
-        const s = (seconds || '0').padStart(2, '0');
-        return `${m}:${s}`;
+    // Clock time is a countdown (MM:SS) capped per period: 20:00 in regulation, 5:00 in OT.
+    const periodMaxMin = (period) => (period === 'OT' || period === 4 ? 5 : 20);
+
+    // Auto-insert the colon as digits are typed: "123" -> "1:23", "1234" -> "12:34".
+    const fmtClock = (str) => {
+        const d = String(str || '').replace(/\D/g, '').slice(0, 4);
+        return d.length <= 2 ? d : d.slice(0, d.length - 2) + ':' + d.slice(-2);
     };
+
+    // Validate MM:SS against the period cap; returns a normalized "M:SS" or null.
+    const parseTime = (str, period) => {
+        const m = String(str || '').trim().match(/^(\d{1,2}):(\d{1,2})$/);
+        if (!m) return null;
+        const mm = +m[1], ss = +m[2];
+        if (ss > 59) return null;
+        if (mm * 60 + ss > periodMaxMin(period) * 60) return null;
+        return mm + ':' + String(ss).padStart(2, '0');
+    };
+
+    const periodCapLabel = (period) => `${periodMaxMin(period)}:00`;
 
     const handleAddGoal = async (e) => {
         e.preventDefault();
 
         if (goalLimitWarning && !goalLimitWarning.allowed) {
             alert('Cannot add goal - player has reached goal limit!');
+            return;
+        }
+
+        const clock = parseTime(goalClock, goalPeriod);
+        if (!clock) {
+            setGoalTimeError(`Enter a valid clock time (MM:SS, up to ${periodCapLabel(goalPeriod)}).`);
             return;
         }
 
@@ -395,7 +416,7 @@ function LiveScoreEntry(props) {
             type: 'goal',
             team: goalTeam,
             period: goalPeriod,
-            time: formatTime(goalMinutes, goalSeconds),
+            time: clock,
             scorer: scorer.name,
             scorerId: scorer.id,
             assists: [assist1?.name, assist2?.name].filter(Boolean),
@@ -453,6 +474,12 @@ function LiveScoreEntry(props) {
             return;
         }
 
+        const clock = parseTime(penaltyClock, penaltyPeriod);
+        if (!clock) {
+            setPenaltyTimeError(`Enter a valid clock time (MM:SS, up to ${periodCapLabel(penaltyPeriod)}).`);
+            return;
+        }
+
         // Validate penalty for ejection/suspension
         try {
             const validation = await api.validatePenalty(player.id, game.id, player.teamId);
@@ -482,7 +509,7 @@ function LiveScoreEntry(props) {
             type: 'penalty',
             team: penaltyTeam,
             period: penaltyPeriod,
-            time: formatTime(penaltyTimeMinutes, penaltyTimeSeconds),
+            time: clock,
             player: player.name,
             playerId: player.id,
             minutes: penaltyMinutes,
@@ -545,9 +572,8 @@ function LiveScoreEntry(props) {
         if (event.type === 'goal') {
             setGoalTeam(event.team);
             setGoalPeriod(event.period);
-            const [mins, secs] = event.time.split(':');
-            setGoalMinutes(mins);
-            setGoalSeconds(secs);
+            setGoalClock(event.time || '');
+            setGoalTimeError('');
             // Restore player IDs
             setGoalScorer(event.scorerId?.toString() || '');
             setGoalAssist1(event.assist1Id?.toString() || '');
@@ -561,9 +587,8 @@ function LiveScoreEntry(props) {
         } else {
             setPenaltyTeam(event.team);
             setPenaltyPeriod(event.period);
-            const [mins, secs] = event.time.split(':');
-            setPenaltyTimeMinutes(mins);
-            setPenaltyTimeSeconds(secs);
+            setPenaltyClock(event.time || '');
+            setPenaltyTimeError('');
             // Restore player ID
             setPenaltyPlayer(event.playerId?.toString() || '');
             setPenaltyMinutes(event.minutes);
@@ -667,8 +692,8 @@ function LiveScoreEntry(props) {
         setGoalAssist1('');
         setGoalAssist2('');
         setGoalPeriod('1');
-        setGoalMinutes('');
-        setGoalSeconds('');
+        setGoalClock('');
+        setGoalTimeError('');
         setGoalLimitWarning(null);
         setShowGoalForm(false);
     };
@@ -679,8 +704,8 @@ function LiveScoreEntry(props) {
         setPenaltyDescription('');
         setPenaltyOtherDescription('');
         setPenaltyPeriod('1');
-        setPenaltyTimeMinutes('');
-        setPenaltyTimeSeconds('');
+        setPenaltyClock('');
+        setPenaltyTimeError('');
         setShowPenaltyForm(false);
     };
 
@@ -902,40 +927,17 @@ function LiveScoreEntry(props) {
                         </div>
 
                         <div className="form-group">
-                            <label>Time * (MM:SS)</label>
-                            <div className="time-input">
-                                <input
-                                    list="minutes-list"
-                                    type="number"
-                                    min="0"
-                                    max="20"
-                                    value={goalMinutes}
-                                    onChange={(e) => setGoalMinutes(e.target.value)}
-                                    placeholder="MM"
-                                    required
-                                />
-                                <datalist id="minutes-list">
-                                    {[...Array(21)].map((_, i) => (
-                                        <option key={i} value={i} />
-                                    ))}
-                                </datalist>
-                                <span>:</span>
-                                <input
-                                    list="seconds-list"
-                                    type="number"
-                                    min="0"
-                                    max="59"
-                                    value={goalSeconds}
-                                    onChange={(e) => setGoalSeconds(e.target.value)}
-                                    placeholder="SS"
-                                    required
-                                />
-                                <datalist id="seconds-list">
-                                    {[...Array(60)].map((_, i) => (
-                                        <option key={i} value={i} />
-                                    ))}
-                                </datalist>
-                            </div>
+                            <label>Clock Time * <span className="clock-hint">Period {goalPeriod === 'OT' ? 'OT' : goalPeriod} · {periodCapLabel(goalPeriod)} max</span></label>
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                className={`clock-input${goalTimeError ? ' clock-input-error' : ''}`}
+                                value={goalClock}
+                                onChange={(e) => { setGoalClock(fmtClock(e.target.value)); setGoalTimeError(''); }}
+                                placeholder="MM:SS"
+                                required
+                            />
+                            {goalTimeError && <div className="clock-error">{goalTimeError}</div>}
                         </div>
                     </div>
 
@@ -970,9 +972,12 @@ function LiveScoreEntry(props) {
                     )}
 
                     <div className="form-group">
-                        <label>Assist 1 (optional)</label>
-                        <select value={goalAssist1} onChange={(e) => setGoalAssist1(e.target.value)}>
-                            <option value="">None</option>
+                        <label>Primary Assist</label>
+                        <select
+                            value={goalAssist1}
+                            onChange={(e) => { setGoalAssist1(e.target.value); setGoalAssist2(''); }}
+                        >
+                            <option value="">Unassisted</option>
                             {getTeamPlayers(goalTeam).filter(p => p.id !== parseInt(goalScorer)).map(player => (
                                 <option key={player.id} value={player.id}>#{player.jerseyNumber || '??'} - {player.name}</option>
                             ))}
@@ -980,8 +985,13 @@ function LiveScoreEntry(props) {
                     </div>
 
                     <div className="form-group">
-                        <label>Assist 2 (optional)</label>
-                        <select value={goalAssist2} onChange={(e) => setGoalAssist2(e.target.value)}>
+                        <label className={goalAssist1 ? '' : 'label-disabled'}>Secondary Assist</label>
+                        <select
+                            value={goalAssist2}
+                            onChange={(e) => setGoalAssist2(e.target.value)}
+                            disabled={!goalAssist1}
+                            title={!goalAssist1 ? 'Select a primary assist first' : ''}
+                        >
                             <option value="">None</option>
                             {getTeamPlayers(goalTeam)
                                 .filter(p => p.id !== parseInt(goalScorer) && p.id !== parseInt(goalAssist1))
@@ -1019,40 +1029,17 @@ function LiveScoreEntry(props) {
                         </div>
 
                         <div className="form-group">
-                            <label>Time * (MM:SS)</label>
-                            <div className="time-input">
-                                <input
-                                    list="penalty-minutes-list"
-                                    type="number"
-                                    min="0"
-                                    max="20"
-                                    value={penaltyTimeMinutes}
-                                    onChange={(e) => setPenaltyTimeMinutes(e.target.value)}
-                                    placeholder="MM"
-                                    required
-                                />
-                                <datalist id="penalty-minutes-list">
-                                    {[...Array(21)].map((_, i) => (
-                                        <option key={i} value={i} />
-                                    ))}
-                                </datalist>
-                                <span>:</span>
-                                <input
-                                    list="penalty-seconds-list"
-                                    type="number"
-                                    min="0"
-                                    max="59"
-                                    value={penaltyTimeSeconds}
-                                    onChange={(e) => setPenaltyTimeSeconds(e.target.value)}
-                                    placeholder="SS"
-                                    required
-                                />
-                                <datalist id="penalty-seconds-list">
-                                    {[...Array(60)].map((_, i) => (
-                                        <option key={i} value={i} />
-                                    ))}
-                                </datalist>
-                            </div>
+                            <label>Clock Time * <span className="clock-hint">Period {penaltyPeriod === 'OT' ? 'OT' : penaltyPeriod} · {periodCapLabel(penaltyPeriod)} max</span></label>
+                            <input
+                                type="text"
+                                inputMode="numeric"
+                                className={`clock-input${penaltyTimeError ? ' clock-input-error' : ''}`}
+                                value={penaltyClock}
+                                onChange={(e) => { setPenaltyClock(fmtClock(e.target.value)); setPenaltyTimeError(''); }}
+                                placeholder="MM:SS"
+                                required
+                            />
+                            {penaltyTimeError && <div className="clock-error">{penaltyTimeError}</div>}
                         </div>
                     </div>
 
