@@ -1205,3 +1205,295 @@
         padding: 12px 14px;
     }
 }
+
+/* ============================================================
+   v6 scoreboard rebuild — ScorekeeperGame design
+   ============================================================ */
+.sk-board {
+    background: linear-gradient(160deg, #161b22, #0e1217);
+    border: 1px solid rgba(246, 169, 28, 0.22);
+    border-radius: 16px;
+    padding: 26px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    gap: clamp(14px, 5vw, 56px);
+}
+
+.sk-board-side {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    max-width: 300px;
+}
+
+.sk-board-team { display: flex; align-items: center; gap: 10px; }
+.sk-board-dot {
+    width: 18px; height: 18px; border-radius: 50%;
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.45);
+    flex: none;
+}
+.sk-board-name {
+    font-family: var(--obi-font-display);
+    font-weight: 900; font-style: italic; font-size: 26px; color: #fff;
+    text-align: center;
+}
+
+.sk-board-score {
+    font-family: var(--obi-font-display);
+    font-weight: 900; font-size: 80px; line-height: 0.85; color: #fff;
+}
+.sk-board-score-input {
+    width: 130px; text-align: center; background: transparent;
+    border: 1px solid rgba(157, 185, 205, 0.25); border-radius: 10px;
+    padding: 2px 4px; outline: none;
+}
+.sk-board-score-input:focus { border-color: var(--obi-accent); }
+.sk-board-score-input:disabled { border-color: transparent; }
+
+.sk-board-goal {
+    cursor: pointer;
+    font-family: var(--obi-font-display); font-weight: 800; font-size: 15px;
+    letter-spacing: 1px; text-transform: uppercase; color: #0b0c0f;
+    background: var(--obi-accent); border: none; padding: 13px 26px; border-radius: 9px;
+    white-space: nowrap; transition: transform .12s, filter .12s;
+}
+.sk-board-goal:hover:not(:disabled) { transform: translateY(-1px); filter: brightness(1.05); }
+.sk-board-pen {
+    cursor: pointer;
+    font-family: var(--obi-font-display); font-weight: 700; font-size: 12px;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--obi-text-secondary);
+    background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(157, 185, 205, 0.22);
+    padding: 8px 18px; border-radius: 8px; white-space: nowrap; transition: color .12s;
+}
+.sk-board-pen:hover:not(:disabled) { color: #fff; }
+.sk-board-goal:disabled, .sk-board-pen:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.sk-board-center {
+    display: flex; flex-direction: column; align-items: center; gap: 10px;
+    padding-top: 30px;
+}
+.sk-board-period-label {
+    font-family: var(--obi-font-display); font-weight: 700; font-size: 11px;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--obi-text-muted);
+}
+.sk-board-stepper { display: flex; align-items: center; gap: 8px; }
+.sk-board-step {
+    cursor: pointer; width: 32px; height: 32px; border-radius: 7px;
+    background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(157, 185, 205, 0.22);
+    color: #fff; font-size: 18px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+}
+.sk-board-step:hover:not(:disabled) { background: rgba(255, 255, 255, 0.12); }
+.sk-board-step:disabled { opacity: 0.4; cursor: not-allowed; }
+.sk-board-period {
+    font-family: var(--obi-font-display); font-weight: 900; font-size: 34px;
+    color: var(--obi-accent); width: 44px; text-align: center;
+}
+.sk-board-venue {
+    font-family: var(--obi-font-body); font-size: 12px; color: var(--obi-text-muted);
+    margin-top: 6px; text-align: center;
+}
+
+/* Finalized banner */
+.sk-final-banner {
+    margin-top: 14px; display: flex; flex-wrap: wrap; align-items: center;
+    justify-content: space-between; gap: 12px;
+    background: rgba(127, 181, 154, 0.1); border: 1px solid rgba(127, 181, 154, 0.4);
+    border-radius: 11px; padding: 13px 18px;
+}
+.sk-final-text {
+    font-family: var(--obi-font-body); font-size: 13.5px; color: var(--obi-text-secondary);
+    display: flex; align-items: center; gap: 10px;
+}
+.sk-final-tag {
+    font-family: var(--obi-font-display); font-weight: 800; font-size: 11px;
+    letter-spacing: 1px; text-transform: uppercase; color: #0b0c0f;
+    background: var(--obi-success); padding: 4px 10px; border-radius: 5px;
+}
+.sk-reopen-btn {
+    cursor: pointer;
+    font-family: var(--obi-font-display); font-weight: 800; font-size: 12px;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--obi-text-secondary);
+    background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(157, 185, 205, 0.3);
+    padding: 9px 16px; border-radius: 8px;
+}
+.sk-reopen-btn:hover { color: #fff; }
+
+/* Scoring & Penalties feed */
+.sk-feed {
+    margin-top: 18px; background: var(--obi-bg-card, #13171d);
+    border: 1px solid rgba(157, 185, 205, 0.14); border-radius: 12px; padding: 16px 20px;
+}
+.sk-feed-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin-bottom: 12px;
+}
+.sk-feed-title {
+    font-family: var(--obi-font-display); font-weight: 800; font-size: 15px;
+    letter-spacing: 0.5px; text-transform: uppercase; color: #fff;
+}
+.sk-finalize-btn {
+    cursor: pointer;
+    font-family: var(--obi-font-display); font-weight: 800; font-size: 12px;
+    letter-spacing: 1px; text-transform: uppercase; color: #0b0c0f;
+    background: var(--obi-success); border: none; padding: 9px 18px; border-radius: 8px;
+    transition: transform .12s;
+}
+.sk-finalize-btn:hover { transform: translateY(-1px); }
+.sk-feed-empty {
+    padding: 28px; text-align: center; font-family: var(--obi-font-body);
+    font-size: 14px; color: var(--obi-text-muted);
+}
+.sk-feed-empty-accent { color: var(--obi-accent); font-weight: 600; }
+.sk-feed-list { display: flex; flex-direction: column; }
+.sk-feed-row {
+    display: flex; align-items: center; gap: 12px; padding: 11px 4px;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.07);
+}
+.sk-feed-row.is-editable { cursor: pointer; }
+.sk-feed-row.is-editable:hover { background: rgba(157, 185, 205, 0.04); }
+.sk-feed-tag {
+    font-family: var(--obi-font-display); font-weight: 800; font-size: 11px;
+    letter-spacing: 1px; text-transform: uppercase; width: 74px; text-align: center;
+    flex: none; padding: 3px 9px; border-radius: 5px;
+}
+.sk-feed-tag.goal { color: #0b0c0f; background: var(--obi-accent); }
+.sk-feed-tag.penalty { color: #E8C26A; background: rgba(232, 194, 106, 0.18); }
+.sk-feed-dot {
+    width: 14px; height: 14px; border-radius: 50%; flex: none;
+    box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.45);
+}
+.sk-feed-text {
+    flex: 1; min-width: 0; font-family: var(--obi-font-body); font-size: 14px; color: var(--obi-text);
+}
+.sk-feed-assists { color: var(--obi-text-muted); }
+.sk-feed-period {
+    font-family: var(--obi-font-body); font-size: 12px; color: var(--obi-text-muted); flex: none;
+}
+.sk-feed-remove {
+    cursor: pointer; background: none; border: none; color: #6E7882;
+    font-size: 17px; padding: 0 4px; flex: none; line-height: 1;
+}
+.sk-feed-remove:hover { color: var(--obi-error); }
+
+/* Modals (goal / penalty) */
+.sk-modal-overlay {
+    position: fixed; inset: 0; z-index: 90;
+    background: rgba(5, 6, 8, 0.7); backdrop-filter: blur(3px);
+    display: flex; align-items: center; justify-content: center; padding: 24px;
+}
+.sk-modal {
+    width: 100%; max-width: 440px; background: #161b22;
+    border: 1px solid rgba(157, 185, 205, 0.2); border-radius: 16px; padding: 22px;
+    max-height: 84vh; overflow-y: auto; animation: sk-modal-in .2s ease;
+}
+@keyframes sk-modal-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.sk-modal-title { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.sk-modal-dot {
+    width: 14px; height: 14px; border-radius: 50%;
+    box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.45); flex: none;
+}
+.sk-modal-team {
+    font-family: var(--obi-font-display); font-weight: 900; font-style: italic;
+    font-size: 22px; color: #fff;
+}
+.sk-modal-sub {
+    font-family: var(--obi-font-body); font-size: 13px; color: var(--obi-text-muted);
+    margin: 0 0 14px;
+}
+.sk-modal-label {
+    display: block; margin: 12px 0 6px;
+    font-family: var(--obi-font-display); font-weight: 700; font-size: 11px;
+    letter-spacing: 1.5px; text-transform: uppercase; color: var(--obi-icy);
+}
+.sk-modal-label.is-disabled { color: var(--obi-text-muted); }
+.sk-modal-select, .sk-modal-input {
+    width: 100%; background: #0e1116; border: 1px solid rgba(157, 185, 205, 0.22);
+    border-radius: 8px; padding: 11px 13px; color: var(--obi-text); font-size: 14px;
+    font-family: var(--obi-font-body); outline: none;
+}
+.sk-modal-select:focus, .sk-modal-input:focus { border-color: rgba(246, 169, 28, 0.6); }
+.sk-modal-select:disabled { opacity: 0.5; }
+
+.sk-limits-off {
+    display: flex; align-items: center; gap: 9px; margin: 12px 0;
+    background: rgba(127, 181, 154, 0.1); border: 1px solid rgba(127, 181, 154, 0.3);
+    border-radius: 8px; padding: 9px 12px;
+    font-family: var(--obi-font-body); font-size: 12.5px; color: var(--obi-text-secondary);
+}
+.sk-limits-off-tag {
+    font-family: var(--obi-font-display); font-weight: 800; font-size: 10px;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--obi-success); flex: none;
+}
+
+.sk-roster { display: flex; flex-direction: column; gap: 7px; margin-top: 12px; }
+.sk-roster-row {
+    display: flex; align-items: center; gap: 12px; cursor: pointer; text-align: left;
+    background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(157, 185, 205, 0.18);
+    border-radius: 9px; padding: 11px 14px; transition: border-color .12s, background .12s;
+}
+.sk-roster-row:hover { border-color: rgba(246, 169, 28, 0.4); }
+.sk-roster-row.is-blocked {
+    opacity: 0.5; cursor: not-allowed;
+    background: rgba(224, 138, 138, 0.06); border-color: rgba(224, 138, 138, 0.25);
+}
+.sk-roster-num {
+    font-family: var(--obi-font-display); font-weight: 800; font-size: 16px;
+    color: var(--obi-icy); width: 34px; flex: none;
+}
+.sk-roster-name {
+    flex: 1; font-family: var(--obi-font-display); font-weight: 700; font-size: 16px; color: #fff;
+}
+.sk-roster-skill {
+    font-family: var(--obi-font-display); font-weight: 800; font-size: 12px;
+    letter-spacing: 0.5px; text-transform: uppercase; color: var(--obi-icy);
+    background: rgba(157, 185, 205, 0.12); padding: 3px 9px; border-radius: 5px; flex: none;
+}
+.sk-roster-skill.is-high { color: var(--obi-accent); background: rgba(246, 169, 28, 0.15); }
+.sk-roster-capped {
+    font-family: var(--obi-font-display); font-weight: 700; font-size: 10px;
+    letter-spacing: 0.5px; text-transform: uppercase; color: var(--obi-error); flex: none;
+}
+.sk-block-msg {
+    margin-top: 12px; font-family: var(--obi-font-body); font-size: 12.5px; color: var(--obi-error);
+    background: rgba(224, 138, 138, 0.1); border: 1px solid rgba(224, 138, 138, 0.3);
+    border-radius: 8px; padding: 9px 12px;
+}
+.sk-modal-cancel {
+    width: 100%; margin-top: 14px; cursor: pointer;
+    font-family: var(--obi-font-display); font-weight: 700; font-size: 12px;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--obi-icy);
+    background: none; border: none; padding: 8px;
+}
+
+.sk-assist-scorer { display: flex; align-items: center; gap: 8px; margin: 6px 0 4px; }
+.sk-assist-scorer-name {
+    font-family: var(--obi-font-display); font-weight: 800; font-size: 13px; color: var(--obi-text);
+}
+.sk-assist-scorer-meta { font-family: var(--obi-font-body); font-size: 13px; color: var(--obi-text-muted); }
+
+.sk-modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.sk-modal-back {
+    flex: 1; cursor: pointer;
+    font-family: var(--obi-font-display); font-weight: 700; font-size: 13px;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--obi-text-secondary);
+    background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(157, 185, 205, 0.25);
+    padding: 12px; border-radius: 8px;
+}
+.sk-modal-back:hover { color: #fff; }
+.sk-modal-confirm {
+    flex: 1; cursor: pointer;
+    font-family: var(--obi-font-display); font-weight: 800; font-size: 13px;
+    letter-spacing: 1px; text-transform: uppercase; color: #0b0c0f;
+    background: var(--obi-accent); border: none; padding: 12px; border-radius: 8px;
+}
+.sk-modal-confirm:hover { filter: brightness(1.05); }
+
+@media (max-width: 560px) {
+    .sk-board { flex-direction: column; align-items: stretch; gap: 22px; }
+    .sk-board-center { padding-top: 0; }
+    .sk-board-score { font-size: 60px; }
+}
