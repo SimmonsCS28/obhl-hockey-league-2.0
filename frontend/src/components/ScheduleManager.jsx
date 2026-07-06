@@ -129,6 +129,12 @@ const ScheduleManager = () => {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             setParsedSlots(response.data);
+            // Auto-derive week counts from the file: the last 3 weeks are reserved for
+            // playoffs (league convention), the rest are the regular season.
+            const weekCount = new Set(response.data.map(s => s.week)).size;
+            const playoffs = weekCount > 3 ? 3 : Math.max(0, weekCount - 1);
+            setPlayoffWeeks(playoffs);
+            setMaxWeeks(weekCount - playoffs);
             showMessage('success', `Parsed ${response.data.length} game slots successfully`);
         } catch (error) {
             showMessage('error', error.response?.data || 'Failed to parse CSV file');
@@ -826,75 +832,45 @@ const ScheduleManager = () => {
                             <span className="sched-file-check">✓</span> {csvFile.name}
                         </div>
                     )}
-                    {parsedSlots.length > 0 && (
-                        <div className="slots-preview">
-                            <h3>Parsed Slots ({parsedSlots.length})</h3>
-                            <div className="slots-grid">
-                                {parsedSlots.slice(0, 10).map((slot, idx) => (
-                                    <div key={idx} className="slot-card">
-                                        Week {slot.week}: {slot.date} {slot.time} - {slot.rink}
+                    {parsedSlots.length > 0 && (() => {
+                        const totalWeeks = new Set(parsedSlots.map(s => s.week)).size;
+                        const regularWeeks = Math.max(0, totalWeeks - playoffWeeks);
+                        return (
+                            <div className="sched-parsed">
+                                <div className="sched-parsed-stats">
+                                    <div className="sched-stat">
+                                        <span className="sched-stat-num sched-stat-num--accent">{totalWeeks}</span>
+                                        <span className="sched-stat-label">Weeks</span>
                                     </div>
-                                ))}
-                                {parsedSlots.length > 10 && (
-                                    <div className="slot-card more">
-                                        +{parsedSlots.length - 10} more...
+                                    <div className="sched-stat">
+                                        <span className="sched-stat-num">{regularWeeks}</span>
+                                        <span className="sched-stat-label">Regular</span>
                                     </div>
+                                    <div className="sched-stat">
+                                        <span className="sched-stat-num sched-stat-num--amber">{playoffWeeks}</span>
+                                        <span className="sched-stat-label">Playoffs</span>
+                                    </div>
+                                </div>
+                                <p className="sched-parsed-note">
+                                    {parsedSlots.length} ice slots parsed across {totalWeeks} weeks.
+                                    {playoffWeeks > 0 && ` Last ${playoffWeeks} weeks auto-reserved for playoffs.`}
+                                </p>
+                                {games.length > 0 ? (
+                                    <p className="sched-parsed-note sched-parsed-warn">
+                                        Schedule already exists. Reset it first to regenerate.
+                                    </p>
+                                ) : (
+                                    <button
+                                        onClick={handleGenerateSchedule}
+                                        disabled={loading}
+                                        className="sched-generate-btn"
+                                    >
+                                        {loading ? 'Generating…' : 'Generate Schedule'}
+                                    </button>
                                 )}
                             </div>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Generate Schedule */}
-            {selectedSeason && isActiveSeason && parsedSlots.length > 0 && (
-                <div className="sched-step">
-                    <span className="sched-step-label">Step 3 · Generate</span>
-                    <div className="generate-form">
-                        <label>
-                            Max Weeks (Regular Season):
-                            <input
-                                id="maxWeeks"
-                                name="maxWeeks"
-                                type="number"
-                                value={maxWeeks}
-                                onChange={(e) => setMaxWeeks(parseInt(e.target.value))}
-                                min="1"
-                                max="20"
-                            />
-                        </label>
-                        <label>
-                            Playoff Weeks:
-                            <input
-                                id="playoffWeeks"
-                                name="playoffWeeks"
-                                type="number"
-                                value={playoffWeeks}
-                                onChange={(e) => setPlayoffWeeks(parseInt(e.target.value) || 0)}
-                                min="0"
-                                max="5"
-                                title="Weeks at end of season for playoffs (e.g. 3 for QF/SF/Final)"
-                            />
-                        </label>
-                        <div className="playoff-weeks-hint">
-                            {playoffWeeks === 3 && '🏆 QF (Wk ' + (maxWeeks + 1) + ') → SF (Wk ' + (maxWeeks + 2) + ') → Final (Wk ' + (maxWeeks + 3) + ')'}
-                            {playoffWeeks === 2 && '🏆 SF (Wk ' + (maxWeeks + 1) + ') → Final (Wk ' + (maxWeeks + 2) + ')'}
-                            {playoffWeeks === 1 && '🏆 Final (Wk ' + (maxWeeks + 1) + ')'}
-                            {playoffWeeks === 0 && 'No playoff weeks will be generated'}
-                        </div>
-                        <button
-                            onClick={handleGenerateSchedule}
-                            disabled={loading || games.length > 0}
-                            className="btn-primary"
-                        >
-                            {loading ? 'Generating...' : 'Generate Schedule'}
-                        </button>
-                        {games.length > 0 && (
-                            <p className="warning">
-                                Schedule already exists. Reset first to regenerate.
-                            </p>
-                        )}
-                    </div>
+                        );
+                    })()}
                 </div>
             )}
             </div>{/* /.sched-import */}

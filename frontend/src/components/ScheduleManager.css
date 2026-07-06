@@ -868,6 +868,90 @@
     flex: none;
 }
 
+/* Parsed-file summary (Weeks / Regular / Playoffs) + Generate */
+.schedule-manager .sched-parsed {
+    margin-top: 16px;
+    border-top: 1px solid rgba(157, 185, 205, 0.1);
+    padding-top: 14px;
+}
+
+.schedule-manager .sched-parsed-stats {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.schedule-manager .sched-stat {
+    flex: 1;
+    min-width: 90px;
+    display: flex;
+    flex-direction: column;
+}
+
+.schedule-manager .sched-stat-num {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 26px;
+    line-height: 1;
+    color: #fff;
+}
+
+.schedule-manager .sched-stat-num--accent {
+    color: var(--obi-accent);
+}
+
+.schedule-manager .sched-stat-num--amber {
+    color: #E8C26A;
+}
+
+.schedule-manager .sched-stat-label {
+    margin-top: 3px;
+    font-family: var(--obi-font-display);
+    font-weight: 600;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+}
+
+.schedule-manager .sched-parsed-note {
+    font-family: var(--obi-font-body);
+    font-size: 12px;
+    color: var(--obi-text-muted);
+    margin: 10px 0 0;
+    line-height: 1.5;
+}
+
+.schedule-manager .sched-parsed-warn {
+    color: var(--obi-accent);
+}
+
+.schedule-manager .sched-generate-btn {
+    width: 100%;
+    margin-top: 14px;
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #0b0c0f;
+    background: var(--obi-accent);
+    border: none;
+    padding: 12px;
+    border-radius: 8px;
+    transition: filter .15s;
+}
+
+.schedule-manager .sched-generate-btn:hover:not(:disabled) {
+    filter: brightness(1.06);
+}
+
+.schedule-manager .sched-generate-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
 /* ============================================================
    Inline per-week schedule editor (design)
    ============================================================ */
