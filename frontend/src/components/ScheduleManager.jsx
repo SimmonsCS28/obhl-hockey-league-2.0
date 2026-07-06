@@ -510,16 +510,21 @@ const ScheduleManager = () => {
         setHasPendingChanges(true);
     };
 
-    const handleInlineDateChange = (game, newDate) => {
-        const { time } = toLocalParts(game.gameDate);
-        const stored = partsToStored(newDate, time || '00:00');
-        if (stored) applyInlineEdit(game, { gameDate: stored });
-    };
-
     const handleInlineTimeChange = (game, newTime) => {
         const { date } = toLocalParts(game.gameDate);
         const stored = partsToStored(date, newTime);
         if (stored) applyInlineEdit(game, { gameDate: stored });
+    };
+
+    // Per-week date (design): all games in a week share a date. Setting the week
+    // date shifts every game in it to that date, keeping each game's own time.
+    const handleWeekDateChange = (week, newDate) => {
+        if (!newDate) return;
+        (gamesByWeek[week] || []).forEach(g => {
+            const { time } = toLocalParts(g.gameDate);
+            const stored = partsToStored(newDate, time || '00:00');
+            if (stored) applyInlineEdit(g, { gameDate: stored });
+        });
     };
 
     const handleRemoveWeek = (week) => {
@@ -908,80 +913,54 @@ const ScheduleManager = () => {
             {/* Schedule Display */}
             {selectedSeason && games.length > 0 && (
                 <div className="sched-generated-body">
-                    <div className="sched-generated-status">
-                        {scheduleMode === 'draft' && '📝 Draft Schedule'}
-                        {scheduleMode === 'saved' && '✅ Season Schedule'}
-                        {scheduleMode === 'editing' && '✏️ Season Schedule (Editing)'}
-                        {scheduleMode === 'none' && 'Generated Schedule'}
-                        {' '}({games.length} games)
-                    </div>
-
-                    {/* Show Reset button only in draft mode */}
-                    {scheduleMode === 'draft' && (
-                        <button
-                            onClick={handleResetSchedule}
-                            disabled={loading}
-                            className="btn-danger"
-                        >
-                            Reset Schedule
-                        </button>
-                    )}
-
-                    {/* Show Save Schedule button in draft or editing mode */}
-                    {(scheduleMode === 'draft' || scheduleMode === 'editing') && (
-                        <button
-                            onClick={handleSaveSchedule}
-                            disabled={loading}
-                            className="btn-primary"
-                            style={{ marginLeft: scheduleMode === 'draft' ? '10px' : '0', marginBottom: '20px' }}
-                        >
-                            💾 Save Schedule
-                        </button>
-                    )}
-
-                    {/* Download Schedule button - always show when games exist */}
-                    {games.length > 0 && (
-                        <button
-                            onClick={handleDownloadSchedule}
-                            disabled={loading}
-                            className="btn-secondary"
-                            style={{ marginLeft: '10px', marginBottom: '20px' }}
-                        >
-                            ⬇️ Download Schedule
-                        </button>
-                    )}
-
-                    {/* Show Clear Changes button only in editing mode */}
-                    {scheduleMode === 'editing' && (
-                        <button
-                            onClick={handleClearChanges}
-                            disabled={loading}
-                            className="btn-secondary"
-                            style={{ marginLeft: '10px', marginBottom: '20px' }}
-                        >
-                            ↩️ Clear Changes
-                        </button>
-                    )}
-
-                    {/* Week Filter - only show for saved/editing schedules */}
-                    {(scheduleMode === 'saved' || scheduleMode === 'editing') && (
-                        <div className="sm-week-filter">
-                            <label className="sm-filter-label">Filter by Week:</label>
-                            <select
-                                value={selectedWeek}
-                                onChange={(e) => setSelectedWeek(e.target.value)}
-                                className="season-select"
-                                style={{ maxWidth: '200px', display: 'inline-block' }}
-                            >
-                                <option value="all">All Weeks</option>
-                                {weeks.filter(w => w !== 'Unassigned').map(week => (
-                                    <option key={week} value={week}>
-                                        Week {week}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    )}
+                    {(() => {
+                        const schedDirty = scheduleMode === 'draft' || hasPendingChanges;
+                        return (
+                            <div className="sched-ctrl-bar">
+                                <span className="sched-ctrl-show">Show</span>
+                                <select
+                                    className="sched-ctrl-filter"
+                                    value={selectedWeek}
+                                    onChange={(e) => setSelectedWeek(e.target.value)}
+                                >
+                                    <option value="all">All Weeks</option>
+                                    {weeks.filter(w => w !== 'Unassigned').map(week => (
+                                        <option key={week} value={week}>Week {week}</option>
+                                    ))}
+                                </select>
+                                <span className="sched-ctrl-spacer" />
+                                {schedDirty ? (
+                                    <>
+                                        <span className="sched-unsaved-tag">
+                                            <span className="sched-unsaved-dot" />Not saved to database
+                                        </span>
+                                        <button className="sched-ctrl-ghost" onClick={handleAddWeek} disabled={loading}>+ Add Week</button>
+                                        {scheduleMode === 'draft' ? (
+                                            <button className="sched-ctrl-reset" onClick={handleResetSchedule} disabled={loading}>Reset</button>
+                                        ) : (
+                                            <button className="sched-ctrl-ghost" onClick={handleClearChanges} disabled={loading}>Clear Changes</button>
+                                        )}
+                                        <button className="sched-ctrl-primary" onClick={handleSaveSchedule} disabled={loading}>
+                                            {loading ? 'Saving…' : (scheduleMode === 'draft' ? 'Save Schedule' : 'Save Changes')}
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="sched-saved-pill">Saved</span>
+                                        <button className="sched-ctrl-ghost" onClick={handleAddWeek} disabled={loading}>+ Add Week</button>
+                                        <button className="sched-ctrl-download" onClick={handleDownloadSchedule} disabled={loading}>
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                                <polyline points="7 10 12 15 17 10" />
+                                                <line x1="12" y1="15" x2="12" y2="3" />
+                                            </svg>
+                                            Download Schedule
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        );
+                    })()}
 
                     {/* Responsive Schedule Display */}
                     {isDesktop ? (
@@ -992,17 +971,23 @@ const ScheduleManager = () => {
                                 .map(week => {
                                     const weekGames = gamesByWeek[week] || [];
                                     const isPlayoffWeek = weekGames.some(g => g.gameType === 'PLAYOFF');
+                                    const weekDate = toLocalParts(weekGames[0]?.gameDate).date;
                                     return (
                                         <div key={week} className="sched-week">
                                             <div className="sched-week-head">
                                                 <span className="sched-week-title">
                                                     {week === 'Unassigned' ? 'Unassigned' : `Week ${week}`}
                                                 </span>
+                                                {week !== 'Unassigned' && weekGames.length > 0 && (
+                                                    <input
+                                                        type="date"
+                                                        className="sched-week-date"
+                                                        value={weekDate}
+                                                        onChange={(e) => handleWeekDateChange(week, e.target.value)}
+                                                    />
+                                                )}
                                                 <span className={`sched-week-tag${isPlayoffWeek ? ' is-playoff' : ''}`}>
                                                     {isPlayoffWeek ? 'Playoff' : 'Regular'}
-                                                </span>
-                                                <span className="sched-week-count">
-                                                    {weekGames.length} game{weekGames.length === 1 ? '' : 's'}
                                                 </span>
                                                 {week !== 'Unassigned' && (
                                                     <button
@@ -1016,22 +1001,13 @@ const ScheduleManager = () => {
                                             </div>
                                             <div className="sched-week-games">
                                                 {weekGames.map(game => {
-                                                    const { date, time } = toLocalParts(game.gameDate);
+                                                    const { time } = toLocalParts(game.gameDate);
                                                     const homeColor = getValidColor(getTeamById(game.homeTeamId)?.teamColor);
                                                     const awayColor = getValidColor(getTeamById(game.awayTeamId)?.teamColor);
-                                                    const isCompleted = game.status === 'completed';
-                                                    const gd = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
-                                                    const isNotFriday = gd.getDay() !== 5;
-                                                    const isPlayoff = game.gameType === 'PLAYOFF';
+                                                    const isReserved = game.gameType === 'PLAYOFF' && (!game.homeTeamId || !game.awayTeamId);
                                                     return (
                                                         <div key={game.id} className="sched-game-row">
-                                                            <div className="sched-game-when">
-                                                                <input
-                                                                    type="date"
-                                                                    className="sched-inline-input"
-                                                                    value={date}
-                                                                    onChange={(e) => handleInlineDateChange(game, e.target.value)}
-                                                                />
+                                                            <span className="sched-game-slot">
                                                                 <input
                                                                     type="time"
                                                                     className="sched-inline-input"
@@ -1040,55 +1016,50 @@ const ScheduleManager = () => {
                                                                 />
                                                                 <select
                                                                     className="sched-inline-input sched-rink-select"
-                                                                    value={game.rink || 'Tubbs'}
+                                                                    value={game.rink || ''}
                                                                     onChange={(e) => applyInlineEdit(game, { rink: e.target.value })}
                                                                 >
+                                                                    <option value="">Rink</option>
                                                                     <option value="Tubbs">Tubbs</option>
                                                                     <option value="Cardinal">Cardinal</option>
                                                                 </select>
-                                                                {isNotFriday && (
-                                                                    <span className="sched-day-warn" title="Not a Friday game">⚠️</span>
-                                                                )}
-                                                                {isPlayoff && (
-                                                                    <span className="sched-playoff-chip">
-                                                                        {game.playoffRound?.replace('QUARTERFINAL', 'QF').replace('SEMIFINAL', 'SF').replace('FINAL', 'Final') || 'Playoff'}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            <div className="sched-game-teams">
-                                                                <span className="sched-team-dot" style={{ background: homeColor }} />
-                                                                <select
-                                                                    className="sched-inline-input sched-team-select"
-                                                                    value={game.homeTeamId || ''}
-                                                                    onChange={(e) => applyInlineEdit(game, { homeTeamId: e.target.value ? parseInt(e.target.value) : null })}
-                                                                >
-                                                                    <option value="">TBD</option>
-                                                                    {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                                                                </select>
-                                                                <span className="sched-vs">vs</span>
-                                                                <select
-                                                                    className="sched-inline-input sched-team-select"
-                                                                    value={game.awayTeamId || ''}
-                                                                    onChange={(e) => applyInlineEdit(game, { awayTeamId: e.target.value ? parseInt(e.target.value) : null })}
-                                                                >
-                                                                    <option value="">TBD</option>
-                                                                    {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                                                                </select>
-                                                                <span className="sched-team-dot" style={{ background: awayColor }} />
-                                                            </div>
-                                                            <div className="sched-game-end">
-                                                                {isCompleted
-                                                                    ? <span className="score">{game.homeScore} - {game.awayScore}</span>
-                                                                    : <span className="upcoming-badge">Scheduled</span>}
-                                                                <button
-                                                                    className="sched-game-remove"
-                                                                    title="Remove game"
-                                                                    onClick={() => handleDeleteGame(game.id)}
-                                                                    disabled={loading}
-                                                                >
-                                                                    ×
-                                                                </button>
-                                                            </div>
+                                                            </span>
+                                                            {isReserved ? (
+                                                                <span className="sched-reserved">Playoff — reserved (TBD)</span>
+                                                            ) : (
+                                                                <span className="sched-game-teams">
+                                                                    <span className="sched-team-dot" style={{ background: homeColor }} />
+                                                                    <select
+                                                                        className="sched-inline-input sched-team-select"
+                                                                        value={game.homeTeamId || ''}
+                                                                        onChange={(e) => applyInlineEdit(game, { homeTeamId: e.target.value ? parseInt(e.target.value) : null })}
+                                                                    >
+                                                                        <option value="">TBD</option>
+                                                                        {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                                                    </select>
+                                                                    <span className="sched-vs">vs</span>
+                                                                    <select
+                                                                        className="sched-inline-input sched-team-select"
+                                                                        value={game.awayTeamId || ''}
+                                                                        onChange={(e) => applyInlineEdit(game, { awayTeamId: e.target.value ? parseInt(e.target.value) : null })}
+                                                                    >
+                                                                        <option value="">TBD</option>
+                                                                        {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                                                                    </select>
+                                                                    <span className="sched-team-dot" style={{ background: awayColor }} />
+                                                                </span>
+                                                            )}
+                                                            {game.status === 'completed' && (
+                                                                <span className="sched-game-score">{game.homeScore} - {game.awayScore}</span>
+                                                            )}
+                                                            <button
+                                                                className="sched-game-remove"
+                                                                title="Remove game"
+                                                                onClick={() => handleDeleteGame(game.id)}
+                                                                disabled={loading}
+                                                            >
+                                                                ×
+                                                            </button>
                                                         </div>
                                                     );
                                                 })}
@@ -1167,19 +1138,6 @@ const ScheduleManager = () => {
                         </div>
                     )}
 
-
-                    {/* Add Week Button */}
-                    {
-                        isActiveSeason && (
-                            <button
-                                onClick={handleAddWeek}
-                                className="btn-add-week"
-                                disabled={loading}
-                            >
-                                ➕ Add Week
-                            </button>
-                        )
-                    }
 
                     {/* Initialize Playoff Bracket — shown when saved schedule has TBD playoff games */}
                     {isActiveSeason && scheduleMode === 'saved' && games.some(g => g.gameType === 'PLAYOFF' && !g.homeTeamId) && (
