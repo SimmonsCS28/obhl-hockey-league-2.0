@@ -25,7 +25,8 @@ function LiveScoreEntry(props) {
         onDirtyChange,
         hasPendingNavigation,
         onNavigate,
-        onNavigateCancel
+        onNavigateCancel,
+        embedded = false
     } = props;
     const { gameId } = useParams();
     const navigate = useNavigate();
@@ -810,11 +811,11 @@ function LiveScoreEntry(props) {
 
     return (
         <div className="live-score-entry">
-            <div className="entry-header">
-                <button className="btn-back" onClick={handleBack}>← Signups · Dashboard</button>
+            <div className={`entry-header${embedded ? ' entry-header--embedded' : ''}`}>
+                {!embedded && <button className="btn-back" onClick={handleBack}>← Signups · Dashboard</button>}
                 <h2>
                     <span className="matchup-title">{game.homeTeamName} <span className="matchup-vs">vs</span> {game.awayTeamName}</span>
-                    <span className="entry-subtitle">Live Score Entry</span>
+                    {!embedded && <span className="entry-subtitle">Live Score Entry</span>}
                 </h2>
                 {!gameFinalized && (
                     <button

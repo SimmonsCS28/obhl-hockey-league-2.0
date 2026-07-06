@@ -65,6 +65,21 @@
     justify-self: end;
 }
 
+/* Embedded (admin chip-picker) — no back link; matchup left, Save right */
+.entry-header.entry-header--embedded {
+    grid-template-columns: 1fr auto;
+}
+.entry-header--embedded h2 {
+    grid-column: 1;
+    align-items: flex-start;
+    text-align: left;
+}
+.entry-header--embedded .btn-save,
+.entry-header--embedded .btn-action,
+.entry-header--embedded .finalized-badge {
+    grid-column: 2;
+}
+
 .entry-header .finalized-badge {
     grid-column: 3;
     justify-self: end;
