@@ -173,9 +173,9 @@ function GMSchedule() {
                                         </td>
                                         <td>
                                             {isCompleted ? (
-                                                <Link to={`/game/${game.id}/recap`} className="btn-action-small preview-btn">Recap</Link>
+                                                <Link to={`/game/${game.id}/recap`} state={{ from: '/gm/schedule', backLabel: 'Schedule' }} className="btn-action-small preview-btn">Recap</Link>
                                             ) : (
-                                                <Link to={`/game/${game.id}/preview`} className="btn-action-small preview-btn">Preview</Link>
+                                                <Link to={`/game/${game.id}/preview`} state={{ from: '/gm/schedule', backLabel: 'Schedule' }} className="btn-action-small preview-btn">Preview</Link>
                                             )}
                                         </td>
                                     </tr>

@@ -9,21 +9,27 @@
     padding-bottom: 74px;
 }
 
-/* Controls row */
+/* Controls row — season selector leads, then a hairline divider, then search, then the count pushed right */
 .obi-players-controls {
     display: flex;
     flex-wrap: wrap;
-    gap: 14px;
+    gap: 16px;
     align-items: center;
-    justify-content: space-between;
     margin-bottom: 18px;
+}
+
+.obi-players-divider {
+    width: 1px;
+    height: 34px;
+    background: rgba(157, 185, 205, 0.16);
+    flex: none;
 }
 
 .obi-search {
     position: relative;
     flex: 1;
-    min-width: 230px;
-    max-width: 360px;
+    min-width: 200px;
+    max-width: 320px;
 }
 
 .obi-search-icon {
@@ -51,10 +57,8 @@
     border-color: rgba(246, 169, 28, 0.5);
 }
 
-.obi-players-controls-right {
-    display: flex;
-    align-items: center;
-    gap: 14px;
+.obi-showing-push {
+    margin-left: auto;
 }
 
 .obi-showing {

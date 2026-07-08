@@ -25,6 +25,19 @@ server {
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+
+        # When the frontend container is unreachable (deploys, rebuilds, crashes),
+        # serve a friendly static maintenance page instead of a raw 502. Served from
+        # the host filesystem so it works even when every container is down.
+        proxy_intercept_errors on;
+        error_page 502 503 504 =503 /maintenance.html;
+    }
+
+    # Static maintenance page (host FS, container-independent). Deploy to
+    # /var/www/obhl-maintenance/maintenance.html — see deploy/README.md.
+    location = /maintenance.html {
+        root /var/www/obhl-maintenance;
+        internal;
     }
 
     location /api/ {

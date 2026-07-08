@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSeason } from '../../contexts/SeasonContext';
+import SeasonSelector from '../common/SeasonSelector';
 import heroBg from '../../assets/images/buzzard-full.jpg';
 import './StandingsPage.css';
 
@@ -18,10 +19,13 @@ const dotColor = (color) => (color ? (TEAM_COLOR_MAP[color] || color) : '#808080
 
 function StandingsPage() {
     const navigate = useNavigate();
-    const { seasons, selectedSeason, selectedSeasonId, setSelectedSeasonId } = useSeason();
+    const { seasons, selectedSeason, selectedSeasonId, setSelectedSeasonId, resetToActiveSeason } = useSeason();
     const [teams, setTeams] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // Always open on the active season (the selection is app-global and otherwise sticks).
+    useEffect(() => { resetToActiveSeason(); }, [resetToActiveSeason]);
 
     useEffect(() => {
         if (selectedSeasonId) {
@@ -107,25 +111,19 @@ function StandingsPage() {
             <section className="obi-standings-body">
                 <div className="obi-container">
                     <div className="obi-standings-toolbar">
+                        {seasons?.length > 0 && (
+                            <SeasonSelector
+                                seasons={seasons}
+                                selectedSeasonId={selectedSeasonId}
+                                onChange={setSelectedSeasonId}
+                            />
+                        )}
                         <div className="obi-legend">
                             <span><b>PTS</b> = points · Win = 2 · OT Loss = 1 · Loss = 0</span>
                             <span className="obi-legend-cut">
                                 <span className="obi-legend-line" />Playoff cut line
                             </span>
                         </div>
-                        {seasons?.length > 0 && (
-                            <select
-                                className="obi-season-select"
-                                value={String(selectedSeasonId || '')}
-                                onChange={(e) => setSelectedSeasonId(Number(e.target.value))}
-                            >
-                                {seasons.map(s => (
-                                    <option key={s.id} value={String(s.id)}>
-                                        {s.name}{s.isActive ? ' (Active)' : ''}
-                                    </option>
-                                ))}
-                            </select>
-                        )}
                     </div>
 
                     {loading ? (

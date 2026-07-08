@@ -176,9 +176,9 @@ function GamePreview() {
                 <div className="obi-page-hero-inner">
                     <button
                         className="obi-gd-back"
-                        onClick={() => navigate(location.state?.fromDashboard ? '/user' : '/schedule')}
+                        onClick={() => navigate(location.state?.from || (location.state?.fromDashboard ? '/dashboard' : '/schedule'))}
                     >
-                        ← Back to {location.state?.fromDashboard ? 'My Dashboard' : 'Schedule'}
+                        ← Back to {location.state?.backLabel || (location.state?.fromDashboard ? 'My Dashboard' : 'Schedule')}
                     </button>
                     <div className="obi-eyebrow">Matchup Preview</div>
                     <h1 className="obi-gd-title">

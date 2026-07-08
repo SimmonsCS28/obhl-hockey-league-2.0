@@ -1,0 +1,340 @@
+/* Generate Users tab — OBHL dark theme, per design_handoff_season */
+
+.gen-tab {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    max-width: 820px;
+}
+
+.gen-card {
+    background: var(--obi-bg-card);
+    border: 1px solid rgba(157, 185, 205, 0.14);
+    border-radius: 12px;
+    padding: 22px 24px;
+}
+
+.gen-title {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 22px;
+    color: #fff;
+    margin: 0 0 8px;
+}
+
+.gen-desc {
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--obi-text-secondary);
+    margin: 0 0 16px;
+}
+
+.gen-list-label {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #fff;
+    margin-bottom: 8px;
+}
+
+.gen-list {
+    margin: 0 0 20px;
+    padding-left: 20px;
+    list-style: disc;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.gen-list li {
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-text-secondary);
+}
+
+.gen-list li b {
+    color: var(--obi-text);
+    font-weight: 600;
+}
+
+.gen-list li small {
+    color: var(--obi-text-muted);
+}
+
+.gen-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+    color: var(--obi-text);
+    background: rgba(157, 185, 205, 0.12);
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+.gen-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.gen-btn {
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    transition: filter 0.15s;
+}
+
+.gen-btn:hover:not(:disabled) { filter: brightness(1.08); }
+.gen-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.gen-btn--generate { background: #4FA971; color: #0b0c0f; }
+.gen-btn--import { background: #2C8C94; color: #fff; }
+
+.gen-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    border-radius: 9px;
+    padding: 11px 14px;
+    font-family: var(--obi-font-body);
+    font-size: 13.5px;
+    line-height: 1.4;
+}
+
+.gen-alert--error {
+    background: rgba(224, 138, 138, 0.1);
+    border: 1px solid rgba(224, 138, 138, 0.3);
+    color: var(--obi-error);
+}
+
+.gen-alert--success {
+    background: rgba(127, 181, 154, 0.14);
+    border: 1px solid rgba(127, 181, 154, 0.32);
+    color: var(--obi-success);
+}
+
+/* Accounts-to-create / review panel */
+.gen-result-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.gen-result-title {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #fff;
+}
+
+.gen-result-summary {
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    color: #9AA6B0;
+}
+
+.gen-result-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+.gen-result-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 13px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    flex-wrap: wrap;
+}
+
+.gen-result-name {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    color: #fff;
+    width: 150px;
+    min-width: 110px;
+}
+
+.gen-result-email {
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    color: #9AA6B0;
+    flex: 1;
+    min-width: 0;
+}
+
+.gen-result-tag {
+    flex: none;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 5px;
+    white-space: nowrap;
+    border: 1px solid transparent;
+}
+
+.gen-result-tag--create {
+    color: var(--obi-success);
+    background: rgba(127, 181, 154, 0.12);
+    border-color: rgba(127, 181, 154, 0.32);
+}
+
+.gen-result-tag--flag {
+    color: var(--obi-warning);
+    background: rgba(232, 194, 106, 0.14);
+    border-color: rgba(232, 194, 106, 0.3);
+}
+
+.gen-resolve {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.gen-resolve-btn {
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    background: transparent;
+    color: var(--obi-text-muted);
+    border: 1px solid var(--obi-card-border);
+    padding: 5px 9px;
+    border-radius: 6px;
+    height: auto !important;
+}
+
+.gen-resolve-btn.is-active {
+    color: #0b0c0f;
+    background: var(--obi-accent);
+    border-color: var(--obi-accent);
+}
+
+.gen-confirm-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 14px;
+}
+
+.gen-empty {
+    background: var(--obi-bg-card);
+    border: 1px dashed rgba(157, 185, 205, 0.22);
+    border-radius: 12px;
+    padding: 26px;
+    text-align: center;
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-text-muted);
+}
+
+/* Duplicate-name / goalie-import modal tables */
+.gen-modal-table-wrap {
+    max-height: 400px;
+    overflow: auto;
+    margin-bottom: 20px;
+    border: 1px solid rgba(157, 185, 205, 0.16);
+    border-radius: 10px;
+}
+
+.gen-modal-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.gen-modal-table th {
+    text-align: left;
+    padding: 10px 14px;
+    background: rgba(0, 0, 0, 0.25);
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    border-bottom: 1px solid rgba(157, 185, 205, 0.18);
+    white-space: nowrap;
+}
+
+.gen-modal-table td {
+    padding: 10px 14px;
+    font-family: var(--obi-font-body);
+    font-size: 13.5px;
+    color: var(--obi-text-secondary);
+    border-bottom: 1px solid rgba(157, 185, 205, 0.08);
+    white-space: nowrap;
+}
+
+.gen-modal-table tr:last-child td { border-bottom: none; }
+
+.gen-modal-table td b { color: var(--obi-text); }
+
+.gen-skill-input {
+    width: 60px;
+    background: #0e1116;
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    border-radius: 6px;
+    padding: 6px 8px;
+    color: var(--obi-text);
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+}
+
+.gen-modal-note {
+    font-family: var(--obi-font-body);
+    font-size: 13.5px;
+    color: var(--obi-text-secondary);
+    margin: 0 0 16px;
+    line-height: 1.5;
+}
+
+.gen-modal-note ul {
+    margin: 10px 0 0;
+    padding-left: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.gen-modal-note li { font-size: 13px; color: var(--obi-text-muted); }
+.gen-modal-note li b { color: var(--obi-text-secondary); }
+
+.gen-radio-group {
+    display: flex;
+    gap: 12px;
+}
+
+.gen-radio-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    color: var(--obi-text-secondary);
+}

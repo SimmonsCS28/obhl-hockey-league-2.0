@@ -56,26 +56,28 @@ function LoginModal({ isOpen, onClose }) {
 
     return (
         <div className="login-modal-overlay" onClick={handleOverlayClick}>
-            <div className="login-modal">
-                <button className="modal-close" onClick={onClose}>&times;</button>
+            <div className="login-modal auth-card">
+                <button className="login-modal-close" onClick={onClose} aria-label="Close">&times;</button>
 
-                <div className="modal-header">
-                    <h2>Login</h2>
-                    <p>Sign in to continue</p>
+                <div className="login-modal-header">
+                    <h2 className="auth-title">Login</h2>
+                    <p className="auth-subtitle">Sign in to continue</p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="modal-form">
+                <form onSubmit={handleSubmit} className="login-modal-form">
                     {error && (
-                        <div className="error-message">
-                            {error}
+                        <div className="auth-alert auth-alert--error">
+                            <span className="auth-alert-icon" aria-hidden="true">⚠</span>
+                            <span>{error}</span>
                         </div>
                     )}
 
-                    <div className="form-group">
-                        <label htmlFor="modal-email">Email or Username</label>
+                    <div className="auth-form-group">
+                        <label className="auth-label" htmlFor="modal-email">Email or Username</label>
                         <input
                             id="modal-email"
                             type="text"
+                            className={`auth-input${error ? ' auth-input-error' : ''}`}
                             value={usernameOrEmail}
                             onChange={(e) => setUsernameOrEmail(e.target.value)}
                             placeholder="Enter your email or username"
@@ -84,12 +86,13 @@ function LoginModal({ isOpen, onClose }) {
                         />
                     </div>
 
-                    <div className="form-group">
-                        <label htmlFor="modal-password">Password</label>
-                        <div className="password-input-wrapper">
+                    <div className="auth-form-group">
+                        <label className="auth-label" htmlFor="modal-password">Password</label>
+                        <div className="auth-password-wrapper">
                             <input
                                 id="modal-password"
                                 type={showPassword ? "text" : "password"}
+                                className={`auth-input${error ? ' auth-input-error' : ''}`}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="Enter your password"
@@ -97,17 +100,17 @@ function LoginModal({ isOpen, onClose }) {
                             />
                             <button
                                 type="button"
-                                className="password-toggle"
+                                className="auth-password-toggle"
                                 onClick={() => setShowPassword(!showPassword)}
                                 aria-label={showPassword ? "Hide password" : "Show password"}
                             >
                                 {showPassword ? (
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
                                         <line x1="1" y1="1" x2="23" y2="23"></line>
                                     </svg>
                                 ) : (
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
                                         <circle cx="12" cy="12" r="3"></circle>
                                     </svg>
@@ -118,15 +121,16 @@ function LoginModal({ isOpen, onClose }) {
 
                     <button
                         type="submit"
-                        className="login-button"
+                        className="auth-btn"
                         disabled={loading}
                     >
+                        {loading && <span className="auth-spinner" aria-hidden="true"></span>}
                         {loading ? 'Signing in...' : 'Sign In'}
                     </button>
 
-                    <div className="modal-footer" style={{ marginTop: '1rem', textAlign: 'center' }}>
-                        <p>Don't have an account? <span onClick={() => { onClose(); navigate('/signup'); }} style={{ color: '#007bff', cursor: 'pointer', textDecoration: 'underline' }}>Create Account</span></p>
-                        <p style={{ marginTop: '0.5rem' }}><span onClick={() => { onClose(); navigate('/forgot-password'); }} style={{ color: '#6c757d', cursor: 'pointer', fontSize: '0.9rem' }}>Forgot Password?</span></p>
+                    <div className="auth-footer">
+                        <span>Don't have an account? <button type="button" className="auth-link" onClick={() => { onClose(); navigate('/signup'); }}>Create Account</button></span>
+                        <button type="button" className="auth-link" onClick={() => { onClose(); navigate('/forgot-password'); }}>Forgot Password?</button>
                     </div>
                 </form>
             </div>

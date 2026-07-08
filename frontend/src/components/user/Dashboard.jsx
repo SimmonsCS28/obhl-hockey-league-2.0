@@ -207,7 +207,7 @@ function Dashboard() {
                                     <TeamChip id={nextGame.awayTeamId} teamById={teamById} />
                                 </div>
                                 <div className="dash-when">{fmtWhen(nextGame.gameDate)}{nextGame.rink ? ` · ${nextGame.rink}` : ''}</div>
-                                <button className="dash-preview-btn" onClick={() => navigate(`/game/${nextGame.id}/preview`)}>View Preview</button>
+                                <button className="dash-preview-btn" onClick={() => navigate(`/game/${nextGame.id}/preview`, { state: { from: '/dashboard', backLabel: 'Dashboard' } })}>View Preview</button>
                             </>
                         ) : <div className="dash-empty">No upcoming games scheduled.</div>}
                     </div>
@@ -225,7 +225,7 @@ function Dashboard() {
                                     <span className="dash-score-team">{teamName(lastGame.awayTeamId)}</span>
                                 </div>
                                 {lastResult && <div className={`dash-result dash-result--${lastResult.toLowerCase()}`}>{lastResult}</div>}
-                                <button className="dash-preview-btn" onClick={() => navigate(`/game/${lastGame.id}/recap`)}>View Recap</button>
+                                <button className="dash-preview-btn" onClick={() => navigate(`/game/${lastGame.id}/recap`, { state: { from: '/dashboard', backLabel: 'Dashboard' } })}>View Recap</button>
                             </>
                         ) : <div className="dash-empty">No games played yet.</div>}
                     </div>
@@ -249,7 +249,7 @@ function Dashboard() {
                                 <div className="dash-sched-teams">{teamName(g.homeTeamId)} <span className="dash-vs">vs</span> {teamName(g.awayTeamId)}</div>
                                 <div className="dash-sched-meta">{fmtTime(g.gameDate)}{g.rink ? ` · ${g.rink}` : ''}</div>
                             </div>
-                            <button className="dash-preview-btn dash-preview-btn--sm" onClick={() => navigate(`/game/${g.id}/preview`)}>Preview</button>
+                            <button className="dash-preview-btn dash-preview-btn--sm" onClick={() => navigate(`/game/${g.id}/preview`, { state: { from: '/dashboard', backLabel: 'Dashboard' } })}>Preview</button>
                         </div>
                     ))}
                 </div>

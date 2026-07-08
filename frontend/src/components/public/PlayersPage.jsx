@@ -1,17 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useSeason } from '../../contexts/SeasonContext';
 import { resolveTeamColor } from '../../constants/teamColors';
+import SeasonSelector from '../common/SeasonSelector';
 import heroBg from '../../assets/images/buzzard-full.jpg';
 import './PlayersPage.css';
 
 function PlayersPage() {
-    const { seasons, selectedSeason, selectedSeasonId, setSelectedSeasonId } = useSeason();
+    const { seasons, selectedSeason, selectedSeasonId, setSelectedSeasonId, resetToActiveSeason } = useSeason();
     const [players, setPlayers] = useState([]);
     const [teams, setTeams] = useState([]);
     const [selectedTeam, setSelectedTeam] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+
+    // Always open on the active season (the selection is app-global and otherwise sticks).
+    useEffect(() => { resetToActiveSeason(); }, [resetToActiveSeason]);
 
     useEffect(() => {
         if (selectedSeasonId) {
@@ -79,6 +83,16 @@ function PlayersPage() {
                 <div className="obi-container">
                     {/* Controls */}
                     <div className="obi-players-controls">
+                        {seasons?.length > 0 && (
+                            <>
+                                <SeasonSelector
+                                    seasons={seasons}
+                                    selectedSeasonId={selectedSeasonId}
+                                    onChange={setSelectedSeasonId}
+                                />
+                                <span className="obi-players-divider" />
+                            </>
+                        )}
                         <div className="obi-search">
                             <span className="obi-search-icon">⌕</span>
                             <input
@@ -89,24 +103,9 @@ function PlayersPage() {
                                 className="obi-search-input"
                             />
                         </div>
-                        <div className="obi-players-controls-right">
-                            {seasons?.length > 0 && (
-                                <select
-                                    className="obi-season-select"
-                                    value={String(selectedSeasonId || '')}
-                                    onChange={(e) => setSelectedSeasonId(Number(e.target.value))}
-                                >
-                                    {seasons.map(s => (
-                                        <option key={s.id} value={String(s.id)}>
-                                            {s.name}{s.isActive ? ' (Active)' : ''}
-                                        </option>
-                                    ))}
-                                </select>
-                            )}
-                            <span className="obi-showing">
-                                Showing <b>{sorted.length}</b> of {players.length}
-                            </span>
-                        </div>
+                        <span className="obi-showing obi-showing-push">
+                            Showing <b>{sorted.length}</b> of {players.length}
+                        </span>
                     </div>
 
                     {/* Team filter chips */}

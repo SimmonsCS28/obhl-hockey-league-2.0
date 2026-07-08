@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { resolveTeamColor } from '../../constants/teamColors';
+import SeasonOverviewCards from '../common/SeasonOverviewCards';
 import bannerImg from '../../assets/images/buzzard-banner.png';
 import './Home.css';
 
@@ -20,7 +21,6 @@ const fmtAnnDate = (s) => {
 function Home() {
     const [activeSeason, setActiveSeason] = useState(null);
     const [teams, setTeams] = useState([]);
-    const [players, setPlayers] = useState([]);
     const [games, setGames] = useState([]);
     const [announcements, setAnnouncements] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -39,13 +39,11 @@ function Home() {
             setActiveSeason(active);
 
             if (active) {
-                const [teamsRes, playersRes, gamesRes] = await Promise.all([
+                const [teamsRes, gamesRes] = await Promise.all([
                     fetch(`/api/v1/teams?seasonId=${active.id}`),
-                    fetch(`/stats-api/players?seasonId=${active.id}`),
                     fetch(`/games-api/games?seasonId=${active.id}`),
                 ]);
                 if (teamsRes.ok) setTeams(await teamsRes.json());
-                if (playersRes.ok) setPlayers(await playersRes.json());
                 if (gamesRes.ok) setGames(await gamesRes.json());
             }
 
@@ -80,14 +78,6 @@ function Home() {
     const nextWeekNum = upcoming.length ? upcoming[0].week : null;
     const nextWeek = upcoming.filter(g => g.week === nextWeekNum).slice(0, 4);
 
-    const playedCount = completed.length;
-    const stats = [
-        { value: teams.length, label: 'Teams', sub: 'in the league' },
-        { value: players.length, label: 'Players', sub: 'rostered this season' },
-        { value: games.length, label: 'Games', sub: 'on the schedule' },
-        { value: playedCount, label: 'Played', sub: `${Math.max(games.length - playedCount, 0)} remaining` },
-    ];
-
     if (loading) {
         return <div className="obi-page obi-home"><div className="obi-home-loading">Loading…</div></div>;
     }
@@ -108,7 +98,7 @@ function Home() {
                     </div>
                     <h1 className="obi-hero-title">OLD BIRDS.<br />SHARP TALONS.</h1>
                     <p className="obi-hero-sub">
-                        Adult beer-league hockey at the Sun Prairie Ice Arena. Ten teams, two nights a week,
+                        Adult beer-league hockey at the Sun Prairie Ice Arena. Ten teams, one night a week,
                         one ugly trophy worth bleeding for.
                     </p>
                     <div className="obi-hero-cta">
@@ -153,15 +143,7 @@ function Home() {
                             </div>
                             <Link to="/seasons" className="obi-glance-link">Full season details →</Link>
                         </div>
-                        <div className="obi-stat-grid">
-                            {stats.map(s => (
-                                <div key={s.label} className="obi-stat-card">
-                                    <div className="obi-stat-value">{s.value}</div>
-                                    <div className="obi-stat-label">{s.label}</div>
-                                    <div className="obi-stat-sub">{s.sub}</div>
-                                </div>
-                            ))}
-                        </div>
+                        <SeasonOverviewCards season={activeSeason} />
                     </div>
                 </section>
             )}

@@ -294,6 +294,17 @@
     transition: color 0.15s;
 }
 
+/* Override the global DraftDashboard.css `button {}` reset so this link-styled button
+   lines up with the sibling anchor links (no 36px height / centered / inline-flex text). */
+.obi-footer-linkbtn {
+    height: auto;
+    align-self: flex-start;
+    justify-content: flex-start;
+    line-height: inherit;
+    white-space: normal;
+    border-radius: 0;
+}
+
 .obi-footer-col a:hover,
 .obi-footer-linkbtn:hover {
     color: #fff;

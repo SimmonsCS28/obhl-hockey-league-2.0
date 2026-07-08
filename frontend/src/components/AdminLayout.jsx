@@ -4,6 +4,7 @@ import logo from '../assets/images/buzzard-logo.png';
 import { useAuth } from '../contexts/AuthContext';
 import { useSeason } from '../contexts/SeasonContext';
 import UserPill from './common/UserPill';
+import SeasonSelector from './common/SeasonSelector';
 import './AdminLayout.css';
 
 // Sidebar nav. Items use ?tab= except Schedule which is its own route.
@@ -120,16 +121,15 @@ function AdminLayout({ children, activeTab }) {
                     </div>
                     <div className="obi-admin-topbar-right">
                         {seasons?.length > 0 ? (
-                            <select
-                                className="obi-admin-season"
-                                value={selectedSeasonId || ''}
-                                onChange={(e) => setSelectedSeasonId(Number(e.target.value))}
-                                title="Active season"
-                            >
-                                {seasons.map(s => (
-                                    <option key={s.id} value={s.id}>{s.name}{s.isActive ? ' ★' : ''}</option>
-                                ))}
-                            </select>
+                            <SeasonSelector
+                                seasons={seasons}
+                                selectedSeasonId={selectedSeasonId}
+                                onChange={setSelectedSeasonId}
+                                size="sm"
+                                align="right"
+                                caption="Drives every admin tab"
+                                menuHint="Select Season · applies everywhere"
+                            />
                         ) : (
                             <span className="obi-admin-season-badge">{activeSeasonName}</span>
                         )}

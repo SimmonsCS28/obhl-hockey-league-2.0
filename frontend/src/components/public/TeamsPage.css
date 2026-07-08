@@ -9,11 +9,28 @@
     padding-bottom: 72px;
 }
 
-.obi-teams-toolbar {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 20px;
+.obi-teams-subbar {
+    background: rgba(14, 16, 20, 0.96);
+    border-bottom: 1px solid rgba(157, 185, 205, 0.12);
 }
+
+.obi-teams-subbar-inner {
+    padding-top: 14px;
+    padding-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.obi-showing {
+    font-family: var(--obi-font-body);
+    font-size: 13.5px;
+    color: var(--obi-text-muted);
+}
+
+.obi-showing b { color: var(--obi-text); }
 
 .obi-teams-grid {
     display: grid;

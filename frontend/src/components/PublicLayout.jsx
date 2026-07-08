@@ -121,16 +121,21 @@ function PublicLayout() {
                     <div className="obi-footer-cols">
                         <div className="obi-footer-col">
                             <div className="obi-footer-col-title">League</div>
+                            <Link to="/">Home</Link>
+                            <Link to="/seasons">Seasons</Link>
+                            <Link to="/rules">Rules &amp; Bylaws</Link>
+                            <a
+                                href="https://sunprairieice.com/hockey/adult-hockey-league/obhl-hockey/"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >Sun Prairie Ice Arena</a>
+                        </div>
+                        <div className="obi-footer-col">
+                            <div className="obi-footer-col-title">Season</div>
                             <Link to="/schedule">Schedule</Link>
                             <Link to="/standings">Standings</Link>
                             <Link to="/teams">Teams</Link>
                             <Link to="/players">Players</Link>
-                        </div>
-                        <div className="obi-footer-col">
-                            <div className="obi-footer-col-title">Season</div>
-                            <Link to="/">Home</Link>
-                            <Link to="/seasons">Seasons</Link>
-                            <Link to="/rules">Rules &amp; Bylaws</Link>
                         </div>
                         <div className="obi-footer-col">
                             <div className="obi-footer-col-title">My Account</div>

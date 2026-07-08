@@ -1,135 +1,224 @@
-.seasons-page {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 2rem;
+/* Seasons (/seasons) — OBHL dark theme, per design_handoff (Website theme integration (3)).
+ * Scoped `obi-seasons-*` classnames — the old file used generic `.season-selector`,
+ * `.info-card`, `.active-badge`, `.no-data` which collide across this unscoped codebase. */
+
+.obi-seasons-body {
+    background: var(--obi-bg-elevated);
 }
 
-.season-selector {
-    background: white;
-    padding: 1rem 1.5rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    margin-bottom: 2rem;
+.obi-seasons-body .obi-container {
+    padding-bottom: 80px;
+}
+
+/* Sticky toolbar under the hero */
+.obi-seasons-toolbar {
+    position: sticky;
+    top: 74px; /* public header height */
+    z-index: 40;
+    background: rgba(14, 16, 20, 0.96);
+    backdrop-filter: blur(8px);
+    margin: 0 -28px 32px;
+    padding: 16px 28px;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.obi-seasons-count {
+    font-family: var(--obi-font-body);
+    font-size: 13.5px;
+    color: var(--obi-text-muted);
+}
+
+.obi-seasons-count b { color: var(--obi-text); }
+
+/* Details panel */
+.obi-seasons-panel {
+    margin-top: 44px;
+    background: linear-gradient(180deg, #13171d, #10141a);
+    border: 1px solid rgba(157, 185, 205, 0.16);
+    border-radius: 18px;
+    overflow: hidden;
+}
+
+.obi-seasons-panel-head {
+    padding: 30px 34px 26px;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    flex-wrap: wrap;
+}
+
+.obi-seasons-status-eyebrow {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+}
+
+.obi-seasons-name {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: clamp(30px, 4vw, 44px);
+    line-height: 0.92;
+    margin: 0;
+    color: #fff;
+}
+
+.obi-seasons-active-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-success);
+    background: rgba(127, 181, 154, 0.12);
+    border: 1px solid rgba(127, 181, 154, 0.35);
+    padding: 9px 16px;
+    border-radius: 24px;
+}
+
+.obi-seasons-active-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--obi-success);
+    box-shadow: 0 0 0 4px rgba(127, 181, 154, 0.18);
+}
+
+/* Overview-cards row (cards themselves live in the shared SeasonOverviewCards component) */
+.obi-seasons-grid {
+    padding: 26px 34px 34px;
+}
+
+/* Status eyebrow in the panel header — colored by season status */
+.obi-seasons-status-eyebrow.is-active { color: var(--obi-success); }
+.obi-seasons-status-eyebrow.is-upcoming { color: #6FA8DC; }
+.obi-seasons-status-eyebrow.is-completed { color: var(--obi-icy); }
+
+/* Season by the Numbers */
+.obi-seasons-numbers {
+    padding: 4px 34px 34px;
+}
+
+.obi-seasons-numbers-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 0 0 18px;
+}
+
+.obi-seasons-numbers-title {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+}
+
+.obi-seasons-numbers-rule {
+    height: 1px;
+    flex: 1;
+    background: rgba(157, 185, 205, 0.12);
+}
+
+.obi-seasons-numbers-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.obi-seasons-stat {
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(157, 185, 205, 0.12);
+    border-radius: 13px;
+    padding: 22px 20px;
+}
+
+.obi-seasons-stat-val {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 40px;
+    line-height: 1;
+    color: var(--obi-accent);
+}
+
+.obi-seasons-stat-label {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: #fff;
+    margin-top: 8px;
+}
+
+.obi-seasons-stat-sub {
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    color: #8A95A0;
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+/* Empty state */
+.obi-seasons-empty {
+    margin-top: 56px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    background: linear-gradient(180deg, #13171d, #10141a);
+    border: 1px solid rgba(157, 185, 205, 0.16);
+    border-radius: 18px;
+    padding: 72px 32px;
+}
+
+.obi-seasons-empty-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 18px;
+    background: rgba(157, 185, 205, 0.08);
+    border: 1px solid rgba(157, 185, 205, 0.18);
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1rem;
+    margin-bottom: 22px;
+    color: var(--obi-text-muted);
 }
 
-.season-selector label {
-    font-weight: 600;
-    color: #2d3748;
-    font-size: 1.1rem;
+.obi-seasons-empty-title {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 30px;
+    color: #fff;
+    margin: 0 0 10px;
 }
 
-.season-dropdown {
-    width: 300px;
-    max-width: 100%;
-    padding: 0.75rem 1rem;
-    font-size: 1rem;
-    color: #2d3748;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    background: white;
-    cursor: pointer;
-    transition: border-color 0.2s;
-}
-
-.season-dropdown:hover {
-    border-color: #4a5568;
-}
-
-.season-dropdown:focus {
-    outline: none;
-    border-color: #2d3748;
-}
-
-.season-details {
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.season-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 2rem;
-    padding-bottom: 1rem;
-    border-bottom: 2px solid #e2e8f0;
-}
-
-.season-header h2 {
+.obi-seasons-empty-text {
+    font-family: var(--obi-font-body);
+    font-size: 15.5px;
+    color: var(--obi-icy);
+    line-height: 1.55;
+    max-width: 420px;
     margin: 0;
-    color: #2d3748;
-    font-size: 2rem;
 }
 
-.active-badge {
-    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
-    color: white;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-.season-info-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 1.5rem;
-}
-
-.info-card {
-    background: #e2e8f0;
-    padding: 1.5rem;
-    border-radius: 8px;
-    border-left: 4px solid #4a5568;
-}
-
-.info-card h3 {
-    margin: 0 0 0.5rem 0;
-    color: #4a5568;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.info-card p {
-    margin: 0;
-    color: #2d3748;
-    font-size: 1.1rem;
-    font-weight: 500;
-}
-
-.status-value {
-    text-transform: capitalize;
-}
-
-.loading,
-.error,
-.no-data {
-    text-align: center;
-    padding: 3rem;
-    font-size: 1.2rem;
-}
-
-.error {
-    color: #dc3545;
-}
-
-.no-data {
-    color: #666;
-}
-
-@media (max-width: 768px) {
-    .season-selector {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .season-info-grid {
-        grid-template-columns: 1fr;
-    }
+@media (max-width: 640px) {
+    .obi-seasons-grid,
+    .obi-seasons-numbers-grid { grid-template-columns: repeat(2, 1fr); }
 }

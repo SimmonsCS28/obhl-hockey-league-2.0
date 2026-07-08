@@ -1,0 +1,186 @@
+.obi-season-picker {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.obi-season-picker--align-left { align-items: flex-start; }
+.obi-season-picker--align-right { align-items: flex-end; }
+
+.obi-season-picker-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: #13171d;
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    border-radius: 10px;
+    padding: 10px 14px;
+    min-width: 225px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+}
+
+.obi-season-picker-trigger:hover { border-color: rgba(157, 185, 205, 0.4); }
+.obi-season-picker-trigger.is-open { border-color: rgba(246, 169, 28, 0.5); }
+
+.obi-season-picker-id {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+    gap: 4px;
+    text-align: left;
+}
+
+.obi-season-picker-microlabel {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 9.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+}
+
+.obi-season-picker-name {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 16px;
+    color: #fff;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.obi-season-picker-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+
+.obi-season-picker-tag--active {
+    color: var(--obi-success);
+    background: rgba(127, 181, 154, 0.12);
+    border: 1px solid rgba(127, 181, 154, 0.32);
+}
+
+.obi-season-picker-tag-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--obi-success);
+}
+
+.obi-season-picker-tag--archived {
+    color: #C99A3A;
+    background: rgba(201, 154, 58, 0.1);
+    border: 1px solid rgba(201, 154, 58, 0.32);
+}
+
+.obi-season-picker-tag--sm {
+    font-size: 9px;
+    padding: 2px 7px;
+    gap: 5px;
+}
+
+.obi-season-picker-chev {
+    margin-left: 6px;
+    color: var(--obi-text-muted);
+    font-size: 11px;
+}
+
+.obi-season-picker-trigger.is-open .obi-season-picker-chev { color: var(--obi-accent); }
+
+.obi-season-picker-caption {
+    font-family: var(--obi-font-body);
+    font-size: 11px;
+    color: var(--obi-text-dim);
+    letter-spacing: 0.2px;
+}
+
+.obi-season-picker-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 55;
+}
+
+.obi-season-picker-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    z-index: 60;
+    width: 280px;
+    background: var(--obi-bg-deep-card);
+    border: 1px solid rgba(157, 185, 205, 0.2);
+    border-radius: 12px;
+    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.55);
+    padding: 7px;
+}
+
+.obi-season-picker--align-left .obi-season-picker-menu { left: 0; }
+.obi-season-picker--align-right .obi-season-picker-menu { right: 0; }
+
+.obi-season-picker-menu-hint {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    padding: 8px 10px 7px;
+}
+
+.obi-season-picker-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 11px;
+    cursor: pointer;
+    height: auto !important;
+}
+
+.obi-season-picker-row:hover { background: rgba(157, 185, 205, 0.06); }
+
+.obi-season-picker-row.is-selected { background: rgba(246, 169, 28, 0.1); }
+.obi-season-picker-row.is-selected:hover { background: rgba(246, 169, 28, 0.14); }
+
+.obi-season-picker-row-name {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 15px;
+    white-space: nowrap;
+    color: #C8D0D8;
+}
+
+.obi-season-picker-row.is-selected .obi-season-picker-row-name { color: #fff; }
+
+.obi-season-picker-check {
+    margin-left: auto;
+    color: var(--obi-accent);
+    font-weight: 800;
+}
+
+/* Admin topbar (compact) variant */
+.obi-season-picker--sm .obi-season-picker-trigger {
+    gap: 11px;
+    padding: 8px 13px;
+    min-width: 200px;
+    border-radius: 9px;
+}
+
+.obi-season-picker--sm .obi-season-picker-id { gap: 3px; }
+.obi-season-picker--sm .obi-season-picker-microlabel { font-size: 9px; }
+.obi-season-picker--sm .obi-season-picker-name { font-size: 15px; }
+.obi-season-picker--sm .obi-season-picker-tag { font-size: 9.5px; padding: 2px 7px; gap: 5px; }
+.obi-season-picker--sm .obi-season-picker-tag-dot { width: 5px; height: 5px; }
+.obi-season-picker--sm .obi-season-picker-chev { margin-left: 4px; font-size: 10px; }

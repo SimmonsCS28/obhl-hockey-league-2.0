@@ -2,7 +2,13 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import * as api from '../services/api';
 import SecurityQuestionInput from './common/SecurityQuestionInput';
-import './referee/Signup.css'; // Reuse existing styles
+import './Signup.css';
+
+const ROLE_OPTIONS = [
+    { value: 'GOALIE', label: 'Goalie' },
+    { value: 'REF', label: 'Referee' },
+    { value: 'SCOREKEEPER', label: 'Scorekeeper' },
+];
 
 const Signup = () => {
     const navigate = useNavigate();
@@ -100,38 +106,53 @@ const Signup = () => {
     };
 
     return (
-        <div className="signup-container">
-            <div className="signup-card">
-                <h2>Create Account</h2>
-                {error && <div className="error-message">{error}</div>}
+        <div className="signup-page auth-page">
+            <div className="auth-card">
+                <p className="auth-eyebrow">OBHL · Join the League</p>
+                <h2 className="auth-title">Create Account</h2>
+                <p className="auth-subtitle">Set up your player profile to register for the season.</p>
+
+                {error && (
+                    <div className="auth-alert auth-alert--error">
+                        <span className="auth-alert-icon" aria-hidden="true">⚠</span>
+                        <span>{error}</span>
+                    </div>
+                )}
+
                 <form onSubmit={handleSubmit}>
-                    <div className="form-group">
-                        <label>Username</label>
+                    <div className="auth-form-group">
+                        <label className="auth-label">Username</label>
                         <input
                             type="text"
                             name="username"
+                            className="auth-input"
+                            placeholder="Choose a username"
                             value={formData.username}
                             onChange={handleChange}
                             required
                         />
                     </div>
 
-                    <div className="form-row" style={{ display: 'flex', gap: '1rem' }}>
-                        <div className="form-group" style={{ flex: 1 }}>
-                            <label>First Name</label>
+                    <div className="auth-form-row">
+                        <div className="auth-form-group">
+                            <label className="auth-label">First Name</label>
                             <input
                                 type="text"
                                 name="firstName"
+                                className="auth-input"
+                                placeholder="First"
                                 value={formData.firstName}
                                 onChange={handleChange}
                                 required
                             />
                         </div>
-                        <div className="form-group" style={{ flex: 1 }}>
-                            <label>Last Name</label>
+                        <div className="auth-form-group">
+                            <label className="auth-label">Last Name</label>
                             <input
                                 type="text"
                                 name="lastName"
+                                className="auth-input"
+                                placeholder="Last"
                                 value={formData.lastName}
                                 onChange={handleChange}
                                 required
@@ -139,100 +160,94 @@ const Signup = () => {
                         </div>
                     </div>
 
-                    <div className="form-group">
-                        <label>Email</label>
+                    <div className="auth-form-group">
+                        <label className="auth-label">Email</label>
                         <input
                             type="email"
                             name="email"
+                            className="auth-input"
+                            placeholder="you@example.com"
                             value={formData.email}
                             onChange={handleChange}
                             required
                         />
                     </div>
 
-                    <div className="form-group">
-                        <label>I am a... (Select all that apply)</label>
-                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#4a5568' }}>
-                                <input
-                                    type="checkbox"
-                                    value="GOALIE"
-                                    checked={formData.roles.includes('GOALIE')}
-                                    onChange={handleRoleChange}
-                                />
-                                Goalie
-                            </label>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#4a5568' }}>
-                                <input
-                                    type="checkbox"
-                                    value="REF"
-                                    checked={formData.roles.includes('REF')}
-                                    onChange={handleRoleChange}
-                                />
-                                Referee
-                            </label>
-                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: '#4a5568' }}>
-                                <input
-                                    type="checkbox"
-                                    value="SCOREKEEPER"
-                                    checked={formData.roles.includes('SCOREKEEPER')}
-                                    onChange={handleRoleChange}
-                                />
-                                Scorekeeper
-                            </label>
+                    <div className="auth-form-group">
+                        <label className="auth-label">I am a...</label>
+                        <p className="auth-hint">Select all that apply, or none</p>
+                        <div className="role-chip-group">
+                            {ROLE_OPTIONS.map(({ value, label }) => {
+                                const active = formData.roles.includes(value);
+                                return (
+                                    <label key={value} className={`role-chip${active ? ' is-active' : ''}`}>
+                                        <input
+                                            type="checkbox"
+                                            value={value}
+                                            checked={active}
+                                            onChange={handleRoleChange}
+                                        />
+                                        <span className="role-chip-box" aria-hidden="true">{active ? '✓' : ''}</span>
+                                        <span className="role-chip-label">{label}</span>
+                                    </label>
+                                );
+                            })}
                         </div>
                     </div>
 
-                    <div className="form-group">
-                        <label>Password</label>
-                        <input
-                            type="password"
-                            name="password"
-                            value={formData.password}
-                            onChange={handleChange}
-                            required
-                        />
+                    <div className="auth-form-row">
+                        <div className="auth-form-group">
+                            <label className="auth-label">Password</label>
+                            <input
+                                type="password"
+                                name="password"
+                                className="auth-input"
+                                value={formData.password}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
+                        <div className="auth-form-group">
+                            <label className="auth-label">Confirm Password</label>
+                            <input
+                                type="password"
+                                name="confirmPassword"
+                                className="auth-input"
+                                value={formData.confirmPassword}
+                                onChange={handleChange}
+                                required
+                            />
+                        </div>
                     </div>
-                    <div className="form-group">
-                        <label>Confirm Password</label>
-                        <input
-                            type="password"
-                            name="confirmPassword"
-                            value={formData.confirmPassword}
-                            onChange={handleChange}
-                            required
+
+                    <div className="auth-form-group">
+                        <SecurityQuestionInput
+                            value={formData.securityQuestion}
+                            onChange={handleQuestionChange}
+                            disabled={loading}
                         />
                     </div>
 
-                    <SecurityQuestionInput
-                        value={formData.securityQuestion}
-                        onChange={handleQuestionChange}
-                        disabled={loading}
-                    />
-
-                    <div className="form-group">
-                        <label>Security Answer</label>
+                    <div className="auth-form-group">
+                        <label className="auth-label">Security Answer</label>
                         <input
                             type="text"
                             name="securityAnswer"
+                            className="auth-input"
+                            placeholder="Your answer"
                             value={formData.securityAnswer}
                             onChange={handleChange}
                             required
                         />
                     </div>
 
-                    <button type="submit" disabled={loading} className="signup-btn">
+                    <button type="submit" disabled={loading} className="auth-btn">
+                        {loading && <span className="auth-spinner" aria-hidden="true"></span>}
                         {loading ? 'Creating Account...' : 'Sign Up'}
                     </button>
-                    <div className="login-link">
-                        Already have an account?{' '}
-                        <button
-                            type="button"
-                            onClick={() => navigate('/')}
-                            style={{ background: 'none', border: 'none', padding: 0, color: 'inherit', textDecoration: 'underline', cursor: 'pointer', font: 'inherit' }}
-                        >
-                            Log In
-                        </button>
+
+                    <div className="auth-footer auth-footer--center">
+                        <span>Already have an account? <button type="button" className="auth-link" onClick={() => navigate('/')}>Log In</button></span>
                     </div>
                 </form>
             </div>

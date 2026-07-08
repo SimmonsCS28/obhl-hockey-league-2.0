@@ -17,6 +17,7 @@ const ForgotPassword = () => {
     });
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
+    const [resetDone, setResetDone] = useState(false);
     const [loading, setLoading] = useState(false);
 
     const handleUsernameSubmit = async (e) => {
@@ -49,7 +50,7 @@ const ForgotPassword = () => {
                 answer: formData.answer,
                 newPassword: formData.newPassword
             });
-            setMessage('Password reset successfully! Redirecting to login...');
+            setResetDone(true);
             setTimeout(() => navigate('/', { state: { openLogin: true } }), 2000);
         } catch (err) {
             setError(err.message || 'Failed to reset password. Check your answer.');
@@ -82,128 +83,180 @@ const ForgotPassword = () => {
         setMessage('');
     };
 
+    if (resetDone) {
+        return (
+            <div className="forgot-password-page auth-page">
+                <div className="auth-card auth-success">
+                    <div className="auth-success-icon" aria-hidden="true">✓</div>
+                    <h2 className="auth-success-title">Password Reset</h2>
+                    <p className="auth-success-text">Password reset successfully! Redirecting to login...</p>
+                </div>
+            </div>
+        );
+    }
+
+    const footerLinks = (
+        <div className="auth-footer">
+            <button type="button" className="auth-link" onClick={reset}>Choose a different option</button>
+            <button type="button" className="auth-link" onClick={() => navigate('/', { state: { openLogin: true } })}>Back to Login</button>
+        </div>
+    );
+
     return (
-        <div className="forgot-password-container">
-            <div className="forgot-password-card">
-                <h2>Reset Password</h2>
-                {error && <div className="error-message">{error}</div>}
-                {message && <div className="success-message">{message}</div>}
+        <div className="forgot-password-page auth-page">
+            <div className="auth-card">
+                <p className="auth-eyebrow">Account Recovery</p>
+                <h2 className="auth-title">Reset Password</h2>
 
                 {!method && (
-                    <div className="reset-method-choice">
-                        <p>How would you like to reset your password?</p>
-                        <button type="button" className="reset-btn" onClick={() => setMethod('email')}>
-                            Email Me a Reset Link
+                    <>
+                        <p className="auth-subtitle">How would you like to reset your password?</p>
+                        <button type="button" className="recovery-method-btn" onClick={() => setMethod('email')}>
+                            <span className="recovery-method-icon" aria-hidden="true">✉</span>
+                            <span className="recovery-method-text">
+                                <span className="recovery-method-title">Email Me a Reset Link</span>
+                                <span className="recovery-method-sub">Sent to your account email</span>
+                            </span>
                         </button>
-                        <button type="button" className="reset-btn secondary-btn" onClick={() => setMethod('question')}>
-                            Answer My Security Question
+                        <button type="button" className="recovery-method-btn" onClick={() => setMethod('question')}>
+                            <span className="recovery-method-icon" aria-hidden="true">🔑</span>
+                            <span className="recovery-method-text">
+                                <span className="recovery-method-title">Answer My Security Question</span>
+                                <span className="recovery-method-sub">Verify with your saved answer</span>
+                            </span>
                         </button>
-                    </div>
+                        <div className="auth-footer auth-footer--center">
+                            <button type="button" className="auth-link" onClick={() => navigate('/', { state: { openLogin: true } })}>Back to Login</button>
+                        </div>
+                    </>
                 )}
 
-                {method === 'email' && !message && (
-                    <form onSubmit={handleEmailSubmit}>
-                        <p>Enter your account email and we'll send you a link to reset your password.</p>
-                        <div className="form-group">
-                            <label>Email</label>
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <button type="submit" disabled={loading} className="reset-btn">
-                            {loading ? 'Sending...' : 'Send Reset Link'}
-                        </button>
-                    </form>
+                {method === 'email' && (
+                    <>
+                        <p className="auth-subtitle">Enter your account email and we'll send you a link to reset your password.</p>
+                        {error && (
+                            <div className="auth-alert auth-alert--error">
+                                <span className="auth-alert-icon" aria-hidden="true">⚠</span>
+                                <span>{error}</span>
+                            </div>
+                        )}
+                        {message && (
+                            <div className="auth-alert auth-alert--success">
+                                <span className="auth-alert-icon" aria-hidden="true">✓</span>
+                                <span>{message}</span>
+                            </div>
+                        )}
+                        <form onSubmit={handleEmailSubmit}>
+                            <div className="auth-form-group">
+                                <label className="auth-label">Email</label>
+                                <input
+                                    type="email"
+                                    className="auth-input"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <button type="submit" disabled={loading} className="auth-btn">
+                                {loading && <span className="auth-spinner" aria-hidden="true"></span>}
+                                {loading ? 'Sending...' : 'Send Reset Link'}
+                            </button>
+                        </form>
+                        {footerLinks}
+                    </>
                 )}
 
                 {method === 'question' && step === 1 && (
-                    <form onSubmit={handleUsernameSubmit}>
-                        <p>Enter your username to retrieve your security question.</p>
-                        <div className="form-group">
-                            <label>Username</label>
-                            <input
-                                type="text"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <button type="submit" disabled={loading} className="reset-btn">
-                            {loading ? 'Searching...' : 'Next'}
-                        </button>
-                    </form>
+                    <>
+                        <p className="auth-subtitle">Enter your username to retrieve your security question.</p>
+                        {error && (
+                            <div className="auth-alert auth-alert--error">
+                                <span className="auth-alert-icon" aria-hidden="true">⚠</span>
+                                <span>{error}</span>
+                            </div>
+                        )}
+                        <form onSubmit={handleUsernameSubmit}>
+                            <div className="auth-form-group">
+                                <label className="auth-label">Username</label>
+                                <input
+                                    type="text"
+                                    className={`auth-input${error ? ' auth-input-error' : ''}`}
+                                    value={username}
+                                    onChange={(e) => setUsername(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <button type="submit" disabled={loading} className="auth-btn">
+                                {loading && <span className="auth-spinner" aria-hidden="true"></span>}
+                                {loading ? 'Searching...' : 'Next'}
+                            </button>
+                        </form>
+                        {footerLinks}
+                    </>
                 )}
 
-                {method === 'question' && step === 2 && !message && (
-                    <form onSubmit={handleResetSubmit}>
-                        <div className="security-question-display">
-                            <strong>Security Question:</strong>
-                            <p>"{securityQuestion}"</p>
+                {method === 'question' && step === 2 && (
+                    <>
+                        <p className="auth-step-note">Step 1 — username entered · <span>{username}</span></p>
+                        <div className="security-question-box">
+                            <div className="security-question-box-label">Your Security Question</div>
+                            <div className="security-question-box-text">&ldquo;{securityQuestion}&rdquo;</div>
                         </div>
 
-                        <div className="form-group">
-                            <label>Answer</label>
-                            <input
-                                type="text"
-                                name="answer"
-                                value={formData.answer}
-                                onChange={handleChange}
-                                required
-                            />
-                        </div>
+                        {error && (
+                            <div className="auth-alert auth-alert--error">
+                                <span className="auth-alert-icon" aria-hidden="true">⚠</span>
+                                <span>{error}</span>
+                            </div>
+                        )}
 
-                        <div className="form-group">
-                            <label>New Password</label>
-                            <input
-                                type="password"
-                                name="newPassword"
-                                value={formData.newPassword}
-                                onChange={handleChange}
-                                required
-                            />
-                        </div>
+                        <form onSubmit={handleResetSubmit}>
+                            <div className="auth-form-group">
+                                <label className="auth-label">Security Answer</label>
+                                <input
+                                    type="text"
+                                    name="answer"
+                                    className="auth-input"
+                                    value={formData.answer}
+                                    onChange={handleChange}
+                                    required
+                                />
+                            </div>
 
-                        <div className="form-group">
-                            <label>Confirm Password</label>
-                            <input
-                                type="password"
-                                name="confirmPassword"
-                                value={formData.confirmPassword}
-                                onChange={handleChange}
-                                required
-                            />
-                        </div>
+                            <div className="auth-form-group">
+                                <label className="auth-label">New Password</label>
+                                <input
+                                    type="password"
+                                    name="newPassword"
+                                    className="auth-input"
+                                    placeholder="Enter a new password"
+                                    value={formData.newPassword}
+                                    onChange={handleChange}
+                                    required
+                                />
+                            </div>
 
-                        <button type="submit" disabled={loading} className="reset-btn">
-                            {loading ? 'Resetting...' : 'Reset Password'}
-                        </button>
-                    </form>
+                            <div className="auth-form-group">
+                                <label className="auth-label">Confirm Password</label>
+                                <input
+                                    type="password"
+                                    name="confirmPassword"
+                                    className="auth-input"
+                                    placeholder="Re-enter new password"
+                                    value={formData.confirmPassword}
+                                    onChange={handleChange}
+                                    required
+                                />
+                            </div>
+
+                            <button type="submit" disabled={loading} className="auth-btn">
+                                {loading && <span className="auth-spinner" aria-hidden="true"></span>}
+                                {loading ? 'Resetting...' : 'Reset Password'}
+                            </button>
+                        </form>
+                        {footerLinks}
+                    </>
                 )}
-
-                {method && !message && (
-                    <div className="login-link">
-                        <button
-                            type="button"
-                            onClick={reset}
-                            style={{ background: 'none', border: 'none', padding: 0, color: 'inherit', textDecoration: 'underline', cursor: 'pointer', font: 'inherit' }}
-                        >
-                            Choose a different option
-                        </button>
-                    </div>
-                )}
-
-                <div className="login-link">
-                    <button
-                        type="button"
-                        onClick={() => navigate('/', { state: { openLogin: true } })}
-                        style={{ background: 'none', border: 'none', padding: 0, color: 'inherit', textDecoration: 'underline', cursor: 'pointer', font: 'inherit' }}
-                    >
-                        Back to Login
-                    </button>
-                </div>
             </div>
         </div>
     );
