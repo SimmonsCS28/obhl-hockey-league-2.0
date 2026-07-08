@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
 import './App.css';
 import AdminDashboard from './components/AdminDashboard';
 import AdminLayout from './components/AdminLayout';
@@ -25,6 +25,8 @@ import { AuthProvider } from './contexts/AuthContext';
 import { SeasonProvider } from './contexts/SeasonContext';
 import ChangePassword from './pages/ChangePassword';
 import AccountSettings from './pages/AccountSettings';
+import CoordinatorDashboard from './components/coordinator/CoordinatorDashboard';
+import ConfirmShift from './components/ConfirmShift';
 
 // New Staff Components
 import GoalieLayout from './components/GoalieLayout';
@@ -39,10 +41,11 @@ import ScorekeeperSchedulePage from './components/scorekeeper/ScorekeeperSchedul
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import GoalieShiftSignup from './components/user/GoalieShiftSignup';
-import PlayerDashboard from './components/user/PlayerDashboard';
+import Dashboard from './components/user/Dashboard';
+import OpenSlots from './components/user/OpenSlots';
+import GoalieAvailability from './components/user/GoalieAvailability';
 import RefereeShiftSignup from './components/user/RefereeShiftSignup';
 import ScorekeeperShiftSignup from './components/user/ScorekeeperShiftSignup';
-import UserDashboard from './components/user/UserDashboard';
 
 const router = createBrowserRouter([
   {
@@ -65,11 +68,15 @@ const router = createBrowserRouter([
       { path: "signup", element: <Signup /> },
       { path: "forgot-password", element: <ForgotPassword /> },
       { path: "reset-password", element: <ResetPassword /> },
+      { path: "shift-confirm", element: <ConfirmShift /> },
 
       // Legacy Routes - Redirect to unified signup
       { path: "referee/signup", element: <Signup /> },
       { path: "scorekeeper/signup", element: <Signup /> },
       { path: "goalie/signup", element: <Signup /> },
+
+      // Unified Dashboard (any authenticated user) — rendered within the public chrome
+      { path: "dashboard", element: <ProtectedRoute><Dashboard /></ProtectedRoute> },
 
       // Account Settings (any authenticated user) — rendered within the public chrome
       { path: "account", element: <ProtectedRoute><AccountSettings /></ProtectedRoute> }
@@ -131,23 +138,9 @@ const router = createBrowserRouter([
     ]
   },
 
-  // User Shift Management Routes
-  {
-    path: "/user",
-    element: (
-      <ProtectedRoute requiredRoles={['USER', 'GOALIE', 'REF', 'SCOREKEEPER']}>
-        <PlayerDashboard />
-      </ProtectedRoute>
-    )
-  },
-  {
-    path: "/user/shifts",
-    element: (
-      <ProtectedRoute requiredRoles={['GOALIE', 'REF', 'SCOREKEEPER']}>
-        <UserDashboard />
-      </ProtectedRoute>
-    )
-  },
+  // Retired: PlayerDashboard + UserDashboard are superseded by the unified /dashboard (v4).
+  { path: "/user", element: <Navigate to="/dashboard" replace /> },
+  { path: "/user/shifts", element: <Navigate to="/dashboard" replace /> },
   {
     path: "/user/goalie",
     element: (
@@ -155,6 +148,29 @@ const router = createBrowserRouter([
         <GoalieShiftSignup />
       </ProtectedRoute>
     )
+  },
+  // v3: positive weekly goalie availability (replaces the date-based GoalieShiftSignup UI)
+  {
+    path: "/user/goalie-availability",
+    element: (
+      <ProtectedRoute requiredRoles={['GOALIE']}>
+        <GoalieAvailability />
+      </ProtectedRoute>
+    )
+  },
+  // v3: ref/scorekeeper self sign-up for open shifts
+  {
+    path: "/user/open-slots",
+    element: (
+      <ProtectedRoute requiredRoles={['REF', 'SCOREKEEPER']}>
+        <OpenSlots />
+      </ProtectedRoute>
+    )
+  },
+  {
+    // Retired: refs now self-sign-up via Open Slots (v3). Redirect any old links/bookmarks.
+    path: "/user/ref-availability",
+    element: <Navigate to="/user/open-slots" replace />
   },
   {
     path: "/user/referee",
@@ -199,6 +215,16 @@ const router = createBrowserRouter([
         <AdminLayout activeTab="teams">
           <TeamDetails onBack={() => window.history.back()} />
         </AdminLayout>
+      </ProtectedRoute>
+    )
+  },
+
+  // Coordinator Route (goalie/ref/scorekeeper coordinators + admin)
+  {
+    path: "/coordinator",
+    element: (
+      <ProtectedRoute requiredRoles={['GOALIE_COORDINATOR', 'REF_COORDINATOR', 'SCOREKEEPER_COORDINATOR', 'ADMIN']}>
+        <CoordinatorDashboard />
       </ProtectedRoute>
     )
   },

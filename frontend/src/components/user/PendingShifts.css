@@ -1,0 +1,121 @@
+.pending-shifts {
+    background: var(--obi-bg-card);
+    border: 1px solid var(--obi-card-border);
+    border-left: 3px solid var(--obi-accent);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+    font-family: var(--obi-font-body);
+}
+
+.pending-shifts-title {
+    margin: 0 0 0.25rem;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 1.2rem;
+    color: var(--obi-accent);
+}
+
+.pending-shifts-sub {
+    margin: 0 0 1rem;
+    color: var(--obi-text-secondary);
+    font-size: 0.9rem;
+}
+
+.pending-shifts-error {
+    background: rgba(224, 138, 138, 0.12);
+    border: 1px solid rgba(224, 138, 138, 0.35);
+    color: var(--obi-error);
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 0.75rem;
+    font-size: 0.9rem;
+}
+
+.pending-shifts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.pending-shift-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    background: var(--obi-bg-elevated);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+}
+
+.pending-shift-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.pending-shift-role {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    color: var(--obi-accent);
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.pending-shift-matchup {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    color: var(--obi-text);
+}
+
+.pending-shift-meta {
+    color: var(--obi-text-muted);
+    font-size: 0.85rem;
+}
+
+.pending-shift-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-confirm,
+.btn-decline {
+    padding: 0.5rem 1.1rem;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    cursor: pointer;
+    font-size: 0.85rem;
+}
+
+.btn-confirm {
+    background: var(--obi-accent);
+    color: #10131a;
+}
+
+.btn-confirm:hover:not(:disabled) {
+    background: var(--obi-accent-hover, #ffbf3f);
+}
+
+.btn-decline {
+    background: transparent;
+    border-color: var(--obi-card-border);
+    color: var(--obi-text-secondary);
+}
+
+.btn-decline:hover:not(:disabled) {
+    background: rgba(157, 185, 205, 0.08);
+    color: var(--obi-text);
+}
+
+.btn-confirm:disabled,
+.btn-decline:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}

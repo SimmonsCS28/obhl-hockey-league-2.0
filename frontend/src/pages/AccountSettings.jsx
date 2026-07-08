@@ -67,10 +67,14 @@ export default function AccountSettings() {
     }, []);
 
     const toggleStaffRole = (role) => {
+        setError('');
         setStaffRoles((prev) =>
             prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]
         );
     };
+
+    const mismatch = confirmPassword.length > 0 && confirmPassword !== newPassword;
+    const currentPwError = Boolean(error && !currentPassword);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -124,7 +128,7 @@ export default function AccountSettings() {
                 completeLogin(localStorage.getItem('token'), { ...user, ...response.user });
             }
 
-            setMessage('Account updated successfully');
+            setMessage('Account updated successfully.');
             setCurrentPassword('');
             setNewPassword('');
             setConfirmPassword('');
@@ -138,196 +142,184 @@ export default function AccountSettings() {
 
     if (loadingProfile) {
         return (
-            <div className="account-settings-container">
-                <div className="account-settings-card">
-                    <p>Loading account settings...</p>
+            <div className="as-container">
+                <div className="as-card">
+                    <div className="as-loading">
+                        <span className="as-loading-spinner" aria-hidden="true" />
+                        <span className="as-loading-text">Loading account settings…</span>
+                    </div>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="account-settings-container">
-            <div className="account-settings-card">
-                <h1>Account Settings</h1>
-                <p className="account-settings-message">
-                    Update your username, email, password, or security question.
-                </p>
+        <div className="as-container">
+            <div className="as-card">
+                <p className="as-eyebrow">OBHL · My Account</p>
+                <h1 className="as-title">Account Settings</h1>
+                <p className="as-subtitle">Update your login details, security question, and volunteer roles.</p>
 
-                <form onSubmit={handleSubmit} className="account-settings-form">
-                    {error && <div className="error-message">{error}</div>}
+                <form onSubmit={handleSubmit}>
+                    {error && (
+                        <div className="as-banner">
+                            <span className="as-banner-icon" aria-hidden="true">⚠</span>
+                            <span className="as-banner-text">{error}</span>
+                        </div>
+                    )}
 
-                    <div className="as-section-label">Username</div>
-                    <div className="form-group">
-                        <label htmlFor="username">Username</label>
+                    {/* Username */}
+                    <div className="as-field">
+                        <label className="as-label" htmlFor="username">Username</label>
                         <input
-                            type="text"
-                            id="username"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
+                            type="text" id="username" className="as-input"
+                            value={username} onChange={(e) => { setUsername(e.target.value); setError(''); }}
                             required
                         />
                     </div>
 
-                    <div className="as-section-divider" />
-                    <div className="as-section-label">Email</div>
-                    <div className="form-group">
-                        <label htmlFor="email">Email</label>
+                    {/* Email */}
+                    <div className="as-field as-field--gap">
+                        <label className="as-label" htmlFor="email">Email</label>
                         <input
-                            type="email"
-                            id="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
+                            type="email" id="email" className="as-input"
+                            value={email} onChange={(e) => { setEmail(e.target.value); setError(''); }}
                             required
                         />
                     </div>
 
-                    <div className="as-section-divider" />
-                    <div className="as-section-label">Password</div>
+                    {/* Password */}
+                    <div className="as-divider" />
+                    <h2 className="as-section-heading">Password</h2>
                     <p className="as-section-hint">Leave blank to keep your current password.</p>
-                    <div className="form-group">
-                        <label htmlFor="newPassword">New Password</label>
-                        <div className="password-input-wrapper">
+
+                    <div className="as-field">
+                        <label className="as-label" htmlFor="newPassword">New Password</label>
+                        <div className="as-pw-wrap">
                             <input
-                                type={showNewPassword ? 'text' : 'password'}
-                                id="newPassword"
-                                value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
-                                minLength={8}
-                                autoComplete="new-password"
+                                type={showNewPassword ? 'text' : 'password'} id="newPassword" className="as-input"
+                                value={newPassword} onChange={(e) => { setNewPassword(e.target.value); setError(''); }}
+                                minLength={8} placeholder="Enter a new password" autoComplete="new-password"
                             />
                             <button
-                                type="button"
-                                className="password-toggle"
+                                type="button" className="as-pw-toggle"
                                 onClick={() => setShowNewPassword((v) => !v)}
                                 aria-label={showNewPassword ? 'Hide password' : 'Show password'}
-                            >
-                                {showNewPassword ? 'Hide' : 'Show'}
-                            </button>
+                            >{showNewPassword ? 'Hide' : 'Show'}</button>
                         </div>
-                        <small>Minimum 8 characters</small>
+                        <div className="as-help">Minimum 8 characters</div>
                     </div>
-                    <div className="form-group">
-                        <label htmlFor="confirmPassword">Confirm New Password</label>
-                        <div className="password-input-wrapper">
+
+                    <div className="as-field as-field--gap">
+                        <label className="as-label" htmlFor="confirmPassword">Confirm New Password</label>
+                        <div className="as-pw-wrap">
                             <input
-                                type={showConfirmPassword ? 'text' : 'password'}
-                                id="confirmPassword"
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                minLength={8}
-                                autoComplete="new-password"
+                                type={showConfirmPassword ? 'text' : 'password'} id="confirmPassword"
+                                className={`as-input${mismatch ? ' as-input--error' : ''}`}
+                                value={confirmPassword} onChange={(e) => { setConfirmPassword(e.target.value); setError(''); }}
+                                minLength={8} placeholder="Re-enter new password" autoComplete="new-password"
                             />
                             <button
-                                type="button"
-                                className="password-toggle"
+                                type="button" className="as-pw-toggle"
                                 onClick={() => setShowConfirmPassword((v) => !v)}
                                 aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                            >
-                                {showConfirmPassword ? 'Hide' : 'Show'}
-                            </button>
+                            >{showConfirmPassword ? 'Hide' : 'Show'}</button>
                         </div>
-                        {confirmPassword && confirmPassword !== newPassword && (
-                            <small className="password-mismatch">Passwords must match</small>
+                        {mismatch && (
+                            <div className="as-mismatch"><span style={{ fontWeight: 700 }} aria-hidden="true">⚠</span>Passwords must match</div>
                         )}
                     </div>
 
-                    <div className="as-section-divider" />
-                    <div className="as-section-label">Security Question</div>
-                    <p className="as-section-hint">
-                        This is used to reset your password if you ever forget it.
-                    </p>
-                    <div className="form-group">
-                        <label htmlFor="securityQuestion">Security Question</label>
-                        <select
-                            id="securityQuestion"
-                            value={securityQuestion}
-                            onChange={(e) => setSecurityQuestion(e.target.value)}
-                            className="security-question-select"
-                        >
-                            {SECURITY_QUESTIONS.map((q) => (
-                                <option key={q} value={q}>{q}</option>
-                            ))}
-                        </select>
+                    {/* Security Question */}
+                    <div className="as-divider" />
+                    <h2 className="as-section-heading">Security Question</h2>
+                    <p className="as-section-hint">This is used to reset your password if you ever forget it.</p>
+
+                    <div className="as-field">
+                        <label className="as-label" htmlFor="securityQuestion">Security Question</label>
+                        <div className="as-select-wrap">
+                            <select
+                                id="securityQuestion" className="as-select"
+                                value={securityQuestion} onChange={(e) => { setSecurityQuestion(e.target.value); setError(''); }}
+                            >
+                                {SECURITY_QUESTIONS.map((q) => <option key={q} value={q}>{q}</option>)}
+                            </select>
+                            <span className="as-select-chev" aria-hidden="true">▼</span>
+                        </div>
                     </div>
-                    <div className="form-group">
-                        <label htmlFor="securityAnswer">Answer</label>
+
+                    <div className="as-field as-field--gap">
+                        <label className="as-label" htmlFor="securityAnswer">Answer</label>
                         <input
-                            type="text"
-                            id="securityAnswer"
-                            value={securityAnswer}
-                            onChange={(e) => setSecurityAnswer(e.target.value)}
+                            type="text" id="securityAnswer" className="as-input"
+                            value={securityAnswer} onChange={(e) => { setSecurityAnswer(e.target.value); setError(''); }}
                             placeholder={profile?.securityQuestion ? 'Leave blank to keep your current answer' : 'Enter your answer'}
                             autoComplete="off"
                         />
-                        <small>Not case-sensitive. Only fill this in if you want to set or change your security question/answer.</small>
+                        <div className="as-help">Not case-sensitive. Only fill this in if you want to set or change your security question / answer.</div>
                     </div>
 
-                    <div className="as-section-divider" />
-                    <div className="as-section-label">Volunteer Roles</div>
+                    {/* Volunteer Roles */}
+                    <div className="as-divider" />
+                    <h2 className="as-section-heading">Volunteer Roles</h2>
                     <p className="as-section-hint">
                         Opt in to volunteer as a goalie, referee, or scorekeeper. Enabling a role
                         unlocks the matching shift sign-up pages; disabling it removes that access.
                     </p>
-                    <div className="as-role-options">
-                        {STAFF_ROLES.map((role) => (
-                            <label key={role.value} className="as-role-option">
-                                <input
-                                    type="checkbox"
-                                    checked={staffRoles.includes(role.value)}
-                                    onChange={() => toggleStaffRole(role.value)}
-                                />
-                                <span className="as-role-text">
-                                    <span className="as-role-label">{role.label}</span>
-                                    <span className="as-role-hint">{role.hint}</span>
-                                </span>
-                            </label>
-                        ))}
+                    <div className="as-role-cards">
+                        {STAFF_ROLES.map((role) => {
+                            const checked = staffRoles.includes(role.value);
+                            return (
+                                <button
+                                    type="button" key={role.value}
+                                    className={`as-role-card${checked ? ' is-checked' : ''}`}
+                                    onClick={() => toggleStaffRole(role.value)}
+                                    aria-pressed={checked}
+                                >
+                                    <span className="as-role-box" aria-hidden="true">{checked ? '✓' : ''}</span>
+                                    <span className="as-role-text">
+                                        <span className="as-role-name">{role.label}</span>
+                                        <span className="as-role-hint">{role.hint}</span>
+                                    </span>
+                                </button>
+                            );
+                        })}
                     </div>
 
-                    <div className="as-section-divider" />
-                    <div className="as-section-label">Confirm Changes</div>
-                    <div className="form-group">
-                        <label htmlFor="currentPassword">Current Password</label>
-                        <div className="password-input-wrapper">
+                    {/* Confirm Changes */}
+                    <div className="as-divider" />
+                    <h2 className="as-section-heading">Confirm Changes</h2>
+
+                    <div className="as-field as-field--gap">
+                        <label className="as-label" htmlFor="currentPassword">Current Password <span className="as-required">*</span></label>
+                        <div className="as-pw-wrap">
                             <input
-                                type={showCurrentPassword ? 'text' : 'password'}
-                                id="currentPassword"
-                                value={currentPassword}
-                                onChange={(e) => setCurrentPassword(e.target.value)}
-                                required
-                                autoComplete="current-password"
+                                type={showCurrentPassword ? 'text' : 'password'} id="currentPassword"
+                                className={`as-input${currentPwError ? ' as-input--error' : ''}`}
+                                value={currentPassword} onChange={(e) => { setCurrentPassword(e.target.value); setError(''); }}
+                                required placeholder="Enter your current password" autoComplete="current-password"
                             />
                             <button
-                                type="button"
-                                className="password-toggle"
+                                type="button" className="as-pw-toggle"
                                 onClick={() => setShowCurrentPassword((v) => !v)}
                                 aria-label={showCurrentPassword ? 'Hide password' : 'Show password'}
-                            >
-                                {showCurrentPassword ? 'Hide' : 'Show'}
+                            >{showCurrentPassword ? 'Hide' : 'Show'}</button>
+                        </div>
+                        <div className="as-current-meta">
+                            <span className="as-help" style={{ marginTop: 0 }}>Required to save any changes on this page.</span>
+                            <button type="button" className="as-forgot-link" onClick={() => navigate('/forgot-password')}>
+                                Forgot your password?
                             </button>
                         </div>
-                        <small>Required to save any changes on this page.</small>
-                        <button
-                            type="button"
-                            className="as-forgot-link"
-                            onClick={() => navigate('/forgot-password')}
-                        >
-                            Forgot your password?
-                        </button>
                     </div>
 
-                    <button type="submit" className="submit-btn" disabled={loading}>
-                        {loading ? 'Saving...' : 'Save Changes'}
-                    </button>
-
-                    <button
-                        type="button"
-                        className="cancel-btn"
-                        onClick={() => navigate('/')}
-                    >
-                        Back to Home
-                    </button>
+                    <div className="as-actions">
+                        <button type="submit" className="as-save" disabled={loading}>
+                            {loading && <span className="as-spinner" aria-hidden="true" />}
+                            {loading ? 'Saving…' : 'Save Changes'}
+                        </button>
+                        <button type="button" className="as-back" onClick={() => navigate('/')}>Back to Home</button>
+                    </div>
                 </form>
             </div>
 
@@ -337,14 +329,7 @@ export default function AccountSettings() {
                         <div className="as-modal-icon" aria-hidden="true">✓</div>
                         <h2>Success</h2>
                         <p>{message}</p>
-                        <button
-                            type="button"
-                            className="submit-btn"
-                            onClick={() => setMessage('')}
-                            autoFocus
-                        >
-                            OK
-                        </button>
+                        <button type="button" className="as-modal-ok" onClick={() => setMessage('')} autoFocus>OK</button>
                     </div>
                 </div>
             )}

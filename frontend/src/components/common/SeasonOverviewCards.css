@@ -1,0 +1,88 @@
+/* Shared season overview cards (Status / Start / End / Duration).
+ * Scoped `obi-season-ov-*` classnames — used by Home glance + Seasons details panel. */
+
+.obi-season-ov {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.obi-season-ov-card {
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(157, 185, 205, 0.12);
+    border-radius: 13px;
+    padding: 20px 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.obi-season-ov-card--accent {
+    background: rgba(246, 169, 28, 0.08);
+    border-color: rgba(246, 169, 28, 0.28);
+}
+
+.obi-season-ov-label {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+}
+
+.obi-season-ov-card--accent .obi-season-ov-label { color: #9A7A2E; }
+
+.obi-season-ov-val {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 24px;
+    line-height: 1.05;
+    color: #fff;
+}
+
+.obi-season-ov-card--accent .obi-season-ov-val { color: var(--obi-accent); }
+
+/* Status pill */
+.obi-season-ov-status {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    border-radius: 22px;
+}
+
+.obi-season-ov-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.obi-season-ov-status.is-active {
+    color: var(--obi-success);
+    background: rgba(127, 181, 154, 0.12);
+    border: 1px solid rgba(127, 181, 154, 0.35);
+}
+
+.obi-season-ov-status.is-upcoming {
+    color: #6FA8DC;
+    background: rgba(111, 168, 220, 0.12);
+    border: 1px solid rgba(111, 168, 220, 0.35);
+}
+
+.obi-season-ov-status.is-completed {
+    color: var(--obi-icy);
+    background: rgba(157, 185, 205, 0.1);
+    border: 1px solid rgba(157, 185, 205, 0.28);
+}
+
+@media (max-width: 640px) {
+    .obi-season-ov { grid-template-columns: repeat(2, 1fr); }
+}

@@ -1,0 +1,194 @@
+.cs-page {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+    background: var(--obi-bg);
+    color: var(--obi-text);
+    font-family: var(--obi-font-body);
+}
+
+.cs-card {
+    width: 100%;
+    max-width: 440px;
+    background: var(--obi-bg-card);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 14px;
+    padding: 2rem 1.75rem;
+}
+
+.cs-eyebrow {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--obi-accent);
+    text-align: center;
+}
+
+.cs-title {
+    margin: 0.35rem 0 1.25rem;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 1.6rem;
+    color: var(--obi-text);
+    text-align: center;
+}
+
+.cs-alert {
+    border-radius: 9px;
+    padding: 0.7rem 0.9rem;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+}
+
+.cs-alert--error {
+    background: rgba(224, 138, 138, 0.12);
+    border: 1px solid rgba(224, 138, 138, 0.35);
+    color: var(--obi-error);
+}
+
+.cs-alert--success {
+    background: rgba(127, 181, 154, 0.12);
+    border: 1px solid rgba(127, 181, 154, 0.35);
+    color: var(--obi-success);
+}
+
+.cs-loading {
+    color: var(--obi-text-muted);
+    text-align: center;
+}
+
+.cs-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    background: var(--obi-bg-elevated);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 10px;
+    padding: 1rem 1.1rem;
+    margin-bottom: 1.25rem;
+}
+
+.cs-detail-role {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--obi-accent);
+}
+
+.cs-detail-matchup {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 1.15rem;
+    color: var(--obi-text);
+}
+
+.cs-detail-meta {
+    color: var(--obi-text-secondary);
+    font-size: 0.9rem;
+}
+
+.cs-detail-status {
+    align-self: flex-start;
+    margin-top: 0.25rem;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--obi-text-secondary);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 999px;
+    padding: 3px 10px;
+}
+
+.cs-detail-status--confirmed {
+    color: var(--obi-success);
+    border-color: rgba(127, 181, 154, 0.4);
+}
+
+.cs-detail-status--declined {
+    color: var(--obi-error);
+    border-color: rgba(224, 138, 138, 0.4);
+}
+
+.cs-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.cs-field-label {
+    font-size: 0.85rem;
+    color: var(--obi-text-secondary);
+}
+
+.cs-input {
+    width: 100%;
+    padding: 0.7rem 0.85rem;
+    background: var(--obi-bg-elevated);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 9px;
+    color: var(--obi-text);
+    font-family: var(--obi-font-body);
+    font-size: 0.95rem;
+}
+
+.cs-input:focus {
+    outline: none;
+    border-color: var(--obi-accent);
+}
+
+.cs-btn {
+    padding: 0.75rem 1rem;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    cursor: pointer;
+}
+
+.cs-btn--confirm {
+    background: var(--obi-accent);
+    color: #10131a;
+}
+
+.cs-btn--confirm:hover:not(:disabled) {
+    background: var(--obi-accent-hover, #ffbf3f);
+}
+
+.cs-btn--ghost {
+    background: transparent;
+    border-color: var(--obi-card-border);
+    color: var(--obi-text-secondary);
+}
+
+.cs-btn--ghost:hover:not(:disabled) {
+    background: rgba(157, 185, 205, 0.08);
+    color: var(--obi-text);
+}
+
+.cs-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.cs-home-link {
+    display: block;
+    margin: 1.25rem auto 0;
+    background: none;
+    border: none;
+    color: var(--obi-icy);
+    font-family: var(--obi-font-body);
+    font-size: 0.9rem;
+    text-decoration: underline;
+    cursor: pointer;
+}

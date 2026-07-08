@@ -1,91 +1,497 @@
-.home-container {
-    max-width: 1200px;
+/* Home — redesigned per OBHL design handoff (banner hero variant) */
+
+.obi-home-loading {
+    padding: 80px 28px;
+    text-align: center;
+    font-family: var(--obi-font-body);
+    font-size: 18px;
+    color: var(--obi-text-muted);
+}
+
+.obi-neg { color: var(--obi-error); }
+
+/* ---------- HERO (banner) ---------- */
+.obi-hero {
+    position: relative;
+    overflow: hidden;
+    border-bottom: 3px solid var(--obi-accent);
+    background: var(--obi-bg);
+}
+
+.obi-hero-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: right center;
+}
+
+.obi-hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, #0b0c0f 0%, #0b0c0f 28%, rgba(11, 12, 15, 0.82) 46%, rgba(11, 12, 15, 0.15) 70%, rgba(11, 12, 15, 0) 88%);
+}
+
+.obi-hero-inner {
+    position: relative;
+    max-width: var(--obi-page-max);
     margin: 0 auto;
-    padding: 2rem;
+    padding: 96px 28px 104px;
 }
 
-.active-season-section {
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.obi-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 15px;
+    border: 1px solid rgba(157, 185, 205, 0.4);
+    border-radius: 30px;
+    background: rgba(43, 58, 72, 0.4);
+    margin-bottom: 26px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
 }
 
-.active-season-section h2 {
-    color: #333;
-    margin-bottom: 1.5rem;
-    font-size: 2rem;
+.obi-pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--obi-accent);
+    animation: obi-pulse 2s ease-in-out infinite;
 }
 
-.season-info {
-    background: #f8f9fa;
-    padding: 1.5rem;
-    border-radius: 8px;
-    margin-bottom: 2rem;
-}
-
-.season-info p {
-    margin: 0.5rem 0;
-    font-size: 1.1rem;
-    color: #2d3748;
-}
-
-.season-info strong {
-    color: #667eea;
-}
-
-.quick-links {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1.5rem;
-    margin-top: 2rem;
-}
-
-.quick-link-card {
-    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
-    color: white;
-    padding: 2rem;
-    border-radius: 12px;
-    text-decoration: none;
-    transition: transform 0.2s, box-shadow 0.2s;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.quick-link-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
-}
-
-.quick-link-card h3 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.5rem;
-}
-
-.quick-link-card p {
+.obi-hero-title {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: clamp(48px, 8vw, 104px);
+    line-height: 0.88;
+    letter-spacing: -1px;
     margin: 0;
-    opacity: 0.9;
-    font-size: 1rem;
+    color: #fff;
+    text-shadow: 0 6px 30px rgba(0, 0, 0, 0.6);
+    max-width: 760px;
 }
 
-.no-season-section {
+.obi-hero-sub {
+    font-family: var(--obi-font-body);
+    font-weight: 500;
+    font-size: clamp(17px, 2vw, 21px);
+    color: #C8D0D8;
+    margin: 24px 0 0;
+    max-width: 530px;
+    line-height: 1.5;
+}
+
+.obi-hero-cta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-top: 38px;
+}
+
+.obi-btn-gold {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #0b0c0f;
+    background: var(--obi-accent);
+    text-decoration: none;
+    padding: 15px 30px;
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(246, 169, 28, 0.35);
+    transition: transform 0.12s;
+}
+
+.obi-btn-gold:hover {
+    transform: translateY(-2px);
+}
+
+.obi-btn-ghost {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #fff;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(157, 185, 205, 0.45);
+    text-decoration: none;
+    padding: 15px 30px;
+    border-radius: 8px;
+    transition: background 0.15s;
+}
+
+.obi-btn-ghost:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+/* ---------- ANNOUNCEMENTS ---------- */
+.obi-news {
+    background: linear-gradient(180deg, #14110a, #0b0c0f);
+    border-bottom: 1px solid rgba(246, 169, 28, 0.18);
+}
+
+.obi-news .obi-container {
+    padding-top: 40px;
+    padding-bottom: 44px;
+}
+
+.obi-news-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 22px;
+}
+
+.obi-news-pill {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 13px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #0b0c0f;
+    background: var(--obi-accent);
+    padding: 5px 12px;
+    border-radius: 5px;
+}
+
+.obi-news-rule {
+    height: 1px;
+    flex: 1;
+    background: linear-gradient(90deg, rgba(246, 169, 28, 0.4), transparent);
+}
+
+.obi-news-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.obi-news-card {
+    padding: 20px 22px;
+    background: rgba(246, 169, 28, 0.06);
+    border: 1px solid rgba(246, 169, 28, 0.22);
+    border-left: 4px solid var(--obi-accent);
+    border-radius: 10px;
+}
+
+.obi-news-title {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 19px;
+    letter-spacing: 0.3px;
+    color: #fff;
+    margin-bottom: 5px;
+}
+
+.obi-news-body {
+    font-family: var(--obi-font-body);
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--obi-text-secondary);
+}
+
+.obi-news-body :is(p, ul, ol) { margin: 0 0 8px; }
+.obi-news-body :is(p, ul, ol):last-child { margin-bottom: 0; }
+.obi-news-body a { color: var(--obi-accent); }
+
+.obi-news-date {
+    font-family: var(--obi-font-display);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    margin-top: 10px;
+}
+
+/* ---------- SEASON AT A GLANCE ---------- */
+.obi-glance {
+    background: var(--obi-bg-elevated);
+}
+
+.obi-glance .obi-container {
+    padding-top: 68px;
+    padding-bottom: 60px;
+}
+
+.obi-glance-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 38px;
+}
+
+.obi-glance-title {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: clamp(34px, 4.5vw, 52px);
+    line-height: 0.95;
+    margin: 0;
+    color: #fff;
+}
+
+.obi-glance-link {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
+    text-decoration: none;
+    border-bottom: 2px solid rgba(157, 185, 205, 0.4);
+    padding-bottom: 3px;
+}
+
+.obi-glance-link:hover { color: #fff; }
+
+.obi-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 16px;
+}
+
+.obi-stat-card {
+    background: linear-gradient(160deg, #161b22, #10141a);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 14px;
+    padding: 26px 24px;
+}
+
+.obi-stat-value {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 46px;
+    line-height: 1;
+    color: var(--obi-accent);
+}
+
+.obi-stat-label {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: #fff;
+    margin-top: 8px;
+}
+
+.obi-stat-sub {
+    font-family: var(--obi-font-body);
+    font-size: 13.5px;
+    color: #8A95A0;
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+/* ---------- THIS WEEK ---------- */
+.obi-week {
+    position: relative;
+    background: var(--obi-bg);
+}
+
+.obi-week .obi-container {
+    padding-top: 64px;
+    padding-bottom: 84px;
+}
+
+.obi-week-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+}
+
+.obi-week-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 22px;
+}
+
+.obi-week-title {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 22px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #fff;
+}
+
+.obi-week-sub {
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    color: var(--obi-text-muted);
+}
+
+.obi-week-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.obi-result-card,
+.obi-upcoming-card {
+    border-radius: 12px;
+    padding: 16px 20px;
+}
+
+.obi-result-card {
+    background: var(--obi-bg-card);
+    border: 1px solid rgba(157, 185, 205, 0.14);
+}
+
+.obi-upcoming-card {
+    background: linear-gradient(160deg, #13171d, #0f1318);
+    border: 1px solid rgba(246, 169, 28, 0.2);
+}
+
+.obi-result-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.obi-team-side {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+}
+
+.obi-team-side-right {
+    justify-content: flex-end;
+}
+
+.obi-team-side-name {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 19px;
+    letter-spacing: 0.3px;
+    color: var(--obi-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.obi-team-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex: none;
+    box-shadow: var(--obi-ring-light);
+}
+
+.obi-score {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 26px;
+    color: #fff;
+    min-width: 30px;
     text-align: center;
-    padding: 3rem;
-    background: #f8f9fa;
+}
+
+.obi-score-dash {
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    color: var(--obi-text-dim);
+    padding: 0 4px;
+}
+
+.obi-vs {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 14px;
+    color: var(--obi-accent);
+    letter-spacing: 2px;
+    padding: 0 6px;
+}
+
+.obi-result-meta {
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    color: #6E7882;
+    margin-top: 9px;
+    letter-spacing: 0.5px;
+}
+
+.obi-upcoming-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.obi-when {
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    color: var(--obi-icy);
+    letter-spacing: 0.5px;
+}
+
+.obi-venue {
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    color: #6E7882;
+}
+
+.obi-week-full-btn {
+    margin-top: 4px;
+    text-align: center;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #0b0c0f;
+    background: var(--obi-accent);
+    text-decoration: none;
+    padding: 13px;
+    border-radius: 9px;
+    transition: transform 0.12s;
+}
+
+.obi-week-full-btn:hover {
+    transform: translateY(-2px);
+}
+
+.obi-week-empty {
+    padding: 24px;
+    text-align: center;
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-text-muted);
+    background: var(--obi-bg-card);
+    border: 1px solid var(--obi-divider);
     border-radius: 12px;
 }
 
-.no-season-section p {
-    font-size: 1.2rem;
-    color: #666;
+/* ---------- Responsive ---------- */
+@media (max-width: 900px) {
+    .obi-week-grid {
+        grid-template-columns: 1fr;
+        gap: 32px;
+    }
 }
 
-.loading,
-.error {
-    text-align: center;
-    padding: 3rem;
-    font-size: 1.2rem;
-}
-
-.error {
-    color: #dc3545;
+@media (max-width: 760px) {
+    .obi-hero-inner {
+        padding: 64px 28px 72px;
+    }
 }

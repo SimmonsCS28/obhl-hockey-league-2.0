@@ -79,3 +79,6 @@ logs/
 temp_*.sql
 generate_*.py
 *_hash.py
+
+# Design handoff / reference material (not app code)
+Website theme integration/

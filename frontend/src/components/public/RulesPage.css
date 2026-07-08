@@ -1,235 +1,279 @@
-/* ── Page Layout ── */
-.rules-page {
-    min-height: 100vh;
+/* Rules — redesigned per OBHL design handoff v2 */
+
+.obi-rules-hero-inner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 18px;
 }
 
-/* ── Hero Banner ── */
-.rules-page-hero {
-    padding: 0;
-    text-align: center;
-    width: 100%;
-}
-
-.rules-hero-content {
-    position: relative;
-    z-index: 1;
-    display: block;
-    background: rgba(10, 12, 20, 0.88);
-    border: none;
-    border-radius: 0;
-    padding: 2rem 2rem;
-    max-width: 100%;
-    width: 100%;
-}
-
-.rules-hero-icon {
-    font-size: 3rem;
-    display: block;
-    margin-bottom: 0.75rem;
-    filter: drop-shadow(0 0 16px rgba(96, 165, 250, 0.35));
-}
-
-.rules-hero-title {
-    font-size: clamp(1.8rem, 4vw, 2.8rem);
+.obi-rules-print-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    cursor: pointer;
+    font-family: var(--obi-font-display);
     font-weight: 800;
-    color: #f1f5f9;
-    margin: 0 0 0.6rem;
-    letter-spacing: -0.02em;
-}
-
-.rules-hero-subtitle {
-    font-size: 1rem;
-    color: #94a3b8;
-    margin: 0;
-    max-width: 480px;
-    margin-inline: auto;
-}
-
-/* ── Content Container ── */
-.rules-page-container {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 2rem 1.5rem 4rem;
-    background: rgba(15, 23, 42, 0.82);
-    backdrop-filter: blur(4px);
-    border-radius: 12px;
-    overflow: hidden;
-    min-width: 0;
-}
-
-/* ── Meta Bar (last updated) ── */
-.rules-meta-bar {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    font-size: 0.82rem;
-    color: #94a3b8;
-    background: rgba(148, 163, 184, 0.07);
-    border: 1px solid rgba(148, 163, 184, 0.12);
-    border-radius: 8px;
-    padding: 0.5rem 1rem;
-    margin-bottom: 2rem;
-}
-
-.rules-meta-icon {
-    font-size: 0.95rem;
-}
-
-/* ── Rules Content (from Quill HTML output) ── */
-.rules-content {
-    color: #e2e8f0;
-    line-height: 1.7;
-    font-size: 0.97rem;
-    overflow-wrap: break-word;
-    word-break: break-word;
-    min-width: 0;
-    width: 100%;
-}
-
-/* ── Rule Items (generated from PDF) ── */
-.rules-content .rule-item {
-    background: rgba(30, 41, 59, 0.75);
-    border: 1px solid rgba(148, 163, 184, 0.15);
-    border-left: 3px solid rgba(96, 165, 250, 0.5);
-    border-radius: 8px;
-    padding: 1rem 1.25rem;
-    margin-bottom: 0.85rem;
-    color: #e2e8f0;
-    overflow-wrap: break-word;
-    word-break: break-word;
-    min-width: 0;
-    box-sizing: border-box;
-    width: 100%;
-}
-
-.rules-content .rule-item p {
-    color: #e2e8f0;
-    margin: 0 0 0.25rem 0 !important;
-}
-
-.rules-content .rule-sub {
-    color: #cbd5e1;
-    padding-left: 1.25rem;
-    margin-top: 0.35rem !important;
-    border-left: 2px solid rgba(148, 163, 184, 0.2);
-    margin-left: 0.5rem;
-}
-
-/* These target the HTML that Quill outputs */
-.rules-content h1 {
-    font-size: 1.7rem;
-    font-weight: 700;
-    color: #f1f5f9;
-    margin: 2rem 0 0.5rem;
-    padding-bottom: 0.35rem;
-    border-bottom: 2px solid rgba(96, 165, 250, 0.25);
-}
-
-.rules-content h2 {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: #93c5fd;
-    margin: 1.75rem 0 0.4rem;
+    font-size: 14px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
-    letter-spacing: 0.04em;
+    color: #C8D0D8;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(157, 185, 205, 0.3);
+    padding: 12px 20px;
+    border-radius: 9px;
+    transition: background 0.15s;
 }
 
-.rules-content h3 {
-    font-size: 1.05rem;
-    font-weight: 600;
-    color: #e2e8f0;
-    margin: 1.1rem 0 0.1rem;
+.obi-rules-print-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
 }
 
-.rules-content p {
-    margin: 0 0 0.2rem 0 !important;
-    padding: 0 !important;
+.obi-rules-body {
+    background: var(--obi-bg-elevated);
 }
 
-.rules-content strong {
-    color: #93c5fd;
-    font-weight: 600;
+.obi-rules-grid {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 48px;
+    align-items: start;
+    padding-top: 8px;
+    padding-bottom: 40px;
 }
 
-.rules-content ol,
-.rules-content ul {
-    padding-left: 1.5rem;
-    margin: 0.3rem 0;
+.obi-rules-grid.no-toc {
+    grid-template-columns: 1fr;
+    max-width: 860px;
 }
 
-.rules-content li {
-    margin: 0.15rem 0;
+/* Sidebar ToC */
+.obi-rules-sidebar {
+    position: sticky;
+    top: 96px;
+    padding: 24px 0 60px;
+    max-height: calc(100vh - 120px);
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
-/* Indented paragraphs (from Quill) */
-.rules-content .ql-indent-1 {
-    padding-left: 3rem;
-}
-.rules-content .ql-indent-2 {
-    padding-left: 6rem;
+.obi-rules-toc-label {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--obi-text-dim);
+    padding: 0 12px 11px;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.1);
+    margin-bottom: 8px;
 }
 
-/* ── Loading ── */
-.rules-loading {
+.obi-rules-toc {
     display: flex;
-    align-items: center;
-    gap: 1rem;
-    color: #94a3b8;
-    justify-content: center;
-    padding: 4rem;
+    flex-direction: column;
+    gap: 1px;
 }
 
-.rules-spinner {
-    width: 28px;
-    height: 28px;
-    border: 3px solid rgba(96, 165, 250, 0.2);
-    border-top-color: #60a5fa;
-    border-radius: 50%;
-    animation: rulesSpin 0.8s linear infinite;
+.obi-rules-toc-item {
+    display: block;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--obi-text-secondary);
+    background: transparent;
+    border: none;
+    border-left: 3px solid transparent;
+    padding: 8px 12px;
+    border-radius: 0 6px 6px 0;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+    overflow-wrap: break-word;
+    line-height: 1.3;
 }
 
-@keyframes rulesSpin {
-    to { transform: rotate(360deg); }
+.obi-rules-toc-item.level-3 {
+    padding-left: 22px;
+    font-weight: 600;
+    font-size: 12.5px;
+    color: var(--obi-text-muted);
 }
 
-/* ── Error ── */
-.rules-error {
+.obi-rules-toc-item:hover {
+    background: var(--obi-accent-hover);
+    color: #fff;
+}
+
+.obi-rules-toc-item.is-active {
+    color: var(--obi-accent);
+    background: var(--obi-accent-soft);
+    border-left-color: var(--obi-accent);
+}
+
+/* Main content (rendered rich-text HTML) */
+.obi-rules-main {
+    padding: 36px 0 80px;
+    min-width: 0;
+}
+
+.obi-rules-content {
+    font-family: var(--obi-font-body);
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--obi-text-secondary);
+    min-width: 0;
+    overflow-wrap: break-word;
+    word-break: break-word;
+}
+
+.obi-rules-content h1,
+.obi-rules-content h2,
+.obi-rules-content h3 {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    color: #fff;
+    letter-spacing: 0.3px;
+}
+
+.obi-rules-content h1 { font-size: 30px; margin: 36px 0 14px; }
+.obi-rules-content h2 {
+    font-size: 25px;
+    margin: 34px 0 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--obi-divider);
+}
+.obi-rules-content h3 { font-size: 19px; margin: 24px 0 10px; color: var(--obi-icy); }
+
+.obi-rules-content :first-child { margin-top: 0; }
+
+/* Grouped ToC (v4 §5a) */
+.obi-rules-toc-group-block { margin-bottom: 10px; }
+.obi-rules-toc-group {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 12px 12px 5px;
+    color: var(--obi-text-muted);
+}
+.obi-rules-toc-group.tone-ice { color: var(--obi-icy); }
+.obi-rules-toc-group.tone-gold { color: var(--obi-accent); }
+.obi-rules-toc-group.tone-green { color: var(--obi-success); }
+
+/* Sections */
+.obi-rules-section {
+    scroll-margin-top: 120px;
+    padding-bottom: 26px;
+    margin-bottom: 26px;
+    border-bottom: 1px solid var(--obi-divider);
+}
+.obi-rules-section:last-child { border-bottom: none; margin-bottom: 0; }
+
+.obi-rules-section-chip {
+    display: inline-block;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 5px;
+    margin-bottom: 12px;
+}
+.obi-rules-section-chip.tone-ice { color: var(--obi-icy); background: rgba(157, 185, 205, 0.14); }
+.obi-rules-section-chip.tone-gold { color: var(--obi-accent); background: rgba(246, 169, 28, 0.12); }
+.obi-rules-section-chip.tone-green { color: var(--obi-success); background: rgba(127, 181, 154, 0.14); }
+
+.obi-rules-section-title {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 26px;
+    color: #fff;
+    margin: 0 0 16px;
+    line-height: 1.05;
+}
+
+.obi-rules-content p { margin: 0 0 14px; }
+
+.obi-rules-content ul,
+.obi-rules-content ol {
+    margin: 0 0 16px;
+    padding-left: 24px;
+}
+
+.obi-rules-content li { margin-bottom: 7px; }
+
+.obi-rules-content a {
+    color: var(--obi-accent);
+    text-decoration: none;
+}
+
+.obi-rules-content a:hover { text-decoration: underline; }
+
+.obi-rules-content strong { color: var(--obi-text); }
+
+.obi-rules-content hr {
+    border: none;
+    border-top: 1px solid var(--obi-divider);
+    margin: 28px 0;
+}
+
+.obi-rules-msg {
+    max-width: var(--obi-page-max);
+    margin: 0 auto;
+    padding: 60px 28px;
     text-align: center;
-    color: #f87171;
-    background: rgba(239, 68, 68, 0.08);
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    border-radius: 10px;
-    padding: 2rem;
-    margin: 2rem 0;
+    font-family: var(--obi-font-body);
+    font-size: 16px;
+    color: var(--obi-text-muted);
 }
 
-/* ── Empty State ── */
-.rules-empty {
-    text-align: center;
-    color: #64748b;
-    padding: 4rem 2rem;
-    font-size: 1rem;
+.obi-neg { color: var(--obi-error); }
+
+/* Responsive: ToC drops above content */
+@media (max-width: 860px) {
+    .obi-rules-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .obi-rules-sidebar {
+        position: static;
+        max-height: none;
+        padding: 16px 0 0;
+    }
+
+    .obi-rules-toc {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .obi-rules-toc-item {
+        width: auto;
+        border-left: none;
+        border: 1px solid var(--obi-card-border);
+        border-radius: 20px;
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .obi-rules-toc-item.level-3 { padding-left: 12px; }
+
+    .obi-rules-main { padding-top: 20px; }
 }
 
-/* ── Responsive ── */
-@media (max-width: 640px) {
-    .rules-page-hero {
-        padding: 1.75rem 1rem 1.5rem;
-    }
-
-    .rules-hero-content {
-        padding: 1.5rem 1.25rem;
-    }
-
-    .rules-hero-icon {
-        font-size: 2.25rem;
-    }
-
-    .rules-page-container {
-        padding: 1.5rem 1rem 3rem;
-    }
-
-    .rules-content {
-        font-size: 0.9rem;
-    }
+@media print {
+    .obi-no-print { display: none !important; }
+    .obi-rules-grid { grid-template-columns: 1fr; }
+    .obi-rules-content { color: #000; }
+    .obi-rules-content h1,
+    .obi-rules-content h2,
+    .obi-rules-content h3 { color: #000; }
 }

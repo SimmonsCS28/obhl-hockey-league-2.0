@@ -1,0 +1,1052 @@
+/* ============================================================
+   Coordinator Console — v3 theme
+   ============================================================ */
+
+/* ---------- Page shell ---------- */
+
+.cc-page {
+    font-family: var(--obi-font-body);
+    background: var(--obi-bg);
+    color: var(--obi-text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ---------- Sticky header ---------- */
+
+.cc-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(11, 12, 15, 0.92);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--obi-header-border);
+}
+
+.cc-header-inner {
+    max-width: var(--obi-page-max);
+    margin: 0 auto;
+    padding: 0 28px;
+    height: 74px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.cc-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    text-decoration: none;
+    color: inherit;
+}
+
+.cc-header-logo {
+    height: 42px;
+    width: auto;
+    display: block;
+}
+
+.cc-header-wordmark {
+    display: flex;
+    flex-direction: column;
+    line-height: 0.92;
+}
+
+.cc-wordmark-top {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 22px;
+    letter-spacing: 0.5px;
+    color: #fff;
+}
+
+.cc-wordmark-sub {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 4.5px;
+    color: var(--obi-accent);
+}
+
+.cc-header-nav {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.cc-nav-link {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #C8D0D8;
+    text-decoration: none;
+    padding: 9px 15px;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+}
+
+.cc-nav-link:hover {
+    color: #fff;
+    background: var(--obi-accent-hover);
+}
+
+.cc-user-pill {
+    margin-left: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px 6px 6px;
+    border: 1px solid rgba(157, 185, 205, 0.25);
+    border-radius: 30px;
+    background: rgba(255, 255, 255, 0.04);
+    cursor: pointer;
+}
+
+.cc-user-pill:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.cc-user-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: var(--obi-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 14px;
+    color: #0b0c0f;
+    flex: none;
+}
+
+.cc-user-info {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+}
+
+.cc-user-name {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    color: #fff;
+}
+
+.cc-user-role {
+    font-family: var(--obi-font-body);
+    font-size: 11px;
+    color: var(--obi-icy);
+    margin-top: 2px;
+}
+
+/* ---------- Banner / hero ---------- */
+
+.cc-banner {
+    position: relative;
+    overflow: hidden;
+    border-bottom: 3px solid var(--obi-accent);
+}
+
+.cc-banner-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.12;
+}
+
+.cc-banner-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(11, 12, 15, 0.72), rgba(11, 12, 15, 0.95));
+}
+
+.cc-banner-inner {
+    position: relative;
+    max-width: var(--obi-page-max);
+    margin: 0 auto;
+    padding: 34px 28px 30px;
+}
+
+.cc-banner-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.cc-banner-badge {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #0b0c0f;
+    background: var(--obi-accent);
+    padding: 4px 10px;
+    border-radius: 5px;
+}
+
+.cc-banner-label {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--obi-accent);
+}
+
+.cc-banner-title {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: clamp(34px, 5vw, 52px);
+    line-height: 0.92;
+    margin: 0;
+    color: #fff;
+}
+
+.cc-banner-sub {
+    font-family: var(--obi-font-body);
+    font-size: 15px;
+    color: var(--obi-icy);
+    margin: 10px 0 0;
+    max-width: 700px;
+}
+
+/* ---------- Sticky role tabs ---------- */
+
+.cc-tabs-bar {
+    position: sticky;
+    top: 74px;
+    z-index: 40;
+    background: rgba(14, 16, 20, 0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--obi-divider);
+}
+
+.cc-tabs-inner {
+    max-width: var(--obi-page-max);
+    margin: 0 auto;
+    padding: 12px 28px;
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.cc-role-tab {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 9px 16px;
+    border-radius: 9px;
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    color: #C8D0D8;
+    background: rgba(255, 255, 255, 0.04);
+    transition: transform 0.1s, color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.cc-role-tab:hover {
+    transform: translateY(-1px);
+}
+
+.cc-role-tab.is-active {
+    color: #0b0c0f;
+    background: var(--obi-accent);
+    border-color: var(--obi-accent);
+}
+
+.cc-tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 10px;
+    background: var(--obi-accent);
+    color: #0b0c0f;
+    font-family: var(--obi-font-body);
+    font-weight: 700;
+    font-size: 11px;
+}
+
+.cc-role-tab.is-active .cc-tab-badge {
+    background: rgba(11, 12, 15, 0.25);
+    color: #0b0c0f;
+}
+
+/* ---------- Main content area ---------- */
+
+.cc-content {
+    max-width: var(--obi-page-max);
+    margin: 0 auto;
+    padding: 32px 28px 60px;
+}
+
+/* ---------- Week filter chips ---------- */
+
+.cc-week-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 22px;
+}
+
+.cc-week-bar-label {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    white-space: nowrap;
+}
+
+.cc-week-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.cc-week-chip {
+    cursor: pointer;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 13.5px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #C8D0D8;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    padding: 7px 14px;
+    border-radius: 8px;
+    transition: transform 0.1s, color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.cc-week-chip:hover {
+    transform: translateY(-1px);
+}
+
+.cc-week-chip.is-active {
+    color: #0b0c0f;
+    background: var(--obi-accent);
+    border-color: var(--obi-accent);
+}
+
+.cc-week-chip-range {
+    font-family: var(--obi-font-body);
+    font-weight: 500;
+    font-size: 10px;
+    letter-spacing: 0.3px;
+    text-transform: none;
+    opacity: 0.7;
+}
+
+/* ---------- Summary cards ---------- */
+
+.cc-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+}
+
+.cc-summary-card {
+    background: linear-gradient(160deg, #13171d, #10141a);
+    border-radius: 14px;
+    padding: 18px 20px;
+}
+
+.cc-summary-value {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 38px;
+    line-height: 1;
+}
+
+.cc-summary-label {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1.3px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
+    margin-top: 7px;
+}
+
+/* ---------- Goalie pool band ---------- */
+
+.cc-goalie-pool {
+    background: linear-gradient(150deg, rgba(127, 181, 154, 0.1), rgba(127, 181, 154, 0.02));
+    border: 1px solid rgba(127, 181, 154, 0.28);
+    border-radius: 16px;
+    padding: 20px 22px;
+    margin-bottom: 28px;
+}
+
+.cc-goalie-pool-hd {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.cc-goalie-pool-title {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 18px;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.cc-goalie-pool-sub {
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    color: var(--obi-icy);
+}
+
+.cc-goalie-pool-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.cc-goalie-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(11, 12, 15, 0.5);
+    border-radius: 11px;
+    padding: 10px 14px;
+}
+
+.cc-goalie-chip-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 12px;
+    flex: none;
+}
+
+.cc-goalie-chip-name {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 15px;
+    color: #fff;
+    line-height: 1.05;
+}
+
+.cc-goalie-chip-status {
+    font-family: var(--obi-font-body);
+    font-size: 11.5px;
+    margin-top: 2px;
+}
+
+/* ---------- Section heading ---------- */
+
+.cc-section-hd {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 22px;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    margin-bottom: 14px;
+}
+
+/* ---------- Month groups ---------- */
+
+.cc-months {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.cc-month-hd {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 27px;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.cc-month-rule {
+    flex: 1;
+    height: 2px;
+    background: rgba(246, 169, 28, 0.25);
+}
+
+.cc-weeks {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+}
+
+.cc-week-hd {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 13px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--obi-divider);
+    flex-wrap: wrap;
+}
+
+.cc-week-hd-label {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 18px;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.cc-week-hd-range {
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    color: var(--obi-text-muted);
+}
+
+.cc-week-hd-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cc-week-scope-note {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--obi-accent);
+}
+
+.cc-publish-btn {
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #0b0c0f;
+    background: var(--obi-success);
+    border: 1px solid var(--obi-success);
+    padding: 7px 14px;
+    border-radius: 8px;
+    transition: opacity 0.15s, transform 0.1s;
+}
+
+.cc-publish-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    opacity: 0.9;
+}
+
+.cc-publish-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.cc-games {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* ---------- Game card ---------- */
+
+.cc-game-card {
+    background: linear-gradient(180deg, #13171d, #10141a);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 16px;
+    overflow: hidden;
+}
+
+.cc-game-hd {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 13px 20px;
+    background: rgba(0, 0, 0, 0.28);
+    border-bottom: 1px solid rgba(157, 185, 205, 0.12);
+}
+
+.cc-game-date-block {
+    flex: none;
+    width: 60px;
+    text-align: center;
+    border-right: 1px solid rgba(157, 185, 205, 0.14);
+    padding-right: 12px;
+}
+
+.cc-game-day {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: var(--obi-accent);
+}
+
+.cc-game-date {
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    color: var(--obi-icy);
+}
+
+.cc-game-matchup {
+    flex: 1;
+    min-width: 0;
+}
+
+.cc-game-teams {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.cc-team-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    box-shadow: var(--obi-ring-light);
+    flex: none;
+}
+
+.cc-team-name {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 17px;
+    color: #fff;
+}
+
+.cc-vs {
+    font-family: var(--obi-font-display);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--obi-text-dim);
+}
+
+.cc-game-meta {
+    font-family: var(--obi-font-body);
+    font-size: 12px;
+    color: var(--obi-text-muted);
+    margin-top: 2px;
+}
+
+.cc-fill-badge {
+    flex: none;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 5px 11px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+/* ---------- Slot rows ---------- */
+
+.cc-slot-row {
+    border-bottom: 1px solid rgba(157, 185, 205, 0.07);
+}
+
+.cc-slot-row:last-child {
+    border-bottom: none;
+}
+
+.cc-slot-inner {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 13px 20px;
+    flex-wrap: wrap;
+}
+
+.cc-slot-label-col {
+    flex: none;
+    width: 148px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cc-slot-dot {
+    width: 13px;
+    height: 13px;
+    border-radius: 50%;
+    box-shadow: var(--obi-ring-light);
+    flex: none;
+}
+
+.cc-slot-label {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #C8D0D8;
+}
+
+.cc-slot-player-col {
+    flex: 1;
+    min-width: 0;
+}
+
+.cc-slot-player {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.cc-player-avatar {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: rgba(157, 185, 205, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 11px;
+    color: #fff;
+    flex: none;
+}
+
+.cc-player-name {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--obi-text);
+}
+
+.cc-slot-empty {
+    font-family: var(--obi-font-body);
+    font-size: 13.5px;
+    color: var(--obi-text-dim);
+    font-style: italic;
+}
+
+.cc-status-chip {
+    flex: none;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+    padding: 5px 11px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+.cc-slot-actions {
+    flex: none;
+    width: 196px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.cc-action-btn {
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12.5px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 9px 14px;
+    border-radius: 8px;
+    transition: transform 0.1s;
+    white-space: nowrap;
+}
+
+.cc-action-btn:hover {
+    transform: translateY(-1px);
+}
+
+/* ---------- Assign picker ---------- */
+
+.cc-picker {
+    background: rgba(0, 0, 0, 0.32);
+    border-top: 1px solid rgba(246, 169, 28, 0.25);
+    padding: 16px 20px 18px;
+}
+
+.cc-picker-title {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--obi-accent);
+    margin-bottom: 12px;
+}
+
+.cc-picker-candidates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+}
+
+.cc-candidate-btn {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    border-radius: 11px;
+    padding: 9px 14px 9px 10px;
+    transition: transform 0.1s;
+}
+
+.cc-candidate-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.cc-candidate-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.cc-candidate-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--obi-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 11px;
+    color: #0b0c0f;
+    flex: none;
+}
+
+.cc-candidate-btn:disabled .cc-candidate-avatar {
+    background: rgba(157, 185, 205, 0.18);
+    color: #fff;
+}
+
+.cc-candidate-name {
+    display: block;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14.5px;
+    color: #fff;
+    line-height: 1.05;
+    text-align: left;
+}
+
+.cc-candidate-sub {
+    display: block;
+    font-family: var(--obi-font-body);
+    font-size: 11px;
+    margin-top: 1px;
+    text-align: left;
+}
+
+.cc-picker-cancel {
+    cursor: pointer;
+    margin-top: 12px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
+    background: none;
+    border: none;
+    padding: 4px 0;
+    transition: color 0.15s;
+}
+
+.cc-picker-cancel:hover {
+    color: #fff;
+}
+
+/* ---------- Publish result ---------- */
+
+.cc-publish-result {
+    padding: 14px 18px;
+    border-radius: 10px;
+    margin-bottom: 22px;
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+}
+
+.cc-publish-result.is-ok {
+    background: rgba(127, 181, 154, 0.14);
+    border: 1px solid rgba(127, 181, 154, 0.32);
+    color: var(--obi-success);
+}
+
+.cc-publish-result.has-warnings {
+    background: rgba(232, 194, 106, 0.1);
+    border: 1px solid rgba(232, 194, 106, 0.32);
+    color: var(--obi-warning);
+}
+
+.cc-publish-result ul {
+    margin: 8px 0 0;
+    padding-left: 20px;
+    color: var(--obi-text-secondary);
+}
+
+/* ---------- Error / empty / loading ---------- */
+
+.cc-error {
+    padding: 14px 18px;
+    background: rgba(224, 138, 138, 0.1);
+    border: 1px solid rgba(224, 138, 138, 0.3);
+    border-radius: 10px;
+    color: var(--obi-error);
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    margin-bottom: 22px;
+}
+
+.cc-loading {
+    padding: 60px 0;
+    text-align: center;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--obi-text-muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+}
+
+.cc-empty {
+    padding: 60px 0;
+    text-align: center;
+    font-family: var(--obi-font-body);
+    font-size: 15px;
+    color: var(--obi-text-dim);
+    font-style: italic;
+}
+
+.cc-footer-note {
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    color: var(--obi-text-dim);
+    margin: 16px 2px 0;
+}
+
+/* ---------- Footer ---------- */
+
+.cc-footer {
+    background: #070809;
+    border-top: 3px solid var(--obi-accent);
+    margin-top: 30px;
+}
+
+.cc-footer-inner {
+    max-width: var(--obi-page-max);
+    margin: 0 auto;
+    padding: 30px 28px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+}
+
+.cc-footer-copy {
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    color: var(--obi-text-dim);
+}
+
+.cc-footer-link {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
+    text-decoration: none;
+    transition: color 0.15s;
+}
+
+.cc-footer-link:hover {
+    color: #fff;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 900px) {
+    .cc-summary-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media (max-width: 760px) {
+    .cc-slot-inner {
+        flex-wrap: wrap;
+    }
+
+    .cc-slot-actions {
+        width: 100%;
+        justify-content: flex-start;
+        padding-left: 0;
+    }
+
+    .cc-slot-label-col {
+        width: auto;
+    }
+}
+
+@media (max-width: 540px) {
+    .cc-header-inner,
+    .cc-banner-inner,
+    .cc-content,
+    .cc-tabs-inner,
+    .cc-footer-inner {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+
+    .cc-summary-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}

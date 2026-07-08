@@ -1,0 +1,127 @@
+@import '../styles/auth.css';
+
+.signup-page.auth-page {
+    padding: 3rem 1rem;
+}
+
+.signup-page .auth-card {
+    max-width: 480px;
+    padding: 2.1rem 2.1rem 1.9rem;
+}
+
+.signup-page .auth-title {
+    font-size: 32px;
+}
+
+/* Role picker — checkbox chips ("I am a... Select all that apply, or none") */
+.role-chip-group {
+    display: flex;
+    gap: 9px;
+    flex-wrap: wrap;
+}
+
+.role-chip {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    border-radius: 9px;
+    padding: 11px 15px;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+}
+
+.role-chip:hover {
+    border-color: var(--obi-accent);
+}
+
+.role-chip.is-active {
+    background: rgba(246, 169, 28, 0.12);
+    border-color: var(--obi-accent);
+}
+
+.role-chip input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.role-chip-box {
+    width: 19px;
+    height: 19px;
+    flex: none;
+    border-radius: 5px;
+    border: 1.5px solid rgba(157, 185, 205, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0b0c0f;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.role-chip.is-active .role-chip-box {
+    background: var(--obi-accent);
+    border-color: var(--obi-accent);
+}
+
+.role-chip-label {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #C8D0D8;
+}
+
+.role-chip.is-active .role-chip-label {
+    color: #fff;
+}
+
+/* Security question — scoped override of the shared component's light-theme default */
+.signup-page .security-question-input {
+    margin-bottom: 0;
+}
+
+.signup-page .security-question-input label {
+    display: block;
+    margin-bottom: 7px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
+}
+
+.signup-page .security-question-input select,
+.signup-page .custom-question-input input {
+    background: #0e1116;
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    color: var(--obi-text);
+    color-scheme: dark;
+}
+
+.signup-page .security-question-input select:focus,
+.signup-page .custom-question-input input:focus {
+    border-color: var(--obi-accent);
+    box-shadow: none;
+}
+
+.signup-page .custom-question-input {
+    gap: 0;
+}
+
+.signup-page .btn-link {
+    color: var(--obi-accent);
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.signup-page .btn-link:hover {
+    color: #FFC24D;
+}

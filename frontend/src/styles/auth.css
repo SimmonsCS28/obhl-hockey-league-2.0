@@ -1,0 +1,301 @@
+/*
+ * Shared "auth family" primitives — Login (modal), Signup, Forgot/Reset Password.
+ * Dark theme per design_handoff_auth (Downloads/Website theme integration (5)).
+ * Card gradient is slightly darker than --obi-bg-card per that spec, so it's
+ * hardcoded here rather than reusing the token.
+ */
+
+.auth-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1rem;
+    background: var(--obi-bg);
+    font-family: var(--obi-font-body);
+}
+
+.auth-card {
+    position: relative;
+    width: 100%;
+    max-width: 420px;
+    background: linear-gradient(160deg, #13171d, #10141a);
+    border: 1px solid rgba(157, 185, 205, 0.14);
+    border-radius: 16px;
+    padding: 2.1rem 2.1rem 1.9rem;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.auth-eyebrow {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--obi-accent);
+    margin: 0 0 6px;
+}
+
+.auth-title {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 30px;
+    color: #fff;
+    line-height: 0.95;
+    margin: 0;
+}
+
+.auth-subtitle {
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-icy);
+    line-height: 1.45;
+    margin: 8px 0 22px;
+}
+
+.auth-form-group {
+    margin-bottom: 15px;
+}
+
+.auth-form-row {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.auth-form-row .auth-form-group {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.auth-label {
+    display: block;
+    margin-bottom: 7px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
+}
+
+.auth-hint {
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    color: var(--obi-text-muted);
+    margin: -2px 0 10px;
+}
+
+.auth-input {
+    width: 100%;
+    background: #0e1116;
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: var(--obi-text);
+    font-size: 15px;
+    font-family: var(--obi-font-body);
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+}
+
+.auth-input::placeholder {
+    color: #6E7882;
+}
+
+.auth-input:focus {
+    border-color: var(--obi-accent);
+}
+
+.auth-input.auth-input-error {
+    border-color: rgba(224, 138, 138, 0.4);
+}
+
+select.auth-input {
+    appearance: none;
+    cursor: pointer;
+    padding-right: 40px;
+}
+
+.auth-password-wrapper {
+    position: relative;
+}
+
+.auth-password-wrapper .auth-input {
+    padding-right: 46px;
+}
+
+.auth-password-toggle {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px !important;
+    padding: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 0 !important;
+    color: var(--obi-icy);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.auth-password-toggle:hover {
+    color: var(--obi-accent);
+}
+
+.auth-password-toggle:focus-visible {
+    outline: 2px solid var(--obi-accent);
+    outline-offset: 2px;
+}
+
+.auth-btn {
+    width: 100%;
+    height: auto !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 13px !important;
+    background: var(--obi-accent);
+    color: #0b0c0f;
+    border: none;
+    border-radius: 9px !important;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.auth-btn:hover:not(:disabled) {
+    background: #FFB733;
+}
+
+.auth-btn:disabled {
+    background: rgba(246, 169, 28, 0.5);
+    cursor: default;
+}
+
+.auth-spinner {
+    width: 15px;
+    height: 15px;
+    border: 2px solid rgba(11, 12, 15, 0.35);
+    border-top-color: #0b0c0f;
+    border-radius: 50%;
+    display: inline-block;
+    animation: auth-spin 0.7s linear infinite;
+}
+
+@keyframes auth-spin {
+    to { transform: rotate(360deg); }
+}
+
+.auth-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    border-radius: 9px;
+    padding: 12px 14px;
+    margin-bottom: 18px;
+    font-family: var(--obi-font-body);
+    font-size: 13.5px;
+    line-height: 1.4;
+}
+
+.auth-alert-icon {
+    flex: none;
+    font-size: 14px;
+    line-height: 1.3;
+}
+
+.auth-alert--error {
+    background: rgba(224, 138, 138, 0.1);
+    border: 1px solid rgba(224, 138, 138, 0.3);
+    color: var(--obi-error);
+}
+
+.auth-alert--success {
+    background: rgba(127, 181, 154, 0.14);
+    border: 1px solid rgba(127, 181, 154, 0.32);
+    color: var(--obi-success);
+}
+
+.auth-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+    font-family: var(--obi-font-body);
+    font-size: 13.5px;
+    color: var(--obi-icy);
+}
+
+.auth-footer--center {
+    justify-content: center;
+    text-align: center;
+}
+
+.auth-link {
+    display: inline;
+    height: auto !important;
+    background: none;
+    border: none;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    font: inherit;
+    color: var(--obi-accent);
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+}
+
+.auth-link:hover {
+    color: #FFC24D;
+}
+
+/* Full-card success takeover (e.g. "Password Reset" complete) */
+.auth-success {
+    text-align: center;
+}
+
+.auth-success-icon {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    background: rgba(127, 181, 154, 0.16);
+    border: 1px solid rgba(127, 181, 154, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: var(--obi-success);
+}
+
+.auth-success-title {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 24px;
+    color: #fff;
+    margin: 0;
+}
+
+.auth-success-text {
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-success);
+    margin-top: 8px;
+    line-height: 1.45;
+}

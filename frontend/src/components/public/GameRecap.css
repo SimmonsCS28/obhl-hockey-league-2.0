@@ -1,375 +1,138 @@
-.game-recap-container {
-    padding: 2rem;
-    max-width: 1000px;
-    margin: 0 auto;
-    color: #e0e0e0;
+/* Game Recap — recap-specific styles (shares .obi-gd-* / .obi-roster-* from GamePreview.css) */
+
+/* Scoreboard */
+.obi-recap-board {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 16px;
 }
 
-.game-recap-container .recap-nav {
-    margin-bottom: 2rem;
-}
-
-.game-recap-container .btn-back {
-    background: transparent;
-    border: 1px solid #4a5568;
-    color: #e2e8f0;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: all 0.2s;
-}
-
-.game-recap-container .btn-back:hover {
-    background: #4a5568;
-    color: #fff;
-}
-
-.game-recap-container .recap-header {
-    background: #1e1e1e;
-    border-radius: 12px;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-}
-
-.game-recap-container .recap-sup-header {
+.obi-recap-side {
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid var(--obi-divider);
+    border-radius: 14px;
+    padding: 24px 18px;
     text-align: center;
-    margin-bottom: 2rem;
-    border-bottom: 1px solid #333;
-    padding-bottom: 1.5rem;
 }
 
-.game-recap-container .recap-sup-header h2 {
-    margin-top: 0;
-    margin-bottom: 1rem;
-    color: #fff;
-    font-size: 2rem;
-}
-
-.game-recap-container .game-logistics {
-    display: flex;
-    justify-content: center;
-    gap: 1.5rem;
-    flex-wrap: wrap;
-}
-
-.game-recap-container .logistics-item {
-    background: #2c2c2c;
-    padding: 0.5rem 1rem;
-    border-radius: 9999px;
-    font-size: 0.9rem;
-    color: #aaa;
-    font-weight: 600;
-}
-
-.game-recap-container .scoreboard {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 3rem;
-    padding: 1rem 0;
-}
-
-.game-recap-container .team-score {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    flex: 1;
-    max-width: 250px;
-}
-
-.game-recap-container .home-away-label {
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: #888;
-    letter-spacing: 2px;
-    margin-bottom: 0.5rem;
-}
-
-.game-recap-container .team-name-link {
-    text-decoration: none;
-    color: inherit;
-    width: 100%;
-}
-
-.game-recap-container .team-name {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    padding: 1rem;
-    border-radius: 8px;
-    font-size: 1.2rem;
-    font-weight: bold;
-    text-align: center;
-    min-height: 80px;
-    margin-bottom: 1rem;
-    background: #2c2c2c;
-    transition: transform 0.2s, background 0.2s;
-}
-
-.game-recap-container .team-name:hover {
-    transform: translateY(-2px);
-    background: #333;
-}
-
-.game-recap-container .name-text {
-    margin-top: 0.5rem;
-}
-
-.game-recap-container .score {
-    font-size: 3.5rem;
+.obi-recap-score {
+    font-family: var(--obi-font-display);
     font-weight: 900;
+    font-size: 56px;
+    line-height: 1;
+    margin: 16px 0 18px;
+}
+
+.obi-recap-score.is-win { color: #fff; }
+.obi-recap-score.is-lose { color: #6E7882; }
+
+.obi-recap-mid {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    text-align: center;
+    padding: 0 4px;
+}
+
+/* Event sections */
+.obi-recap-section-title {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 22px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
     color: #fff;
-    font-variant-numeric: tabular-nums;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    margin: 0 0 14px;
 }
 
-.game-recap-container .vs {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #666;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 1rem;
-}
-
-.game-recap-container .events-container {
-    display: flex;
-    flex-direction: column;
-    gap: 2rem;
-}
-
-.game-recap-container .events-section {
-    background: #1e1e1e;
-    border-radius: 12px;
-    padding: 1.5rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-}
-
-.game-recap-container .events-section h3 {
-    margin-top: 0;
-    margin-bottom: 1.5rem;
-    color: #fff;
-    font-size: 1.2rem;
-    border-bottom: 1px solid #333;
-    padding-bottom: 1rem;
-}
-
-.game-recap-container .table-responsive {
+.obi-recap-table-wrap {
+    background: linear-gradient(180deg, #13171d, #10141a);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 16px;
     overflow-x: auto;
 }
 
-.game-recap-container .events-table {
+.obi-recap-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.95rem;
 }
 
-.game-recap-container .events-table th {
+.obi-recap-table thead {
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.obi-recap-table th {
     text-align: left;
-    padding: 0.75rem;
-    background-color: #2c2c2c;
-    color: #aaa;
-    border-bottom: 2px solid #333;
-    font-weight: 600;
+    padding: 12px 18px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+}
+
+.obi-recap-table td {
+    padding: 12px 18px;
+    border-top: 1px solid rgba(157, 185, 205, 0.07);
+    font-family: var(--obi-font-body);
+    font-size: 14.5px;
+    color: var(--obi-text-secondary);
+    vertical-align: middle;
+}
+
+.obi-recap-pd,
+.obi-recap-time {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    color: var(--obi-icy);
     white-space: nowrap;
 }
 
-.game-recap-container .events-table td {
-    padding: 0.75rem;
-    border-bottom: 1px solid #333;
-    color: #e0e0e0;
+.obi-recap-player {
+    font-weight: 600;
+    color: var(--obi-text);
 }
 
-.game-recap-container .events-table tbody tr:hover {
-    background: #2c2c2c;
+.obi-recap-assists {
+    color: var(--obi-text-muted);
 }
 
-.game-recap-container .period-cell,
-.game-recap-container .time-cell {
-    width: 80px;
-    color: #888;
-    font-variant-numeric: tabular-nums;
+.obi-recap-min {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    color: var(--obi-warning);
 }
 
-.game-recap-container .team-cell {
-    width: 150px;
-    font-weight: 500;
+.obi-recap-team {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--obi-text);
+    cursor: pointer;
+    white-space: nowrap;
 }
 
-.game-recap-container .player-cell strong {
-    color: #fff;
-}
+.obi-recap-team:hover { color: #fff; }
 
-.game-recap-container .min-cell {
-    width: 60px;
-    text-align: center;
-    font-weight: bold;
-    color: #e74c3c;
-}
-
-.game-recap-container .unassisted {
-    color: #666;
-    font-style: italic;
-    font-size: 0.85rem;
-}
-
-.game-recap-container .no-events {
-    text-align: center;
-    color: #888;
-    padding: 2rem;
-    background: #2c2c2c;
-    border-radius: 8px;
-}
-
-.game-recap-container .mt-4 {
-    margin-top: 1rem;
-}
-
-@media (max-width: 768px) {
-    .game-recap-container .scoreboard {
-        gap: 1rem;
-    }
-
-    .game-recap-container .team-name {
-        font-size: 1rem;
-        padding: 0.75rem;
-        min-height: 60px;
-    }
-
-    .game-recap-container .score {
-        font-size: 2.5rem;
-    }
-
-    .game-recap-container .events-table th,
-    .game-recap-container .events-table td {
-        padding: 0.5rem;
-    }
-
-    .game-recap-container .staff-grid {
+@media (max-width: 720px) {
+    .obi-recap-board {
         grid-template-columns: 1fr;
     }
 
-    .game-recap-container .staff-row {
-        flex-direction: column;
-        gap: 0.75rem;
+    .obi-recap-mid {
+        padding: 6px 0;
+    }
+
+    .obi-recap-table {
+        min-width: 540px;
     }
 }
-
-/* =============================================
-   Game Staff Section
-   ============================================= */
-.game-recap-container .game-staff-section {
-    background: #1e1e1e;
-    border-radius: 12px;
-    padding: 1.5rem 2rem;
-    margin-top: 2rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-}
-
-.game-recap-container .staff-header {
-    color: #fff;
-    font-size: 1.3rem;
-    margin-top: 0;
-    margin-bottom: 1.25rem;
-    padding-bottom: 0.75rem;
-    border-bottom: 1px solid #333;
-}
-
-.game-recap-container .staff-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.5rem;
-}
-
-.game-recap-container .staff-group h4 {
-    color: #a0aec0;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    margin: 0 0 0.75rem 0;
-}
-
-.game-recap-container .staff-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-}
-
-.game-recap-container .staff-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    min-width: 130px;
-}
-
-.game-recap-container .staff-label {
-    font-size: 0.75rem;
-    color: #718096;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.game-recap-container .staff-value {
-    font-size: 1rem;
-    color: #e2e8f0;
-    font-weight: 500;
-}
-
-/* Goalie tag below team score */
-.game-recap-container .goalie-tag {
-    margin-top: 0.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.1rem;
-}
-
-.game-recap-container .goalie-tag-label {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: #718096;
-}
-
-.game-recap-container .goalie-tag-value {
-    font-size: 0.85rem;
-    color: #cbd5e0;
-    font-weight: 500;
-}
-
-/* Officials bar below scoreboard */
-.game-recap-container .officials-bar {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    flex-wrap: wrap;
-    padding-top: 1rem;
-    margin-top: 1rem;
-    border-top: 1px solid #333;
-}
-
-.game-recap-container .official-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.15rem;
-}
-
-.game-recap-container .official-label {
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: #718096;
-}
-
-.game-recap-container .official-value {
-    font-size: 0.9rem;
-    color: #cbd5e0;
-    font-weight: 500;
-}
-

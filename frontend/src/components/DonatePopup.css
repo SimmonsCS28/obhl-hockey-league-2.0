@@ -1,0 +1,158 @@
+@keyframes obi-don-pop {
+    from { transform: translateY(16px) scale(0.985); opacity: 0; }
+    to { transform: none; opacity: 1; }
+}
+
+.obi-donate-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(6, 7, 9, 0.78);
+    backdrop-filter: blur(6px);
+    font-family: var(--obi-font-body);
+}
+
+.obi-donate-modal {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    background: linear-gradient(180deg, #14181f, #0e1116);
+    border: 1px solid rgba(246, 169, 28, 0.3);
+    border-top: 4px solid var(--obi-accent);
+    border-radius: 16px;
+    padding: 38px 34px 30px;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+    animation: obi-don-pop 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.15);
+}
+
+.obi-donate-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(157, 185, 205, 0.2);
+    border-radius: 9px;
+    color: var(--obi-icy);
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+}
+
+.obi-donate-close:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+.obi-donate-head {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin-bottom: 20px;
+}
+
+.obi-donate-logo {
+    height: 48px;
+    width: auto;
+    display: block;
+}
+
+.obi-donate-titles {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+}
+
+.obi-donate-title {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 21px;
+    letter-spacing: 0.5px;
+    color: #fff;
+}
+
+.obi-donate-subtitle {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--obi-accent);
+    margin-top: 3px;
+}
+
+.obi-donate-p {
+    font-family: var(--obi-font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    color: #C8D0D8;
+    margin: 0 0 13px;
+}
+
+.obi-donate-p-dim {
+    color: #97A2AC;
+    margin-bottom: 26px;
+}
+
+.obi-donate-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.obi-donate-paypal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #0b0c0f;
+    background: var(--obi-accent);
+    text-decoration: none;
+    padding: 15px;
+    border-radius: 9px;
+    box-shadow: 0 6px 20px rgba(246, 169, 28, 0.35);
+    transition: transform 0.12s;
+}
+
+.obi-donate-paypal:hover {
+    transform: translateY(-2px);
+}
+
+.obi-donate-paypal svg {
+    fill: #0b0c0f;
+    display: block;
+    flex: none;
+}
+
+.obi-donate-later {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
+    background: transparent;
+    border: none;
+    padding: 9px;
+    cursor: pointer;
+    transition: color 0.15s;
+}
+
+.obi-donate-later:hover {
+    color: #fff;
+}

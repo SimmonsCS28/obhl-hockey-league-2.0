@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import * as api from '../../services/api';
-import TeamBadge from '../common/TeamBadge';
+import { resolveTeamColor, textOn } from '../../constants/teamColors';
+import heroBg from '../../assets/images/buzzard-full.jpg';
 import './GamePreview.css';
 
 function GamePreview() {
     const { gameId } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
-    const fromTeamId = location.state?.fromTeamId;
 
     const [game, setGame] = useState(null);
     const [homeTeam, setHomeTeam] = useState(null);
@@ -22,76 +22,50 @@ function GamePreview() {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        if (gameId) {
-            fetchPreviewData();
-        }
+        if (gameId) fetchPreviewData();
     }, [gameId]);
 
     const fetchPreviewData = async () => {
         try {
             setLoading(true);
-
-            // Fetch game
             const gameData = await api.getGame(gameId);
             setGame(gameData);
-
             if (!gameData) throw new Error('Game not found');
 
-            // Fetch teams
             const [homeTeamData, awayTeamData] = await Promise.all([
                 api.getTeam(gameData.homeTeamId),
-                api.getTeam(gameData.awayTeamId)
+                api.getTeam(gameData.awayTeamId),
             ]);
 
-            // Fetch and sort all teams in season to determine rank
             const allTeamsResponse = await fetch(`/api/v1/teams?seasonId=${gameData.seasonId}`);
             let homeRankStr = '';
             let awayRankStr = '';
-
             if (allTeamsResponse.ok) {
                 const allTeams = await allTeamsResponse.json();
-                allTeams.sort((a, b) => {
-                    if (b.points !== a.points) return b.points - a.points;
-                    return b.wins - a.wins;
-                });
-
+                allTeams.sort((a, b) => (b.points !== a.points ? b.points - a.points : b.wins - a.wins));
                 const getRankString = (n) => {
-                    const s = ["th", "st", "nd", "rd"];
+                    const s = ['th', 'st', 'nd', 'rd'];
                     const v = n % 100;
                     return n + (s[(v - 20) % 10] || s[v] || s[0]);
                 };
-
                 const hIndex = allTeams.findIndex(t => t.id === gameData.homeTeamId);
                 const aIndex = allTeams.findIndex(t => t.id === gameData.awayTeamId);
-
                 if (hIndex !== -1) homeRankStr = getRankString(hIndex + 1);
                 if (aIndex !== -1) awayRankStr = getRankString(aIndex + 1);
             }
-
             setHomeRank(homeRankStr);
             setAwayRank(awayRankStr);
-
             setHomeTeam(homeTeamData);
             setAwayTeam(awayTeamData);
 
-            // Fetch players for the season
             const playersResponse = await fetch(`/stats-api/players?seasonId=${gameData.seasonId}`);
             if (!playersResponse.ok) throw new Error('Failed to fetch players');
             const playersData = await playersResponse.json();
-
-            // Filter players to home/away rosters and sort by jersey
-            const sortPlayers = (players) => {
-                return players.sort((a, b) => {
-                    const jerseyA = parseInt(a.jerseyNumber) || 999;
-                    const jerseyB = parseInt(b.jerseyNumber) || 999;
-                    return jerseyA - jerseyB;
-                });
-            };
-
+            const sortPlayers = (players) => players.sort((a, b) =>
+                (parseInt(a.jerseyNumber) || 999) - (parseInt(b.jerseyNumber) || 999));
             setHomeRoster(sortPlayers(playersData.filter(p => p.teamId === gameData.homeTeamId)));
             setAwayRoster(sortPlayers(playersData.filter(p => p.teamId === gameData.awayTeamId)));
 
-            // Resolve staff names
             const [goalie1Name, goalie2Name, ref1Name, ref2Name, skName] = await Promise.all([
                 api.getUserPublicName(gameData.goalie1Id),
                 api.getUserPublicName(gameData.goalie2Id),
@@ -106,7 +80,6 @@ function GamePreview() {
                 referee2: ref2Name,
                 scorekeeper: skName,
             });
-
         } catch (err) {
             setError(err.message);
         } finally {
@@ -116,158 +89,139 @@ function GamePreview() {
 
     const formatDate = (dateString) => {
         if (!dateString) return '';
-        const dateStr = dateString.endsWith('Z') ? dateString : dateString + 'Z';
-        const date = new Date(dateStr);
-        return date.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: 'America/Chicago' });
+        const date = new Date(dateString.endsWith('Z') ? dateString : dateString + 'Z');
+        return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'America/Chicago' });
     };
 
-    const formatTime = (timeString) => {
-        if (!timeString) return '';
-        // If it's a full ISO string
-        if (timeString.includes('T')) {
-            const dateStr = timeString.endsWith('Z') ? timeString : timeString + 'Z';
-            const date = new Date(dateStr);
-            return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' });
-        }
-        // If it's just 'HH:mm:ss'
-        const [hours, minutes] = timeString.split(':');
-        const hour = parseInt(hours);
-        const ampm = hour >= 12 ? 'PM' : 'AM';
-        const hour12 = hour % 12 || 12;
-        return `${hour12}:${minutes} ${ampm}`;
+    const formatTime = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString.endsWith('Z') ? dateString : dateString + 'Z');
+        return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' });
     };
 
-    if (loading) return <div className="game-preview-container"><div className="loading">Loading Game Preview...</div></div>;
-    if (error) return <div className="game-preview-container"><div className="error-container"><h2>Error Loading Preview</h2><p>{error}</p><button onClick={() => navigate(-1)} className="btn-back">Go Back</button></div></div>;
-    if (!game || !homeTeam || !awayTeam) return <div className="game-preview-container"><div className="error-container">Game details could not be found.</div></div>;
+    const record = (t) => t
+        ? `${(t.wins || 0) + (t.overtimeWins || 0)}-${t.losses || 0}-${t.overtimeLosses || 0}`
+        : '—';
 
-    const renderRosterTable = (roster, team) => {
-        if (!roster || roster.length === 0) {
-            return <p className="no-roster">No active roster</p>;
-        }
+    if (loading) return <div className="obi-page obi-gd"><div className="obi-gd-msg">Loading game preview…</div></div>;
+    if (error) return (
+        <div className="obi-page obi-gd">
+            <div className="obi-gd-msg">
+                <p className="obi-neg">Error: {error}</p>
+                <button className="obi-ghost-btn" onClick={() => navigate(-1)}>Go Back</button>
+            </div>
+        </div>
+    );
+    if (!game || !homeTeam || !awayTeam) return <div className="obi-page obi-gd"><div className="obi-gd-msg">Game details could not be found.</div></div>;
 
+    const metaChips = [formatDate(game.gameDate), formatTime(game.gameDate), game.rink ? `${game.rink} Rink` : null, `Week ${game.week}`].filter(Boolean);
+
+    const officials = [
+        { label: 'Referee 1', value: staffNames?.referee1 },
+        { label: 'Referee 2', value: staffNames?.referee2 },
+        { label: 'Scorekeeper', value: staffNames?.scorekeeper },
+    ];
+
+    const renderTeamCard = (team, designation, rank, goalie) => {
+        const color = resolveTeamColor(team.teamColor);
         return (
-            <table className="roster-table condensed">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Player Name</th>
-                        <th className="hide-mobile">Pos</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {roster.map(player => (
-                        <tr key={player.id}>
-                            <td>{player.jerseyNumber}</td>
-                            <td>
-                                {player.firstName} {player.lastName}
-                                {team.gmId === player.id && <span className="gm-badge mini">GM</span>}
-                                {player.skillRating >= 9 && <span className="twogl-badge mini">2GL</span>}
-                            </td>
-                            <td className="hide-mobile">{player.position}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+            <div className="obi-gd-teamcard">
+                <div className="obi-gd-desig">{designation}</div>
+                <Link
+                    to={`/teams/${team.id}`}
+                    className="obi-gd-teamchip"
+                    style={{ background: color, color: textOn(team.teamColor) }}
+                >
+                    {team.name}
+                </Link>
+                <div className="obi-gd-record">{record(team)}</div>
+                <div className="obi-gd-rank">{rank || '—'}</div>
+                <div className="obi-gd-rank-label">Rank</div>
+                <div className="obi-gd-divider" />
+                <div className="obi-gd-goalie-label">Goalie</div>
+                <div className={`obi-gd-goalie ${goalie ? '' : 'obi-unassigned'}`}>{goalie || 'Not Assigned'}</div>
+            </div>
         );
     };
 
+    const renderRoster = (roster, team, title) => (
+        <div className="obi-roster-card">
+            <div className="obi-roster-title">{title}</div>
+            <div className="obi-roster-head">
+                <span className="obi-roster-num">#</span>
+                <span className="obi-roster-name">Player Name</span>
+                <span className="obi-roster-pos">Pos</span>
+            </div>
+            {(!roster || roster.length === 0) ? (
+                <div className="obi-roster-empty">No active roster</div>
+            ) : roster.map(p => (
+                <div key={p.id} className="obi-roster-row">
+                    <span className="obi-roster-num">{p.jerseyNumber ?? '—'}</span>
+                    <span className="obi-roster-name">
+                        {p.firstName} {p.lastName}
+                        {team.gmId === p.id && <span className="obi-mini-badge">GM</span>}
+                        {p.skillRating >= 9 && <span className="obi-mini-badge obi-mini-2gl">2GL</span>}
+                    </span>
+                    <span className="obi-roster-pos">{p.position || '—'}</span>
+                </div>
+            ))}
+        </div>
+    );
+
     return (
-        <div className="game-preview-container">
-            <div className="preview-nav">
-                <button onClick={() => navigate(-1)} className="btn-back">
-                    ← Back to {fromTeamId ? 'Team' : location.state?.fromDashboard ? 'My Dashboard' : 'Schedule'}
-                </button>
-            </div>
+        <div className="obi-page obi-gd">
+            <section className="obi-page-hero">
+                <img src={heroBg} alt="" className="obi-page-hero-bg" />
+                <div className="obi-page-hero-overlay" />
+                <div className="obi-page-hero-inner">
+                    <button
+                        className="obi-gd-back"
+                        onClick={() => navigate(location.state?.from || (location.state?.fromDashboard ? '/dashboard' : '/schedule'))}
+                    >
+                        ← Back to {location.state?.backLabel || (location.state?.fromDashboard ? 'My Dashboard' : 'Schedule')}
+                    </button>
+                    <div className="obi-eyebrow">Matchup Preview</div>
+                    <h1 className="obi-gd-title">
+                        {homeTeam.name}<span className="obi-gd-title-vs">vs</span>{awayTeam.name}
+                    </h1>
+                </div>
+            </section>
 
-            <div className="preview-header">
-                <div className="preview-sup-header">
-                    <h2>Game Preview</h2>
-                    <div className="game-logistics">
-                        <span className="logistics-item">{formatDate(game.gameDate)}</span>
-                        <span className="logistics-item">{formatTime(game.gameDate)}</span>
-                        <span className="logistics-item">{game.rink} Rink</span>
-                        <span className="logistics-item">Week {game.week}</span>
+            <section className="obi-gd-body">
+                <div className="obi-gd-detail">
+                    <div className="obi-gd-chips">
+                        {metaChips.map((c, i) => <span key={i} className="obi-gd-chip">{c}</span>)}
+                    </div>
+
+                    <div className="obi-gd-rule" />
+
+                    <div className="obi-vs-grid">
+                        {renderTeamCard(homeTeam, 'Home', homeRank, staffNames?.homeGoalie)}
+                        <div className="obi-vs-mid"><span className="obi-vs-circle">VS</span></div>
+                        {renderTeamCard(awayTeam, 'Away', awayRank, staffNames?.awayGoalie)}
+                    </div>
+
+                    <div className="obi-gd-rule" />
+
+                    <div className="obi-gd-officials">
+                        {officials.map(o => (
+                            <div key={o.label} className="obi-gd-official">
+                                <div className="obi-gd-official-label">{o.label}</div>
+                                <div className={`obi-gd-official-value ${o.value ? '' : 'obi-unassigned'}`}>
+                                    {o.value || 'Not Assigned'}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
 
-                <div className="matchup-container">
-                    {/* Home Team */}
-                    <div className="team-column home-team">
-                        <div className="team-identity">
-                            <span className="designation">HOME</span>
-                            <Link to={`/teams/${homeTeam.id}`} className="team-link">
-                                <TeamBadge teamName={homeTeam.name} teamColor={homeTeam.teamColor} style={{ fontSize: '1.2rem', padding: '10px 20px' }} />
-                            </Link>
-                            <div className="team-record">
-                                {homeTeam.wins + (homeTeam.overtimeWins || 0)}-{homeTeam.losses}-{homeTeam.ties || 0}-{homeTeam.overtimeLosses || 0}
-                            </div>
-                            <div className="team-rank">
-                                <div className="rank-value">{homeRank || '-'}</div>
-                                <div className="rank-label">RANK</div>
-                            </div>
-                            <div className="goalie-tag">
-                                <span className="goalie-tag-label">Goalie</span>
-                                <span className="goalie-tag-value">{staffNames?.homeGoalie || 'Not Assigned'}</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="matchup-vs">
-                        <span className="vs-circle">VS</span>
-                    </div>
-
-                    {/* Away Team */}
-                    <div className="team-column away-team">
-                        <div className="team-identity">
-                            <span className="designation">AWAY</span>
-                            <Link to={`/teams/${awayTeam.id}`} className="team-link">
-                                <TeamBadge teamName={awayTeam.name} teamColor={awayTeam.teamColor} style={{ fontSize: '1.2rem', padding: '10px 20px' }} />
-                            </Link>
-                            <div className="team-record">
-                                {awayTeam.wins + (awayTeam.overtimeWins || 0)}-{awayTeam.losses}-{awayTeam.ties || 0}-{awayTeam.overtimeLosses || 0}
-                            </div>
-                            <div className="team-rank">
-                                <div className="rank-value">{awayRank || '-'}</div>
-                                <div className="rank-label">RANK</div>
-                            </div>
-                            <div className="goalie-tag">
-                                <span className="goalie-tag-label">Goalie</span>
-                                <span className="goalie-tag-value">{staffNames?.awayGoalie || 'Not Assigned'}</span>
-                            </div>
-                        </div>
-                    </div>
+                <div className="obi-roster-grid">
+                    {renderRoster(homeRoster, homeTeam, 'Home Roster')}
+                    {renderRoster(awayRoster, awayTeam, 'Away Roster')}
                 </div>
-
-                <div className="officials-bar">
-                    <div className="official-item">
-                        <span className="official-label">Referee 1</span>
-                        <span className="official-value">{staffNames?.referee1 || 'Not Assigned'}</span>
-                    </div>
-                    <div className="official-item">
-                        <span className="official-label">Referee 2</span>
-                        <span className="official-value">{staffNames?.referee2 || 'Not Assigned'}</span>
-                    </div>
-                    <div className="official-item">
-                        <span className="official-label">Scorekeeper</span>
-                        <span className="official-value">{staffNames?.scorekeeper || 'Not Assigned'}</span>
-                    </div>
-                </div>
-            </div>
-
-            <div className="rosters-comparison">
-                <div className="roster-column">
-                    <h4>Home Roster</h4>
-                    {renderRosterTable(homeRoster, homeTeam)}
-                </div>
-                <div className="roster-column">
-                    <h4>Away Roster</h4>
-                    {renderRosterTable(awayRoster, awayTeam)}
-                </div>
-            </div>
+            </section>
         </div>
     );
 }
 
 export default GamePreview;
-

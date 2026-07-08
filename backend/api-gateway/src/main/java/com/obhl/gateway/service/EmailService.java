@@ -42,6 +42,33 @@ public class EmailService {
         send(toEmail, subject, html);
     }
 
+    public void sendShiftProposalEmail(String toEmail, String name, String roleLabel, String gameDescription,
+            String confirmLink) {
+        String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";
+        String subject = "OBHL " + roleLabel + " shift — please confirm";
+        String html = "<p>" + greeting + "</p>"
+                + "<p>You've been assigned a " + roleLabel + " shift:</p>"
+                + "<p><strong>" + gameDescription + "</strong></p>"
+                + "<p>Please let us know if you can make it:</p>"
+                + "<p><a href=\"" + confirmLink + "\">Confirm or decline this shift</a></p>"
+                + "<p>If you can't make the link work, copy and paste this into your browser:<br>"
+                + confirmLink + "</p>";
+
+        send(toEmail, subject, html);
+    }
+
+    /** Courtesy confirmation when a coordinator confirms a shift the official signed up for (no action needed). */
+    public void sendShiftConfirmedEmail(String toEmail, String name, String roleLabel, String gameDescription) {
+        String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";
+        String subject = "OBHL " + roleLabel + " shift — confirmed";
+        String html = "<p>" + greeting + "</p>"
+                + "<p>Your " + roleLabel + " shift is confirmed:</p>"
+                + "<p><strong>" + gameDescription + "</strong></p>"
+                + "<p>Thanks for signing up — no further action is needed.</p>";
+
+        send(toEmail, subject, html);
+    }
+
     private void send(String toEmail, String subject, String html) {
         if (resendApiKey == null || resendApiKey.isBlank()) {
             logger.warn("RESEND_API_KEY is not configured; skipping email send to {}", toEmail);

@@ -1,0 +1,28 @@
+/* Shared logged-in user pill (v4 §2b). */
+.obi-user-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 8px 6px 6px;
+    border: 1px solid rgba(157, 185, 205, 0.25);
+    border-radius: 30px;
+    background: rgba(255, 255, 255, 0.04);
+}
+.obi-pill-id { display: flex; align-items: center; gap: 10px; background: none; border: none; cursor: pointer; padding: 0; }
+.obi-pill-avatar {
+    width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-family: var(--obi-font-display); font-weight: 900; font-size: 14px; flex: none;
+    box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.3);
+}
+.obi-pill-name { display: flex; flex-direction: column; line-height: 1; text-align: left; }
+.obi-pill-first { font-family: var(--obi-font-display); font-weight: 700; font-size: 14px; color: #fff; }
+.obi-pill-team { font-family: var(--obi-font-body); font-size: 11px; color: var(--obi-icy); margin-top: 2px; }
+.obi-pill-link {
+    font-family: var(--obi-font-display); font-weight: 700; font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+    color: var(--obi-text-muted); background: none; border: none; cursor: pointer;
+    padding-left: 8px; border-left: 1px solid rgba(157, 185, 205, 0.2);
+}
+.obi-pill-link:hover { color: #fff; }
+/* Active page → gold */
+.obi-pill-link.is-active { color: var(--obi-accent); }
+.obi-pill-id.is-active .obi-pill-first { color: var(--obi-accent); }

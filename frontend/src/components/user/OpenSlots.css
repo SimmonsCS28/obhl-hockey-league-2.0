@@ -1,0 +1,496 @@
+/* =====================================================================
+   OpenSlots — ref / scorekeeper self sign-up (v3 redesign)
+   ===================================================================== */
+
+/* ---- Page shell ---- */
+.os-page {
+    font-family: var(--obi-font-body);
+    background: var(--obi-bg);
+    color: var(--obi-text);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ---- Banner ---- */
+.os-banner {
+    position: relative;
+    overflow: hidden;
+    border-bottom: 3px solid var(--obi-accent);
+    background: var(--obi-bg);
+}
+
+.os-banner-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(11, 12, 15, 0.72), rgba(11, 12, 15, 0.97));
+}
+
+.os-banner-inner {
+    position: relative;
+    padding-top: 34px;
+    padding-bottom: 30px;
+}
+
+.os-back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
+    text-decoration: none;
+    margin-bottom: 12px;
+    transition: color 0.15s;
+}
+
+.os-back-link:hover { color: #fff; }
+
+.os-banner-sub {
+    font-size: 15px;
+    color: var(--obi-icy);
+    margin: 10px 0 0;
+    max-width: 680px;
+}
+
+.os-banner-link {
+    color: var(--obi-accent);
+    text-decoration: none;
+}
+
+.os-banner-link:hover { text-decoration: underline; }
+
+/* ---- Sticky filter bar ---- */
+.os-filter-bar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    background: rgba(14, 16, 20, 0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--obi-divider);
+}
+
+.os-filter-inner {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.os-filter-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.os-filter-label {
+    flex: none;
+    width: 42px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+}
+
+.os-filter-summary {
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--obi-icy);
+    white-space: nowrap;
+}
+
+.os-filter-summary--solo {
+    margin-left: 0;
+    order: -1;
+}
+
+/* ---- Chips ---- */
+.os-chips {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.os-chip {
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 13.5px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #C8D0D8;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    padding: 8px 14px;
+    border-radius: 8px;
+    transition: transform 0.1s, color 0.15s, background 0.15s, border-color 0.15s;
+    user-select: none;
+}
+
+.os-chip:hover { transform: translateY(-1px); color: #fff; }
+
+.os-chip--active {
+    color: var(--obi-bg);
+    background: var(--obi-accent);
+    border-color: var(--obi-accent);
+}
+
+.os-chip--active:hover { color: var(--obi-bg); }
+
+.os-chip-count {
+    font-family: var(--obi-font-body);
+    font-weight: 600;
+    font-size: 11px;
+    opacity: 0.72;
+}
+
+/* Week chips have a stacked label + range */
+.os-chip--week {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    padding: 6px 13px;
+}
+
+.os-chip-range {
+    font-family: var(--obi-font-body);
+    font-weight: 500;
+    font-size: 10px;
+    letter-spacing: 0.3px;
+    text-transform: none;
+    opacity: 0.7;
+}
+
+/* ---- Content ---- */
+.os-content {
+    padding-top: 30px;
+    padding-bottom: 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+/* ---- Empty / loading / error states ---- */
+.os-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 60px 0;
+}
+
+.os-state--error { padding-top: 40px; }
+
+.os-state-text {
+    font-size: 15px;
+    color: var(--obi-text-muted);
+    margin: 0;
+    text-align: center;
+}
+
+.os-spinner {
+    width: 32px;
+    height: 32px;
+    border: 3px solid var(--obi-divider);
+    border-top-color: var(--obi-accent);
+    border-radius: 50%;
+    animation: os-spin 0.7s linear infinite;
+}
+
+@keyframes os-spin { to { transform: rotate(360deg); } }
+
+.os-retry-btn {
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--obi-accent);
+    background: none;
+    border: 1px solid var(--obi-accent);
+    padding: 9px 20px;
+    border-radius: var(--obi-radius-btn);
+    transition: background 0.15s;
+    user-select: none;
+}
+
+.os-retry-btn:hover { background: var(--obi-accent-soft); }
+
+/* ---- Month group ---- */
+.os-month-header {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 27px;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.os-month-divider {
+    flex: 1;
+    height: 2px;
+    background: rgba(246, 169, 28, 0.25);
+}
+
+/* ---- Week group ---- */
+.os-weeks {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+}
+
+.os-week-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 13px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--obi-divider);
+}
+
+.os-week-label {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 21px;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.os-week-range {
+    font-size: 13px;
+    color: var(--obi-text-muted);
+}
+
+.os-week-open {
+    margin-left: auto;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--obi-accent);
+}
+
+/* ---- Slot cards ---- */
+.os-slots {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.os-slot-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    background: linear-gradient(160deg, var(--obi-bg-card), #10141a);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 13px;
+    padding: 14px 18px;
+    flex-wrap: wrap;
+}
+
+.os-slot-card--mine {
+    border-color: rgba(157, 185, 205, 0.30);
+}
+
+.os-slot-card--taken {
+    opacity: 0.65;
+}
+
+/* Date column */
+.os-slot-date {
+    flex: none;
+    width: 60px;
+    text-align: center;
+    border-right: 1px solid var(--obi-divider);
+    padding-right: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.os-slot-day {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 1px;
+    color: var(--obi-accent);
+}
+
+.os-slot-datenum {
+    font-size: 12.5px;
+    color: var(--obi-icy);
+}
+
+/* Role badge */
+.os-role-badge {
+    flex: none;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 5px;
+}
+
+.os-role-badge--ref {
+    color: var(--obi-bg);
+    background: var(--obi-accent);
+    border: 1px solid var(--obi-accent);
+}
+
+.os-role-badge--sk {
+    color: var(--obi-icy);
+    background: rgba(157, 185, 205, 0.12);
+    border: 1px solid rgba(157, 185, 205, 0.3);
+}
+
+/* Game info */
+.os-slot-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.os-slot-game {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 17px;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.os-slot-meta {
+    font-size: 12.5px;
+    color: var(--obi-text-muted);
+    margin-top: 2px;
+}
+
+/* Action column */
+.os-slot-action {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Awaiting coordinator badge */
+.os-awaiting-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
+    background: rgba(157, 185, 205, 0.12);
+    border: 1px solid rgba(157, 185, 205, 0.3);
+    padding: 10px 14px;
+    border-radius: 9px;
+}
+
+/* Confirmed badge (coordinator confirmed your sign-up) */
+.os-confirmed-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--obi-success);
+    background: rgba(127, 181, 154, 0.12);
+    border: 1px solid rgba(127, 181, 154, 0.35);
+    padding: 10px 14px;
+    border-radius: 9px;
+}
+
+/* Undo button */
+.os-undo-btn {
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    padding: 8px 4px;
+    transition: color 0.15s;
+    user-select: none;
+}
+
+.os-undo-btn:hover { color: var(--obi-error); }
+
+/* Sign Up CTA */
+.os-signup-btn {
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--obi-bg);
+    background: var(--obi-accent);
+    padding: 11px 18px;
+    border-radius: 9px;
+    transition: transform 0.1s, opacity 0.15s;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.os-signup-btn:hover { transform: translateY(-1px); }
+
+.os-signup-btn--pending {
+    opacity: 0.6;
+    cursor: default;
+    pointer-events: none;
+}
+
+/* Taken label */
+.os-taken-label {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 760px) {
+    .os-slot-card {
+        flex-wrap: wrap;
+    }
+
+    .os-slot-action {
+        width: 100%;
+        justify-content: flex-end;
+        margin-top: 4px;
+    }
+}
+
+@media (max-width: 540px) {
+    .os-filter-label { width: 36px; }
+}

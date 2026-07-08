@@ -1,0 +1,16 @@
+/* Admin Standings — reuses public StandingsPage table styles inside the admin shell. */
+.admin-standings {
+    font-family: var(--obi-font-body);
+}
+
+.admin-standings-note {
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    color: var(--obi-text-muted);
+    margin-bottom: 16px;
+}
+
+/* The public table card already themes itself; just ensure it sits flush in the admin content. */
+.admin-standings .obi-table-card {
+    max-width: 100%;
+}

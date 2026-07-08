@@ -1,124 +1,218 @@
-.scorekeeper-content {
+/* Admin Live Score Entry — Claude Design v6 (week/game chips + context card) */
+.sk-live {
+    animation: sk-live-fade .25s ease;
+}
+
+@keyframes sk-live-fade {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+}
+
+.sk-live-loading,
+.sk-live-empty {
+    padding: 40px;
+    text-align: center;
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-text-muted);
+}
+
+/* ── Week filter chips ── */
+.sk-live-weekbar {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.sk-live-weeklabel {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    margin-right: 2px;
+}
+
+.sk-live-chip {
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 0.5px;
+    color: var(--obi-text-secondary);
+    background: rgba(157, 185, 205, 0.08);
+    border: 1px solid rgba(157, 185, 205, 0.2);
+    padding: 7px 13px;
+    border-radius: 8px;
+    transition: color .15s, background .15s, border-color .15s;
+}
+
+.sk-live-chip:hover {
+    color: #fff;
+    background: rgba(157, 185, 205, 0.14);
+}
+
+.sk-live-chip.is-active {
+    color: #0b0c0f;
+    background: var(--obi-accent);
+    border-color: var(--obi-accent);
+}
+
+/* ── Game selector chips ── */
+.sk-live-gamebar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-bottom: 18px;
+}
+
+.sk-live-gamechip {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    color: var(--obi-text-secondary);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(157, 185, 205, 0.2);
+    padding: 9px 14px;
+    border-radius: 9px;
+    transition: color .15s, background .15s, border-color .15s;
+}
+
+.sk-live-gamechip:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.sk-live-gamechip.is-active {
+    color: #fff;
+    background: rgba(246, 169, 28, 0.14);
+    border-color: rgba(246, 169, 28, 0.5);
+}
+
+/* Team-color dots flanking the matchup on each game chip */
+.sk-live-teamdot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex: none;
+    box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.45);
+}
+
+.sk-live-vsdim {
+    font-family: var(--obi-font-body);
+    font-size: 11px;
+    color: #5E6872;
+}
+
+.sk-live-chip-status {
+    margin-left: 3px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 9.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
+    background: rgba(157, 185, 205, 0.12);
+    border-radius: 4px;
+    padding: 2px 6px;
+}
+
+.sk-live-chip-status.is-live {
+    color: var(--obi-success);
+    background: rgba(127, 181, 154, 0.14);
+}
+
+/* ── Selected game context card ── */
+.sk-live-context {
+    margin-bottom: 18px;
+    background: var(--obi-bg-card, #13171d);
+    border: 1px solid rgba(157, 185, 205, 0.14);
+    border-radius: 12px;
+    padding: 14px 18px;
+}
+
+.sk-live-context-top {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 13px 30px;
+    align-items: center;
+}
+
+.sk-live-meta {
     display: flex;
     flex-direction: column;
-    height: 100%;
-    /* Ensure it fits within parent container */
+    gap: 2px;
 }
 
-.scorekeeper-nav {
-    background-color: #f8f9fa;
-    padding: 1rem 2rem;
-    border-bottom: 1px solid #e2e8f0;
+.sk-live-meta-label {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+}
+
+.sk-live-meta-val {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 16px;
+    color: #fff;
+}
+
+.sk-live-context-divider {
+    height: 1px;
+    background: rgba(157, 185, 205, 0.1);
+    margin: 13px 0;
+}
+
+.sk-live-context-staff {
     display: flex;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px 26px;
+}
+
+.sk-live-staff {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    min-width: 118px;
+}
+
+.sk-live-staff-label {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+}
+
+.sk-live-staff-val {
+    display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 7px;
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-text);
 }
 
-.nav-left {
-    display: flex;
-    gap: 1rem;
+.sk-live-staff-val.is-empty {
+    color: #6E7882;
 }
 
-.nav-right {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-}
-
-.nav-right label {
-    color: #64748b;
-    font-weight: 500;
-}
-
-.season-select,
-.week-select {
-    padding: 0.5rem 1rem;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    font-size: 0.9rem;
-    background: white;
-    cursor: pointer;
-}
-
-.scorekeeper-nav .nav-btn {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    color: #64748b;
-    background: transparent;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.scorekeeper-nav .nav-btn:hover:not(:disabled) {
-    background-color: #e2e8f0;
-    color: #1e293b;
-}
-
-.scorekeeper-nav .nav-btn.active {
-    background-color: #003E7E;
-    color: white;
-    box-shadow: 0 4px 6px -1px rgba(0, 62, 126, 0.2);
-}
-
-.scorekeeper-nav .nav-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.scorekeeper-body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 2rem;
-    background-color: #f1f5f9;
-}
-
-/* Mobile Responsive */
-@media (max-width: 768px) {
-    .scorekeeper-nav {
-        padding: 0.75rem;
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .nav-left {
-        width: 100%;
-        justify-content: center;
-        flex-wrap: wrap;
-        gap: 0.5rem;
-    }
-
-    .scorekeeper-nav .nav-btn {
-        flex: 1 1 auto;
-        padding: 0.75rem 1rem;
-        font-size: 0.9rem;
-        min-width: 120px;
-        text-align: center;
-    }
-
-    .nav-right {
-        width: 100%;
-        justify-content: center;
-        margin-top: 0.5rem;
-        padding-top: 0.5rem;
-        border-top: 1px solid #e2e8f0;
-        flex-wrap: wrap;
-    }
-
-    .nav-right label {
-        font-size: 0.85rem;
-    }
-
-    .season-select,
-    .week-select {
-        flex: 1;
-        min-width: 100px;
-        font-size: 0.85rem;
-    }
-
-    .scorekeeper-body {
-        padding: 1rem 0.5rem;
-    }
+.sk-live-staff-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    flex: none;
+    box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.45);
 }

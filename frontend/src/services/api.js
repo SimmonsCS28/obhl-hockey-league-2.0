@@ -507,6 +507,115 @@ const api = {
     },
 
     // ============================================
+    // COORDINATOR API
+    // ============================================
+    async getCoordinatorAssignments(seasonId, role, week) {
+        const params = new URLSearchParams({ seasonId, role, ...(week != null && { week }) }).toString();
+        return request(`/coordinator/assignments?${params}`);
+    },
+
+    async getCoordinatorAvailability(role) {
+        return request(`/coordinator/availability?role=${role}`);
+    },
+
+    // v3 goalie pool: each goalie's positive availability for a week
+    async getCoordinatorGoalieAvailability(seasonId, week) {
+        return request(`/coordinator/goalie-availability?seasonId=${seasonId}&week=${week}`);
+    },
+
+    async proposeShift(data) {
+        return request('/coordinator/propose', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
+    async withdrawShift(id, role) {
+        return request(`/coordinator/assignments/${id}?role=${role}`, { method: 'DELETE' });
+    },
+
+    // Coordinator confirms an official's self-signup (SIGNED_UP -> CONFIRMED)
+    async confirmSignup(id, role) {
+        return request(`/coordinator/assignments/${id}/confirm?role=${role}`, { method: 'POST' });
+    },
+
+    async publishShiftWeek(seasonId, role, week) {
+        const params = new URLSearchParams({ seasonId, role, ...(week != null && { week }) }).toString();
+        return request(`/coordinator/publish?${params}`, { method: 'POST' });
+    },
+
+    // ============================================
+    // OPEN SLOTS (ref/scorekeeper self sign-up)
+    // ============================================
+    async getOpenSlots(role, seasonId, week) {
+        const params = new URLSearchParams({ role, seasonId, ...(week != null && { week }) }).toString();
+        return request(`/open-slots?${params}`);
+    },
+
+    async signupForSlot(slotId) {
+        return request(`/slots/${slotId}/signup`, { method: 'POST' });
+    },
+
+    async dropSlotSignup(slotId) {
+        return request(`/slots/${slotId}/signup`, { method: 'DELETE' });
+    },
+
+    // ============================================
+    // GOALIE WEEKLY AVAILABILITY (v3, positive)
+    // ============================================
+    async getGoalieAvailability(seasonId) {
+        return request(`/goalie/availability?seasonId=${seasonId}`);
+    },
+
+    async setGoalieAvailability(seasonId, week, status) {
+        return request('/goalie/availability', {
+            method: 'PUT',
+            body: JSON.stringify({ seasonId, week, status })
+        });
+    },
+
+    // ============================================
+    // SHIFT CONFIRMATIONS (in-app + public token)
+    // ============================================
+    async getPendingShifts() {
+        return request('/shifts/pending');
+    },
+
+    async respondToShift(id, action, reason) {
+        return request(`/shifts/${id}/respond`, {
+            method: 'POST',
+            body: JSON.stringify({ action, reason })
+        });
+    },
+
+    async getShiftByToken(id, token) {
+        return request(`/auth/shift-confirm?id=${id}&token=${encodeURIComponent(token)}`);
+    },
+
+    async respondToShiftByToken(id, token, action, reason) {
+        return request('/auth/shift-confirm', {
+            method: 'POST',
+            body: JSON.stringify({ id, token, action, reason })
+        });
+    },
+
+    // Staff availability self-service (referees)
+    async getMyStaffAvailability(role) {
+        return request(`/staff/availability?role=${role}`);
+    },
+
+    async markStaffUnavailable(role, dates) {
+        return request(`/staff/availability?role=${role}`, {
+            method: 'POST',
+            body: JSON.stringify({ dates })
+        });
+    },
+
+    async removeStaffUnavailable(role, date) {
+        return request(`/staff/availability?role=${role}&date=${date}`, { method: 'DELETE' });
+    },
+
+    // ============================================
     // PLAYER STATS API
     // ============================================
     async getPlayerStats(seasonId, teamId = null) {
@@ -580,15 +689,27 @@ const api = {
     // ============================================
     // LEAGUE RULES API
     // ============================================
+    // Public: { sections:[{id,group,title,content,order}], publishedAt, publishedBy }
     async getRules() {
         return request('/rules');
     },
 
-    async updateRules(content) {
-        return request('/rules', {
+    // Admin editing view (same shape as getRules)
+    async getAdminRules() {
+        return request('/admin/rules');
+    },
+
+    // Admin: replace the full ordered section list
+    async saveRules(sections) {
+        return request('/admin/rules', {
             method: 'PUT',
-            body: JSON.stringify({ content })
+            body: JSON.stringify({ sections })
         });
+    },
+
+    // Admin: stamp published_at / published_by
+    async publishRules() {
+        return request('/admin/rules/publish', { method: 'POST' });
     }
 };
 
@@ -623,6 +744,25 @@ export const {
     generateUsers,
     importGoalies,
     getAllGoalieUnavailability,
+    getCoordinatorAssignments,
+    getCoordinatorAvailability,
+    getCoordinatorGoalieAvailability,
+    proposeShift,
+    withdrawShift,
+    confirmSignup,
+    publishShiftWeek,
+    getOpenSlots,
+    signupForSlot,
+    dropSlotSignup,
+    getGoalieAvailability,
+    setGoalieAvailability,
+    getPendingShifts,
+    respondToShift,
+    getShiftByToken,
+    respondToShiftByToken,
+    getMyStaffAvailability,
+    markStaffUnavailable,
+    removeStaffUnavailable,
     getMyAssignments,
     getMyShifts,
     goalieSignup,
@@ -658,7 +798,9 @@ export const {
     toggleAnnouncementActive,
     deleteAnnouncement,
     getRules,
-    updateRules
+    getAdminRules,
+    saveRules,
+    publishRules
 } = api;
 
 export default api;

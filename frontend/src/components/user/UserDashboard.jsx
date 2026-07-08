@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import PendingShifts from './PendingShifts';
 import './UserDashboard.css';
 
 const UserDashboard = () => {
@@ -187,6 +188,15 @@ const UserDashboard = () => {
                     >
                         My Dashboard
                     </button>
+                    {(user?.roles?.includes('GOALIE_COORDINATOR') || user?.roles?.includes('REF_COORDINATOR') || user?.roles?.includes('SCOREKEEPER_COORDINATOR')) && (
+                        <button
+                            className="home-button"
+                            onClick={() => navigate('/coordinator')}
+                            style={{ marginRight: '1rem' }}
+                        >
+                            Coordinator
+                        </button>
+                    )}
                     <button
                         className="home-button"
                         onClick={() => navigate('/')}
@@ -211,6 +221,8 @@ const UserDashboard = () => {
             </div>
 
             {/* Dashboard Stats / Summary can go here */}
+
+            <PendingShifts />
 
             <div className="dashboard-content">
                 <section className="upcoming-shifts-section">
@@ -336,8 +348,8 @@ const UserDashboard = () => {
                     {hasRole('GOALIE') && (
                         <div className="role-card">
                             <h2>Goalie</h2>
-                            <p>Manage your goalie availability for upcoming games</p>
-                            <button onClick={() => navigate('/user/goalie')}>
+                            <p>Mark which weeks you're available so the coordinator can schedule you</p>
+                            <button onClick={() => navigate('/user/goalie-availability')}>
                                 Manage Availability
                             </button>
                         </div>
@@ -346,8 +358,8 @@ const UserDashboard = () => {
                     {hasRole('REF') && (
                         <div className="role-card">
                             <h2>Referee</h2>
-                            <p>View and sign up for referee shifts</p>
-                            <button onClick={() => navigate('/user/referee')}>
+                            <p>Browse open referee slots and sign up for the games you want</p>
+                            <button onClick={() => navigate('/user/open-slots')}>
                                 View & Sign Up for Shifts
                             </button>
                         </div>
@@ -356,8 +368,8 @@ const UserDashboard = () => {
                     {hasRole('SCOREKEEPER') && (
                         <div className="role-card">
                             <h2>Scorekeeper</h2>
-                            <p>View and sign up for scorekeeper shifts</p>
-                            <button onClick={() => navigate('/user/scorekeeper')}>
+                            <p>Browse open scorekeeper slots and sign up for the games you want</p>
+                            <button onClick={() => navigate('/user/open-slots')}>
                                 View & Sign Up for Shifts
                             </button>
                         </div>

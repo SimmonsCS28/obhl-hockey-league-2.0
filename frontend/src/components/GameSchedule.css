@@ -1,88 +1,106 @@
-/* Game Schedule - Table Layout */
+/* GameSchedule — OBHL dark theme */
+
 .game-schedule {
     padding: 20px;
+    font-family: var(--obi-font-body);
+    color: var(--obi-text);
+    -webkit-font-smoothing: antialiased;
 }
 
 .schedule-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    margin-bottom: 20px;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 14px;
 }
 
 .schedule-header h2 {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 26px;
+    color: #fff;
     margin: 0;
-    color: #2d3748;
 }
 
+/* ── Filter chips ── */
 .filters {
     display: flex;
-    gap: 8px;
+    gap: 7px;
     flex-wrap: wrap;
 }
 
 .filter-btn {
-    padding: 8px 16px;
-    border: 2px solid #e2e8f0;
-    background: white;
-    color: #4a5568;
-    border-radius: 6px;
-    font-weight: 500;
+    padding: 7px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--obi-card-border);
+    color: var(--obi-text-secondary);
+    border-radius: var(--obi-radius-btn);
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.5px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
 }
 
 .filter-btn:hover {
-    border-color: #cbd5e1;
-    background: #f8fafc;
+    border-color: rgba(246, 169, 28, 0.45);
+    color: var(--obi-accent);
 }
 
 .filter-btn.active {
-    background: #3b82f6;
-    color: white;
-    border-color: #3b82f6;
+    background: var(--obi-accent-soft);
+    color: var(--obi-accent);
+    border-color: rgba(246, 169, 28, 0.4);
 }
 
+/* ── Empty state ── */
 .no-games {
     text-align: center;
-    padding: 40px 20px;
-    color: #94a3b8;
-    font-size: 16px;
+    padding: 48px 20px;
+    font-family: var(--obi-font-body);
+    font-size: 15px;
+    color: var(--obi-text-muted);
 }
 
-/* Table Styles */
+/* ── Table card ── */
 .game-schedule .schedule-table-container {
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(180deg, #13171d, #10141a);
+    border: 1px solid var(--obi-card-border);
+    border-radius: var(--obi-radius-card);
+    overflow: hidden;
     overflow-x: auto;
 }
 
 .game-schedule .schedule-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 900px;
+    min-width: 800px;
 }
 
 .game-schedule .schedule-table th {
-    background-color: #f7fafc;
-    color: #4a5568;
-    font-weight: 600;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 12px 14px;
     text-align: left;
-    padding: 0.75rem 1rem;
-    border-bottom: 2px solid #e2e8f0;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    border-bottom: 1px solid rgba(157, 185, 205, 0.18);
     white-space: nowrap;
-    font-size: 0.875rem;
 }
 
 .game-schedule .schedule-table td {
-    padding: 0.75rem 1rem;
-    border-bottom: 1px solid #e2e8f0;
-    color: #2d3748;
+    padding: 11px 14px;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.07);
+    color: var(--obi-text-secondary);
     vertical-align: middle;
-    font-size: 0.875rem;
+    font-size: 14px;
 }
 
 .game-schedule .schedule-table tr:last-child td {
@@ -91,80 +109,98 @@
 
 .clickable-row {
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: background 0.12s;
 }
 
 .clickable-row:hover td:not(.team-cell) {
-    background-color: #f8fafc;
+    background: var(--obi-accent-hover);
 }
 
+/* ── Columns ── */
 .game-schedule .schedule-table .week-col {
-    font-weight: 600;
-    color: #d97706;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--obi-accent);
     white-space: nowrap;
-}
-
-.game-schedule .schedule-table .time-col {
-    font-weight: 500;
-    white-space: nowrap;
-}
-
-.game-schedule .schedule-table .team-cell {
-    font-weight: 600;
-    padding: 0.5rem 1rem;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-    transition: opacity 0.2s;
-}
-
-.game-schedule .schedule-table .team-cell:hover {
-    opacity: 0.9;
-}
-
-.game-schedule .schedule-table .score {
-    font-weight: bold;
-    color: #2d3748;
-}
-
-.game-schedule .schedule-table .ot-badge {
-    margin-left: 6px;
-    font-size: 0.7rem;
-    background: #fbbf24;
-    color: #78350f;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-weight: 700;
-}
-
-.game-schedule .schedule-table .upcoming-badge,
-.game-schedule .schedule-table .in-progress-badge {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 600;
-}
-
-.game-schedule .schedule-table .upcoming-badge {
-    background-color: #e2e8f0;
-    color: #4a5568;
-}
-
-.game-schedule .schedule-table .in-progress-badge {
-    background-color: #dbeafe;
-    color: #1e40af;
-}
-
-.game-schedule .schedule-table .non-friday-row {
-    background-color: rgba(245, 158, 11, 0.1);
 }
 
 .game-schedule .schedule-table .date-col {
     white-space: nowrap;
+    color: var(--obi-text-secondary);
+}
+
+.game-schedule .schedule-table .time-col {
+    font-size: 13px;
+    color: var(--obi-text-muted);
+    white-space: nowrap;
+}
+
+.game-schedule .schedule-table .team-cell {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    padding: 8px 14px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* ── Score / status badges ── */
+.game-schedule .schedule-table .score {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 16px;
+    color: #fff;
+}
+
+.game-schedule .schedule-table .ot-badge {
+    display: inline-block;
+    background: var(--obi-accent-soft);
+    color: var(--obi-accent);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 10px;
+    letter-spacing: 1px;
+    margin-left: 6px;
+    vertical-align: middle;
+}
+
+.game-schedule .schedule-table .upcoming-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    background: rgba(157, 185, 205, 0.08);
+    color: var(--obi-text-muted);
+}
+
+.game-schedule .schedule-table .in-progress-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    background: rgba(246, 169, 28, 0.1);
+    color: var(--obi-accent);
+    border: 1px solid rgba(246, 169, 28, 0.25);
+}
+
+/* ── Off-Friday warning ── */
+.game-schedule .schedule-table .non-friday-row {
+    background: rgba(232, 194, 106, 0.03);
 }
 
 .game-schedule .schedule-table .non-friday-date {
     font-weight: 700;
-    color: #c2410c;
+    color: var(--obi-warning);
 }
 
 .game-schedule .schedule-table .day-warning {
@@ -177,13 +213,12 @@
     text-align: center;
 }
 
-/* Week Separator */
+/* ── Week separator (gold top rule) ── */
 .game-schedule .schedule-table .week-separator td {
-    border-top: 2px solid #000 !important;
-    padding-top: 0.75rem !important;
+    border-top: 1px solid rgba(246, 169, 28, 0.28) !important;
 }
 
-/* Mobile Responsive */
+/* ── Mobile ── */
 @media (max-width: 768px) {
     .schedule-header {
         flex-direction: column;
@@ -197,19 +232,19 @@
     .filter-btn {
         flex: 1;
         min-width: calc(50% - 4px);
+        text-align: center;
     }
 
     .game-schedule .schedule-table-container {
-        border-radius: 0;
-        margin: 0 -20px;
+        border-radius: 8px;
     }
 
     .game-schedule .schedule-table {
-        font-size: 0.75rem;
+        font-size: 12px;
     }
 
     .game-schedule .schedule-table th,
     .game-schedule .schedule-table td {
-        padding: 0.5rem;
+        padding: 8px 10px;
     }
 }

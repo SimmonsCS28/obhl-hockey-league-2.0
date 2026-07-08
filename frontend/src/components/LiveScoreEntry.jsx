@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { useBlocker, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
-import TeamBadge from './common/TeamBadge';
 import './LiveScoreEntry.css';
 
 const PENALTY_TYPES = [
@@ -25,7 +24,8 @@ function LiveScoreEntry(props) {
         onDirtyChange,
         hasPendingNavigation,
         onNavigate,
-        onNavigateCancel
+        onNavigateCancel,
+        embedded = false
     } = props;
     const { gameId } = useParams();
     const navigate = useNavigate();
@@ -49,25 +49,28 @@ function LiveScoreEntry(props) {
     const [editingEvent, setEditingEvent] = useState(null);
     const [gameFinalized, setGameFinalized] = useState(game?.status === 'completed');
 
-    // Goal form state
+    // Global period stepper — 1 / 2 / 3 / OT — sets the period for new goals & penalties.
+    const [currentPeriod, setCurrentPeriod] = useState('1');
+
+    // Goal modal state (two steps: 'scorer' → 'assist')
     const [goalTeam, setGoalTeam] = useState('home');
+    const [goalStep, setGoalStep] = useState('scorer');
     const [goalScorer, setGoalScorer] = useState('');
     const [goalAssist1, setGoalAssist1] = useState('');
     const [goalAssist2, setGoalAssist2] = useState('');
-    const [goalPeriod, setGoalPeriod] = useState('1');
-    const [goalMinutes, setGoalMinutes] = useState('');
-    const [goalSeconds, setGoalSeconds] = useState('');
+    const [goalClock, setGoalClock] = useState('');
+    const [goalTimeError, setGoalTimeError] = useState('');
+    const [goalBlockMsg, setGoalBlockMsg] = useState('');
     const [goalLimitWarning, setGoalLimitWarning] = useState(null);
 
-    // Penalty form state
+    // Penalty modal state
     const [penaltyTeam, setPenaltyTeam] = useState('home');
     const [penaltyPlayer, setPenaltyPlayer] = useState('');
     const [penaltyMinutes, setPenaltyMinutes] = useState(2);
     const [penaltyDescription, setPenaltyDescription] = useState('');
     const [penaltyOtherDescription, setPenaltyOtherDescription] = useState('');
-    const [penaltyPeriod, setPenaltyPeriod] = useState('1');
-    const [penaltyTimeMinutes, setPenaltyTimeMinutes] = useState('');
-    const [penaltyTimeSeconds, setPenaltyTimeSeconds] = useState('');
+    const [penaltyClock, setPenaltyClock] = useState('');
+    const [penaltyTimeError, setPenaltyTimeError] = useState('');
 
     const [showFinalizeModal, setShowFinalizeModal] = useState(false);
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -230,14 +233,6 @@ function LiveScoreEntry(props) {
         return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }, [isDirty, gameFinalized]);
 
-    const getTextColor = (bgColor) => {
-        if (!bgColor) return 'white';
-        // List of light colors that need dark text
-        const lightColors = ['White', '#FFFFFF', 'Yellow', '#FFD700', 'Gold', 'Lt. Blu', '#87CEEB', 'LightBlue', 'Lt Blu'];
-        const isLight = lightColors.some(c => bgColor.toLowerCase().includes(c.toLowerCase()));
-        return isLight ? '#2c3e50' : 'white';
-    };
-
     // Shared so freshly-added events and events reloaded from the backend render identically
     const formatPlayerLabel = (player) => {
         if (!player) return '';
@@ -334,15 +329,17 @@ function LiveScoreEntry(props) {
 
         const goalLimit = player.skillRating >= 9 ? 2 : 3;
         const goalsScored = player.goalsInGame;
-        const scoreDiff = Math.abs(homeScore - awayScore);
-        const isMercyRule = scoreDiff >= 4;
-        const losingTeam = homeScore < awayScore ? 'home' : 'away';
-        const mercyRuleActive = isMercyRule && goalTeam === losingTeam;
+        // Free-goal exception: a team trailing by 3+ has its skill caps lifted
+        // ("Limits Suspended") until it climbs back within 2.
+        const ownScore = goalTeam === 'home' ? homeScore : awayScore;
+        const oppScore = goalTeam === 'home' ? awayScore : homeScore;
+        const deficit = oppScore - ownScore;
+        const limitsSuspended = deficit >= 3;
 
-        if (mercyRuleActive) {
+        if (limitsSuspended) {
             return {
                 allowed: true,
-                message: '✅ Mercy Rule Active - No goal limits',
+                message: `✅ Limits Suspended — team trails by ${deficit}, goal caps lifted`,
                 type: 'success'
             };
         }
@@ -350,7 +347,7 @@ function LiveScoreEntry(props) {
         if (goalsScored >= goalLimit) {
             return {
                 allowed: false,
-                message: `❌ Player has reached goal limit (${goalsScored}/${goalLimit} goals)`,
+                message: `❌ #${player.jerseyNumber || ''} ${player.name} (skill ${player.skillRating}) is capped at ${goalLimit} goals. Team must trail by 3+ to exceed.`,
                 type: 'error'
             };
         }
@@ -370,27 +367,38 @@ function LiveScoreEntry(props) {
         };
     };
 
-    const handleGoalScorerChange = (playerId) => {
-        setGoalScorer(playerId);
-        if (playerId) {
-            const validation = checkGoalLimit(playerId);
-            setGoalLimitWarning(validation);
-        } else {
-            setGoalLimitWarning(null);
-        }
+    // Clock time is a countdown (MM:SS) capped per period: 20:00 in regulation, 5:00 in OT.
+    const periodMaxMin = (period) => (period === 'OT' || period === 4 ? 5 : 20);
+
+    // Auto-insert the colon as digits are typed: "123" -> "1:23", "1234" -> "12:34".
+    const fmtClock = (str) => {
+        const d = String(str || '').replace(/\D/g, '').slice(0, 4);
+        return d.length <= 2 ? d : d.slice(0, d.length - 2) + ':' + d.slice(-2);
     };
 
-    const formatTime = (minutes, seconds) => {
-        const m = minutes || '0';
-        const s = (seconds || '0').padStart(2, '0');
-        return `${m}:${s}`;
+    // Validate MM:SS against the period cap; returns a normalized "M:SS" or null.
+    const parseTime = (str, period) => {
+        const m = String(str || '').trim().match(/^(\d{1,2}):(\d{1,2})$/);
+        if (!m) return null;
+        const mm = +m[1], ss = +m[2];
+        if (ss > 59) return null;
+        if (mm * 60 + ss > periodMaxMin(period) * 60) return null;
+        return mm + ':' + String(ss).padStart(2, '0');
     };
+
+    const periodCapLabel = (period) => `${periodMaxMin(period)}:00`;
 
     const handleAddGoal = async (e) => {
         e.preventDefault();
 
         if (goalLimitWarning && !goalLimitWarning.allowed) {
             alert('Cannot add goal - player has reached goal limit!');
+            return;
+        }
+
+        const clock = parseTime(goalClock, currentPeriod);
+        if (!clock) {
+            setGoalTimeError(`Enter a valid clock time (MM:SS, up to ${periodCapLabel(currentPeriod)}).`);
             return;
         }
 
@@ -403,8 +411,8 @@ function LiveScoreEntry(props) {
             backendId: editingEvent ? editingEvent.backendId : undefined,
             type: 'goal',
             team: goalTeam,
-            period: goalPeriod,
-            time: formatTime(goalMinutes, goalSeconds),
+            period: currentPeriod,
+            time: clock,
             scorer: formatPlayerLabel(scorer),
             scorerId: scorer.id,
             assists: [formatPlayerLabel(assist1), formatPlayerLabel(assist2)].filter(Boolean),
@@ -459,10 +467,20 @@ function LiveScoreEntry(props) {
         e.preventDefault();
 
         const player = players.find(p => p.id === parseInt(penaltyPlayer));
+        if (!player) {
+            setPenaltyTimeError('Select a player for the penalty.');
+            return;
+        }
 
         // Check if player is ejected
         if (ejectedPlayers.includes(player.id)) {
             alert('This player has been ejected and cannot receive more penalties.');
+            return;
+        }
+
+        const clock = parseTime(penaltyClock, currentPeriod);
+        if (!clock) {
+            setPenaltyTimeError(`Enter a valid clock time (MM:SS, up to ${periodCapLabel(currentPeriod)}).`);
             return;
         }
 
@@ -495,8 +513,8 @@ function LiveScoreEntry(props) {
             backendId: editingEvent ? editingEvent.backendId : undefined,
             type: 'penalty',
             team: penaltyTeam,
-            period: penaltyPeriod,
-            time: formatTime(penaltyTimeMinutes, penaltyTimeSeconds),
+            period: currentPeriod,
+            time: clock,
             player: formatPlayerLabel(player),
             playerId: player.id,
             minutes: penaltyMinutes,
@@ -575,10 +593,10 @@ function LiveScoreEntry(props) {
 
         if (event.type === 'goal') {
             setGoalTeam(event.team);
-            setGoalPeriod(event.period);
-            const [mins, secs] = event.time.split(':');
-            setGoalMinutes(mins);
-            setGoalSeconds(secs);
+            setCurrentPeriod(event.period);
+            setGoalClock(event.time || '');
+            setGoalTimeError('');
+            setGoalBlockMsg('');
             // Restore player IDs
             // Locally-added events use scorerId/assist1Id/assist2Id; events loaded from the
             // backend use playerId/assist1PlayerId/assist2PlayerId — accept either shape.
@@ -593,13 +611,13 @@ function LiveScoreEntry(props) {
                 const validation = checkGoalLimit(eventScorerId);
                 setGoalLimitWarning(validation);
             }
+            setGoalStep('assist'); // scorer already known when editing
             setShowGoalForm(true);
         } else {
             setPenaltyTeam(event.team);
-            setPenaltyPeriod(event.period);
-            const [mins, secs] = event.time.split(':');
-            setPenaltyTimeMinutes(mins);
-            setPenaltyTimeSeconds(secs);
+            setCurrentPeriod(event.period);
+            setPenaltyClock(event.time || '');
+            setPenaltyTimeError('');
             // Restore player ID
             setPenaltyPlayer(event.playerId?.toString() || '');
             setPenaltyMinutes(event.minutes);
@@ -743,10 +761,12 @@ function LiveScoreEntry(props) {
         setGoalScorer('');
         setGoalAssist1('');
         setGoalAssist2('');
-        setGoalPeriod('1');
-        setGoalMinutes('');
-        setGoalSeconds('');
+        setGoalStep('scorer');
+        setGoalClock('');
+        setGoalTimeError('');
+        setGoalBlockMsg('');
         setGoalLimitWarning(null);
+        setEditingEvent(null);
         setShowGoalForm(false);
     };
 
@@ -755,12 +775,69 @@ function LiveScoreEntry(props) {
         setPenaltyMinutes(2);
         setPenaltyDescription('');
         setPenaltyOtherDescription('');
-        setPenaltyPeriod('1');
-        setPenaltyTimeMinutes('');
-        setPenaltyTimeSeconds('');
+        setPenaltyClock('');
+        setPenaltyTimeError('');
+        setEditingEvent(null);
         setShowPenaltyForm(false);
     };
 
+    // ── Open the goal/penalty modals for a given side (period comes from the stepper) ──
+    const stepPeriod = (dir) => {
+        setCurrentPeriod(prev => {
+            const order = ['1', '2', '3', 'OT'];
+            const i = order.indexOf(String(prev));
+            const ni = Math.max(0, Math.min(order.length - 1, (i < 0 ? 0 : i) + dir));
+            return order[ni];
+        });
+    };
+
+    const openGoalModal = (team) => {
+        setEditingEvent(null);
+        setGoalTeam(team);
+        setGoalStep('scorer');
+        setGoalScorer('');
+        setGoalAssist1('');
+        setGoalAssist2('');
+        setGoalClock('');
+        setGoalTimeError('');
+        setGoalBlockMsg('');
+        setGoalLimitWarning(null);
+        setShowGoalForm(true);
+    };
+
+    const openPenaltyModal = (team) => {
+        setEditingEvent(null);
+        setPenaltyTeam(team);
+        setPenaltyPlayer('');
+        setPenaltyMinutes(2);
+        setPenaltyDescription('');
+        setPenaltyOtherDescription('');
+        setPenaltyClock('');
+        setPenaltyTimeError('');
+        setShowPenaltyForm(true);
+    };
+
+    // Scorer step → validate clock + goal cap, then advance to the assist step.
+    const handleScorerTap = (player) => {
+        const clock = parseTime(goalClock, currentPeriod);
+        if (!clock) {
+            setGoalTimeError(`Enter a valid clock time (MM:SS, up to ${periodCapLabel(currentPeriod)}).`);
+            return;
+        }
+        const validation = checkGoalLimit(player.id);
+        if (validation && !validation.allowed) {
+            setGoalBlockMsg(validation.message);
+            return;
+        }
+        setGoalBlockMsg('');
+        setGoalScorer(String(player.id));
+        setGoalAssist1('');
+        setGoalAssist2('');
+        setGoalLimitWarning(validation);
+        setGoalStep('assist');
+    };
+
+    // Remove an event from the log (local — the final score is what persists on finalize).
     const performNavigation = useCallback((target) => {
         if (onBack && target === 'back') {
             onBack();
@@ -862,21 +939,17 @@ function LiveScoreEntry(props) {
 
     return (
         <div className="live-score-entry">
-            <div className="entry-header">
-                <button className="btn-back" onClick={handleBack}>← Back to Schedule</button>
-                <h2>Live Score Entry</h2>
+            <div className={`entry-header${embedded ? ' entry-header--embedded' : ''}`}>
+                {!embedded && <button className="btn-back" onClick={handleBack}>← Signups · Dashboard</button>}
+                <h2>
+                    <span className="matchup-title">{game.homeTeamName} <span className="matchup-vs">vs</span> {game.awayTeamName}</span>
+                    {!embedded && <span className="entry-subtitle">Live Score Entry</span>}
+                </h2>
                 {!gameFinalized && (
                     <button
-                        className="btn-action"
+                        className={`btn-save${isDirty ? '' : ' btn-save-inactive'}`}
                         onClick={handleManualSave}
                         disabled={!isDirty || savingDraft}
-                        style={{
-                            marginLeft: 'auto',
-                            backgroundColor: isDirty ? '#2ecc71' : '#bdc3c7',
-                            color: 'white',
-                            opacity: isDirty ? 1 : 0.7,
-                            cursor: isDirty ? 'pointer' : 'default'
-                        }}
                     >
                         {savingDraft ? 'Saving...' : '💾 Save Changes'}
                     </button>
@@ -889,412 +962,262 @@ function LiveScoreEntry(props) {
                 )}
             </div>
 
-            {/* Scoreboard */}
-            <div className="scoreboard">
-                <div className="team-score">
-                    <span className="home-away-label">HOME</span>
-                    <div className="team-name" style={{
-                        backgroundColor: game.homeTeamColor,
-                        color: getTextColor(game.homeTeamColor)
-                    }}>
-                        {game.homeTeamName}
+            {/* Scoreboard (design: per-side goal/penalty + center period stepper) */}
+            <div className={`sk-board${gameFinalized ? ' is-locked' : ''}`}>
+                <div className="sk-board-side">
+                    <div className="sk-board-team">
+                        <span className="sk-board-dot" style={{ background: game.homeTeamColor }} />
+                        <span className="sk-board-name">{game.homeTeamName}</span>
                     </div>
                     {isAdmin ? (
-                        <input
-                            type="number"
-                            min="0"
-                            className="score score-input"
-                            value={homeScore}
-                            onChange={(e) => { setHomeScore(parseInt(e.target.value) || 0); setIsDirty(true); }}
-                            disabled={gameFinalized}
-                        />
+                        <input type="number" min="0" className="sk-board-score sk-board-score-input"
+                            value={homeScore} disabled={gameFinalized}
+                            onChange={(e) => { setHomeScore(parseInt(e.target.value) || 0); setIsDirty(true); }} />
                     ) : (
-                        <div className="score">{homeScore}</div>
+                        <div className="sk-board-score">{homeScore}</div>
                     )}
+                    <button className="sk-board-goal" disabled={gameFinalized} onClick={() => openGoalModal('home')}>+ Goal</button>
+                    <button className="sk-board-pen" disabled={gameFinalized} onClick={() => openPenaltyModal('home')}>+ Penalty</button>
                 </div>
-                <div className="vs">VS</div>
-                <div className="team-score">
-                    <span className="home-away-label">AWAY</span>
-                    <div className="team-name" style={{
-                        backgroundColor: game.awayTeamColor,
-                        color: getTextColor(game.awayTeamColor)
-                    }}>
-                        {game.awayTeamName}
+
+                <div className="sk-board-center">
+                    <span className="sk-board-period-label">Period</span>
+                    <div className="sk-board-stepper">
+                        <button className="sk-board-step" disabled={gameFinalized} onClick={() => stepPeriod(-1)} aria-label="Previous period">−</button>
+                        <span className="sk-board-period">{currentPeriod === 'OT' ? 'OT' : currentPeriod}</span>
+                        <button className="sk-board-step" disabled={gameFinalized} onClick={() => stepPeriod(1)} aria-label="Next period">+</button>
+                    </div>
+                    <span className="sk-board-venue">{game.venue || 'Sun Prairie Ice Arena'}</span>
+                </div>
+
+                <div className="sk-board-side">
+                    <div className="sk-board-team">
+                        <span className="sk-board-dot" style={{ background: game.awayTeamColor }} />
+                        <span className="sk-board-name">{game.awayTeamName}</span>
                     </div>
                     {isAdmin ? (
-                        <input
-                            type="number"
-                            min="0"
-                            className="score score-input"
-                            value={awayScore}
-                            onChange={(e) => { setAwayScore(parseInt(e.target.value) || 0); setIsDirty(true); }}
-                            disabled={gameFinalized}
-                        />
+                        <input type="number" min="0" className="sk-board-score sk-board-score-input"
+                            value={awayScore} disabled={gameFinalized}
+                            onChange={(e) => { setAwayScore(parseInt(e.target.value) || 0); setIsDirty(true); }} />
                     ) : (
-                        <div className="score">{awayScore}</div>
+                        <div className="sk-board-score">{awayScore}</div>
                     )}
+                    <button className="sk-board-goal" disabled={gameFinalized} onClick={() => openGoalModal('away')}>+ Goal</button>
+                    <button className="sk-board-pen" disabled={gameFinalized} onClick={() => openPenaltyModal('away')}>+ Penalty</button>
                 </div>
             </div>
 
-            {/* Mercy Rule Indicator */}
-            {Math.abs(homeScore - awayScore) >= 4 && !gameFinalized && (
+            {/* Limits Suspended — a team trailing by 3+ has goal caps lifted until within 2 */}
+            {Math.abs(homeScore - awayScore) >= 3 && !gameFinalized && (
                 <div className="mercy-rule-alert">
-                    🏒 Mercy Rule Active - Goal limits removed for {homeScore < awayScore ? game.homeTeamName : game.awayTeamName}
+                    <strong>Limits Suspended</strong> — {homeScore < awayScore ? game.homeTeamName : game.awayTeamName} trail by {Math.abs(homeScore - awayScore)}; their goal caps are lifted until within 2.
                 </div>
             )}
 
-            {/* Action Buttons */}
-            {!gameFinalized && (
-                <div className="action-buttons">
-                    <button className="btn-action" onClick={() => setShowGoalForm(!showGoalForm)}>
-                        🏒 Add Goal
-                    </button>
-                    <button className="btn-action" onClick={() => setShowPenaltyForm(!showPenaltyForm)}>
-                        🚫 Add Penalty
-                    </button>
-                    <button className="btn-finalize" onClick={handleFinalizeGame}>
-                        ✓ Finalize Score
-                    </button>
-                </div>
-            )}
-
+            {/* Finalized banner */}
             {gameFinalized && (
-                <div className="finalized-message">
-                    This game has been finalized. Score entry is locked.
+                <div className="sk-final-banner">
+                    <span className="sk-final-text">
+                        <span className="sk-final-tag">Final</span> Score submitted. Standings update automatically.
+                    </span>
                     {isAdmin && (
-                        <div style={{ marginTop: '15px' }}>
-                            <button className="btn-action" onClick={handleUnfinalizeClick} style={{ backgroundColor: '#e67e22', color: 'white' }}>
-                                🔓 Unfinalize Game to Edit
-                            </button>
-                        </div>
+                        <button className="sk-reopen-btn" onClick={handleUnfinalizeClick}>Reopen Game</button>
                     )}
                 </div>
             )}
 
-            {/* Goal Entry Form */}
-            {showGoalForm && !gameFinalized && (
-                <form onSubmit={handleAddGoal} className="event-form">
-                    <h3>{editingEvent ? 'Edit Goal' : 'Record Goal'}</h3>
-
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label>Period *</label>
-                            <select value={goalPeriod} onChange={(e) => setGoalPeriod(e.target.value)} required>
-                                <option value="1">Period 1</option>
-                                <option value="2">Period 2</option>
-                                <option value="3">Period 3</option>
-                                <option value="OT">Overtime</option>
-                            </select>
-                        </div>
-
-                        <div className="form-group">
-                            <label>Time * (MM:SS)</label>
-                            <div className="time-input">
-                                <input
-                                    list="minutes-list"
-                                    type="number"
-                                    min="0"
-                                    max="20"
-                                    value={goalMinutes}
-                                    onChange={(e) => setGoalMinutes(e.target.value)}
-                                    placeholder="MM"
-                                    required
-                                />
-                                <datalist id="minutes-list">
-                                    {[...Array(21)].map((_, i) => (
-                                        <option key={i} value={i} />
-                                    ))}
-                                </datalist>
-                                <span>:</span>
-                                <input
-                                    list="seconds-list"
-                                    type="number"
-                                    min="0"
-                                    max="59"
-                                    value={goalSeconds}
-                                    onChange={(e) => setGoalSeconds(e.target.value)}
-                                    placeholder="SS"
-                                    required
-                                />
-                                <datalist id="seconds-list">
-                                    {[...Array(60)].map((_, i) => (
-                                        <option key={i} value={i} />
-                                    ))}
-                                </datalist>
+            {/* Goal Modal (scorer step → assist step) */}
+            {showGoalForm && !gameFinalized && (() => {
+                const teamName = goalTeam === 'home' ? game.homeTeamName : game.awayTeamName;
+                const teamColor = goalTeam === 'home' ? game.homeTeamColor : game.awayTeamColor;
+                const ownScore = goalTeam === 'home' ? homeScore : awayScore;
+                const oppScore = goalTeam === 'home' ? awayScore : homeScore;
+                const limitsOff = (oppScore - ownScore) >= 3;
+                const roster = getTeamPlayers(goalTeam);
+                const scorerPlayer = players.find(p => p.id === parseInt(goalScorer));
+                return (
+                    <div className="sk-modal-overlay" onClick={resetGoalForm}>
+                        <div className="sk-modal" onClick={(e) => e.stopPropagation()}>
+                            <div className="sk-modal-title">
+                                <span className="sk-modal-dot" style={{ background: teamColor }} />
+                                <span className="sk-modal-team">{teamName} Goal</span>
                             </div>
-                        </div>
-                    </div>
 
-                    <div className="form-group">
-                        <label>Team</label>
-                        <select value={goalTeam} onChange={(e) => setGoalTeam(e.target.value)} required>
-                            <option value="home">{game.homeTeamName}</option>
-                            <option value="away">{game.awayTeamName}</option>
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Goal Scorer *</label>
-                        <select
-                            value={goalScorer}
-                            onChange={(e) => handleGoalScorerChange(e.target.value)}
-                            required
-                        >
-                            <option value="">Select player...</option>
-                            {getTeamPlayers(goalTeam).map(player => (
-                                <option key={player.id} value={player.id}>
-                                    #{player.jerseyNumber || '??'} - {player.name} (Skill: {player.skillRating}, Goals: {player.goalsInGame})
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {goalLimitWarning && (
-                        <div className={`goal-limit-alert alert-${goalLimitWarning.type}`}>
-                            {goalLimitWarning.message}
-                        </div>
-                    )}
-
-                    <div className="form-group">
-                        <label>Assist 1 (optional)</label>
-                        <select value={goalAssist1} onChange={(e) => setGoalAssist1(e.target.value)}>
-                            <option value="">None</option>
-                            {getTeamPlayers(goalTeam).filter(p => p.id !== parseInt(goalScorer)).map(player => (
-                                <option key={player.id} value={player.id}>#{player.jerseyNumber || '??'} - {player.name}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Assist 2 (optional)</label>
-                        <select value={goalAssist2} onChange={(e) => setGoalAssist2(e.target.value)}>
-                            <option value="">None</option>
-                            {getTeamPlayers(goalTeam)
-                                .filter(p => p.id !== parseInt(goalScorer) && p.id !== parseInt(goalAssist1))
-                                .map(player => (
-                                    <option key={player.id} value={player.id}>#{player.jerseyNumber || '??'} - {player.name}</option>
-                                ))}
-                        </select>
-                    </div>
-
-                    <div className="form-actions">
-                        <button type="submit" className="btn-submit" disabled={goalLimitWarning && !goalLimitWarning.allowed}>
-                            {editingEvent ? 'Update Goal' : 'Add Goal'}
-                        </button>
-                        <button type="button" className="btn-cancel" onClick={resetGoalForm}>
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-            )}
-
-            {/* Penalty Entry Form */}
-            {showPenaltyForm && !gameFinalized && (
-                <form onSubmit={handleAddPenalty} className="event-form">
-                    <h3>{editingEvent ? 'Edit Penalty' : 'Record Penalty'}</h3>
-
-                    <div className="form-row">
-                        <div className="form-group">
-                            <label>Period *</label>
-                            <select value={penaltyPeriod} onChange={(e) => setPenaltyPeriod(e.target.value)} required>
-                                <option value="1">Period 1</option>
-                                <option value="2">Period 2</option>
-                                <option value="3">Period 3</option>
-                                <option value="OT">Overtime</option>
-                            </select>
-                        </div>
-
-                        <div className="form-group">
-                            <label>Time * (MM:SS)</label>
-                            <div className="time-input">
-                                <input
-                                    list="penalty-minutes-list"
-                                    type="number"
-                                    min="0"
-                                    max="20"
-                                    value={penaltyTimeMinutes}
-                                    onChange={(e) => setPenaltyTimeMinutes(e.target.value)}
-                                    placeholder="MM"
-                                    required
-                                />
-                                <datalist id="penalty-minutes-list">
-                                    {[...Array(21)].map((_, i) => (
-                                        <option key={i} value={i} />
-                                    ))}
-                                </datalist>
-                                <span>:</span>
-                                <input
-                                    list="penalty-seconds-list"
-                                    type="number"
-                                    min="0"
-                                    max="59"
-                                    value={penaltyTimeSeconds}
-                                    onChange={(e) => setPenaltyTimeSeconds(e.target.value)}
-                                    placeholder="SS"
-                                    required
-                                />
-                                <datalist id="penalty-seconds-list">
-                                    {[...Array(60)].map((_, i) => (
-                                        <option key={i} value={i} />
-                                    ))}
-                                </datalist>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Team</label>
-                        <select value={penaltyTeam} onChange={(e) => setPenaltyTeam(e.target.value)} required>
-                            <option value="home">{game.homeTeamName}</option>
-                            <option value="away">{game.awayTeamName}</option>
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Player *</label>
-                        <select value={penaltyPlayer} onChange={(e) => setPenaltyPlayer(e.target.value)} required>
-                            <option value="">Select player...</option>
-                            {getTeamPlayers(penaltyTeam).map(player => (
-                                <option key={player.id} value={player.id}>#{player.jerseyNumber || '??'} - {player.name}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Penalty Minutes *</label>
-                        <select value={penaltyMinutes} onChange={(e) => setPenaltyMinutes(parseInt(e.target.value))} required>
-                            <option value={2}>2 minutes</option>
-                            <option value={3}>3 minutes</option>
-                            <option value={4}>4 minutes</option>
-                            <option value={6}>6 minutes</option>
-                            <option value={10}>10 minutes</option>
-                        </select>
-                    </div>
-
-                    <div className="form-group">
-                        <label>Penalty Type (optional)</label>
-                        <select
-                            value={penaltyDescription}
-                            onChange={(e) => setPenaltyDescription(e.target.value)}
-                        >
-                            <option value="">Select penalty type...</option>
-                            {PENALTY_TYPES.map(type => (
-                                <option key={type} value={type}>{type}</option>
-                            ))}
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-
-                    {penaltyDescription === 'Other' && (
-                        <div className="form-group">
-                            <label>Other Description *</label>
-                            <input
-                                type="text"
-                                value={penaltyOtherDescription}
-                                onChange={(e) => setPenaltyOtherDescription(e.target.value)}
-                                placeholder="Enter penalty description"
-                                required
-                            />
-                        </div>
-                    )}
-
-                    <div className="form-actions">
-                        <button type="submit" className="btn-submit">
-                            {editingEvent ? 'Update Penalty' : 'Add Penalty'}
-                        </button>
-                        <button type="button" className="btn-cancel" onClick={resetPenaltyForm}>
-                            Cancel
-                        </button>
-                    </div>
-                </form>
-            )}
-
-            {/* Game Log */}
-            <div className="event-log">
-                <h3>Game Log ({events.length} events)</h3>
-                {events.length === 0 ? (
-                    <div className="no-events">No events recorded yet</div>
-                ) : (
-                    <div className="events-table-container">
-                        <table className="events-table">
-                            <thead>
-                                <tr>
-                                    <th>Period</th>
-                                    <th>Time</th>
-                                    <th>Type</th>
-                                    <th>Details</th>
-                                    <th>Team</th>
-                                    {!gameFinalized && <th className="actions-col-header">Actions</th>}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {events.slice().sort((a, b) => {
-                                    // Sort by period (1, 2, 3, OT)
-                                    const periodOrder = { '1': 1, '2': 2, '3': 3, 'OT': 4 };
-                                    const periodA = periodOrder[a.period] || 999;
-                                    const periodB = periodOrder[b.period] || 999;
-                                    if (periodA !== periodB) return periodB - periodA;
-
-                                    // Then sort by time (ascending - lower time = more recent in hockey)
-                                    const [minA, secA] = a.time.split(':').map(Number);
-                                    const [minB, secB] = b.time.split(':').map(Number);
-                                    const timeA = minA * 60 + secA;
-                                    const timeB = minB * 60 + secB;
-                                    return timeA - timeB; // Lower time first (more recent)
-                                }).map(event => (
-                                    <tr
-                                        key={event.id}
-                                        className={`event-row event-${event.type} ${!gameFinalized ? 'editable' : ''}`}
-                                        onClick={() => !gameFinalized && handleEditEvent(event)}
-                                    >
-                                        <td className="period-col">{event.period}</td>
-                                        <td className="time-col">{event.time}</td>
-                                        <td className="type-col">
-                                            {event.type === 'goal' ? (
-                                                <span className="event-badge goal-badge">🏒 Goal</span>
-                                            ) : (
-                                                <span className="event-badge penalty-badge">🚫 Penalty</span>
-                                            )}
-                                        </td>
-                                        <td className="details-col">
-                                            {event.type === 'goal' ? (
-                                                <>
-                                                    <strong>{event.scorer}</strong>
-                                                    {event.assists.length > 0 && (
-                                                        <span className="assists"> (A: {event.assists.join(', ')})</span>
-                                                    )}
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <strong>{event.player}</strong> ({event.minutes} min)
-                                                    {event.description && <span> - {event.description}</span>}
-                                                </>
-                                            )}
-                                        </td>
-                                        <td className="team-col">
-                                            <TeamBadge
-                                                teamId={event.team === 'home' ? game.homeTeamId : game.awayTeamId}
-                                                teamName={event.team === 'home' ? game.homeTeamName : game.awayTeamName}
-                                                teamColor={event.team === 'home' ? game.homeTeamColor : game.awayTeamColor}
-                                            />
-                                        </td>
-                                        {!gameFinalized && (
-                                            <td className="actions-col">
-                                                <button
-                                                    type="button"
-                                                    className="btn-delete-event"
-                                                    title="Delete this event"
-                                                    onClick={(domEvent) => handleDeleteEvent(event, domEvent)}
-                                                >
-                                                    🗑️
+                            {goalStep === 'scorer' ? (
+                                <>
+                                    <p className="sk-modal-sub">Tap the scorer. Skill 9+ players are capped at 2 goals unless trailing by 3+.</p>
+                                    <label className="sk-modal-label">Clock Time <span className="clock-hint">Period {currentPeriod === 'OT' ? 'OT' : currentPeriod} · {periodCapLabel(currentPeriod)} max</span></label>
+                                    <input type="text" inputMode="numeric"
+                                        className={`clock-input${goalTimeError ? ' clock-input-error' : ''}`}
+                                        value={goalClock} placeholder="MM:SS"
+                                        onChange={(e) => { setGoalClock(fmtClock(e.target.value)); setGoalTimeError(''); }} />
+                                    {goalTimeError && <div className="clock-error">{goalTimeError}</div>}
+                                    {limitsOff && (
+                                        <div className="sk-limits-off"><span className="sk-limits-off-tag">Limits Off</span> Team down 3+ — skill caps lifted.</div>
+                                    )}
+                                    <div className="sk-roster">
+                                        {roster.map(player => {
+                                            const res = checkGoalLimit(player.id);
+                                            const blocked = res && !res.allowed;
+                                            return (
+                                                <button key={player.id} type="button"
+                                                    className={`sk-roster-row${blocked ? ' is-blocked' : ''}`}
+                                                    onClick={() => blocked ? setGoalBlockMsg(res.message) : handleScorerTap(player)}>
+                                                    <span className="sk-roster-num">#{player.jerseyNumber || '??'}</span>
+                                                    <span className="sk-roster-name">{player.name}</span>
+                                                    <span className={`sk-roster-skill${player.skillRating >= 9 ? ' is-high' : ''}`}>Skill {player.skillRating}</span>
+                                                    {blocked && <span className="sk-roster-capped">Capped</span>}
                                                 </button>
-                                            </td>
+                                            );
+                                        })}
+                                    </div>
+                                    {goalBlockMsg && <div className="sk-block-msg">{goalBlockMsg}</div>}
+                                    <button type="button" className="sk-modal-cancel" onClick={resetGoalForm}>Cancel</button>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="sk-assist-scorer">
+                                        <span className="sk-assist-scorer-name">{scorerPlayer ? `#${scorerPlayer.jerseyNumber || '??'} ${scorerPlayer.name}` : 'Scorer'}</span>
+                                        <span className="sk-assist-scorer-meta">· {currentPeriod === 'OT' ? 'OT' : 'P' + currentPeriod} {goalClock}</span>
+                                    </div>
+                                    <label className="sk-modal-label">Primary Assist</label>
+                                    <select className="sk-modal-select" value={goalAssist1}
+                                        onChange={(e) => { setGoalAssist1(e.target.value); setGoalAssist2(''); }}>
+                                        <option value="">Unassisted</option>
+                                        {roster.filter(p => p.id !== parseInt(goalScorer)).map(p => (
+                                            <option key={p.id} value={p.id}>#{p.jerseyNumber || '??'} {p.name}</option>
+                                        ))}
+                                    </select>
+                                    <label className={`sk-modal-label${goalAssist1 ? '' : ' is-disabled'}`}>Secondary Assist</label>
+                                    <select className="sk-modal-select" value={goalAssist2} disabled={!goalAssist1}
+                                        onChange={(e) => setGoalAssist2(e.target.value)}>
+                                        <option value="">None</option>
+                                        {roster.filter(p => p.id !== parseInt(goalScorer) && p.id !== parseInt(goalAssist1)).map(p => (
+                                            <option key={p.id} value={p.id}>#{p.jerseyNumber || '??'} {p.name}</option>
+                                        ))}
+                                    </select>
+                                    <div className="sk-modal-actions">
+                                        <button type="button" className="sk-modal-back" onClick={() => setGoalStep('scorer')}>← Scorer</button>
+                                        <button type="button" className="sk-modal-confirm" onClick={handleAddGoal}>{editingEvent ? 'Update Goal' : 'Record Goal'}</button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                );
+            })()}
+
+            {/* Penalty Modal */}
+            {showPenaltyForm && !gameFinalized && (() => {
+                const teamName = penaltyTeam === 'home' ? game.homeTeamName : game.awayTeamName;
+                const teamColor = penaltyTeam === 'home' ? game.homeTeamColor : game.awayTeamColor;
+                const roster = getTeamPlayers(penaltyTeam);
+                return (
+                    <div className="sk-modal-overlay" onClick={resetPenaltyForm}>
+                        <div className="sk-modal" onClick={(e) => e.stopPropagation()}>
+                            <div className="sk-modal-title">
+                                <span className="sk-modal-dot" style={{ background: teamColor }} />
+                                <span className="sk-modal-team">{teamName} Penalty</span>
+                            </div>
+
+                            <label className="sk-modal-label">Clock Time <span className="clock-hint">Period {currentPeriod === 'OT' ? 'OT' : currentPeriod} · {periodCapLabel(currentPeriod)} max</span></label>
+                            <input type="text" inputMode="numeric"
+                                className={`clock-input${penaltyTimeError ? ' clock-input-error' : ''}`}
+                                value={penaltyClock} placeholder="MM:SS"
+                                onChange={(e) => { setPenaltyClock(fmtClock(e.target.value)); setPenaltyTimeError(''); }} />
+                            {penaltyTimeError && <div className="clock-error">{penaltyTimeError}</div>}
+
+                            <label className="sk-modal-label">Player</label>
+                            <select className="sk-modal-select" value={penaltyPlayer} onChange={(e) => setPenaltyPlayer(e.target.value)}>
+                                <option value="">Select player…</option>
+                                {roster.map(p => <option key={p.id} value={p.id}>#{p.jerseyNumber || '??'} {p.name}</option>)}
+                            </select>
+
+                            <label className="sk-modal-label">Penalty Type</label>
+                            <select className="sk-modal-select" value={penaltyDescription} onChange={(e) => setPenaltyDescription(e.target.value)}>
+                                <option value="">Select penalty type…</option>
+                                {PENALTY_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
+                                <option value="Other">Other</option>
+                            </select>
+                            {penaltyDescription === 'Other' && (
+                                <input type="text" className="sk-modal-input" value={penaltyOtherDescription}
+                                    onChange={(e) => setPenaltyOtherDescription(e.target.value)} placeholder="Enter penalty description" />
+                            )}
+
+                            <label className="sk-modal-label">Duration</label>
+                            <select className="sk-modal-select" value={penaltyMinutes} onChange={(e) => setPenaltyMinutes(parseInt(e.target.value))}>
+                                <option value={2}>2 min (Minor)</option>
+                                <option value={3}>3 min</option>
+                                <option value={4}>4 min (Double Minor)</option>
+                                <option value={6}>6 min (Major)</option>
+                                <option value={10}>10 min (Misconduct)</option>
+                            </select>
+
+                            <div className="sk-modal-actions">
+                                <button type="button" className="sk-modal-back" onClick={resetPenaltyForm}>Cancel</button>
+                                <button type="button" className="sk-modal-confirm" onClick={handleAddPenalty}>{editingEvent ? 'Update Penalty' : 'Add Penalty'}</button>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
+
+            {/* Scoring & Penalties feed */}
+            <div className="sk-feed">
+                <div className="sk-feed-head">
+                    <span className="sk-feed-title">Scoring &amp; Penalties</span>
+                    {!gameFinalized && (
+                        <button className="sk-finalize-btn" onClick={handleFinalizeGame}>Finalize Game</button>
+                    )}
+                </div>
+                {events.length === 0 ? (
+                    <div className="sk-feed-empty">
+                        No scoring yet. Tap <span className="sk-feed-empty-accent">+ Goal</span> to record the first one.
+                    </div>
+                ) : (
+                    <div className="sk-feed-list">
+                        {events.slice().sort((a, b) => {
+                            const periodOrder = { '1': 1, '2': 2, '3': 3, 'OT': 4 };
+                            const pa = periodOrder[a.period] || 999;
+                            const pb = periodOrder[b.period] || 999;
+                            if (pa !== pb) return pb - pa;
+                            const [minA, secA] = a.time.split(':').map(Number);
+                            const [minB, secB] = b.time.split(':').map(Number);
+                            return (minA * 60 + secA) - (minB * 60 + secB);
+                        }).map(event => {
+                            const teamColor = event.team === 'home' ? game.homeTeamColor : game.awayTeamColor;
+                            const periodLbl = event.period === 'OT' ? 'OT' : 'P' + event.period;
+                            return (
+                                <div
+                                    key={event.id}
+                                    className={`sk-feed-row${!gameFinalized ? ' is-editable' : ''}`}
+                                    onClick={() => !gameFinalized && handleEditEvent(event)}
+                                >
+                                    <span className={`sk-feed-tag ${event.type}`}>{event.type === 'goal' ? 'Goal' : 'Penalty'}</span>
+                                    <span className="sk-feed-dot" style={{ background: teamColor }} />
+                                    <span className="sk-feed-text">
+                                        {event.type === 'goal' ? (
+                                            <>
+                                                {event.scorer}
+                                                {event.assists.length > 0 && <span className="sk-feed-assists"> · A: {event.assists.join(', ')}</span>}
+                                            </>
+                                        ) : (
+                                            <>{event.player} — {event.description || 'Penalty'} ({event.minutes} min)</>
                                         )}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                        {!gameFinalized && <div className="edit-hint-table">Click any row to edit</div>}
+                                    </span>
+                                    <span className="sk-feed-period">{periodLbl} · {event.time}</span>
+                                    {!gameFinalized && (
+                                        <button
+                                            className="sk-feed-remove"
+                                            title="Remove event"
+                                            onClick={(ev) => handleDeleteEvent(event, ev)}
+                                        >
+                                            ×
+                                        </button>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
             </div>
@@ -1317,7 +1240,7 @@ function LiveScoreEntry(props) {
                             <p className="confirm-question">You MUST re-finalize the game after making edits to ensure stats are accurate.</p>
                         </div>
                         <div className="modal-actions">
-                            <button className="btn-confirm" onClick={confirmUnfinalize} disabled={isUnfinalizing} style={{ backgroundColor: '#e67e22' }}>
+                            <button className="btn-confirm btn-warn" onClick={confirmUnfinalize} disabled={isUnfinalizing}>
                                 {isUnfinalizing ? 'Unfinalizing...' : 'Yes, Unfinalize Game'}
                             </button>
                             <button className="btn-cancel-modal" onClick={cancelUnfinalize} disabled={isUnfinalizing}>
@@ -1457,7 +1380,7 @@ function LiveScoreEntry(props) {
             )}
 
             {showSaveSuccess && (
-                <div className="success-toast" style={{ backgroundColor: '#2ecc71' }}>
+                <div className="success-toast save-toast">
                     <div className="success-icon">💾</div>
                     <div className="success-text">
                         <strong>Saved!</strong>
@@ -1504,7 +1427,7 @@ function LiveScoreEntry(props) {
                             <button className="btn-confirm" onClick={handleSaveAndLeave} disabled={savingDraft}>
                                 {savingDraft ? 'Saving...' : '💾 Save & Leave'}
                             </button>
-                            <button className="btn-cancel-modal" style={{ backgroundColor: '#e74c3c', color: 'white', marginRight: '10px' }} onClick={handleDiscardChanges}>
+                            <button className="btn-cancel-modal btn-danger" onClick={handleDiscardChanges}>
                                 🗑️ Discard Changes
                             </button>
                             <button className="btn-cancel-modal" onClick={handleCancelUnsaved}>

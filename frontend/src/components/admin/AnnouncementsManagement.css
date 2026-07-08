@@ -1,199 +1,281 @@
-.announcements-management {
-    animation: fadeIn 0.3s ease-in;
-    color: #1a202c;
+/* AnnouncementsManagement — OBHL dark theme */
+
+@keyframes ann-fade {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
-.management-header {
+.announcements-management {
+    animation: ann-fade 0.25s ease;
+    color: var(--obi-text);
+}
+
+/* ── Module Header ── */
+.announcements-management .management-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
-    padding-bottom: 1.5rem;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-    color: white;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--obi-divider);
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
-.management-header h2 {
+.announcements-management .management-header h2 {
     margin: 0;
-    font-size: 2rem;
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 26px;
+    color: #fff;
 }
 
+.announcements-management .header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+/* ── Add button ── */
 .btn-add-announcement {
-    background-color: #48bb78;
-    color: white;
-    padding: 0.75rem 1.5rem;
+    background: var(--obi-accent);
+    color: #0b0c0f;
+    padding: 10px 18px;
     border: none;
-    border-radius: 8px;
-    font-weight: 600;
+    border-radius: var(--obi-radius-btn);
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
     cursor: pointer;
-    transition: background-color 0.2s;
-    font-size: 1rem;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: opacity 0.15s, transform 0.12s;
 }
 
-.btn-add-announcement:hover {
-    background-color: #38a169;
-}
+.btn-add-announcement:hover { opacity: 0.88; transform: translateY(-1px); }
 
+/* ── Error banner ── */
 .error-message {
-    background-color: #fed7d7;
-    color: #c53030;
-    padding: 1rem;
+    background: rgba(224, 138, 138, 0.1);
+    color: var(--obi-error);
+    padding: 12px 16px;
     border-radius: 8px;
-    margin-bottom: 1.5rem;
-    border: 1px solid #fc8181;
+    margin-bottom: 16px;
+    border: 1px solid rgba(224, 138, 138, 0.28);
+    font-family: var(--obi-font-body);
+    font-size: 14px;
 }
 
-/* Form Styles */
+/* ── Form card ── */
 .announcement-form-card {
-    background: white;
-    padding: 2rem;
-    border-radius: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-    margin-bottom: 2rem;
+    background: linear-gradient(180deg, #13171d, #10141a);
+    border: 1px solid var(--obi-card-border);
+    border-radius: var(--obi-radius-card);
+    padding: 22px 24px;
+    margin-bottom: 20px;
 }
 
 .announcement-form-card h3 {
-    margin-top: 0;
-    margin-bottom: 1.5rem;
-    color: #2d3748;
-    font-size: 1.5rem;
-    border-bottom: 2px solid #edf2f7;
-    padding-bottom: 0.5rem;
+    margin: 0 0 18px;
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 20px;
+    color: #fff;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--obi-divider);
 }
 
-.form-group {
-    margin-bottom: 1.5rem;
+/* ── Form fields ── */
+.announcements-management .form-group {
+    margin-bottom: 16px;
 }
 
-.form-group label {
+.announcements-management .form-group label {
     display: block;
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-    color: #4a5568;
+    margin-bottom: 6px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
 }
 
-.form-group input[type="text"] {
+.announcements-management .form-group input[type="text"],
+.announcements-management .form-group input[type="date"] {
     width: 100%;
-    padding: 0.75rem;
-    border: 2px solid #e2e8f0;
+    padding: 10px 13px;
+    background: #0e1116;
+    border: 1px solid rgba(157, 185, 205, 0.22);
     border-radius: 8px;
-    font-size: 1rem;
+    color: var(--obi-text);
+    font-family: var(--obi-font-body);
+    font-size: 14px;
     transition: border-color 0.2s;
-}
-
-.form-group input[type="text"]:focus {
-    outline: none;
-    border-color: #4299e1;
-}
-
-/* Two-column row for date pickers */
-.form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1.25rem;
-    margin-bottom: 1.5rem;
-}
-
-@media (max-width: 600px) {
-    .form-row {
-        grid-template-columns: 1fr;
-    }
-}
-
-.form-group input[type="date"] {
-    width: 100%;
-    padding: 0.75rem;
-    border: 2px solid #e2e8f0;
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: border-color 0.2s;
-    background: white;
-    color: #2d3748;
     box-sizing: border-box;
 }
 
-.form-group input[type="date"]:focus {
+.announcements-management .form-group input[type="text"]:focus,
+.announcements-management .form-group input[type="date"]:focus {
     outline: none;
-    border-color: #4299e1;
+    border-color: var(--obi-accent);
+}
+
+.announcements-management .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+@media (max-width: 600px) {
+    .announcements-management .form-row { grid-template-columns: 1fr; }
 }
 
 .field-hint {
     display: block;
-    margin-top: 0.35rem;
-    font-size: 0.8rem;
-    color: #718096;
+    margin-top: 5px;
+    font-family: var(--obi-font-body);
+    font-size: 12px;
+    color: var(--obi-text-dim);
     font-style: italic;
 }
 
-.editor-container {
-    background: white;
+/* ── Quill editor dark theme (scoped to the announcement form) ── */
+.announcement-form-card .editor-container {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid rgba(157, 185, 205, 0.22);
 }
 
-/* ReactQuill overrides */
-.ql-editor {
-    min-height: 200px;
-    font-size: 1rem;
+.announcement-form-card .ql-toolbar {
+    background: #0e1116;
+    border: none !important;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.18) !important;
 }
 
-.checkbox-group label {
+.announcement-form-card .ql-toolbar .ql-stroke { stroke: var(--obi-text-muted); }
+.announcement-form-card .ql-toolbar .ql-fill   { fill:   var(--obi-text-muted); }
+.announcement-form-card .ql-toolbar .ql-picker  { color:  var(--obi-text-muted); }
+
+.announcement-form-card .ql-toolbar button:hover .ql-stroke,
+.announcement-form-card .ql-toolbar button.ql-active .ql-stroke { stroke: var(--obi-accent); }
+.announcement-form-card .ql-toolbar button:hover .ql-fill,
+.announcement-form-card .ql-toolbar button.ql-active .ql-fill   { fill:   var(--obi-accent); }
+
+.announcement-form-card .ql-toolbar button:hover,
+.announcement-form-card .ql-toolbar button.ql-active {
+    background: rgba(246, 169, 28, 0.1);
+    border-radius: 4px;
+}
+
+.announcement-form-card .ql-toolbar .ql-picker-label:hover,
+.announcement-form-card .ql-toolbar .ql-picker-label.ql-active { color: var(--obi-accent); }
+
+.announcement-form-card .ql-toolbar .ql-picker-options {
+    background: #0e1116;
+    border: 1px solid rgba(157, 185, 205, 0.18) !important;
+    border-radius: 6px;
+}
+
+.announcement-form-card .ql-toolbar .ql-picker-item:hover { color: var(--obi-accent); }
+
+.announcement-form-card .ql-container {
+    background: #0b0d10;
+    border: none !important;
+    font-size: 14px;
+    min-height: 180px;
+}
+
+.announcement-form-card .ql-editor {
+    color: var(--obi-text-secondary);
+    min-height: 180px;
+    line-height: 1.65;
+    padding: 12px 14px;
+}
+
+.announcement-form-card .ql-editor.ql-blank::before {
+    color: var(--obi-text-dim);
+    font-style: italic;
+}
+
+/* ── Checkbox ── */
+.announcements-management .checkbox-group label {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 8px;
     cursor: pointer;
-    font-size: 1.1rem;
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-text-secondary);
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: normal;
 }
 
-.checkbox-group input[type="checkbox"] {
-    width: 1.25rem;
-    height: 1.25rem;
+.announcements-management .checkbox-group input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
     cursor: pointer;
+    accent-color: var(--obi-accent);
 }
 
-.form-actions {
+/* ── Form actions ── */
+.announcements-management .form-actions {
     display: flex;
-    gap: 1rem;
-    margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 2px solid #edf2f7;
-}
-
-.btn-save, .btn-cancel {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    font-size: 1rem;
-    transition: all 0.2s;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--obi-divider);
 }
 
 .btn-save {
-    background-color: #4299e1;
-    color: white;
+    background: var(--obi-accent);
+    color: #0b0c0f;
+    padding: 10px 18px;
+    border: none;
+    border-radius: var(--obi-radius-btn);
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.15s;
 }
 
-.btn-save:hover {
-    background-color: #3182ce;
-}
+.btn-save:hover { opacity: 0.88; }
 
 .btn-cancel {
-    background-color: #e2e8f0;
-    color: #4a5568;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--obi-text-secondary);
+    padding: 10px 18px;
+    border: 1px solid var(--obi-card-border);
+    border-radius: var(--obi-radius-btn);
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
 }
 
 .btn-cancel:hover {
-    background-color: #cbd5e0;
+    color: #fff;
+    border-color: var(--obi-accent);
+    background: var(--obi-accent-hover);
 }
 
-/* Table Styles */
+/* ── Announcements table (dark table-card pattern) ── */
 .announcements-table-container {
-    background: white;
-    border-radius: 12px;
-    /* Allow horizontal scrolling so the Actions column stays reachable on narrow screens */
+    background: linear-gradient(180deg, #13171d, #10141a);
+    border: 1px solid var(--obi-card-border);
+    border-radius: var(--obi-radius-card);
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 .announcements-table {
@@ -202,123 +284,141 @@
 }
 
 .announcements-table thead {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: rgba(0, 0, 0, 0.25);
+    border-bottom: 1px solid rgba(157, 185, 205, 0.18);
 }
 
 .announcements-table th {
-    padding: 1.25rem 1.5rem;
+    padding: 13px 18px;
     text-align: left;
-    font-weight: 600;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
-    font-size: 0.875rem;
-    letter-spacing: 0.5px;
+    color: var(--obi-text-muted);
+    white-space: nowrap;
 }
 
 .announcements-table tbody tr {
-    border-bottom: 1px solid #e2e8f0;
-    transition: background-color 0.2s;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.07);
+    transition: background 0.12s;
 }
 
-.announcements-table tbody tr:hover {
-    background-color: #f7fafc;
-}
+.announcements-table tbody tr:last-child { border-bottom: none; }
+
+.announcements-table tbody tr:hover { background: rgba(157, 185, 205, 0.03); }
 
 .announcements-table td {
-    padding: 1rem 1.5rem;
-    color: #2d3748;
+    padding: 12px 18px;
+    color: var(--obi-text-secondary);
+    font-family: var(--obi-font-body);
+    font-size: 14px;
     vertical-align: middle;
 }
 
-.inactive-row td {
-    opacity: 0.7;
-    background-color: #f7fafc;
+.announcements-table td strong {
+    color: var(--obi-text);
+    font-weight: 600;
 }
 
+.inactive-row td {
+    opacity: 0.6;
+}
+
+/* ── Status toggle ── */
 .status-toggle {
-    padding: 0.4rem 0.8rem;
+    padding: 5px 12px;
     border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.5px;
     border: none;
     cursor: pointer;
-    transition: transform 0.1s, opacity 0.2s;
+    transition: opacity 0.15s, transform 0.1s;
+    white-space: nowrap;
 }
 
-.status-toggle:hover {
-    transform: scale(1.05);
-}
+.status-toggle:hover { transform: scale(1.04); }
 
 .status-toggle.active {
-    background-color: #c6f6d5;
-    color: #22543d;
+    background: rgba(127, 181, 154, 0.15);
+    color: var(--obi-success);
+    border: 1px solid rgba(127, 181, 154, 0.35);
 }
 
 .status-toggle.inactive {
-    background-color: #e2e8f0;
-    color: #4a5568;
+    background: rgba(157, 185, 205, 0.08);
+    color: var(--obi-text-muted);
+    border: 1px solid var(--obi-divider);
 }
 
+/* ── Row actions ── */
 .actions-cell {
     display: flex;
-    gap: 0.5rem;
+    gap: 6px;
+    white-space: nowrap;
 }
 
 .btn-edit-small {
-    background-color: #ecc94b;
-    color: #744210;
-    padding: 0.4rem 0.8rem;
-    border-radius: 4px;
-    border: none;
-    font-weight: 600;
-    font-size: 0.875rem;
+    background: rgba(157, 185, 205, 0.08);
+    color: var(--obi-icy);
+    border: 1px solid rgba(157, 185, 205, 0.2);
+    padding: 5px 11px;
+    border-radius: 6px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.15s;
 }
 
 .btn-edit-small:hover {
-    background-color: #d6b33d;
+    background: rgba(157, 185, 205, 0.16);
+    color: #fff;
 }
 
 .btn-delete-small {
-    background-color: #fc8181;
-    color: white;
-    padding: 0.4rem 0.8rem;
-    border-radius: 4px;
-    border: none;
-    font-weight: 600;
-    font-size: 0.875rem;
+    background: rgba(224, 138, 138, 0.08);
+    color: var(--obi-error);
+    border: 1px solid rgba(224, 138, 138, 0.25);
+    padding: 5px 11px;
+    border-radius: 6px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
     cursor: pointer;
-    transition: background-color 0.2s;
+    transition: all 0.15s;
 }
 
 .btn-delete-small:hover {
-    background-color: #e53e3e;
+    background: rgba(224, 138, 138, 0.16);
+    color: #fff;
 }
 
-.empty-state {
-    padding: 3rem;
+/* ── Empty / loading ── */
+.announcements-management .empty-state {
+    padding: 48px;
     text-align: center;
-    color: #718096;
-    font-size: 1.1rem;
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-text-muted);
     font-style: italic;
 }
 
-.loading {
-    padding: 3rem;
+.announcements-management .loading {
+    padding: 48px;
     text-align: center;
-    color: #4a5568;
-    font-size: 1.1rem;
+    font-family: var(--obi-font-body);
+    font-size: 16px;
+    color: var(--obi-text-muted);
 }
 
-/* On narrow screens keep the table from crushing; the container scrolls horizontally
-   so the Status, dates, and Actions (Edit/Delete) columns all stay reachable. */
 @media (max-width: 768px) {
-    .announcements-table {
-        min-width: 640px;
-    }
-
-    .actions-cell {
-        white-space: nowrap;
-    }
+    .announcements-table { min-width: 640px; }
 }

@@ -109,3 +109,33 @@
         font-size: 16px;
     }
 }
+/* ---- Redesigned gold-outline Donate CTA (v2) ---- */
+.obi-donate-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 15px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-accent);
+    background: transparent;
+    border: 1px solid var(--obi-accent);
+    border-radius: 7px;
+    padding: 9px 16px;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: background 0.15s, transform 0.12s;
+}
+
+.obi-donate-btn:hover {
+    background: var(--obi-accent-soft);
+    transform: translateY(-1px);
+}
+
+.obi-donate-btn svg {
+    fill: currentColor;
+    display: block;
+    flex: none;
+}

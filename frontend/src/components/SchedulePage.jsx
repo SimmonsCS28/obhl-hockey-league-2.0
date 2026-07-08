@@ -1,10 +1,15 @@
 import axios from 'axios';
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import PlayoffBracket from './PlayoffBracket';
+import { resolveTeamColor } from '../constants/teamColors';
+import heroBg from '../assets/images/buzzard-full.jpg';
 import './SchedulePage.css';
 
+const parseGameDate = (s) => new Date(s.endsWith('Z') ? s : s + 'Z');
+
 const SchedulePage = () => {
+    const navigate = useNavigate();
     const [seasons, setSeasons] = useState([]);
     const [teams, setTeams] = useState([]);
     const [games, setGames] = useState([]);
@@ -13,26 +18,10 @@ const SchedulePage = () => {
     const [selectedTeam, setSelectedTeam] = useState('all');
     const [loading, setLoading] = useState(false);
     const [showCalendarModal, setShowCalendarModal] = useState(false);
-    const [showCompleted, setShowCompleted] = useState(false);
-    const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 768);
     const [activeTab, setActiveTab] = useState('regular'); // 'regular' | 'playoffs'
 
-    // Responsive detection
-    useEffect(() => {
-        const handleResize = () => {
-            setIsDesktop(window.innerWidth >= 768);
-        };
+    useEffect(() => { fetchSeasons(); }, []);
 
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
-
-    // Fetch seasons on mount
-    useEffect(() => {
-        fetchSeasons();
-    }, []);
-
-    // Fetch teams and games when season changes
     useEffect(() => {
         if (selectedSeason) {
             fetchTeams(selectedSeason);
@@ -44,11 +33,8 @@ const SchedulePage = () => {
         try {
             const response = await axios.get('/api/v1/seasons');
             setSeasons(response.data);
-            // Default to active season
-            const activeSeason = response.data.find(s => s.isActive);
-            if (activeSeason) {
-                setSelectedSeason(activeSeason.id);
-            }
+            const active = response.data.find(s => s.isActive);
+            if (active) setSelectedSeason(active.id);
         } catch (error) {
             console.error('Failed to load seasons:', error);
         }
@@ -75,497 +61,270 @@ const SchedulePage = () => {
         }
     };
 
-    const getTeamById = (teamId) => {
-        return teams.find(t => t.id === teamId);
-    };
+    const teamById = (id) => teams.find(t => t.id === id);
+    const teamName = (id) => teamById(id)?.name || 'TBD';
+    const teamColor = (id) => resolveTeamColor(teamById(id)?.teamColor);
 
-    // Split games into regular season and playoffs
     const regularSeasonGames = games.filter(g => g.gameType !== 'PLAYOFF');
     const playoffGames = games.filter(g => g.gameType === 'PLAYOFF');
     const hasPlayoffs = playoffGames.length > 0;
 
-    // Filter games based on selected week, team, and completion status
-    const filteredGames = regularSeasonGames.filter(game => {
-        const weekMatch = selectedWeek === 'all' || game.week === parseInt(selectedWeek);
-        const teamMatch = selectedTeam === 'all' ||
-            game.homeTeamId === parseInt(selectedTeam) ||
-            game.awayTeamId === parseInt(selectedTeam);
+    const availableWeeks = [...new Set(regularSeasonGames.map(g => g.week).filter(w => w != null))]
+        .sort((a, b) => a - b);
 
-
-        // Include completed games only if showCompleted is true
-        // A game is considered completed if its date has passed
-        const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
-        const now = new Date();
-        const isCompleted = gameDate < now;
-        const completedMatch = !isCompleted || showCompleted;
-
-
-        return weekMatch && teamMatch && completedMatch;
-    }).sort((a, b) => {
-        // Sort by week first, then by date
-        if (a.week !== b.week) {
-            return a.week - b.week;
+    // Current week = lowest week number that still has an un-played game
+    const currentWeek = (() => {
+        for (const w of availableWeeks) {
+            const wkGames = regularSeasonGames.filter(g => g.week === w);
+            if (wkGames.some(g => g.status !== 'completed')) return w;
         }
-        const dateA = new Date(a.gameDate.endsWith('Z') ? a.gameDate : a.gameDate + 'Z');
-        const dateB = new Date(b.gameDate.endsWith('Z') ? b.gameDate : b.gameDate + 'Z');
-        return dateA - dateB;
+        return null;
+    })();
+
+    const weekStatus = (w) => {
+        const wkGames = regularSeasonGames.filter(g => g.week === w);
+        if (wkGames.length > 0 && wkGames.every(g => g.status === 'completed')) {
+            return { label: 'Completed', cls: 'is-completed' };
+        }
+        if (w === currentWeek) return { label: 'This Week', cls: 'is-thisweek' };
+        return { label: 'Scheduled', cls: 'is-scheduled' };
+    };
+
+    const weekRange = (wkGames) => {
+        const dates = wkGames.map(g => parseGameDate(g.gameDate)).sort((a, b) => a - b);
+        if (dates.length === 0) return '';
+        const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const first = fmt(dates[0]);
+        const last = fmt(dates[dates.length - 1]);
+        return first === last ? first : `${first} – ${last}`;
+    };
+
+    const filtered = regularSeasonGames.filter(g => {
+        const weekMatch = selectedWeek === 'all' || g.week === parseInt(selectedWeek);
+        const teamMatch = selectedTeam === 'all' ||
+            g.homeTeamId === parseInt(selectedTeam) || g.awayTeamId === parseInt(selectedTeam);
+        return weekMatch && teamMatch;
     });
 
-    // Group games by week
-    const groupGamesByWeek = () => {
-        const grouped = {};
-        filteredGames.forEach(game => {
-            const week = game.week || 'Unassigned';
-            if (!grouped[week]) {
-                grouped[week] = [];
-            }
-            grouped[week].push(game);
-        });
+    const weeksToShow = availableWeeks.filter(w => filtered.some(g => g.week === w));
 
-        // Sort games within each week by date
-        Object.keys(grouped).forEach(week => {
-            grouped[week].sort((a, b) => new Date(a.gameDate) - new Date(b.gameDate));
-        });
-
-        return grouped;
-    };
-
-    const gamesByWeek = groupGamesByWeek();
-    const weeks = Object.keys(gamesByWeek).sort((a, b) => {
-        if (a === 'Unassigned') return 1;
-        if (b === 'Unassigned') return -1;
-        return parseInt(a) - parseInt(b);
-    });
-
-    // Get unique weeks for filter dropdown (regular season only)
-    const availableWeeks = [...new Set(regularSeasonGames.map(g => g.week))].sort((a, b) => a - b);
-
-    // Helper to get valid CSS color
-    const getValidColor = (color) => {
-        if (!color) return '#95a5a6';
-
-        // Map truncated DB values to valid CSS colors
-        const colorMap = {
-            'Lt. Blu': '#87CEEB', // SkyBlue
-            'Dk. Gre': '#006400', // DarkGreen
-            'White': '#FFFFFF',
-            'Yellow': '#FFD700',
-            'Gold': '#FFD700'
-        };
-
-        return colorMap[color] || color;
-    };
-
-    // Helper to determine text color based on background
-    const getTextColor = (bgColor) => {
-        if (!bgColor) return 'white';
-
-        const lightColors = [
-            'White', '#FFFFFF',
-            'Yellow', '#FFD700',
-            'Gold',
-            'Lt. Blu', '#87CEEB', 'LightBlue'
-        ];
-
-        // Check if color is in light list (case insensitive)
-        const isLight = lightColors.some(c =>
-            c.toLowerCase() === bgColor.toLowerCase()
-        );
-
-        return isLight ? '#2c3e50' : 'white';
-    };
-
-    // Generate ICS calendar file for a specific team
     const generateICS = (teamId) => {
         const team = teams.find(t => t.id === teamId);
         if (!team) return;
-
-        // Filter games for this team
         const teamGames = games.filter(g => g.homeTeamId === teamId || g.awayTeamId === teamId);
-
-        // Start ICS file
-        let icsContent = [
-            'BEGIN:VCALENDAR',
-            'VERSION:2.0',
-            'PRODID:-//OBHL//Hockey Schedule//EN',
-            'CALSCALE:GREGORIAN',
-            'METHOD:PUBLISH',
-            `X-WR-CALNAME:${team.name} - OBHL Schedule`,
-            'X-WR-TIMEZONE:America/Chicago',
+        const lines = [
+            'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//OBHL//Hockey Schedule//EN',
+            'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+            `X-WR-CALNAME:${team.name} - OBHL Schedule`, 'X-WR-TIMEZONE:America/Chicago',
         ];
-
-        // Add each game as an event
-        teamGames.forEach((game, index) => {
-            const homeTeam = getTeamById(game.homeTeamId);
-            const awayTeam = getTeamById(game.awayTeamId);
-
-            // Parse game date (assuming it's in UTC)
-            const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
-
-            // Format datetime for ICS (YYYYMMDDTHHMMSSZ)
-            const formatICSDate = (date) => {
-                return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-            };
-
-            // Game duration: 1.5 hours
-            const endDate = new Date(gameDate.getTime() + (90 * 60 * 1000));
-
-            const summary = `${homeTeam?.name || 'TBD'} vs ${awayTeam?.name || 'TBD'}`;
-            const description = `Week ${game.week || 'TBD'} - ${homeTeam?.name || 'TBD'} vs ${awayTeam?.name || 'TBD'}`;
-
-            icsContent.push(
-                'BEGIN:VEVENT',
-                `UID:obhl-game-${game.id}@oldbuzzardhockey.com`,
-                `DTSTAMP:${formatICSDate(new Date())}`,
-                `DTSTART:${formatICSDate(gameDate)}`,
-                `DTEND:${formatICSDate(endDate)}`,
-                `SUMMARY:${summary}`,
+        const fmtICS = (d) => d.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+        teamGames.forEach((game) => {
+            const start = parseGameDate(game.gameDate);
+            const end = new Date(start.getTime() + 90 * 60 * 1000);
+            lines.push(
+                'BEGIN:VEVENT', `UID:obhl-game-${game.id}@oldbuzzardhockey.com`,
+                `DTSTAMP:${fmtICS(new Date())}`, `DTSTART:${fmtICS(start)}`, `DTEND:${fmtICS(end)}`,
+                `SUMMARY:${teamName(game.homeTeamId)} vs ${teamName(game.awayTeamId)}`,
                 `LOCATION:${game.rink || 'TBD'}`,
-                `DESCRIPTION:${description}`,
-                'STATUS:CONFIRMED',
-                'SEQUENCE:0',
-                'END:VEVENT'
+                `DESCRIPTION:Week ${game.week || 'TBD'} - ${teamName(game.homeTeamId)} vs ${teamName(game.awayTeamId)}`,
+                'STATUS:CONFIRMED', 'SEQUENCE:0', 'END:VEVENT'
             );
         });
-
-        icsContent.push('END:VCALENDAR');
-
-        // Create blob and trigger download
-        const blob = new Blob([icsContent.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+        lines.push('END:VCALENDAR');
+        const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
         const link = document.createElement('a');
         link.href = window.URL.createObjectURL(blob);
         link.download = `${team.name.replace(/\s+/g, '_')}_Schedule.ics`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-
         setShowCalendarModal(false);
     };
 
+    const renderGameRow = (game) => {
+        const done = game.status === 'completed';
+        const d = parseGameDate(game.gameDate);
+        const day = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+        const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        const homeWin = done && game.homeScore > game.awayScore;
+        const awayWin = done && game.awayScore > game.homeScore;
+
+        return (
+            <div key={game.id} className={`obi-game-row ${done ? 'is-done' : 'is-upcoming'}`}>
+                <div className="obi-game-date">
+                    <div className="obi-game-day">{day}</div>
+                    <div className="obi-game-datenum">{date}</div>
+                </div>
+
+                <div className="obi-game-match">
+                    <div className="obi-game-teams">
+                        <span className="obi-game-team obi-game-team-home">
+                            {game.homeTeamId ? (
+                                <Link to={`/teams/${game.homeTeamId}`} className="obi-game-team-name">{teamName(game.homeTeamId)}</Link>
+                            ) : <span className="obi-game-team-name obi-tbd">TBD</span>}
+                            <span className="obi-team-dot" style={{ background: teamColor(game.homeTeamId) }} />
+                        </span>
+
+                        {done ? (
+                            <span className="obi-game-score">
+                                <span className={homeWin ? 'obi-win' : 'obi-lose'}>{game.homeScore ?? 0}</span>
+                                <span className="obi-score-sep">–</span>
+                                <span className={awayWin ? 'obi-win' : 'obi-lose'}>{game.awayScore ?? 0}</span>
+                            </span>
+                        ) : (
+                            <span className="obi-game-vs">VS</span>
+                        )}
+
+                        <span className="obi-game-team obi-game-team-away">
+                            <span className="obi-team-dot" style={{ background: teamColor(game.awayTeamId) }} />
+                            {game.awayTeamId ? (
+                                <Link to={`/teams/${game.awayTeamId}`} className="obi-game-team-name">{teamName(game.awayTeamId)}</Link>
+                            ) : <span className="obi-game-team-name obi-tbd">TBD</span>}
+                        </span>
+                    </div>
+                    <div className="obi-game-meta">
+                        {done ? 'Final' : time}{game.rink ? ` · ${game.rink}` : ''}
+                    </div>
+                </div>
+
+                <button
+                    className={`obi-game-btn ${done ? 'obi-btn-recap' : 'obi-btn-preview'}`}
+                    onClick={() => navigate(`/game/${game.id}/${done ? 'recap' : 'preview'}`)}
+                >
+                    {done ? 'Recap' : 'Preview'}
+                </button>
+            </div>
+        );
+    };
+
     return (
-        <>
-            <div className="page-header-bar">
-                <div className="page-header-inner centered">
-                    <h1>Game Schedule</h1>
-                    <button
-                        className="download-calendar-btn"
-                        style={{ marginTop: '1rem' }}
-                        onClick={() => setShowCalendarModal(true)}
-                        title="Download team schedule as calendar file"
-                    >
-                        📅 Download Calendar
-                    </button>
+        <div className="obi-page obi-schedule">
+            <section className="obi-page-hero">
+                <img src={heroBg} alt="" className="obi-page-hero-bg" />
+                <div className="obi-page-hero-overlay" />
+                <div className="obi-page-hero-inner">
+                    <div className="obi-eyebrow">Old Buzzard Hockey League</div>
+                    <h1 className="obi-page-title">SCHEDULE</h1>
+                    <p className="obi-page-sub">All games at the Sun Prairie Ice Arena.</p>
                 </div>
-            </div>
-            <div className="schedule-page">
+            </section>
 
-            {/* Regular Season / Playoffs Tab Toggle */}
-            {hasPlayoffs && (
-                <div className="schedule-tabs">
-                    <button
-                        className={`schedule-tab ${activeTab === 'regular' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('regular')}
-                    >
-                        📅 Regular Season
-                    </button>
-                    <button
-                        className={`schedule-tab ${activeTab === 'playoffs' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('playoffs')}
-                    >
-                        🏆 Playoffs
-                    </button>
-                </div>
-            )}
+            <section className="obi-schedule-body">
+                <div className="obi-container">
+                    {/* Toolbar */}
+                    <div className="obi-schedule-toolbar">
+                        <div className="obi-schedule-selects">
+                            {seasons.length > 0 && (
+                                <select
+                                    className="obi-season-select"
+                                    value={selectedSeason || ''}
+                                    onChange={(e) => setSelectedSeason(Number(e.target.value))}
+                                >
+                                    {seasons.map(s => (
+                                        <option key={s.id} value={s.id}>{s.name}{s.isActive ? ' (Active)' : ''}</option>
+                                    ))}
+                                </select>
+                            )}
+                            <select
+                                className="obi-season-select"
+                                value={selectedTeam}
+                                onChange={(e) => setSelectedTeam(e.target.value)}
+                            >
+                                <option value="all">All Teams</option>
+                                {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                            </select>
+                        </div>
+                        <button className="obi-ghost-btn" onClick={() => setShowCalendarModal(true)}>
+                            ⤓ Download Calendar
+                        </button>
+                    </div>
 
-            <div className="filters">
-                <div className="filter-group">
-                    <label>Season</label>
-                    <select
-                        value={selectedSeason || ''}
-                        onChange={(e) => setSelectedSeason(parseInt(e.target.value))}
-                        className="filter-select"
-                    >
-                        {seasons.map(season => (
-                            <option key={season.id} value={season.id}>
-                                {season.name} {season.isActive ? '(Active)' : ''}
-                            </option>
-                        ))}
-                    </select>
-                </div>
+                    {/* Playoff tabs */}
+                    {hasPlayoffs && (
+                        <div className="obi-schedule-tabs">
+                            <button
+                                className={`obi-chip ${activeTab === 'regular' ? 'is-active' : ''}`}
+                                onClick={() => setActiveTab('regular')}
+                            >Regular Season</button>
+                            <button
+                                className={`obi-chip ${activeTab === 'playoffs' ? 'is-active' : ''}`}
+                                onClick={() => setActiveTab('playoffs')}
+                            >Playoffs</button>
+                        </div>
+                    )}
 
-                <div className="filter-group">
-                    <label>Week</label>
-                    <select
-                        value={selectedWeek}
-                        onChange={(e) => setSelectedWeek(e.target.value)}
-                        className="filter-select"
-                    >
-                        <option value="all">All Weeks</option>
-                        {availableWeeks.map(week => (
-                            <option key={week} value={week}>Week {week}</option>
-                        ))}
-                    </select>
-                </div>
+                    {/* Week filter chips (regular season) */}
+                    {activeTab === 'regular' && availableWeeks.length > 0 && (
+                        <div className="obi-week-chips">
+                            <button
+                                className={`obi-chip ${selectedWeek === 'all' ? 'is-active' : ''}`}
+                                onClick={() => setSelectedWeek('all')}
+                            >All Weeks</button>
+                            {availableWeeks.map(w => (
+                                <button
+                                    key={w}
+                                    className={`obi-chip ${selectedWeek === String(w) ? 'is-active' : ''}`}
+                                    onClick={() => setSelectedWeek(String(w))}
+                                >Week {w}</button>
+                            ))}
+                        </div>
+                    )}
 
-                <div className="filter-group">
-                    <label>Team</label>
-                    <select
-                        value={selectedTeam}
-                        onChange={(e) => setSelectedTeam(e.target.value)}
-                        className="filter-select"
-                    >
-                        <option value="all">All Teams</option>
-                        {teams.map(team => (
-                            <option key={team.id} value={team.id}>{team.name}</option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className="filter-group checkbox-group">
-                    <label className="checkbox-label">
-                        <input
-                            type="checkbox"
-                            checked={showCompleted}
-                            onChange={(e) => setShowCompleted(e.target.checked)}
-                            className="checkbox-input"
-                        />
-                        <span>Show Completed Games</span>
-                    </label>
-                </div>
-            </div>
-
-            {loading ? (
-                <div className="loading">Loading games...</div>
-            ) : activeTab === 'playoffs' ? (
-                // Playoff Bracket View
-                <PlayoffBracket games={playoffGames} teams={teams} />
-            ) : filteredGames.length === 0 ? (
-                <div className="empty-state">
-                    <p>No games scheduled yet.</p>
-                </div>
-            ) : isDesktop ? (
-                // Desktop: Table View
-                <div className="schedule-table-container">
-                    <table className="schedule-table">
-                        <thead>
-                            <tr>
-                                <th>Week</th>
-                                <th>Date</th>
-                                <th>Time</th>
-                                <th>Home Team</th>
-                                <th>Away Team</th>
-                                <th>Location</th>
-                                <th>Score/Status</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filteredGames.map((game, index) => {
-                                const homeTeam = getTeamById(game.homeTeamId);
-                                const awayTeam = getTeamById(game.awayTeamId);
-                                const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
-                                const dayOfWeek = gameDate.getDay();
-                                const isNotFriday = dayOfWeek !== 5;
-                                const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
-                                const isCompleted = game.status === 'completed';
-
-                                // Determine winner
-                                const homeWin = isCompleted && game.homeScore > game.awayScore;
-                                const awayWin = isCompleted && game.awayScore > game.homeScore;
-
-                                const homeBg = getValidColor(homeTeam?.teamColor);
-                                const awayBg = getValidColor(awayTeam?.teamColor);
-
-                                // Check if this is the first game of a new week
-                                const previousGame = index > 0 ? filteredGames[index - 1] : null;
-                                const isNewWeek = previousGame && previousGame.week !== game.week;
-
+                    {loading ? (
+                        <div className="obi-schedule-msg">Loading games…</div>
+                    ) : activeTab === 'playoffs' ? (
+                        <PlayoffBracket games={playoffGames} teams={teams} />
+                    ) : weeksToShow.length === 0 ? (
+                        <div className="obi-schedule-msg">No games scheduled yet.</div>
+                    ) : (
+                        <div className="obi-weeks">
+                            {weeksToShow.map(w => {
+                                const wkGames = filtered
+                                    .filter(g => g.week === w)
+                                    .sort((a, b) => parseGameDate(a.gameDate) - parseGameDate(b.gameDate));
+                                const status = weekStatus(w);
                                 return (
-                                    <tr
-                                        key={game.id}
-                                        className={`${isNotFriday ? 'non-friday-row' : ''} ${isNewWeek ? 'week-separator' : ''}`}
-                                    >
-                                        <td className="week-col">
-                                            Week {game.week}
-                                        </td>
-                                        <td className={isNotFriday ? 'date-col non-friday-date' : 'date-col'}>
-                                            <span className="day-warning" title={isNotFriday ? `Game on ${dayName}` : ''}>
-                                                {isNotFriday ? '⚠️' : ''}
-                                            </span>
-                                            {gameDate.toLocaleDateString('en-US', {
-                                                weekday: 'short',
-                                                month: 'short',
-                                                day: 'numeric'
-                                            })}
-                                        </td>
-                                        <td className="time-col">
-                                            {gameDate.toLocaleTimeString('en-US', {
-                                                hour: 'numeric',
-                                                minute: '2-digit'
-                                            })}
-                                        </td>
-                                        <td className={`team-cell ${homeWin ? 'winning-team' : ''}`} style={!game.homeTeamId ? { backgroundColor: '#374151', color: '#9ca3af' } : { backgroundColor: homeBg, color: getTextColor(homeBg) }}>
-                                            {!game.homeTeamId ? (
-                                                <span style={{ fontStyle: 'italic', opacity: 0.7 }}>TBD</span>
-                                            ) : (
-                                                <Link to={`/teams/${game.homeTeamId}`} style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', width: '100%', height: '100%', justifyContent: 'center' }}>
-                                                    {homeTeam?.name || `Team ${game.homeTeamId}`}
-                                                    {homeWin && <span className="win-icon" title="Winner">★</span>}
-                                                </Link>
-                                            )}
-                                        </td>
-                                        <td className={`team-cell ${awayWin ? 'winning-team' : ''}`} style={!game.awayTeamId ? { backgroundColor: '#374151', color: '#9ca3af' } : { backgroundColor: awayBg, color: getTextColor(awayBg) }}>
-                                            {!game.awayTeamId ? (
-                                                <span style={{ fontStyle: 'italic', opacity: 0.7 }}>TBD</span>
-                                            ) : (
-                                                <Link to={`/teams/${game.awayTeamId}`} style={{ color: 'inherit', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '5px', width: '100%', height: '100%', justifyContent: 'center' }}>
-                                                    {awayTeam?.name || `Team ${game.awayTeamId}`}
-                                                    {awayWin && <span className="win-icon" title="Winner">★</span>}
-                                                </Link>
-                                            )}
-                                        </td>
-                                        <td>{game.rink}</td>
-                                        <td>
-                                            {isCompleted ? (
-                                                <span className="score">
-                                                    <span className={homeWin ? 'winning-score' : ''}>{game.homeScore}</span>
-                                                    {' - '}
-                                                    <span className={awayWin ? 'winning-score' : ''}>{game.awayScore}</span>
-                                                </span>
-                                            ) : (
-                                                <span className="upcoming-badge">Upcoming</span>
-                                            )}
-                                        </td>
-                                        <td>
-                                            {isCompleted ? (
-                                                <Link to={`/game/${game.id}/recap`} className="btn-action-small preview-btn">Recap</Link>
-                                            ) : (
-                                                <Link to={`/game/${game.id}/preview`} className="btn-action-small preview-btn">Preview</Link>
-                                            )}
-                                        </td>
-                                    </tr>
+                                    <div key={w} className="obi-week-block">
+                                        <div className="obi-week-block-head">
+                                            <span className="obi-week-block-label">Week {w}</span>
+                                            <span className="obi-week-block-range">{weekRange(wkGames)}</span>
+                                            <span className={`obi-week-badge ${status.cls}`}>{status.label}</span>
+                                            <span className="obi-week-rule" />
+                                        </div>
+                                        <div className="obi-week-games">
+                                            {wkGames.map(renderGameRow)}
+                                        </div>
+                                    </div>
                                 );
                             })}
-                        </tbody>
-                    </table>
-                </div>
-            ) : (
-                // Mobile: Compact Card View
-                <div className="schedule-grid">
-                    {weeks.map(week => (
-                        <div key={week} className="week-section">
-                            <h2>Week {week}</h2>
-                            <div className="games-list">
-                                {gamesByWeek[week].map(game => {
-                                    const homeTeam = getTeamById(game.homeTeamId);
-                                    const awayTeam = getTeamById(game.awayTeamId);
-                                    const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
-                                    const dayOfWeek = gameDate.getDay();
-                                    const isNotFriday = dayOfWeek !== 5;
-                                    const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
-                                    const isCompleted = game.status === 'completed';
-
-                                    // Determine winner
-                                    const homeWin = isCompleted && game.homeScore > game.awayScore;
-                                    const awayWin = isCompleted && game.awayScore > game.homeScore;
-
-                                    const homeBg = getValidColor(homeTeam?.teamColor);
-                                    const awayBg = getValidColor(awayTeam?.teamColor);
-
-                                    return (
-                                        <div
-                                            key={game.id}
-                                            className={`game-card ${isNotFriday ? 'non-friday-game' : ''}`}
-                                        >
-                                            {isNotFriday && (
-                                                <div className="day-badge">
-                                                    ⚠️ {dayName.toUpperCase()}
-                                                </div>
-                                            )}
-                                            <div className="game-date">
-                                                {gameDate.toLocaleDateString('en-US', {
-                                                    weekday: 'short',
-                                                    month: 'short',
-                                                    day: 'numeric'
-                                                })}
-                                            </div>
-                                            <div className="game-time">
-                                                {gameDate.toLocaleTimeString('en-US', {
-                                                    hour: 'numeric',
-                                                    minute: '2-digit'
-                                                })}
-                                            </div>
-                                            <div className="game-teams">
-                                                <Link to={`/teams/${game.homeTeamId}`} style={{ textDecoration: 'none', display: 'inline-block' }}>
-                                                    <span className={`team-badge ${homeWin ? 'winning-team' : ''}`} style={{ backgroundColor: homeBg, color: getTextColor(homeBg) }}>
-                                                        {homeTeam?.name || `Team ${game.homeTeamId}`}
-                                                        {homeWin && <span className="win-icon">★</span>}
-                                                    </span>
-                                                </Link>
-                                                <span className="vs">vs</span>
-                                                <Link to={`/teams/${game.awayTeamId}`} style={{ textDecoration: 'none', display: 'inline-block' }}>
-                                                    <span className={`team-badge ${awayWin ? 'winning-team' : ''}`} style={{ backgroundColor: awayBg, color: getTextColor(awayBg) }}>
-                                                        {awayTeam?.name || `Team ${game.awayTeamId}`}
-                                                        {awayWin && <span className="win-icon">★</span>}
-                                                    </span>
-                                                </Link>
-                                            </div>
-                                            <div className="game-location">
-                                                📍 {game.rink}
-                                            </div>
-                                            {isCompleted && (
-                                                <div className="game-score-mobile">
-                                                    Final: <span className={homeWin ? 'winning-score' : ''}>{game.homeScore}</span> - <span className={awayWin ? 'winning-score' : ''}>{game.awayScore}</span>
-                                                </div>
-                                            )}
-                                            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-                                                {isCompleted ? (
-                                                    <Link to={`/game/${game.id}/recap`} className="btn-action-small preview-btn" style={{ width: '100%', display: 'block' }}>Recap</Link>
-                                                ) : (
-                                                    <Link to={`/game/${game.id}/preview`} className="btn-action-small preview-btn" style={{ width: '100%', display: 'block' }}>Preview</Link>
-                                                )}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
                         </div>
-                    ))}
+                    )}
                 </div>
-            )}
+            </section>
 
-            {/* Calendar Download Modal */}
             {showCalendarModal && (
-                <div className="calendar-modal-overlay" onClick={() => setShowCalendarModal(false)}>
-                    <div className="calendar-modal" onClick={(e) => e.stopPropagation()}>
-                        <h2>Select Team</h2>
-                        <p>Choose a team to download their schedule:</p>
-                        <div className="team-selection">
+                <div className="obi-cal-overlay" onClick={() => setShowCalendarModal(false)}>
+                    <div className="obi-cal-modal" onClick={(e) => e.stopPropagation()}>
+                        <h2 className="obi-cal-title">Download Team Schedule</h2>
+                        <p className="obi-cal-sub">Choose a team to download their schedule (.ics):</p>
+                        <div className="obi-cal-teams">
                             {teams.map(team => (
                                 <button
                                     key={team.id}
-                                    className="team-select-btn"
+                                    className="obi-cal-team-btn"
                                     onClick={() => generateICS(team.id)}
-                                    style={{
-                                        backgroundColor: getValidColor(team.teamColor),
-                                        color: getTextColor(team.teamColor)
-                                    }}
                                 >
+                                    <span className="obi-team-dot" style={{ background: resolveTeamColor(team.teamColor) }} />
                                     {team.name}
                                 </button>
                             ))}
                         </div>
-                        <button
-                            className="modal-close-btn"
-                            onClick={() => setShowCalendarModal(false)}
-                        >
-                            Cancel
-                        </button>
+                        <button className="obi-cal-cancel" onClick={() => setShowCalendarModal(false)}>Cancel</button>
                     </div>
                 </div>
             )}
         </div>
-        </>
     );
 };
 
