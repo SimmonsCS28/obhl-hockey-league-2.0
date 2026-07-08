@@ -5,7 +5,7 @@ import api from '../../services/api';
 import TeamBadge from '../common/TeamBadge';
 import './GMDashboard.css';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
