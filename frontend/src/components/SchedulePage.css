@@ -21,7 +21,28 @@
 .obi-schedule-selects {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
     gap: 10px;
+}
+
+/* Functional-only for now (design pass pending) — plain checkbox using existing tokens. */
+.obi-show-completed {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-text-secondary);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.obi-show-completed input {
+    accent-color: var(--obi-accent);
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
 }
 
 .obi-schedule-tabs {

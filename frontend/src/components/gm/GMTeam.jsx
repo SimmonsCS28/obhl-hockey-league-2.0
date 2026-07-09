@@ -108,6 +108,54 @@ function GMTeam() {
         setEditedSkills(prev => ({ ...prev, [player.id]: next }));
     };
 
+    // Column sorting — functionality restored from the pre-redesign roster table;
+    // not yet through a design pass (plain click-to-sort headers with an arrow for now).
+    const [sortConfig, setSortConfig] = useState({ key: 'jerseyNumber', direction: 'ascending' });
+
+    const requestSort = (key) => {
+        setSortConfig(prev => ({
+            key,
+            direction: prev.key === key && prev.direction === 'ascending' ? 'descending' : 'ascending',
+        }));
+    };
+
+    const sortIcon = (key) => {
+        if (sortConfig.key !== key) return null;
+        return sortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
+    };
+
+    const sortValue = (player, key) => {
+        const stats = playerStats[player.id] || {};
+        switch (key) {
+            case 'jerseyNumber':
+                return parseInt(player.jerseyNumber) || 0;
+            case 'lastName':
+                return `${(player.lastName || '').toLowerCase()} ${(player.firstName || '').toLowerCase()}`;
+            case 'position':
+                return shortPos(player.position);
+            case 'skillRating':
+                return currentSkill(player);
+            case 'goals':
+                return stats.goals || 0;
+            case 'assists':
+                return stats.assists || 0;
+            case 'points':
+                return (stats.goals || 0) + (stats.assists || 0);
+            case 'penaltyMinutes':
+                return stats.penaltyMinutes || 0;
+            default:
+                return 0;
+        }
+    };
+
+    const sortedRoster = [...roster].sort((a, b) => {
+        const aVal = sortValue(a, sortConfig.key);
+        const bVal = sortValue(b, sortConfig.key);
+        if (aVal < bVal) return sortConfig.direction === 'ascending' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'ascending' ? 1 : -1;
+        return 0;
+    });
+
     const changeCount = Object.keys(editedPlayers).length + Object.keys(editedSkills).length;
 
     const handleSave = async () => {
@@ -272,17 +320,57 @@ function GMTeam() {
                 {roster.length > 0 ? (
                     <div className="gm-roster-scroll">
                         <div className="gm-roster-head">
-                            <span className="gm-col gm-col-jersey">Jersey</span>
-                            <span className="gm-col gm-col-player">Player</span>
+                            <span
+                                className="gm-col gm-col-jersey gm-col-sortable"
+                                role="button" tabIndex={0}
+                                onClick={() => requestSort('jerseyNumber')}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') requestSort('jerseyNumber'); }}
+                            >Jersey{sortIcon('jerseyNumber')}</span>
+                            <span
+                                className="gm-col gm-col-player gm-col-sortable"
+                                role="button" tabIndex={0}
+                                onClick={() => requestSort('lastName')}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') requestSort('lastName'); }}
+                            >Player{sortIcon('lastName')}</span>
                             <span className="gm-col gm-col-email">Email</span>
-                            <span className="gm-col gm-col-pos">Pos</span>
-                            <span className="gm-col gm-col-stat" title="Goals">G</span>
-                            <span className="gm-col gm-col-stat" title="Assists">A</span>
-                            <span className="gm-col gm-col-stat" title="Points">P</span>
-                            <span className="gm-col gm-col-pim" title="Penalty Minutes">PIM</span>
-                            <span className="gm-col gm-col-skill">Skill Rating</span>
+                            <span
+                                className="gm-col gm-col-pos gm-col-sortable"
+                                role="button" tabIndex={0}
+                                onClick={() => requestSort('position')}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') requestSort('position'); }}
+                            >Pos{sortIcon('position')}</span>
+                            <span
+                                className="gm-col gm-col-stat gm-col-sortable" title="Goals"
+                                role="button" tabIndex={0}
+                                onClick={() => requestSort('goals')}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') requestSort('goals'); }}
+                            >G{sortIcon('goals')}</span>
+                            <span
+                                className="gm-col gm-col-stat gm-col-sortable" title="Assists"
+                                role="button" tabIndex={0}
+                                onClick={() => requestSort('assists')}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') requestSort('assists'); }}
+                            >A{sortIcon('assists')}</span>
+                            <span
+                                className="gm-col gm-col-stat gm-col-sortable" title="Points"
+                                role="button" tabIndex={0}
+                                onClick={() => requestSort('points')}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') requestSort('points'); }}
+                            >P{sortIcon('points')}</span>
+                            <span
+                                className="gm-col gm-col-pim gm-col-sortable" title="Penalty Minutes"
+                                role="button" tabIndex={0}
+                                onClick={() => requestSort('penaltyMinutes')}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') requestSort('penaltyMinutes'); }}
+                            >PIM{sortIcon('penaltyMinutes')}</span>
+                            <span
+                                className="gm-col gm-col-skill gm-col-sortable"
+                                role="button" tabIndex={0}
+                                onClick={() => requestSort('skillRating')}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') requestSort('skillRating'); }}
+                            >Skill Rating{sortIcon('skillRating')}</span>
                         </div>
-                        {roster.map(player => {
+                        {sortedRoster.map(player => {
                             const stats = playerStats[player.id] || {};
                             const g = stats.goals || 0;
                             const a = stats.assists || 0;

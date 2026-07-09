@@ -213,6 +213,22 @@
 
 .gm-col-points { font-weight: 900 !important; color: var(--obi-accent) !important; }
 
+/* Sortable column headers — functional-only for now (design pass pending) */
+.gm-col-sortable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.gm-col-sortable:hover,
+.gm-col-sortable:focus-visible {
+    color: var(--obi-accent);
+}
+
+.gm-col-sortable:focus-visible {
+    outline: 1px solid var(--obi-accent);
+    outline-offset: 2px;
+}
+
 .gm-hash {
     font-family: var(--obi-font-body);
     font-size: 15px;

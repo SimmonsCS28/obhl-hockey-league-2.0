@@ -16,6 +16,9 @@ const SchedulePage = () => {
     const [selectedSeason, setSelectedSeason] = useState(null);
     const [selectedWeek, setSelectedWeek] = useState('all');
     const [selectedTeam, setSelectedTeam] = useState('all');
+    // Hides completed games by default so, with "All Weeks" selected, the list
+    // effectively opens on the current week instead of scrolling from Week 1.
+    const [showCompleted, setShowCompleted] = useState(false);
     const [loading, setLoading] = useState(false);
     const [showCalendarModal, setShowCalendarModal] = useState(false);
     const [activeTab, setActiveTab] = useState('regular'); // 'regular' | 'playoffs'
@@ -103,7 +106,8 @@ const SchedulePage = () => {
         const weekMatch = selectedWeek === 'all' || g.week === parseInt(selectedWeek);
         const teamMatch = selectedTeam === 'all' ||
             g.homeTeamId === parseInt(selectedTeam) || g.awayTeamId === parseInt(selectedTeam);
-        return weekMatch && teamMatch;
+        const completedMatch = showCompleted || g.status !== 'completed';
+        return weekMatch && teamMatch && completedMatch;
     });
 
     const weeksToShow = availableWeeks.filter(w => filtered.some(g => g.week === w));
@@ -234,6 +238,16 @@ const SchedulePage = () => {
                                 <option value="all">All Teams</option>
                                 {teams.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                             </select>
+                            {/* Functionality restored from the pre-redesign schedule; not yet
+                                through a design pass — plain checkbox for now. */}
+                            <label className="obi-show-completed">
+                                <input
+                                    type="checkbox"
+                                    checked={showCompleted}
+                                    onChange={(e) => setShowCompleted(e.target.checked)}
+                                />
+                                Show Completed Games
+                            </label>
                         </div>
                         <button className="obi-ghost-btn" onClick={() => setShowCalendarModal(true)}>
                             ⤓ Download Calendar

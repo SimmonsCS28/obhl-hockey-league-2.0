@@ -230,7 +230,7 @@ function LeagueRulesAdmin() {
                         <section key={i} className="re-preview-section">
                             <span className="re-preview-chip">{groupLabel(s.group)}</span>
                             <h2 className="re-preview-title">{s.title || 'Untitled Section'}</h2>
-                            <div className="re-preview-body" dangerouslySetInnerHTML={{ __html: s.content || '' }} />
+                            <div className="re-preview-body" dangerouslySetInnerHTML={{ __html: (s.content || '').replace(/&nbsp;/g, ' ') }} />
                         </section>
                     ))}
                 </div>
