@@ -18,6 +18,11 @@ const fmtAnnDate = (s) => {
     return `Posted ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
 };
 
+// The rich-text editor saves announcements with &nbsp; between every word. Non-breaking
+// spaces prevent line wrapping, so the browser treats a whole paragraph as one giant
+// "word" and slices it mid-word. Convert them back to normal spaces so text wraps naturally.
+const normalizeAnnouncement = (html) => (html || '').replace(/&nbsp;/g, ' ');
+
 function Home() {
     const [activeSeason, setActiveSeason] = useState(null);
     const [teams, setTeams] = useState([]);
@@ -123,7 +128,7 @@ function Home() {
                                     <div className="obi-news-title">{ann.title}</div>
                                     <div
                                         className="obi-news-body"
-                                        dangerouslySetInnerHTML={{ __html: ann.content }}
+                                        dangerouslySetInnerHTML={{ __html: normalizeAnnouncement(ann.content) }}
                                     />
                                     <div className="obi-news-date">{fmtAnnDate(ann.startDate || ann.createdAt)}</div>
                                 </div>
