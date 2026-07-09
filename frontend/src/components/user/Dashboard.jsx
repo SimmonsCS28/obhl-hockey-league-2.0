@@ -118,6 +118,8 @@ function Dashboard() {
         ];
     const availableOpen = activeSlots.filter(s => s.state === 'OPEN' && isUpcoming(s)).slice(0, 3);
     const openCount = (r) => (openSlotsByRole[r] || []).filter(s => s.state === 'OPEN' && isUpcoming(s)).length;
+    // A goalie week is still relevant until its last game has passed.
+    const upcomingGoalieWeeks = goalieWeeks.filter(w => isUpcoming({ gameDate: w.endDate || w.startDate }));
     const tabCountLabel = (r) => (r === 'GOALIE' ? 'Set availability' : `${openCount(r)} open`);
 
     const respondPending = async (id, action) => {
@@ -324,7 +326,7 @@ function Dashboard() {
                                         <div className="dash-col-title">My Availability</div>
                                         <p className="dash-col-note">Mark each week so the goalie coordinator can build balanced matchups. They schedule you — you don't claim shifts.</p>
                                         <div className="dash-week-list">
-                                            {goalieWeeks.slice(0, 2).map(w => (
+                                            {upcomingGoalieWeeks.slice(0, 2).map(w => (
                                                 <div key={w.week} className="dash-week-row">
                                                     <div className="dash-week-label">{w.status === 'AVAILABLE' ? 'Available' : w.status === 'UNAVAILABLE' ? 'Unavailable' : 'Not set'} · Week {w.week}</div>
                                                     <div className="dash-week-btns">
@@ -336,7 +338,7 @@ function Dashboard() {
                                         </div>
                                         <Link to="/user/goalie-availability" className="dash-deeplink">
                                             <span>Set availability for all weeks</span>
-                                            <span className="dash-deeplink-more">{goalieWeeks.length > 2 ? `+${goalieWeeks.length - 2} more weeks →` : 'Open →'}</span>
+                                            <span className="dash-deeplink-more">{upcomingGoalieWeeks.length > 2 ? `+${upcomingGoalieWeeks.length - 2} more weeks →` : 'Open →'}</span>
                                         </Link>
                                     </>
                                 ) : (
