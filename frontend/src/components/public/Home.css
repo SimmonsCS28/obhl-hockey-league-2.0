@@ -1,5 +1,12 @@
 /* Home — redesigned per OBHL design handoff (banner hero variant) */
 
+/* Safety net: never let stray content (e.g. admin-authored announcement HTML) create
+   a horizontal scroll — on mobile that pushes fixed overlays like the donate modal
+   off-screen and forces the browser to zoom out. */
+.obi-home {
+    overflow-x: hidden;
+}
+
 .obi-home-loading {
     padding: 80px 28px;
     text-align: center;
@@ -172,7 +179,8 @@
 
 .obi-news-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    /* min(300px,100%) so a column never exceeds the container on narrow screens */
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
     gap: 16px;
 }
 
@@ -182,6 +190,8 @@
     border: 1px solid rgba(246, 169, 28, 0.22);
     border-left: 4px solid var(--obi-accent);
     border-radius: 10px;
+    min-width: 0; /* allow the card to shrink instead of forcing the grid wider */
+    overflow: hidden;
 }
 
 .obi-news-title {
@@ -198,11 +208,29 @@
     font-size: 15px;
     line-height: 1.5;
     color: var(--obi-text-secondary);
+    /* Admin-authored rich text — wrap long words/titles so they can't blow out the card */
+    overflow-wrap: anywhere;
+    word-break: break-word;
 }
 
 .obi-news-body :is(p, ul, ol) { margin: 0 0 8px; }
 .obi-news-body :is(p, ul, ol):last-child { margin-bottom: 0; }
 .obi-news-body a { color: var(--obi-accent); }
+
+/* Cap admin-authored headings so a large <h1>/<h2> in an announcement can't overflow */
+.obi-news-body :is(h1, h2, h3, h4, h5, h6) {
+    font-size: 1.05rem;
+    line-height: 1.3;
+    margin: 0 0 6px;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+}
+
+/* Keep embedded media/tables inside the card */
+.obi-news-body :is(img, table, pre, iframe, video) {
+    max-width: 100%;
+    height: auto;
+}
 
 .obi-news-date {
     font-family: var(--obi-font-display);
