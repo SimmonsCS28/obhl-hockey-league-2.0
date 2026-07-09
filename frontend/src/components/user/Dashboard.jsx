@@ -106,6 +106,9 @@ function Dashboard() {
     })();
 
     // ── Officiating derived ──
+    // Open slots for games that already happened just sit there unfilled forever,
+    // so the preview should start at the current week rather than week 1.
+    const isUpcoming = (s) => { const d = toDate(s.gameDate); return !d || d >= now; };
     const activeSlots = openSlotsByRole[activeRole] || [];
     const myCommitments = activeRole === 'GOALIE'
         ? pending.filter(p => p.role === 'GOALIE')
@@ -113,8 +116,8 @@ function Dashboard() {
             ...pending.filter(p => p.role === activeRole),
             ...activeSlots.filter(s => s.state === 'MINE'),
         ];
-    const availableOpen = activeSlots.filter(s => s.state === 'OPEN').slice(0, 3);
-    const openCount = (r) => (openSlotsByRole[r] || []).filter(s => s.state === 'OPEN').length;
+    const availableOpen = activeSlots.filter(s => s.state === 'OPEN' && isUpcoming(s)).slice(0, 3);
+    const openCount = (r) => (openSlotsByRole[r] || []).filter(s => s.state === 'OPEN' && isUpcoming(s)).length;
     const tabCountLabel = (r) => (r === 'GOALIE' ? 'Set availability' : `${openCount(r)} open`);
 
     const respondPending = async (id, action) => {
