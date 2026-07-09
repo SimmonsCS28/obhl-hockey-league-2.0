@@ -544,6 +544,14 @@ const api = {
         return request(`/coordinator/publish?${params}`, { method: 'POST' });
     },
 
+    // Admin-only: assign a slot directly, bypassing propose/confirm/publish
+    async adminAssignShift(data) {
+        return request('/coordinator/admin-assign', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    },
+
     // ============================================
     // OPEN SLOTS (ref/scorekeeper self sign-up)
     // ============================================

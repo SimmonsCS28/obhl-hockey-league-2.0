@@ -12,6 +12,15 @@ function displayName(user) {
         : user.username || `User ${user.id}`;
 }
 
+// Maps a select's field name to the coordinator role/slot it corresponds to.
+const FIELD_TO_SLOT = {
+    goalie1Id: { role: 'GOALIE', slot: 1 },
+    goalie2Id: { role: 'GOALIE', slot: 2 },
+    referee1Id: { role: 'REF', slot: 1 },
+    referee2Id: { role: 'REF', slot: 2 },
+    scorekeeperId: { role: 'SCOREKEEPER', slot: 1 },
+};
+
 function AdminAssignments() {
     const { selectedSeasonId } = useSeason();
 
@@ -78,7 +87,11 @@ function AdminAssignments() {
         setSaving(prev => ({ ...prev, [gameId]: true }));
         setErrors(prev => { const n = { ...prev }; delete n[gameId]; return n; });
         try {
-            await api.updateGame(gameId, { [field]: numVal });
+            const { role, slot } = FIELD_TO_SLOT[field];
+            // Routed through the coordinator service so the assignment is immediately
+            // CONFIRMED + published — visible on the Coordinator Console and the
+            // assigned user's dashboard without a separate confirm/publish step.
+            await api.adminAssignShift({ gameId, role, slot, userId: numVal });
         } catch (err) {
             console.error('Assignment save error:', err);
             setErrors(prev => ({ ...prev, [gameId]: 'Save failed' }));

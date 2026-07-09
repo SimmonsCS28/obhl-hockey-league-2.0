@@ -122,6 +122,55 @@ public class CoordinatorService {
     }
 
     /**
+     * Admin direct-assign override: upserts a shift_assignments row that's already
+     * CONFIRMED and published, and writes the game's staff column in the same step —
+     * bypassing propose/confirm/publish entirely so the assignment shows up immediately
+     * on both the Coordinator Console and the assigned user's dashboard. A null userId
+     * clears the slot (removes the row and the game column).
+     */
+    @Transactional
+    public CoordinatorDto.AssignmentView adminDirectAssign(Long gameId, String role, Integer slot, Long userId, Long adminUserId) {
+        String r = normalizeRole(role);
+        int s = slot == null ? 1 : slot;
+        int maxSlot = slotsForRole(r);
+        if (s < 1 || s > maxSlot) {
+            throw new RuntimeException(maxSlot == 1 ? "Slot must be 1" : "Slot must be 1 or 2");
+        }
+
+        GameResponseDTO game = gameProxyService.getGameById(gameId);
+        if (game == null) {
+            throw new RuntimeException("Game not found");
+        }
+
+        Optional<ShiftAssignment> existing = assignmentRepository.findByGameIdAndRoleAndSlot(gameId, r, s);
+
+        if (userId == null) {
+            existing.ifPresent(a -> assignmentRepository.deleteById(a.getId()));
+            gameProxyService.updateGameStaff(gameId, Map.of(slotColumn(r, s), -1L));
+            return null;
+        }
+
+        ShiftAssignment a = existing.orElseGet(ShiftAssignment::new);
+        a.setGameId(gameId);
+        a.setSeasonId(game.getSeasonId());
+        a.setRole(r);
+        a.setSlot(s);
+        a.setUserId(userId);
+        a.setStatus(ShiftAssignment.STATUS_CONFIRMED);
+        a.setPublished(true);
+        a.setDeclineReason(null);
+        a.setConfirmTokenHash(null);
+        a.setTokenExpiresAt(null);
+        a.setRespondedAt(LocalDateTime.now());
+        a.setAssignedBy(adminUserId);
+        a = assignmentRepository.save(a);
+
+        gameProxyService.updateGameStaff(gameId, Map.of(slotColumn(r, s), userId));
+
+        return toView(a, game);
+    }
+
+    /**
      * Coordinator confirms a slot an official signed up for: SIGNED_UP -> CONFIRMED directly
      * (no accept loop — the official already opted in). Sends a courtesy "you're confirmed" email.
      */

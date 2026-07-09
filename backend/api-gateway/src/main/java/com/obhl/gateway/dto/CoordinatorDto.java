@@ -24,6 +24,17 @@ public class CoordinatorDto {
         private Long userId;   // staff member being proposed
     }
 
+    /** Admin direct-assign override: writes a slot as already CONFIRMED + published. */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class AdminAssignRequest {
+        private Long gameId;
+        private String role;   // GOALIE | REF | SCOREKEEPER
+        private Integer slot;  // 1 or 2 (SCOREKEEPER is always 1)
+        private Long userId;   // null clears the slot
+    }
+
     /** A proposed assignment with its confirmation status (coordinator + in-app views). */
     @Data
     @NoArgsConstructor

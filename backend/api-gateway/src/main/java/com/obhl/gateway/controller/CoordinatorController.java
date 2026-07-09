@@ -108,6 +108,22 @@ public class CoordinatorController {
         }
     }
 
+    /** Admin-only: assign a staff member to a slot bypassing propose/confirm/publish. */
+    @PostMapping("/admin-assign")
+    public ResponseEntity<?> adminAssign(@RequestBody CoordinatorDto.AdminAssignRequest req, Authentication auth) {
+        if (!hasAuthority(auth, "ROLE_ADMIN")) {
+            return ResponseEntity.status(403).body(java.util.Map.of("error", "Admin only"));
+        }
+        try {
+            Long adminId = currentUserId(auth);
+            CoordinatorDto.AssignmentView view = coordinatorService.adminDirectAssign(
+                    req.getGameId(), req.getRole(), req.getSlot(), req.getUserId(), adminId);
+            return ResponseEntity.ok(view != null ? view : java.util.Map.of("message", "Assignment cleared"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
     @PostMapping("/publish")
     public ResponseEntity<?> publish(@RequestParam Long seasonId, @RequestParam String role,
             @RequestParam(required = false) Integer week, Authentication auth) {
