@@ -208,9 +208,9 @@
     font-size: 15px;
     line-height: 1.5;
     color: var(--obi-text-secondary);
-    /* Admin-authored rich text — wrap long words/titles so they can't blow out the card */
-    overflow-wrap: anywhere;
-    word-break: break-word;
+    /* Wrap at spaces normally; only break a word if it's too long to fit on its own line
+       (break-word, not anywhere/break-all, so normal words aren't sliced mid-word). */
+    overflow-wrap: break-word;
 }
 
 .obi-news-body :is(p, ul, ol) { margin: 0 0 8px; }
@@ -222,8 +222,7 @@
     font-size: 1.05rem;
     line-height: 1.3;
     margin: 0 0 6px;
-    overflow-wrap: anywhere;
-    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 /* Keep embedded media/tables inside the card */
