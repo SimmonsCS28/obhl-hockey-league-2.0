@@ -69,14 +69,15 @@ function Home() {
         .filter(g => g.status === 'completed')
         .sort((a, b) => (b.week || 0) - (a.week || 0));
     const lastWeekNum = completed.length ? completed[0].week : null;
-    const lastWeek = completed.filter(g => g.week === lastWeekNum).slice(0, 4);
+    // Show the whole week (a full week is 5 games); don't cap at 4.
+    const lastWeek = completed.filter(g => g.week === lastWeekNum);
 
     const now = Date.now();
     const upcoming = [...games]
         .filter(g => g.status !== 'completed' && parseGameDate(g.gameDate).getTime() >= now)
         .sort((a, b) => parseGameDate(a.gameDate) - parseGameDate(b.gameDate));
     const nextWeekNum = upcoming.length ? upcoming[0].week : null;
-    const nextWeek = upcoming.filter(g => g.week === nextWeekNum).slice(0, 4);
+    const nextWeek = upcoming.filter(g => g.week === nextWeekNum);
 
     if (loading) {
         return <div className="obi-page obi-home"><div className="obi-home-loading">Loading…</div></div>;
