@@ -8,14 +8,22 @@ import './SchedulePage.css';
 
 const parseGameDate = (s) => new Date(s.endsWith('Z') ? s : s + 'Z');
 
-// Current week = lowest week number that still has an un-played game, falling
-// back to the last week once the whole regular season is complete.
+// Current week = earliest week whose games haven't all already happened (by
+// date, not by whether someone's finalized the score), falling back to the
+// last week once every game date in the season is in the past.
 const computeCurrentWeek = (gamesList) => {
     const regular = gamesList.filter(g => g.gameType !== 'PLAYOFF');
     const weeks = [...new Set(regular.map(g => g.week).filter(w => w != null))].sort((a, b) => a - b);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     for (const w of weeks) {
         const wkGames = regular.filter(g => g.week === w);
-        if (wkGames.some(g => g.status !== 'completed')) return w;
+        const lastGameDay = wkGames.reduce((max, g) => {
+            const d = parseGameDate(g.gameDate);
+            d.setHours(0, 0, 0, 0);
+            return d > max ? d : max;
+        }, new Date(0));
+        if (lastGameDay >= today) return w;
     }
     return weeks.length ? weeks[weeks.length - 1] : null;
 };
