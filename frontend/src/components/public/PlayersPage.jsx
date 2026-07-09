@@ -51,7 +51,37 @@ function PlayersPage() {
     const teamById = (id) => teams.find(t => t.id === id);
     const teamName = (id) => teamById(id)?.name || 'Free Agent';
 
-    // Filter by team + search, then sort by last name
+    // Column sorting — click-to-sort headers with an arrow (functional-only for now, design pass pending)
+    const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'ascending' });
+
+    const requestSort = (key) => {
+        setSortConfig(prev => ({
+            key,
+            direction: prev.key === key && prev.direction === 'ascending' ? 'descending' : 'ascending',
+        }));
+    };
+
+    const sortIcon = (key) => {
+        if (sortConfig.key !== key) return null;
+        return sortConfig.direction === 'ascending' ? ' ▲' : ' ▼';
+    };
+
+    const sortValue = (player, key) => {
+        switch (key) {
+            case 'jerseyNumber':
+                return player.jerseyNumber ?? -1;
+            case 'name':
+                return `${(player.lastName || '').toLowerCase()} ${(player.firstName || '').toLowerCase()}`;
+            case 'team':
+                return teamName(player.teamId).toLowerCase();
+            case 'position':
+                return (player.position || '').toLowerCase();
+            default:
+                return 0;
+        }
+    };
+
+    // Filter by team + search, then sort by the active column
     const filtered = players
         .filter(p => (selectedTeam === 'all' ? true : p.teamId === Number(selectedTeam)))
         .filter(p => {
@@ -60,9 +90,11 @@ function PlayersPage() {
         });
 
     const sorted = [...filtered].sort((a, b) => {
-        const an = (a.lastName?.toLowerCase() || '') + (a.firstName?.toLowerCase() || '');
-        const bn = (b.lastName?.toLowerCase() || '') + (b.firstName?.toLowerCase() || '');
-        return an.localeCompare(bn);
+        const aVal = sortValue(a, sortConfig.key);
+        const bVal = sortValue(b, sortConfig.key);
+        if (aVal < bVal) return sortConfig.direction === 'ascending' ? -1 : 1;
+        if (aVal > bVal) return sortConfig.direction === 'ascending' ? 1 : -1;
+        return 0;
     });
 
     return (
@@ -131,10 +163,30 @@ function PlayersPage() {
                     {/* Table */}
                     <div className="obi-table-card">
                         <div className="obi-prow obi-prow-head">
-                            <span className="obi-pcol-num">#</span>
-                            <span className="obi-pcol-name">Player</span>
-                            <span className="obi-pcol-team obi-col-sm">Team</span>
-                            <span className="obi-pcol-pos">Position</span>
+                            <span
+                                className="obi-pcol-num obi-pcol-sortable"
+                                role="button" tabIndex={0}
+                                onClick={() => requestSort('jerseyNumber')}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') requestSort('jerseyNumber'); }}
+                            >#{sortIcon('jerseyNumber')}</span>
+                            <span
+                                className="obi-pcol-name obi-pcol-sortable"
+                                role="button" tabIndex={0}
+                                onClick={() => requestSort('name')}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') requestSort('name'); }}
+                            >Player{sortIcon('name')}</span>
+                            <span
+                                className="obi-pcol-team obi-col-sm obi-pcol-sortable"
+                                role="button" tabIndex={0}
+                                onClick={() => requestSort('team')}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') requestSort('team'); }}
+                            >Team{sortIcon('team')}</span>
+                            <span
+                                className="obi-pcol-pos obi-pcol-sortable"
+                                role="button" tabIndex={0}
+                                onClick={() => requestSort('position')}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') requestSort('position'); }}
+                            >Position{sortIcon('position')}</span>
                         </div>
 
                         {loading ? (

@@ -8,6 +8,18 @@ import './SchedulePage.css';
 
 const parseGameDate = (s) => new Date(s.endsWith('Z') ? s : s + 'Z');
 
+// Current week = lowest week number that still has an un-played game, falling
+// back to the last week once the whole regular season is complete.
+const computeCurrentWeek = (gamesList) => {
+    const regular = gamesList.filter(g => g.gameType !== 'PLAYOFF');
+    const weeks = [...new Set(regular.map(g => g.week).filter(w => w != null))].sort((a, b) => a - b);
+    for (const w of weeks) {
+        const wkGames = regular.filter(g => g.week === w);
+        if (wkGames.some(g => g.status !== 'completed')) return w;
+    }
+    return weeks.length ? weeks[weeks.length - 1] : null;
+};
+
 const SchedulePage = () => {
     const navigate = useNavigate();
     const [seasons, setSeasons] = useState([]);
@@ -16,9 +28,10 @@ const SchedulePage = () => {
     const [selectedSeason, setSelectedSeason] = useState(null);
     const [selectedWeek, setSelectedWeek] = useState('all');
     const [selectedTeam, setSelectedTeam] = useState('all');
-    // Hides completed games by default so, with "All Weeks" selected, the list
-    // effectively opens on the current week instead of scrolling from Week 1.
-    const [showCompleted, setShowCompleted] = useState(false);
+    // Defaults to showing completed games since a specific week (usually the
+    // current one) is auto-selected on load — hiding them would make an
+    // already-underway week look incomplete.
+    const [showCompleted, setShowCompleted] = useState(true);
     const [loading, setLoading] = useState(false);
     const [showCalendarModal, setShowCalendarModal] = useState(false);
     const [activeTab, setActiveTab] = useState('regular'); // 'regular' | 'playoffs'
@@ -57,6 +70,7 @@ const SchedulePage = () => {
         try {
             const response = await axios.get(`/games-api/games?seasonId=${seasonId}`);
             setGames(response.data);
+            setSelectedWeek(String(computeCurrentWeek(response.data) ?? 'all'));
         } catch (error) {
             console.error('Failed to load games:', error);
         } finally {
@@ -75,14 +89,7 @@ const SchedulePage = () => {
     const availableWeeks = [...new Set(regularSeasonGames.map(g => g.week).filter(w => w != null))]
         .sort((a, b) => a - b);
 
-    // Current week = lowest week number that still has an un-played game
-    const currentWeek = (() => {
-        for (const w of availableWeeks) {
-            const wkGames = regularSeasonGames.filter(g => g.week === w);
-            if (wkGames.some(g => g.status !== 'completed')) return w;
-        }
-        return null;
-    })();
+    const currentWeek = computeCurrentWeek(games);
 
     const weekStatus = (w) => {
         const wkGames = regularSeasonGames.filter(g => g.week === w);
