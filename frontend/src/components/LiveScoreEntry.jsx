@@ -46,7 +46,6 @@ function LiveScoreEntry(props) {
     const [players, setPlayers] = useState([]);
     const [showGoalForm, setShowGoalForm] = useState(false);
     const [showPenaltyForm, setShowPenaltyForm] = useState(false);
-    const [editingEvent, setEditingEvent] = useState(null);
     const [gameFinalized, setGameFinalized] = useState(game?.status === 'completed');
 
     // Global period stepper — 1 / 2 / 3 / OT — sets the period for new goals & penalties.
@@ -71,6 +70,23 @@ function LiveScoreEntry(props) {
     const [penaltyOtherDescription, setPenaltyOtherDescription] = useState('');
     const [penaltyClock, setPenaltyClock] = useState('');
     const [penaltyTimeError, setPenaltyTimeError] = useState('');
+
+    // Edit Event modal state — dedicated single-screen editor for an already-logged
+    // goal/penalty (reached by clicking its row in the feed), separate from the
+    // add-goal/add-penalty flow above.
+    const [showEditEventModal, setShowEditEventModal] = useState(false);
+    const [editEvent, setEditEvent] = useState(null);
+    const [editPeriod, setEditPeriod] = useState('1');
+    const [editTime, setEditTime] = useState('');
+    const [editTimeError, setEditTimeError] = useState('');
+    const [editGoalScorer, setEditGoalScorer] = useState('');
+    const [editGoalAssist1, setEditGoalAssist1] = useState('');
+    const [editGoalAssist2, setEditGoalAssist2] = useState('');
+    const [editPenPlayer, setEditPenPlayer] = useState('');
+    const [editPenDescription, setEditPenDescription] = useState('');
+    const [editPenOtherDescription, setEditPenOtherDescription] = useState('');
+    const [editPenMinutes, setEditPenMinutes] = useState(2);
+    const [confirmingDelete, setConfirmingDelete] = useState(false);
 
     const [showFinalizeModal, setShowFinalizeModal] = useState(false);
     const [isFinalizing, setIsFinalizing] = useState(false);
@@ -169,14 +185,20 @@ function LiveScoreEntry(props) {
         }
     }, [game]);
 
-    // Resolve player names in loaded events and update goal counts
+    // Resolve player names in loaded events and update goal counts.
+    // Gate retries on `playerResolved` (not just `player` being truthy) — an event that
+    // fell back to "Unknown" because `players` hadn't loaded the right roster yet must
+    // keep retrying on the next players/events update instead of locking in permanently.
+    // (Previously any resolution, including the "Unknown" fallback, set `player` to a
+    // truthy value and stopped the retry forever — this is what scorekeepers were seeing
+    // as a goal scorer stuck on "Unknown".)
     useEffect(() => {
         if (players.length > 0 && events.length > 0) {
-            // Check if any events need player name resolution (from backend load)
-            const needsResolution = events.some(e => e.backendId && !e.player);
+            const needsResolution = events.some(e => e.backendId && !e.playerResolved);
             if (needsResolution) {
+                let changed = false;
                 const resolvedEvents = events.map(event => {
-                    if (!event.backendId || event.player) return event;
+                    if (!event.backendId || event.playerResolved) return event;
 
                     const player = players.find(p => Number(p.id) === Number(event.playerId));
                     const assist1 = event.assist1PlayerId
@@ -192,6 +214,10 @@ function LiveScoreEntry(props) {
 
                     const assists = [assist1Name, assist2Name].filter(Boolean);
 
+                    // Only a real match marks this event as done; an "Unknown" fallback is
+                    // shown but left retryable so a late-arriving correct roster can fix it.
+                    if (player || playerName !== event.player) changed = true;
+
                     return {
                         ...event,
                         player: playerName,
@@ -199,24 +225,28 @@ function LiveScoreEntry(props) {
                         assists: assists,
                         minutes: event.penaltyMinutes,
                         assist1: assist1Name, // Keep backward compat if needed
-                        assist2: assist2Name
+                        assist2: assist2Name,
+                        playerResolved: !!player
                     };
                 });
-                setEvents(resolvedEvents);
 
-                // Update goalsInGame counts from loaded events
-                const goalCounts = {};
-                resolvedEvents.filter(e => e.type === 'goal').forEach(event => {
-                    if (event.playerId) {
-                        goalCounts[event.playerId] = (goalCounts[event.playerId] || 0) + 1;
+                if (changed) {
+                    setEvents(resolvedEvents);
+
+                    // Update goalsInGame counts from loaded events
+                    const goalCounts = {};
+                    resolvedEvents.filter(e => e.type === 'goal').forEach(event => {
+                        if (event.playerId) {
+                            goalCounts[event.playerId] = (goalCounts[event.playerId] || 0) + 1;
+                        }
+                    });
+
+                    if (Object.keys(goalCounts).length > 0) {
+                        setPlayers(prevPlayers => prevPlayers.map(p => ({
+                            ...p,
+                            goalsInGame: goalCounts[p.id] || 0
+                        })));
                     }
-                });
-
-                if (Object.keys(goalCounts).length > 0) {
-                    setPlayers(prevPlayers => prevPlayers.map(p => ({
-                        ...p,
-                        goalsInGame: goalCounts[p.id] || 0
-                    })));
                 }
             }
         }
@@ -408,8 +438,7 @@ function LiveScoreEntry(props) {
         const assist2 = goalAssist2 ? players.find(p => p.id === parseInt(goalAssist2)) : null;
 
         const newEvent = {
-            id: editingEvent ? editingEvent.id : Date.now(),
-            backendId: editingEvent ? editingEvent.backendId : undefined,
+            id: Date.now(),
             type: 'goal',
             team: goalTeam,
             period: currentPeriod,
@@ -418,48 +447,31 @@ function LiveScoreEntry(props) {
             scorerId: scorer.id,
             assists: [formatPlayerLabel(assist1), formatPlayerLabel(assist2)].filter(Boolean),
             assist1Id: assist1?.id || null,
-            assist2Id: assist2?.id || null
+            assist2Id: assist2?.id || null,
+            playerResolved: true
         };
 
-        if (editingEvent) {
-            // Update existing event
-            const updatedEvents = events.map(e => e.id === editingEvent.id ? newEvent : e);
-            setEvents(updatedEvents);
+        // Add new event
+        setEvents([...events, newEvent]);
 
-            // Recalculate scores from all goal events
-            const homeGoals = updatedEvents.filter(e => e.type === 'goal' && e.team === 'home').length;
-            const awayGoals = updatedEvents.filter(e => e.type === 'goal' && e.team === 'away').length;
-            setHomeScore(homeGoals);
-            setAwayScore(awayGoals);
-
-            // Score may have changed (e.g. team was corrected) — needs a manual "Save Changes" to persist
-            setIsDirty(true);
-
-            setEditingEvent(null);
-            await updateEventOnBackend(newEvent);
+        // Update score
+        if (goalTeam === 'home') {
+            setHomeScore(homeScore + 1);
         } else {
-            // Add new event
-            setEvents([...events, newEvent]);
-
-            // Update score
-            if (goalTeam === 'home') {
-                setHomeScore(homeScore + 1);
-            } else {
-                setAwayScore(awayScore + 1);
-            }
-
-            // Update player goal count
-            const updatedPlayers = players.map(p =>
-                p.id === scorer.id ? { ...p, goalsInGame: p.goalsInGame + 1 } : p
-            );
-            setPlayers(updatedPlayers);
-
-            // Mark as dirty (score changed)
-            setIsDirty(true);
-
-            // Auto-save event to backend
-            await saveEventToBackend(newEvent);
+            setAwayScore(awayScore + 1);
         }
+
+        // Update player goal count
+        const updatedPlayers = players.map(p =>
+            p.id === scorer.id ? { ...p, goalsInGame: p.goalsInGame + 1 } : p
+        );
+        setPlayers(updatedPlayers);
+
+        // Mark as dirty (score changed)
+        setIsDirty(true);
+
+        // Auto-save event to backend
+        await saveEventToBackend(newEvent);
 
         resetGoalForm();
     };
@@ -510,8 +522,7 @@ function LiveScoreEntry(props) {
         const finalDescription = penaltyDescription === 'Other' ? penaltyOtherDescription : penaltyDescription;
 
         const newEvent = {
-            id: editingEvent ? editingEvent.id : Date.now(),
-            backendId: editingEvent ? editingEvent.backendId : undefined,
+            id: Date.now(),
             type: 'penalty',
             team: penaltyTeam,
             period: currentPeriod,
@@ -519,21 +530,15 @@ function LiveScoreEntry(props) {
             player: formatPlayerLabel(player),
             playerId: player.id,
             minutes: penaltyMinutes,
-            description: finalDescription
+            description: finalDescription,
+            playerResolved: true
         };
 
-        if (editingEvent) {
-            const updatedEvents = events.map(e => e.id === editingEvent.id ? newEvent : e);
-            setEvents(updatedEvents);
-            setEditingEvent(null);
-            await updateEventOnBackend(newEvent);
-        } else {
-            setEvents([...events, newEvent]);
-            // Mark as dirty (new event added)
-            setIsDirty(true);
-            // Auto-save event to backend
-            await saveEventToBackend(newEvent);
-        }
+        setEvents([...events, newEvent]);
+        // Mark as dirty (new event added)
+        setIsDirty(true);
+        // Auto-save event to backend
+        await saveEventToBackend(newEvent);
 
         resetPenaltyForm();
     };
@@ -584,70 +589,118 @@ function LiveScoreEntry(props) {
         }
     };
 
+    // Opens the dedicated Edit Event modal for a previously-logged goal/penalty,
+    // pre-filled from that event's current values.
     const handleEditEvent = (event) => {
         if (gameFinalized) {
             alert('Game is finalized. Cannot edit events.');
             return;
         }
 
-        setEditingEvent(event);
+        setEditEvent(event);
+        setEditPeriod(event.period);
+        setEditTime(event.time || '');
+        setEditTimeError('');
+        setConfirmingDelete(false);
 
         if (event.type === 'goal') {
-            setGoalTeam(event.team);
-            setCurrentPeriod(event.period);
-            setGoalClock(event.time || '');
-            setGoalTimeError('');
-            setGoalBlockMsg('');
-            // Restore player IDs
             // Locally-added events use scorerId/assist1Id/assist2Id; events loaded from the
             // backend use playerId/assist1PlayerId/assist2PlayerId — accept either shape.
             const eventScorerId = event.scorerId ?? event.playerId;
             const eventAssist1Id = event.assist1Id ?? event.assist1PlayerId;
             const eventAssist2Id = event.assist2Id ?? event.assist2PlayerId;
-            setGoalScorer(eventScorerId?.toString() || '');
-            setGoalAssist1(eventAssist1Id?.toString() || '');
-            setGoalAssist2(eventAssist2Id?.toString() || '');
-            // Check goal limit for the scorer
-            if (eventScorerId) {
-                const validation = checkGoalLimit(eventScorerId);
-                setGoalLimitWarning(validation);
-            }
-            setGoalStep('assist'); // scorer already known when editing
-            setShowGoalForm(true);
+            setEditGoalScorer(eventScorerId?.toString() || '');
+            setEditGoalAssist1(eventAssist1Id?.toString() || '');
+            setEditGoalAssist2(eventAssist2Id?.toString() || '');
         } else {
-            setPenaltyTeam(event.team);
-            setCurrentPeriod(event.period);
-            setPenaltyClock(event.time || '');
-            setPenaltyTimeError('');
-            // Restore player ID
-            setPenaltyPlayer(event.playerId?.toString() || '');
-            setPenaltyMinutes(event.minutes);
-
-            // Check if description is in standard list
+            setEditPenPlayer(event.playerId?.toString() || '');
+            setEditPenMinutes(event.minutes);
             if (event.description && !PENALTY_TYPES.includes(event.description)) {
-                setPenaltyDescription('Other');
-                setPenaltyOtherDescription(event.description);
+                setEditPenDescription('Other');
+                setEditPenOtherDescription(event.description);
             } else {
-                setPenaltyDescription(event.description || '');
-                setPenaltyOtherDescription('');
+                setEditPenDescription(event.description || '');
+                setEditPenOtherDescription('');
             }
-
-            setShowPenaltyForm(true);
         }
+
+        setShowEditEventModal(true);
     };
 
-    const handleDeleteEvent = async (event, domEvent) => {
-        domEvent.stopPropagation();
+    const closeEditEventModal = () => {
+        setShowEditEventModal(false);
+        setConfirmingDelete(false);
+    };
 
-        if (gameFinalized) {
-            alert('Game is finalized. Cannot delete events.');
+    // Editing a previously-committed event is a correction tool, not a re-run of the
+    // add-flow's skill-cap/goal-limit validation — deliberately not re-checked here.
+    const saveEditEvent = async () => {
+        const clock = parseTime(editTime, editPeriod);
+        if (!clock) {
+            setEditTimeError(`Enter a valid clock time (MM:SS, up to ${periodCapLabel(editPeriod)}).`);
             return;
         }
 
-        const confirmed = window.confirm(
-            `Delete this ${event.type === 'goal' ? 'goal' : 'penalty'}? This cannot be undone.`
-        );
-        if (!confirmed) return;
+        const roster = getTeamPlayers(editEvent.team);
+        let updatedEvent;
+
+        if (editEvent.type === 'goal') {
+            const scorer = roster.find(p => p.id === parseInt(editGoalScorer));
+            const assist1 = editGoalAssist1 ? roster.find(p => p.id === parseInt(editGoalAssist1)) : null;
+            const assist2 = editGoalAssist2 ? roster.find(p => p.id === parseInt(editGoalAssist2)) : null;
+            updatedEvent = {
+                ...editEvent,
+                period: editPeriod,
+                time: clock,
+                scorer: formatPlayerLabel(scorer),
+                scorerId: scorer?.id,
+                playerId: scorer?.id,
+                assists: [formatPlayerLabel(assist1), formatPlayerLabel(assist2)].filter(Boolean),
+                assist1Id: assist1?.id || null,
+                assist2Id: assist2?.id || null,
+                assist1PlayerId: assist1?.id || null,
+                assist2PlayerId: assist2?.id || null,
+                playerResolved: true
+            };
+        } else {
+            const player = roster.find(p => p.id === parseInt(editPenPlayer));
+            const finalDescription = editPenDescription === 'Other' ? editPenOtherDescription : editPenDescription;
+            updatedEvent = {
+                ...editEvent,
+                period: editPeriod,
+                time: clock,
+                player: formatPlayerLabel(player),
+                playerId: player?.id,
+                minutes: editPenMinutes,
+                description: finalDescription,
+                playerResolved: true
+            };
+        }
+
+        const updatedEvents = events.map(e => e.id === editEvent.id ? updatedEvent : e);
+        setEvents(updatedEvents);
+
+        if (editEvent.type === 'goal') {
+            const homeGoals = updatedEvents.filter(e => e.type === 'goal' && e.team === 'home').length;
+            const awayGoals = updatedEvents.filter(e => e.type === 'goal' && e.team === 'away').length;
+            setHomeScore(homeGoals);
+            setAwayScore(awayGoals);
+        }
+
+        setIsDirty(true);
+        await updateEventOnBackend(updatedEvent);
+        setShowEditEventModal(false);
+    };
+
+    // Called once the Edit Event modal's inline confirm step has been accepted (not a
+    // native confirm() — that's a plain unstyled OS dialog that clashes with this modal's
+    // theme and is easy to fat-finger-dismiss on mobile). Returns true if the event was
+    // actually removed (so the caller can decide whether to close the modal).
+    const deleteEvent = async (event) => {
+        if (gameFinalized) {
+            alert('Game is finalized. Cannot delete events.');
+            return false;
+        }
 
         try {
             if (event.backendId) {
@@ -663,9 +716,18 @@ function LiveScoreEntry(props) {
                     else setAwayScore(prev => Math.max(0, prev - 1));
                 }
             }
+            return true;
         } catch (error) {
             console.error('Error deleting event:', error);
             alert('Failed to delete event. Please try again.');
+            return false;
+        }
+    };
+
+    const deleteEditEvent = async () => {
+        if (await deleteEvent(editEvent)) {
+            setShowEditEventModal(false);
+            setConfirmingDelete(false);
         }
     };
 
@@ -770,7 +832,6 @@ function LiveScoreEntry(props) {
         setGoalTimeError('');
         setGoalBlockMsg('');
         setGoalLimitWarning(null);
-        setEditingEvent(null);
         setShowGoalForm(false);
     };
 
@@ -781,7 +842,6 @@ function LiveScoreEntry(props) {
         setPenaltyOtherDescription('');
         setPenaltyClock('');
         setPenaltyTimeError('');
-        setEditingEvent(null);
         setShowPenaltyForm(false);
     };
 
@@ -796,7 +856,6 @@ function LiveScoreEntry(props) {
     };
 
     const openGoalModal = (team) => {
-        setEditingEvent(null);
         setGoalTeam(team);
         setGoalStep('scorer');
         setGoalScorer('');
@@ -810,7 +869,6 @@ function LiveScoreEntry(props) {
     };
 
     const openPenaltyModal = (team) => {
-        setEditingEvent(null);
         setPenaltyTeam(team);
         setPenaltyPlayer('');
         setPenaltyMinutes(2);
@@ -1102,7 +1160,7 @@ function LiveScoreEntry(props) {
                                     </select>
                                     <div className="sk-modal-actions">
                                         <button type="button" className="sk-modal-back" onClick={() => setGoalStep('scorer')}>← Scorer</button>
-                                        <button type="button" className="sk-modal-confirm" onClick={handleAddGoal}>{editingEvent ? 'Update Goal' : 'Record Goal'}</button>
+                                        <button type="button" className="sk-modal-confirm" onClick={handleAddGoal}>Record Goal</button>
                                     </div>
                                 </>
                             )}
@@ -1159,8 +1217,143 @@ function LiveScoreEntry(props) {
 
                             <div className="sk-modal-actions">
                                 <button type="button" className="sk-modal-back" onClick={resetPenaltyForm}>Cancel</button>
-                                <button type="button" className="sk-modal-confirm" onClick={handleAddPenalty}>{editingEvent ? 'Update Penalty' : 'Add Penalty'}</button>
+                                <button type="button" className="sk-modal-confirm" onClick={handleAddPenalty}>Add Penalty</button>
                             </div>
+                        </div>
+                    </div>
+                );
+            })()}
+
+            {/* Edit Event Modal — correct (or delete) an already-logged goal/penalty */}
+            {showEditEventModal && editEvent && (() => {
+                const teamName = editEvent.team === 'home' ? game.homeTeamName : game.awayTeamName;
+                const teamColor = editEvent.team === 'home' ? game.homeTeamColor : game.awayTeamColor;
+                const roster = getTeamPlayers(editEvent.team);
+                const isGoal = editEvent.type === 'goal';
+                const periodOptions = ['1', '2', '3', 'OT'];
+                return (
+                    <div className="sk-modal-overlay" onClick={closeEditEventModal}>
+                        <div className="sk-modal" onClick={(e) => e.stopPropagation()}>
+                            <div className="sk-edit-modal-header">
+                                <span className="sk-edit-modal-dot" style={{ background: teamColor }} />
+                                <span className="sk-edit-modal-title">Edit {teamName} {isGoal ? 'Goal' : 'Penalty'}</span>
+                                <button type="button" className="sk-edit-modal-close" onClick={closeEditEventModal} aria-label="Close">×</button>
+                            </div>
+
+                            {isGoal ? (
+                                <>
+                                    <label className="sk-modal-label">Scorer</label>
+                                    <select className="sk-modal-select" value={editGoalScorer}
+                                        onChange={(e) => setEditGoalScorer(e.target.value)}>
+                                        {roster.map(p => (
+                                            <option key={p.id} value={p.id}>#{p.jerseyNumber || '??'} {p.name}</option>
+                                        ))}
+                                    </select>
+
+                                    <div className="sk-modal-row">
+                                        <div className="sk-modal-row-period">
+                                            <label className="sk-modal-label">Period</label>
+                                            <select className="sk-modal-select" value={editPeriod}
+                                                onChange={(e) => { setEditPeriod(e.target.value); setEditTimeError(''); }}>
+                                                {periodOptions.map(p => <option key={p} value={p}>{p === 'OT' ? 'OT' : 'P' + p}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="sk-modal-row-clock">
+                                            <label className="sk-modal-label">Clock Time <span className="clock-hint">— {periodCapLabel(editPeriod)} max</span></label>
+                                            <input type="text" inputMode="numeric"
+                                                className={`clock-input${editTimeError ? ' clock-input-error' : ''}`}
+                                                value={editTime} placeholder="MM:SS"
+                                                onChange={(e) => { setEditTime(fmtClock(e.target.value)); setEditTimeError(''); }} />
+                                        </div>
+                                    </div>
+
+                                    <label className="sk-modal-label">Primary Assist</label>
+                                    <select className="sk-modal-select" value={editGoalAssist1}
+                                        onChange={(e) => { setEditGoalAssist1(e.target.value); setEditGoalAssist2(''); }}>
+                                        <option value="">Unassisted</option>
+                                        {roster.filter(p => p.id !== parseInt(editGoalScorer)).map(p => (
+                                            <option key={p.id} value={p.id}>#{p.jerseyNumber || '??'} {p.name}</option>
+                                        ))}
+                                    </select>
+                                    <label className={`sk-modal-label${editGoalAssist1 ? '' : ' is-disabled'}`}>Secondary Assist</label>
+                                    <select className="sk-modal-select" value={editGoalAssist2} disabled={!editGoalAssist1}
+                                        onChange={(e) => setEditGoalAssist2(e.target.value)}>
+                                        <option value="">None</option>
+                                        {roster.filter(p => p.id !== parseInt(editGoalScorer) && p.id !== parseInt(editGoalAssist1)).map(p => (
+                                            <option key={p.id} value={p.id}>#{p.jerseyNumber || '??'} {p.name}</option>
+                                        ))}
+                                    </select>
+                                </>
+                            ) : (
+                                <>
+                                    <label className="sk-modal-label">Player</label>
+                                    <select className="sk-modal-select" value={editPenPlayer}
+                                        onChange={(e) => setEditPenPlayer(e.target.value)}>
+                                        {roster.map(p => (
+                                            <option key={p.id} value={p.id}>#{p.jerseyNumber || '??'} {p.name}</option>
+                                        ))}
+                                    </select>
+
+                                    <label className="sk-modal-label">Penalty Type</label>
+                                    <select className="sk-modal-select" value={editPenDescription}
+                                        onChange={(e) => setEditPenDescription(e.target.value)}>
+                                        <option value="">Select penalty type…</option>
+                                        {PENALTY_TYPES.map(type => <option key={type} value={type}>{type}</option>)}
+                                        <option value="Other">Other</option>
+                                    </select>
+                                    {editPenDescription === 'Other' && (
+                                        <input type="text" className="sk-modal-input" value={editPenOtherDescription}
+                                            onChange={(e) => setEditPenOtherDescription(e.target.value)} placeholder="Enter penalty description" />
+                                    )}
+
+                                    <label className="sk-modal-label">Duration</label>
+                                    <select className="sk-modal-select" value={editPenMinutes}
+                                        onChange={(e) => setEditPenMinutes(parseInt(e.target.value))}>
+                                        <option value={2}>2 min (Minor)</option>
+                                        <option value={3}>3 min</option>
+                                        <option value={4}>4 min (Double Minor)</option>
+                                        <option value={6}>6 min (Major)</option>
+                                        <option value={10}>10 min (Misconduct)</option>
+                                    </select>
+
+                                    <div className="sk-modal-row">
+                                        <div className="sk-modal-row-period">
+                                            <label className="sk-modal-label">Period</label>
+                                            <select className="sk-modal-select" value={editPeriod}
+                                                onChange={(e) => { setEditPeriod(e.target.value); setEditTimeError(''); }}>
+                                                {periodOptions.map(p => <option key={p} value={p}>{p === 'OT' ? 'OT' : 'P' + p}</option>)}
+                                            </select>
+                                        </div>
+                                        <div className="sk-modal-row-clock">
+                                            <label className="sk-modal-label">Clock Time <span className="clock-hint">— {periodCapLabel(editPeriod)} max</span></label>
+                                            <input type="text" inputMode="numeric"
+                                                className={`clock-input${editTimeError ? ' clock-input-error' : ''}`}
+                                                value={editTime} placeholder="MM:SS"
+                                                onChange={(e) => { setEditTime(fmtClock(e.target.value)); setEditTimeError(''); }} />
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+
+                            {editTimeError && <div className="clock-error">{editTimeError}</div>}
+
+                            <div className="sk-edit-modal-divider" />
+                            {confirmingDelete ? (
+                                <>
+                                    <div className="sk-edit-modal-confirm-text">
+                                        Delete this {isGoal ? 'goal' : 'penalty'}? This cannot be undone.
+                                    </div>
+                                    <div className="sk-edit-modal-actions">
+                                        <button type="button" className="sk-modal-back" onClick={() => setConfirmingDelete(false)}>Cancel</button>
+                                        <button type="button" className="sk-edit-modal-delete-confirm" onClick={deleteEditEvent}>Yes, Delete</button>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="sk-edit-modal-actions">
+                                    <button type="button" className="sk-edit-modal-delete" onClick={() => setConfirmingDelete(true)}>Delete Event</button>
+                                    <button type="button" className="sk-modal-confirm" onClick={saveEditEvent}>Save Changes</button>
+                                </div>
+                            )}
                         </div>
                     </div>
                 );
@@ -1212,11 +1405,11 @@ function LiveScoreEntry(props) {
                                     <span className="sk-feed-period">{periodLbl} · {event.time}</span>
                                     {!gameFinalized && (
                                         <button
-                                            className="sk-feed-remove"
-                                            title="Remove event"
-                                            onClick={(ev) => handleDeleteEvent(event, ev)}
+                                            className="sk-feed-edit"
+                                            title="Edit event"
+                                            onClick={(ev) => { ev.stopPropagation(); handleEditEvent(event); }}
                                         >
-                                            ×
+                                            ✎
                                         </button>
                                     )}
                                 </div>

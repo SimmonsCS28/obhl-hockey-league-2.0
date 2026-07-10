@@ -452,6 +452,12 @@
     font-weight: 800;
     font-size: 18px;
     letter-spacing: 1px;
+    background: #0e1116;
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    border-radius: 8px;
+    padding: 9px 12px;
+    color: var(--obi-text);
+    outline: none;
 }
 
 .clock-input.clock-input-error {
@@ -1451,11 +1457,12 @@
 .sk-feed-empty-accent { color: var(--obi-accent); font-weight: 600; }
 .sk-feed-list { display: flex; flex-direction: column; }
 .sk-feed-row {
-    display: flex; align-items: center; gap: 12px; padding: 11px 4px;
+    display: flex; align-items: center; gap: 12px; padding: 11px 4px; border-radius: 8px;
     border-bottom: 1px solid rgba(157, 185, 205, 0.07);
+    transition: background .12s;
 }
 .sk-feed-row.is-editable { cursor: pointer; }
-.sk-feed-row.is-editable:hover { background: rgba(157, 185, 205, 0.04); }
+.sk-feed-row.is-editable:hover { background: rgba(255, 255, 255, 0.03); }
 .sk-feed-tag {
     font-family: var(--obi-font-display); font-weight: 800; font-size: 11px;
     letter-spacing: 1px; text-transform: uppercase; width: 74px; text-align: center;
@@ -1474,11 +1481,13 @@
 .sk-feed-period {
     font-family: var(--obi-font-body); font-size: 12px; color: var(--obi-text-muted); flex: none;
 }
-.sk-feed-remove {
-    cursor: pointer; background: none; border: none; color: #6E7882;
-    font-size: 17px; padding: 0 4px; flex: none; line-height: 1;
+.sk-feed-edit {
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; background: none; border: 1px solid rgba(157, 185, 205, 0.2);
+    border-radius: 7px; color: var(--obi-icy); font-size: 13px; flex: none;
+    transition: color .12s, border-color .12s, background .12s;
 }
-.sk-feed-remove:hover { color: var(--obi-error); }
+.sk-feed-edit:hover { color: #fff; border-color: rgba(246, 169, 28, 0.45); background: rgba(246, 169, 28, 0.08); }
 
 /* Modals (goal / penalty) */
 .sk-modal-overlay {
@@ -1578,7 +1587,7 @@
 
 .sk-modal-actions { display: flex; gap: 10px; margin-top: 20px; }
 .sk-modal-back {
-    flex: 1; cursor: pointer;
+    flex: 1; min-width: 0; cursor: pointer;
     font-family: var(--obi-font-display); font-weight: 700; font-size: 13px;
     letter-spacing: 1px; text-transform: uppercase; color: var(--obi-text-secondary);
     background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(157, 185, 205, 0.25);
@@ -1586,17 +1595,69 @@
 }
 .sk-modal-back:hover { color: #fff; }
 .sk-modal-confirm {
-    flex: 1; cursor: pointer;
+    flex: 1; min-width: 0; cursor: pointer;
     font-family: var(--obi-font-display); font-weight: 800; font-size: 13px;
     letter-spacing: 1px; text-transform: uppercase; color: #0b0c0f;
     background: var(--obi-accent); border: none; padding: 12px; border-radius: 8px;
 }
 .sk-modal-confirm:hover { filter: brightness(1.05); }
 
+/* Side-by-side Period + Clock Time row (Edit Event modal) */
+.sk-modal-row { display: flex; gap: 10px; margin-bottom: 14px; }
+.sk-modal-row-period { flex: none; width: 100px; }
+.sk-modal-row-clock { flex: 1; min-width: 0; }
+.sk-modal-row-clock .clock-input { width: 100%; }
+
+/* Edit Event modal */
+.sk-edit-modal-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.sk-edit-modal-dot {
+    width: 14px; height: 14px; border-radius: 50%; flex: none;
+    box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.45);
+}
+.sk-edit-modal-title {
+    flex: 1; font-family: var(--obi-font-display); font-weight: 900; font-style: italic;
+    font-size: 22px; color: #fff;
+}
+.sk-edit-modal-close {
+    cursor: pointer; background: none; border: none; color: #6E7882;
+    font-size: 22px; line-height: 1; padding: 2px 6px; flex: none; transition: color .12s;
+}
+.sk-edit-modal-close:hover { color: #fff; }
+
+.sk-edit-modal-divider { height: 1px; background: rgba(157, 185, 205, 0.12); margin: 18px 0 16px; }
+.sk-edit-modal-actions { display: flex; gap: 10px; }
+.sk-edit-modal-delete {
+    flex: none; cursor: pointer;
+    font-family: var(--obi-font-display); font-weight: 700; font-size: 13px;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--obi-error);
+    background: rgba(224, 138, 138, 0.08); border: 1px solid rgba(224, 138, 138, 0.3);
+    padding: 12px 18px; border-radius: 8px; transition: background .12s;
+}
+.sk-edit-modal-delete:hover { background: rgba(224, 138, 138, 0.16); }
+
+.sk-edit-modal-confirm-text {
+    font-family: var(--obi-font-body); font-weight: 600; font-size: 14px;
+    color: var(--obi-error); margin-bottom: 14px; line-height: 1.5;
+}
+.sk-edit-modal-delete-confirm {
+    flex: 1; min-width: 0; cursor: pointer;
+    font-family: var(--obi-font-display); font-weight: 800; font-size: 13px;
+    letter-spacing: 1px; text-transform: uppercase; color: #0b0c0f;
+    background: var(--obi-error); border: none; padding: 12px; border-radius: 8px; transition: filter .12s;
+}
+.sk-edit-modal-delete-confirm:hover { filter: brightness(1.08); }
+
 @media (max-width: 560px) {
     .sk-board { flex-direction: column; align-items: stretch; gap: 22px; }
     .sk-board-center { padding-top: 0; }
     .sk-board-score { font-size: 60px; }
+
+    /* Edit Event modal — stack the Period/Clock row and footer buttons rather than
+       relying on flex-shrink, which has repeatedly proven unreliable for narrow
+       viewports across this file's modals. */
+    .sk-modal-row { flex-direction: column; gap: 14px; }
+    .sk-modal-row-period { width: 100%; }
+    .sk-edit-modal-actions { flex-direction: column; }
 }
 
 /* Finalize Game modal */
