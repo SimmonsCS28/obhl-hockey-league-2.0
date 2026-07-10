@@ -73,6 +73,7 @@ function LiveScoreEntry(props) {
     const [penaltyTimeError, setPenaltyTimeError] = useState('');
 
     const [showFinalizeModal, setShowFinalizeModal] = useState(false);
+    const [isFinalizing, setIsFinalizing] = useState(false);
     const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
     // Unfinalize tracking
@@ -684,7 +685,7 @@ function LiveScoreEntry(props) {
     };
 
     const confirmFinalize = async () => {
-        setShowFinalizeModal(false);
+        setIsFinalizing(true);
 
         try {
             // Save final score to backend with OT flag (forfeits override the score server-side)
@@ -692,6 +693,7 @@ function LiveScoreEntry(props) {
             setGameFinalized(true);
             setIsDirty(false); // No longer dirty after finalize
             setShowSuccessMessage(true);
+            setShowFinalizeModal(false);
 
             // Reflect the authoritative score (forfeits are recorded as 1-0, not whatever was on the board)
             if (finalized) {
@@ -719,11 +721,13 @@ function LiveScoreEntry(props) {
         } catch (error) {
             console.error('Error finalizing game:', error);
             alert('❌ ERROR\n\nFailed to finalize game. Please try again.\n\nError: ' + error.message);
+        } finally {
+            setIsFinalizing(false);
         }
     };
 
     const cancelFinalize = () => {
-        setShowFinalizeModal(false);
+        if (!isFinalizing) setShowFinalizeModal(false);
     };
 
     const handleUnfinalizeClick = () => {
@@ -1252,121 +1256,121 @@ function LiveScoreEntry(props) {
             )}
 
             {/* Finalize Confirmation Modal */}
-            {showFinalizeModal && (
-                <div className="modal-overlay" onClick={cancelFinalize}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <h3>⚠️ Finalize Game</h3>
-                        <div className="modal-body">
-                            <div className="forfeit-selection">
-                                <p><strong>Did either team forfeit?</strong></p>
-                                <div className="forfeit-options">
-                                    <label className="forfeit-option">
-                                        <input
-                                            type="radio"
-                                            name="forfeit"
-                                            checked={forfeitTeamId === null}
-                                            onChange={() => setForfeitTeamId(null)}
-                                        />
-                                        <span>No forfeit</span>
-                                    </label>
-                                    <label className="forfeit-option">
-                                        <input
-                                            type="radio"
-                                            name="forfeit"
-                                            checked={forfeitTeamId === game.homeTeamId}
-                                            onChange={() => setForfeitTeamId(game.homeTeamId)}
-                                        />
-                                        <span>{game.homeTeamName} forfeits</span>
-                                    </label>
-                                    <label className="forfeit-option">
-                                        <input
-                                            type="radio"
-                                            name="forfeit"
-                                            checked={forfeitTeamId === game.awayTeamId}
-                                            onChange={() => setForfeitTeamId(game.awayTeamId)}
-                                        />
-                                        <span>{game.awayTeamName} forfeits</span>
-                                    </label>
-                                </div>
+            {showFinalizeModal && (() => {
+                const isForfeit = forfeitTeamId !== null;
+                const forfeitWinnerName = forfeitTeamId === game.homeTeamId
+                    ? game.awayTeamName
+                    : forfeitTeamId === game.awayTeamId
+                        ? game.homeTeamName
+                        : null;
+                const homeDisplayScore = forfeitTeamId === game.awayTeamId ? 1 : forfeitTeamId === game.homeTeamId ? 0 : homeScore;
+                const awayDisplayScore = forfeitTeamId === game.homeTeamId ? 1 : forfeitTeamId === game.awayTeamId ? 0 : awayScore;
+                const hasOTGoal = events.some(e => e.type === 'goal' && e.period === 'OT');
+                const forfeitOptions = [
+                    { key: 'none', teamId: null, label: 'No forfeit' },
+                    { key: 'home', teamId: game.homeTeamId, label: `${game.homeTeamName} forfeits` },
+                    { key: 'away', teamId: game.awayTeamId, label: `${game.awayTeamName} forfeits` },
+                ];
+
+                return (
+                    <div className="sk-modal-overlay" onClick={cancelFinalize}>
+                        <div className="sk-modal sk-finalize-modal" onClick={(e) => e.stopPropagation()}>
+                            <div className="sk-finalize-header">
+                                <span className="sk-finalize-header-icon">⚠️</span>
+                                <span className="sk-finalize-header-title">Finalize Game</span>
                             </div>
 
-                            <div className="final-score">
-                                <strong>Final Score:</strong>
-                                {forfeitTeamId ? (
-                                    <div className="score-display-large">
-                                        {forfeitTeamId === game.homeTeamId
-                                            ? <>{game.homeTeamName} <span className="score-num">0</span> - <span className="score-num">1</span> {game.awayTeamName}</>
-                                            : <>{game.homeTeamName} <span className="score-num">1</span> - <span className="score-num">0</span> {game.awayTeamName}</>}
-                                        <span className="forfeit-tag"> (forfeit)</span>
-                                    </div>
-                                ) : (
-                                    <div className="score-display-large">
-                                        {game.homeTeamName} <span className="score-num">{homeScore}</span> - <span className="score-num">{awayScore}</span> {game.awayTeamName}
+                            <div className="sk-finalize-section-label">Final Score</div>
+                            <div className="sk-finalize-score-box">
+                                <span className="sk-finalize-score-team">{game.homeTeamName}</span>
+                                <span className="sk-finalize-score-num">{homeDisplayScore} – {awayDisplayScore}</span>
+                                <span className="sk-finalize-score-team">{game.awayTeamName}</span>
+                                {isForfeit && <span className="sk-finalize-forfeit-tag">forfeit</span>}
+                            </div>
+
+                            {!isForfeit && (
+                                <>
+                                    <div className="sk-finalize-section-label">Overtime</div>
+                                    {hasOTGoal ? (
+                                        <div className="sk-finalize-ot-detected">
+                                            <span className="sk-finalize-ot-detected-check">✓</span>
+                                            <span className="sk-finalize-ot-detected-text">OT goal detected — game ended in overtime</span>
+                                        </div>
+                                    ) : (
+                                        <div className="sk-finalize-options">
+                                            <button type="button"
+                                                className={`sk-finalize-option${!endedInOT ? ' is-selected' : ''}`}
+                                                onClick={() => setEndedInOT(false)}>
+                                                <span className="sk-finalize-option-dot">{!endedInOT && <span className="sk-finalize-option-dot-fill" />}</span>
+                                                <span className="sk-finalize-option-label">Ended in Regulation</span>
+                                            </button>
+                                            <button type="button"
+                                                className={`sk-finalize-option${endedInOT ? ' is-selected' : ''}`}
+                                                onClick={() => setEndedInOT(true)}>
+                                                <span className="sk-finalize-option-dot">{endedInOT && <span className="sk-finalize-option-dot-fill" />}</span>
+                                                <span className="sk-finalize-option-label">Ended in Overtime</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+
+                            <div className="sk-finalize-section-label">Forfeit</div>
+                            <div className="sk-finalize-options">
+                                {forfeitOptions.map(opt => {
+                                    const selected = forfeitTeamId === opt.teamId;
+                                    return (
+                                        <button key={opt.key} type="button"
+                                            className={`sk-finalize-option${selected ? ' is-selected' : ''}`}
+                                            onClick={() => setForfeitTeamId(opt.teamId)}>
+                                            <span className="sk-finalize-option-dot">{selected && <span className="sk-finalize-option-dot-fill" />}</span>
+                                            <span className="sk-finalize-option-label">{opt.label}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="sk-finalize-section-label">This will:</div>
+                            <div className="sk-finalize-consequences">
+                                <div className="sk-finalize-consequence">
+                                    <span className="sk-finalize-consequence-dot" />
+                                    <span className="sk-finalize-consequence-text">Lock the game and prevent any further edits</span>
+                                </div>
+                                <div className="sk-finalize-consequence">
+                                    <span className="sk-finalize-consequence-dot" />
+                                    <span className="sk-finalize-consequence-text">Save the final score to the database</span>
+                                </div>
+                                <div className="sk-finalize-consequence">
+                                    <span className="sk-finalize-consequence-dot" />
+                                    <span className="sk-finalize-consequence-text">Mark the game as completed</span>
+                                </div>
+                                {isForfeit && (
+                                    <div className="sk-finalize-consequence is-forfeit">
+                                        <span className="sk-finalize-consequence-dot" />
+                                        <span className="sk-finalize-consequence-text">
+                                            Award the win and 2 points to {forfeitWinnerName}
+                                            {events.length > 0 && ' (any goals/penalties already logged will not count toward player stats)'}
+                                        </span>
                                     </div>
                                 )}
                             </div>
 
-                            {!forfeitTeamId && (
-                                <div className="ot-selection">
-                                    {events.some(e => e.type === 'goal' && e.period === 'OT') ? (
-                                        <p><strong>✓ OT goal detected - Game ended in overtime</strong></p>
-                                    ) : (
-                                        <>
-                                            <p><strong>Did this game end in overtime?</strong></p>
-                                            <div className="ot-options">
-                                                <label className="ot-option">
-                                                    <input
-                                                        type="radio"
-                                                        name="ot"
-                                                        value="regulation"
-                                                        checked={!endedInOT}
-                                                        onChange={() => setEndedInOT(false)}
-                                                    />
-                                                    <span>Ended in Regulation</span>
-                                                </label>
-                                                <label className="ot-option">
-                                                    <input
-                                                        type="radio"
-                                                        name="ot"
-                                                        value="overtime"
-                                                        checked={endedInOT}
-                                                        onChange={() => setEndedInOT(true)}
-                                                    />
-                                                    <span>Ended in Overtime</span>
-                                                </label>
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                            )}
+                            <div className="sk-finalize-divider" />
+                            <div className="sk-finalize-confirm-line">Are you sure you want to finalize this game?</div>
 
-                            <div className="warning-list">
-                                <p><strong>This will:</strong></p>
-                                <ul>
-                                    <li>Lock the game and prevent any further edits</li>
-                                    <li>Save the final score to the database</li>
-                                    <li>Mark the game as completed</li>
-                                    {forfeitTeamId && (
-                                        <li>
-                                            Award the win and 2 points to {forfeitTeamId === game.homeTeamId ? game.awayTeamName : game.homeTeamName}
-                                            {events.length > 0 && ' (any goals/penalties already logged will not count toward player stats)'}
-                                        </li>
-                                    )}
-                                </ul>
+                            <div className="sk-finalize-actions">
+                                <button className="sk-finalize-cancel-btn" onClick={cancelFinalize} disabled={isFinalizing}>
+                                    Cancel
+                                </button>
+                                <button className="sk-finalize-confirm-btn" onClick={confirmFinalize} disabled={isFinalizing}>
+                                    {isFinalizing && <span className="sk-finalize-spinner" />}
+                                    {isFinalizing ? 'Finalizing…' : 'Yes, Finalize Game'}
+                                </button>
                             </div>
-                            <p className="confirm-question">Are you sure you want to finalize this game?</p>
-                        </div>
-                        <div className="modal-actions">
-                            <button className="btn-confirm" onClick={confirmFinalize}>
-                                Yes, Finalize Game
-                            </button>
-                            <button className="btn-cancel-modal" onClick={cancelFinalize}>
-                                Cancel
-                            </button>
                         </div>
                     </div>
-                </div>
-            )}
+                );
+            })()}
 
             {/* Success Message */}
             {showSuccessMessage && (

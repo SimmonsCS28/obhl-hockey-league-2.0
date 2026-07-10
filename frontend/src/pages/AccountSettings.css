@@ -277,7 +277,9 @@
 
 .as-save {
     flex: 1;
+    min-width: 0;
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
     gap: 10px;
