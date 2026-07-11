@@ -12,6 +12,10 @@ function displayName(user) {
         : user.username || `User ${user.id}`;
 }
 
+function sortByName(users) {
+    return [...(users || [])].sort((a, b) => displayName(a).localeCompare(displayName(b)));
+}
+
 // Maps a select's field name to the coordinator role/slot it corresponds to.
 const FIELD_TO_SLOT = {
     goalie1Id: { role: 'GOALIE', slot: 1 },
@@ -57,9 +61,9 @@ function AdminAssignments() {
                     awayTeamColor: resolveTeamColor(teamMap[String(g.awayTeamId)]?.teamColor),
                 }));
                 setGames(enriched);
-                setGoaliePool(goalies || []);
-                setRefPool(refs || []);
-                setScorerPool(scorers || []);
+                setGoaliePool(sortByName(goalies));
+                setRefPool(sortByName(refs));
+                setScorerPool(sortByName(scorers));
             } catch (err) {
                 if (!cancelled) console.error('AdminAssignments load error:', err);
             } finally {

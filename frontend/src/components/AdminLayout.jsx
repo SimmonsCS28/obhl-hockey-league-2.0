@@ -74,11 +74,13 @@ function AdminLayout({ children, activeTab }) {
         <div className="obi-admin-shell">
             <aside className={`obi-side ${mobileOpen ? 'is-open' : ''}`}>
                 <div className="obi-side-brand">
-                    <img src={logo} alt="OBHL" className="obi-side-logo" />
-                    <span className="obi-side-brand-text">
-                        <span className="obi-side-brand-top">OBHL</span>
-                        <span className="obi-side-brand-sub">ADMIN CONSOLE</span>
-                    </span>
+                    <button className="obi-side-brand-link" onClick={() => navigate('/')} aria-label="Go to public site">
+                        <img src={logo} alt="OBHL" className="obi-side-logo" />
+                        <span className="obi-side-brand-text">
+                            <span className="obi-side-brand-top">OBHL</span>
+                            <span className="obi-side-brand-sub">ADMIN CONSOLE</span>
+                        </span>
+                    </button>
                     <button className="obi-side-burger" onClick={() => setMobileOpen(o => !o)} aria-label="Toggle menu">
                         <span></span><span></span><span></span>
                     </button>
