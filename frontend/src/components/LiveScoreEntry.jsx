@@ -1419,29 +1419,48 @@ function LiveScoreEntry(props) {
                 )}
             </div>
 
-            {/* Unfinalize Confirmation Modal */}
+            {/* Unfinalize Confirmation Modal — overlay deliberately has no onClick:
+                unfinalizing unwinds standings/stats that already posted, so this is a
+                higher-consequence action than most modals on this screen; an accidental
+                scrim click reading as "nevermind" is worse here than the minor
+                inconsistency with modals where dismissal is cheap to reverse. */}
             {showUnfinalizeModal && (
-                <div className="modal-overlay">
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <h3>⚠️ Unfinalize Game</h3>
-                        <div className="modal-body">
-                            <p>Are you sure you want to unfinalize this game?</p>
-                            <div className="warning-list">
-                                <p><strong>This will:</strong></p>
-                                <ul>
-                                    <li>Revert all points awarded to the teams in the standings</li>
-                                    <li>Revert player games played statistics</li>
-                                    <li>Unlock the game for score editing</li>
-                                </ul>
-                            </div>
-                            <p className="confirm-question">You MUST re-finalize the game after making edits to ensure stats are accurate.</p>
+                <div className="sk-modal-overlay">
+                    <div className="sk-modal sk-unfinalize-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="sk-unfinalize-header">
+                            <span className="sk-unfinalize-header-icon">⚠️</span>
+                            <span className="sk-unfinalize-header-title">Unfinalize Game</span>
                         </div>
-                        <div className="modal-actions">
-                            <button className="btn-confirm btn-warn" onClick={confirmUnfinalize} disabled={isUnfinalizing}>
+
+                        <div className="sk-unfinalize-confirm-line">Are you sure you want to unfinalize this game?</div>
+
+                        <div className="sk-unfinalize-section-label">This will:</div>
+                        <div className="sk-unfinalize-consequences">
+                            <div className="sk-unfinalize-consequence">
+                                <span className="sk-unfinalize-consequence-dot" />
+                                <span className="sk-unfinalize-consequence-text">Revert all points awarded to the teams in the standings</span>
+                            </div>
+                            <div className="sk-unfinalize-consequence">
+                                <span className="sk-unfinalize-consequence-dot" />
+                                <span className="sk-unfinalize-consequence-text">Revert player games played statistics</span>
+                            </div>
+                            <div className="sk-unfinalize-consequence">
+                                <span className="sk-unfinalize-consequence-dot" />
+                                <span className="sk-unfinalize-consequence-text">Unlock the game for score editing</span>
+                            </div>
+                        </div>
+
+                        <div className="sk-unfinalize-reminder">
+                            <span className="sk-unfinalize-reminder-icon">!</span>
+                            <span className="sk-unfinalize-reminder-text">You MUST re-finalize the game after making edits to ensure stats are accurate.</span>
+                        </div>
+
+                        <div className="sk-unfinalize-divider" />
+                        <div className="sk-unfinalize-actions">
+                            <button className="sk-unfinalize-cancel-btn" onClick={cancelUnfinalize} disabled={isUnfinalizing}>Cancel</button>
+                            <button className="sk-unfinalize-confirm-btn" onClick={confirmUnfinalize} disabled={isUnfinalizing}>
+                                {isUnfinalizing && <span className="sk-unfinalize-spinner" />}
                                 {isUnfinalizing ? 'Unfinalizing...' : 'Yes, Unfinalize Game'}
-                            </button>
-                            <button className="btn-cancel-modal" onClick={cancelUnfinalize} disabled={isUnfinalizing}>
-                                Cancel
                             </button>
                         </div>
                     </div>
@@ -1586,50 +1605,67 @@ function LiveScoreEntry(props) {
                 </div>
             )}
 
-            {/* Penalty Alert Modal */}
+            {/* Penalty Alert Modal — backdrop click DOES dismiss: purely informational,
+                the penalty already saved before this appears, nothing to lose by closing.
+                (Contrast with Unfinalize/Unsaved Changes below, which guard a real
+                decision and deliberately don't dismiss on scrim click.) */}
             {showPenaltyAlert && penaltyAlertData && (
-                <div className="modal-overlay" onClick={() => setShowPenaltyAlert(false)}>
-                    <div className="modal-content penalty-alert-modal" onClick={(e) => e.stopPropagation()}>
-                        <h3>
-                            {penaltyAlertData.warningType === 'EJECTION_AND_SUSPENSION' ? '🚨 EJECTION + SUSPENSION' : '⚠️ EJECTION'}
-                        </h3>
-                        <div className="modal-body">
-                            <div className="penalty-alert-player">
-                                <strong>Player:</strong> {penaltyAlertData.player}
-                            </div>
-                            <div className="penalty-alert-message">
-                                {penaltyAlertData.warningMessage}
-                            </div>
+                <div className="sk-modal-overlay" onClick={() => setShowPenaltyAlert(false)}>
+                    <div className="sk-modal sk-penalty-alert-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="sk-penalty-alert-header">
+                            <span className="sk-penalty-alert-header-icon">
+                                {penaltyAlertData.warningType === 'EJECTION_AND_SUSPENSION' ? '🚨' : '⚠️'}
+                            </span>
+                            <span className="sk-penalty-alert-header-title">
+                                {penaltyAlertData.warningType === 'EJECTION_AND_SUSPENSION' ? 'EJECTION + SUSPENSION' : 'EJECTION'}
+                            </span>
                         </div>
-                        <div className="modal-actions">
-                            <button className="btn-confirm" onClick={() => setShowPenaltyAlert(false)}>
-                                Acknowledged
-                            </button>
+
+                        <div className="sk-penalty-alert-player">
+                            <span className="sk-penalty-alert-player-label">Player</span>
+                            <span className="sk-penalty-alert-player-value">{penaltyAlertData.player}</span>
                         </div>
+
+                        <div className="sk-penalty-alert-message">{penaltyAlertData.warningMessage}</div>
+
+                        <div className="sk-penalty-alert-divider" />
+                        <button className="sk-penalty-alert-ack-btn" onClick={() => setShowPenaltyAlert(false)}>
+                            Acknowledged
+                        </button>
                     </div>
                 </div>
             )}
 
-            {/* Unsaved Changes Modal */}
+            {/* Unsaved Changes Modal — overlay deliberately has no onClick: data loss is
+                on the table here, so this is a consequential decision like Unfinalize,
+                not something that should close on an accidental scrim click. */}
             {showUnsavedModal && (
-                <div className="modal-overlay">
-                    <div className="modal-content unsaved-modal" onClick={(e) => e.stopPropagation()}>
-                        <h3>⚠️ Unsaved Changes</h3>
-                        <div className="modal-body">
-                            <p>You have unsaved changes to this game. Would you like to save your progress before leaving?</p>
-                            <p className="unsaved-detail">Current score: <strong>{game.homeTeamName} {homeScore} - {awayScore} {game.awayTeamName}</strong></p>
-                            <p className="unsaved-note">Saving will preserve the current score so you can return and continue scoring this game later.</p>
+                <div className="sk-modal-overlay">
+                    <div className="sk-modal sk-unsaved-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="sk-unsaved-header">
+                            <span className="sk-unsaved-header-icon">⚠️</span>
+                            <span className="sk-unsaved-header-title">Unsaved Changes</span>
                         </div>
-                        <div className="modal-actions">
-                            <button className="btn-confirm" onClick={handleSaveAndLeave} disabled={savingDraft}>
+
+                        <div className="sk-unsaved-explanation">You have unsaved changes to this game. Would you like to save your progress before leaving?</div>
+
+                        <div className="sk-unsaved-score-box">
+                            <span className="sk-unsaved-score-label">Current Score</span>
+                            <span className="sk-unsaved-score-value">{game.homeTeamName} {homeScore} – {awayScore} {game.awayTeamName}</span>
+                        </div>
+
+                        <div className="sk-unsaved-reassurance">Saving will preserve the current score so you can return and continue scoring this game later.</div>
+
+                        <div className="sk-unsaved-divider" />
+                        <div className="sk-unsaved-actions">
+                            <button className="sk-unsaved-save-btn" onClick={handleSaveAndLeave} disabled={savingDraft}>
+                                {savingDraft && <span className="sk-unsaved-spinner" />}
                                 {savingDraft ? 'Saving...' : '💾 Save & Leave'}
                             </button>
-                            <button className="btn-cancel-modal btn-danger" onClick={handleDiscardChanges}>
-                                🗑️ Discard Changes
-                            </button>
-                            <button className="btn-cancel-modal" onClick={handleCancelUnsaved}>
-                                Cancel
-                            </button>
+                            <div className="sk-unsaved-secondary-row">
+                                <button className="sk-unsaved-discard-btn" onClick={handleDiscardChanges} disabled={savingDraft}>🗑️ Discard Changes</button>
+                                <button className="sk-unsaved-cancel-btn" onClick={handleCancelUnsaved} disabled={savingDraft}>Cancel</button>
+                            </div>
                         </div>
                     </div>
                 </div>
