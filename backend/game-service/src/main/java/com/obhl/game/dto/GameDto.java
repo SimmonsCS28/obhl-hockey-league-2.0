@@ -87,6 +87,7 @@ public class GameDto {
     public static class ScoreUpdate {
         private Integer homeScore;
         private Integer awayScore;
+        private Integer period;
     }
 
     @Data

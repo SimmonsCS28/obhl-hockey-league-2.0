@@ -140,6 +140,16 @@ public class GameController {
         }
     }
 
+    @PostMapping("/{gameId}/start")
+    public ResponseEntity<?> startGame(@PathVariable Long gameId) {
+        try {
+            GameDto.Response started = gameService.startGame(gameId);
+            return ResponseEntity.ok(started);
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
     @PostMapping("/{gameId}/unfinalize")
     public ResponseEntity<?> unfinalizeGame(@PathVariable Long gameId) {
         try {

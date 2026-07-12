@@ -59,6 +59,27 @@
     color: var(--obi-text-muted);
 }
 
+/* Live badge (read-only public view header) */
+.sk-live-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--obi-success);
+}
+
+.sk-live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--obi-success);
+    animation: sk-live-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes sk-live-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}
+
 .entry-header .btn-save,
 .entry-header .btn-action {
     grid-column: 3;
@@ -991,6 +1012,32 @@
     font-family: var(--obi-font-body); font-size: 12px; color: var(--obi-text-muted);
     margin-top: 6px; text-align: center;
 }
+
+/* Start Game banner */
+.sk-start-banner {
+    margin-top: 14px; display: flex; flex-wrap: wrap; align-items: center;
+    justify-content: space-between; gap: 12px;
+    background: rgba(224, 168, 90, 0.1); border: 1px solid rgba(224, 168, 90, 0.4);
+    border-radius: 11px; padding: 13px 18px;
+}
+.sk-start-text {
+    font-family: var(--obi-font-body); font-size: 13.5px; color: var(--obi-text-secondary);
+    display: flex; align-items: center; gap: 10px;
+}
+.sk-start-tag {
+    font-family: var(--obi-font-display); font-weight: 800; font-size: 11px;
+    letter-spacing: 1px; text-transform: uppercase; color: #0b0c0f;
+    background: var(--obi-accent); padding: 4px 10px; border-radius: 5px;
+}
+.sk-start-btn {
+    cursor: pointer;
+    font-family: var(--obi-font-display); font-weight: 800; font-size: 12px;
+    letter-spacing: 1px; text-transform: uppercase; color: #0b0c0f;
+    background: var(--obi-accent); border: none; padding: 9px 18px; border-radius: 8px;
+    transition: transform .12s;
+}
+.sk-start-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.sk-start-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* Finalized banner */
 .sk-final-banner {

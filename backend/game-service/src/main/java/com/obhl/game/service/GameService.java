@@ -169,6 +169,9 @@ public class GameService {
 
         game.setHomeScore(scoreUpdate.getHomeScore());
         game.setAwayScore(scoreUpdate.getAwayScore());
+        if (scoreUpdate.getPeriod() != null) {
+            game.setPeriod(scoreUpdate.getPeriod());
+        }
 
         // Auto-set status to in_progress when scores are updated (unless finalized)
         if (!"completed".equals(game.getStatus())) {
@@ -176,6 +179,21 @@ public class GameService {
         }
 
         return toResponse(gameRepository.save(game));
+    }
+
+    @Transactional
+    public GameDto.Response startGame(Long id) {
+        Game game = gameRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Game not found"));
+
+        // Idempotent: only scheduled games actually transition. Already-live or
+        // completed games are returned as-is so a double-click can't error out.
+        if ("scheduled".equals(game.getStatus())) {
+            game.setStatus("in_progress");
+            game = gameRepository.save(game);
+        }
+
+        return toResponse(game);
     }
 
     @Transactional
@@ -243,8 +261,11 @@ public class GameService {
         // Reset points and status
         game.setHomeTeamPoints(0);
         game.setAwayTeamPoints(0);
-        // Leave scores as is, so they can be edited or left alone
-        game.setStatus("in_progress");
+        // Leave scores as is, so they can be edited or left alone.
+        // Deliberately "scheduled", not "in_progress" — an unfinalized game shouldn't
+        // show as live on the public schedule until someone actively resumes scoring it
+        // (adding/editing an event or saving a score sets it back to in_progress then).
+        game.setStatus("scheduled");
 
         return toResponse(gameRepository.save(game));
     }

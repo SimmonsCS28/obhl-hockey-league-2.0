@@ -233,10 +233,16 @@ const api = {
         });
     },
 
-    async updateGameScore(gameId, homeScore, awayScore) {
+    async updateGameScore(gameId, homeScore, awayScore, period) {
         return request(`/games/${gameId}/score`, {
             method: 'PATCH',
-            body: JSON.stringify({ homeScore, awayScore })
+            body: JSON.stringify({ homeScore, awayScore, period })
+        });
+    },
+
+    async startGame(gameId) {
+        return request(`/games/${gameId}/start`, {
+            method: 'POST'
         });
     },
 

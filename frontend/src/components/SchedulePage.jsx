@@ -162,6 +162,7 @@ const SchedulePage = () => {
 
     const renderGameRow = (game) => {
         const done = game.status === 'completed';
+        const live = game.status === 'in_progress';
         const d = parseGameDate(game.gameDate);
         const day = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
         const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -170,7 +171,7 @@ const SchedulePage = () => {
         const awayWin = done && game.awayScore > game.homeScore;
 
         return (
-            <div key={game.id} className={`obi-game-row ${done ? 'is-done' : 'is-upcoming'}`}>
+            <div key={game.id} className={`obi-game-row ${done ? 'is-done' : live ? 'is-live' : 'is-upcoming'}`}>
                 <div className="obi-game-date">
                     <div className="obi-game-day">{day}</div>
                     <div className="obi-game-datenum">{date}</div>
@@ -185,11 +186,11 @@ const SchedulePage = () => {
                             <span className="obi-team-dot" style={{ background: teamColor(game.homeTeamId) }} />
                         </span>
 
-                        {done ? (
+                        {done || live ? (
                             <span className="obi-game-score">
-                                <span className={homeWin ? 'obi-win' : 'obi-lose'}>{game.homeScore ?? 0}</span>
+                                <span className={done ? (homeWin ? 'obi-win' : 'obi-lose') : 'obi-win'}>{game.homeScore ?? 0}</span>
                                 <span className="obi-score-sep">–</span>
-                                <span className={awayWin ? 'obi-win' : 'obi-lose'}>{game.awayScore ?? 0}</span>
+                                <span className={done ? (awayWin ? 'obi-win' : 'obi-lose') : 'obi-win'}>{game.awayScore ?? 0}</span>
                             </span>
                         ) : (
                             <span className="obi-game-vs">VS</span>
@@ -203,15 +204,17 @@ const SchedulePage = () => {
                         </span>
                     </div>
                     <div className="obi-game-meta">
-                        {done ? 'Final' : time}{game.rink ? ` · ${game.rink}` : ''}
+                        {live ? (
+                            <span className="obi-live-badge"><span className="obi-live-dot" />Live</span>
+                        ) : done ? 'Final' : time}{game.rink ? ` · ${game.rink}` : ''}
                     </div>
                 </div>
 
                 <button
-                    className={`obi-game-btn ${done ? 'obi-btn-recap' : 'obi-btn-preview'}`}
-                    onClick={() => navigate(`/game/${game.id}/${done ? 'recap' : 'preview'}`)}
+                    className={`obi-game-btn ${done ? 'obi-btn-recap' : live ? 'obi-btn-view' : 'obi-btn-preview'}`}
+                    onClick={() => navigate(`/game/${game.id}/${done ? 'recap' : live ? 'live' : 'preview'}`)}
                 >
-                    {done ? 'Recap' : 'Preview'}
+                    {done ? 'Recap' : live ? 'View' : 'Preview'}
                 </button>
             </div>
         );

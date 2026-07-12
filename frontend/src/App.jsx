@@ -61,6 +61,7 @@ const router = createBrowserRouter([
       { path: "schedule", element: <SchedulePage /> },
       { path: "game/:gameId/preview", element: <GamePreview /> },
       { path: "game/:gameId/recap", element: <GameRecap /> },
+      { path: "game/:gameId/live", element: <LiveScoreEntry readOnly /> },
       { path: "rules", element: <RulesPage /> },
 
       // Public Staff Signups

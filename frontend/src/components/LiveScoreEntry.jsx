@@ -25,7 +25,8 @@ function LiveScoreEntry(props) {
         hasPendingNavigation,
         onNavigate,
         onNavigateCancel,
-        embedded = false
+        embedded = false,
+        readOnly = false
     } = props;
     const { gameId } = useParams();
     const navigate = useNavigate();
@@ -33,8 +34,8 @@ function LiveScoreEntry(props) {
 
     // Check if user is admin for editable scores
     // Check if user is admin or scorekeeper for editable scores
-    const isAdmin = user?.role === 'ADMIN' ||
-        user?.roles?.some(r => ['admin', 'scorekeeper'].includes(r.toLowerCase()));
+    const isAdmin = !readOnly && (user?.role === 'ADMIN' ||
+        user?.roles?.some(r => ['admin', 'scorekeeper'].includes(r.toLowerCase())));
 
     // State for game data (loaded from prop or route param)
     const [game, setGame] = useState(propGame || null);
@@ -47,9 +48,17 @@ function LiveScoreEntry(props) {
     const [showGoalForm, setShowGoalForm] = useState(false);
     const [showPenaltyForm, setShowPenaltyForm] = useState(false);
     const [gameFinalized, setGameFinalized] = useState(game?.status === 'completed');
+    // Whether the game has been marked live (status !== 'scheduled') — drives the
+    // Start Game banner. Scheduled is the only "not started" state; completed counts
+    // as started since it was live at some point.
+    const [gameStarted, setGameStarted] = useState(game?.status && game.status !== 'scheduled');
+    const [isStarting, setIsStarting] = useState(false);
+
+    // Maps the backend's integer period to the stepper's string labels.
+    const periodIntToLabel = (p) => ({ 1: '1', 2: '2', 3: '3', 4: 'OT' }[p] || '1');
 
     // Global period stepper — 1 / 2 / 3 / OT — sets the period for new goals & penalties.
-    const [currentPeriod, setCurrentPeriod] = useState('1');
+    const [currentPeriod, setCurrentPeriod] = useState(() => periodIntToLabel(game?.period));
 
     // Goal modal state (two steps: 'scorer' → 'assist')
     const [goalTeam, setGoalTeam] = useState('home');
@@ -167,6 +176,8 @@ function LiveScoreEntry(props) {
                     setHomeScore(enrichedGame.homeScore || 0);
                     setAwayScore(enrichedGame.awayScore || 0);
                     setGameFinalized(enrichedGame.status === 'completed');
+                    setGameStarted(enrichedGame.status && enrichedGame.status !== 'scheduled');
+                    setCurrentPeriod(periodIntToLabel(enrichedGame.period));
                     setForfeitTeamId(enrichedGame.forfeitTeamId || null);
                 } catch (error) {
                     console.error('Error loading game:', error);
@@ -184,6 +195,28 @@ function LiveScoreEntry(props) {
             loadEvents();
         }
     }, [game]);
+
+    // Read-only public view: poll for score/period/status/event updates so the page
+    // reflects what the scorekeeper is entering live, without a websocket. Stops once
+    // the game is finalized — nothing left to change at that point.
+    useEffect(() => {
+        if (!readOnly || !game || gameFinalized) return;
+        const interval = setInterval(async () => {
+            try {
+                const fresh = await api.getGame(game.id);
+                if (fresh) {
+                    setHomeScore(fresh.homeScore || 0);
+                    setAwayScore(fresh.awayScore || 0);
+                    setCurrentPeriod(periodIntToLabel(fresh.period));
+                    setGameFinalized(fresh.status === 'completed');
+                }
+                await loadEvents();
+            } catch (error) {
+                console.error('Error refreshing live game:', error);
+            }
+        }, 10000);
+        return () => clearInterval(interval);
+    }, [readOnly, game?.id, gameFinalized]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Resolve player names in loaded events and update goal counts.
     // Gate retries on `playerResolved` (not just `player` being truthy) — an event that
@@ -419,6 +452,23 @@ function LiveScoreEntry(props) {
 
     const periodCapLabel = (period) => `${periodMaxMin(period)}:00`;
 
+    // Goal/penalty creation already flips the backend game status to in_progress
+    // (GameEventService.createEvent) — this just keeps local UI state (the Start Game
+    // banner, the parent's game list) in sync without a second round-trip.
+    const markGameStarted = () => {
+        if (gameStarted) return;
+        setGameStarted(true);
+        if (onGameUpdated) onGameUpdated({ ...game, status: 'in_progress' });
+    };
+
+    // Brief "Saved" confirmation for actions that persist immediately (goal/penalty
+    // add, event edit, period change) — shorter than the manual-save toast since
+    // these can fire in quick succession during live scoring.
+    const flashAutoSaved = () => {
+        setShowSaveSuccess(true);
+        setTimeout(() => setShowSaveSuccess(false), 1400);
+    };
+
     const handleAddGoal = async (e) => {
         e.preventDefault();
 
@@ -467,11 +517,17 @@ function LiveScoreEntry(props) {
         );
         setPlayers(updatedPlayers);
 
-        // Mark as dirty (score changed)
-        setIsDirty(true);
-
-        // Auto-save event to backend
-        await saveEventToBackend(newEvent);
+        // Auto-save event to backend — no isDirty/manual-save needed on success, this
+        // already persists. On failure, fall back to the manual Save Changes flow so
+        // the unsaved-changes safety net (nav blocker, beforeunload) still applies.
+        const saved = await saveEventToBackend(newEvent);
+        if (saved) {
+            setIsDirty(false);
+            markGameStarted();
+            flashAutoSaved();
+        } else {
+            setIsDirty(true);
+        }
 
         resetGoalForm();
     };
@@ -535,10 +591,15 @@ function LiveScoreEntry(props) {
         };
 
         setEvents([...events, newEvent]);
-        // Mark as dirty (new event added)
-        setIsDirty(true);
-        // Auto-save event to backend
-        await saveEventToBackend(newEvent);
+        // Auto-save event to backend — see handleAddGoal for why isDirty isn't set here.
+        const saved = await saveEventToBackend(newEvent);
+        if (saved) {
+            setIsDirty(false);
+            markGameStarted();
+            flashAutoSaved();
+        } else {
+            setIsDirty(true);
+        }
 
         resetPenaltyForm();
     };
@@ -571,21 +632,25 @@ function LiveScoreEntry(props) {
             if (created && created.id) {
                 setEvents(prev => prev.map(e => e.id === event.id ? { ...e, backendId: created.id } : e));
             }
+            return true;
         } catch (error) {
             console.error('Error saving event:', error);
             alert('Failed to save event to backend. It will remain locally until page refresh.');
             // Note: We don't remove it from local state so user doesn't lose data
             // In a real app we might mark it as "unsaved" in UI
+            return false;
         }
     };
 
     const updateEventOnBackend = async (event) => {
-        if (!event.backendId) return; // never made it to the backend in the first place — nothing to update there
+        if (!event.backendId) return true; // never made it to the backend in the first place — nothing to update there
         try {
             await api.updateGameEvent(game.id, event.backendId, buildEventDto(event));
+            return true;
         } catch (error) {
             console.error('Error updating event:', error);
             alert('Failed to save your changes to the server. Please try again.');
+            return false;
         }
     };
 
@@ -687,8 +752,9 @@ function LiveScoreEntry(props) {
             setAwayScore(awayGoals);
         }
 
-        setIsDirty(true);
-        await updateEventOnBackend(updatedEvent);
+        const saved = await updateEventOnBackend(updatedEvent);
+        setIsDirty(!saved);
+        if (saved) flashAutoSaved();
         setShowEditEventModal(false);
     };
 
@@ -707,7 +773,8 @@ function LiveScoreEntry(props) {
                 await api.deleteGameEvent(game.id, event.backendId);
                 // Reload from backend so score, goal counts, and jersey labels stay in sync
                 await loadEvents();
-                setIsDirty(true);
+                setIsDirty(false);
+                flashAutoSaved();
             } else {
                 // Event never made it to the backend (failed auto-save) — just drop it locally
                 setEvents(prev => prev.filter(e => e.id !== event.id));
@@ -728,6 +795,22 @@ function LiveScoreEntry(props) {
         if (await deleteEvent(editEvent)) {
             setShowEditEventModal(false);
             setConfirmingDelete(false);
+        }
+    };
+
+    const handleStartGame = async () => {
+        setIsStarting(true);
+        try {
+            await api.startGame(game.id);
+            setGameStarted(true);
+            if (onGameUpdated) {
+                onGameUpdated({ ...game, status: 'in_progress' });
+            }
+        } catch (error) {
+            console.error('Error starting game:', error);
+            alert('❌ ERROR\n\nFailed to start game. Please try again.\n\nError: ' + error.message);
+        } finally {
+            setIsStarting(false);
         }
     };
 
@@ -801,13 +884,17 @@ function LiveScoreEntry(props) {
         try {
             await api.unfinalizeGame(game.id);
             setGameFinalized(false);
+            // Unfinalizing intentionally does NOT put the game back into a live state —
+            // it reverts to "scheduled" so it doesn't show as "In Progress" on the public
+            // schedule until someone actively resumes scoring it.
+            setGameStarted(false);
             setShowUnfinalizeModal(false);
 
             // Reload game info to get the proper score/status
             if (onGameUpdated) {
                 onGameUpdated({
                     ...game,
-                    status: 'in_progress'
+                    status: 'scheduled'
                 });
             }
             alert('Game has been unfinalized. You may now edit the score.');
@@ -846,13 +933,25 @@ function LiveScoreEntry(props) {
     };
 
     // ── Open the goal/penalty modals for a given side (period comes from the stepper) ──
-    const stepPeriod = (dir) => {
-        setCurrentPeriod(prev => {
-            const order = ['1', '2', '3', 'OT'];
-            const i = order.indexOf(String(prev));
-            const ni = Math.max(0, Math.min(order.length - 1, (i < 0 ? 0 : i) + dir));
-            return order[ni];
-        });
+    // Auto-saves to the backend immediately — the period stepper isn't gated behind
+    // the manual Save Changes button like a raw score edit is.
+    const stepPeriod = async (dir) => {
+        const order = ['1', '2', '3', 'OT'];
+        const i = order.indexOf(String(currentPeriod));
+        const ni = Math.max(0, Math.min(order.length - 1, (i < 0 ? 0 : i) + dir));
+        const nextPeriod = order[ni];
+        if (nextPeriod === currentPeriod) return;
+
+        setCurrentPeriod(nextPeriod);
+
+        const periodMap = { '1': 1, '2': 2, '3': 3, 'OT': 4 };
+        try {
+            await api.updateGameScore(game.id, homeScore, awayScore, periodMap[nextPeriod] || 1);
+            markGameStarted();
+            flashAutoSaved();
+        } catch (error) {
+            console.error('Error saving period:', error);
+        }
     };
 
     const openGoalModal = (team) => {
@@ -972,6 +1071,10 @@ function LiveScoreEntry(props) {
     };
 
     const handleBack = () => {
+        if (readOnly) {
+            navigate('/schedule');
+            return;
+        }
         if (isDirty && !gameFinalized) {
             setShowUnsavedModal(true);
         } else {
@@ -1002,12 +1105,18 @@ function LiveScoreEntry(props) {
     return (
         <div className="live-score-entry">
             <div className={`entry-header${embedded ? ' entry-header--embedded' : ''}`}>
-                {!embedded && <button className="btn-back" onClick={handleBack}>← Signups · Dashboard</button>}
+                {!embedded && <button className="btn-back" onClick={handleBack}>{readOnly ? '← Schedule' : '← Signups · Dashboard'}</button>}
                 <h2>
                     <span className="matchup-title">{game.homeTeamName} <span className="matchup-vs">vs</span> {game.awayTeamName}</span>
-                    {!embedded && <span className="entry-subtitle">Live Score Entry</span>}
+                    {!embedded && (
+                        <span className="entry-subtitle">
+                            {readOnly && !gameFinalized ? (
+                                <span className="sk-live-badge"><span className="sk-live-dot" />Live</span>
+                            ) : 'Live Score Entry'}
+                        </span>
+                    )}
                 </h2>
-                {!gameFinalized && (
+                {!readOnly && !gameFinalized && (
                     <button
                         className={`btn-save${isDirty ? '' : ' btn-save-inactive'}`}
                         onClick={handleManualSave}
@@ -1024,6 +1133,21 @@ function LiveScoreEntry(props) {
                 )}
             </div>
 
+            {/* Start Game banner — shown until the scorekeeper explicitly starts the
+                game or logs a goal/penalty (either flips status to in_progress).
+                Without this, a game that ends 0-0 would never show "In Progress"
+                on the public schedule since no score/event ever gets saved. */}
+            {!readOnly && !gameFinalized && !gameStarted && (
+                <div className="sk-start-banner">
+                    <span className="sk-start-text">
+                        <span className="sk-start-tag">Not Started</span> Game hasn't been marked live yet.
+                    </span>
+                    <button className="sk-start-btn" onClick={handleStartGame} disabled={isStarting}>
+                        {isStarting ? 'Starting…' : '▶ Start Game'}
+                    </button>
+                </div>
+            )}
+
             {/* Scoreboard (design: per-side goal/penalty + center period stepper) */}
             <div className={`sk-board${gameFinalized ? ' is-locked' : ''}`}>
                 <div className="sk-board-side">
@@ -1038,16 +1162,20 @@ function LiveScoreEntry(props) {
                     ) : (
                         <div className="sk-board-score">{homeScore}</div>
                     )}
-                    <button className="sk-board-goal" disabled={gameFinalized} onClick={() => openGoalModal('home')}>+ Goal</button>
-                    <button className="sk-board-pen" disabled={gameFinalized} onClick={() => openPenaltyModal('home')}>+ Penalty</button>
+                    {!readOnly && (
+                        <>
+                            <button className="sk-board-goal" disabled={gameFinalized} onClick={() => openGoalModal('home')}>+ Goal</button>
+                            <button className="sk-board-pen" disabled={gameFinalized} onClick={() => openPenaltyModal('home')}>+ Penalty</button>
+                        </>
+                    )}
                 </div>
 
                 <div className="sk-board-center">
                     <span className="sk-board-period-label">Period</span>
                     <div className="sk-board-stepper">
-                        <button className="sk-board-step" disabled={gameFinalized} onClick={() => stepPeriod(-1)} aria-label="Previous period">−</button>
+                        {!readOnly && <button className="sk-board-step" disabled={gameFinalized} onClick={() => stepPeriod(-1)} aria-label="Previous period">−</button>}
                         <span className="sk-board-period">{currentPeriod === 'OT' ? 'OT' : currentPeriod}</span>
-                        <button className="sk-board-step" disabled={gameFinalized} onClick={() => stepPeriod(1)} aria-label="Next period">+</button>
+                        {!readOnly && <button className="sk-board-step" disabled={gameFinalized} onClick={() => stepPeriod(1)} aria-label="Next period">+</button>}
                     </div>
                     <span className="sk-board-venue">{game.venue || 'Sun Prairie Ice Arena'}</span>
                 </div>
@@ -1064,8 +1192,12 @@ function LiveScoreEntry(props) {
                     ) : (
                         <div className="sk-board-score">{awayScore}</div>
                     )}
-                    <button className="sk-board-goal" disabled={gameFinalized} onClick={() => openGoalModal('away')}>+ Goal</button>
-                    <button className="sk-board-pen" disabled={gameFinalized} onClick={() => openPenaltyModal('away')}>+ Penalty</button>
+                    {!readOnly && (
+                        <>
+                            <button className="sk-board-goal" disabled={gameFinalized} onClick={() => openGoalModal('away')}>+ Goal</button>
+                            <button className="sk-board-pen" disabled={gameFinalized} onClick={() => openPenaltyModal('away')}>+ Penalty</button>
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -1363,7 +1495,7 @@ function LiveScoreEntry(props) {
             <div className="sk-feed">
                 <div className="sk-feed-head">
                     <span className="sk-feed-title">Scoring &amp; Penalties</span>
-                    {!gameFinalized && (
+                    {!readOnly && !gameFinalized && (
                         <button className="sk-finalize-btn" onClick={handleFinalizeGame}>Finalize Game</button>
                     )}
                 </div>
@@ -1387,8 +1519,8 @@ function LiveScoreEntry(props) {
                             return (
                                 <div
                                     key={event.id}
-                                    className={`sk-feed-row${!gameFinalized ? ' is-editable' : ''}`}
-                                    onClick={() => !gameFinalized && handleEditEvent(event)}
+                                    className={`sk-feed-row${(!gameFinalized && !readOnly) ? ' is-editable' : ''}`}
+                                    onClick={() => (!gameFinalized && !readOnly) && handleEditEvent(event)}
                                 >
                                     <span className={`sk-feed-tag ${event.type}`}>{event.type === 'goal' ? 'Goal' : 'Penalty'}</span>
                                     <span className="sk-feed-dot" style={{ background: teamColor }} />
@@ -1403,7 +1535,7 @@ function LiveScoreEntry(props) {
                                         )}
                                     </span>
                                     <span className="sk-feed-period">{periodLbl} · {event.time}</span>
-                                    {!gameFinalized && (
+                                    {!readOnly && !gameFinalized && (
                                         <button
                                             className="sk-feed-edit"
                                             title="Edit event"
