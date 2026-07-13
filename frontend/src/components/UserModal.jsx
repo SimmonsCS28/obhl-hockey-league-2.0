@@ -298,7 +298,7 @@ const UserModal = ({ user, isCreating, onClose }) => {
                     <button className="um-close" onClick={() => onClose(false)} aria-label="Close">×</button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="um-body">
+                <form onSubmit={handleSubmit} className="um-body" autoComplete="off">
                     {error && (
                         <div className="um-banner um-banner--error">
                             <span style={{ fontWeight: 800, flex: 'none' }}>!</span><span>{error}</span>
@@ -312,6 +312,7 @@ const UserModal = ({ user, isCreating, onClose }) => {
                             id="um-username" name="username" type="text" className="um-input"
                             value={formData.username} onChange={handleChange} placeholder="jsmith"
                             required disabled={loading}
+                            autoComplete="off" data-lpignore="true" data-1p-ignore="true"
                         />
                     </div>
 
@@ -386,6 +387,7 @@ const UserModal = ({ user, isCreating, onClose }) => {
                                 id="um-password" name="password" type="text" className="um-input um-input--mono"
                                 value={formData.password} onChange={handleChange}
                                 placeholder="Set an initial password" required disabled={loading}
+                                autoComplete="new-password" data-lpignore="true" data-1p-ignore="true"
                             />
                             <div className="um-hint">Min 8 characters, 1 uppercase, 1 special character, no spaces</div>
                             <button
@@ -413,6 +415,7 @@ const UserModal = ({ user, isCreating, onClose }) => {
                                         id="um-newPassword" name="newPassword" type="text" className="um-input um-input--mono"
                                         value={formData.newPassword} onChange={handleChange}
                                         placeholder="Enter new password" disabled={loading}
+                                        autoComplete="new-password" data-lpignore="true" data-1p-ignore="true"
                                     />
                                     <div className="um-hint">Min 8 characters, 1 uppercase, 1 special character, no spaces</div>
                                     <button
