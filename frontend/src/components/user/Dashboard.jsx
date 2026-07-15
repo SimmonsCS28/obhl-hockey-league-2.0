@@ -6,6 +6,7 @@ import { resolveTeamColor, textOn } from '../../constants/teamColors';
 import api from '../../services/api';
 import GMTeam from '../gm/GMTeam';
 import GoalieStatsPanel from '../goalie/GoalieStatsPanel';
+import ChickenLicksSection from './chickenLicks/ChickenLicksSection';
 import './Dashboard.css';
 
 const TZ = 'America/Chicago';
@@ -46,6 +47,19 @@ function Dashboard() {
     const [openSlotsByRole, setOpenSlotsByRole] = useState({}); // { REF: [...], SCOREKEEPER: [...] }
     const [goalieWeeks, setGoalieWeeks] = useState([]);          // for GOALIE
     const [busy, setBusy] = useState(null);
+
+    // Chicken Licks — shared between the teammate-notice banner (below) and the
+    // ChickenLicksSection zone, so both reflect the same fetch/poll cycle.
+    const [clOrders, setClOrders] = useState(null);
+    const loadChickenLicks = useCallback(() => {
+        if (!selectedSeasonId) return Promise.resolve();
+        return api.getChickenLicksOrders(selectedSeasonId).then(setClOrders).catch(() => {});
+    }, [selectedSeasonId]);
+    useEffect(() => {
+        loadChickenLicks();
+        const id = setInterval(loadChickenLicks, 60000);
+        return () => clearInterval(id);
+    }, [loadChickenLicks]);
 
     const teamById = useCallback((id) => teams.find(t => t.id === id), [teams]);
     const teamName = (id) => teamById(id)?.name || 'TBD';
@@ -173,6 +187,7 @@ function Dashboard() {
                     {isOfficial && <a href="#signups" className="dash-subnav-link">Signups</a>}
                     {isGM && <a href="#team" className="dash-subnav-link">Team Management</a>}
                     {(isGM || isAdmin) && <a href="#goalie-stats" className="dash-subnav-link">Goalie Stats</a>}
+                    <a href="#chicken-licks" className="dash-subnav-link">Chicken Licks</a>
                 </div>
             </div>
 
@@ -200,6 +215,17 @@ function Dashboard() {
                                 </div>
                             ))}
                         </div>
+                    </div>
+                )}
+
+                {clOrders?.teamOrder && clOrders.teamOrderJoinable && (
+                    <div className="dash-action-card dash-action-card--cl">
+                        <div className="dash-action-head">
+                            <span className="dash-action-bang dash-action-bang--cl">CL</span>
+                            <span className="dash-action-title">Chicken Licks</span>
+                            <span className="dash-action-sub dash-action-sub--cl">{clOrders.teamOrder.initiatorName} started a team order for {clOrders.teamOrder.teamName}</span>
+                        </div>
+                        <a href="#chicken-licks" className="dash-btn dash-btn--cl">Add My Items →</a>
                     </div>
                 )}
 
@@ -401,6 +427,9 @@ function Dashboard() {
                     </div>
                 </section>
             )}
+
+            {/* ── CHICKEN LICKS ── */}
+            <ChickenLicksSection seasonId={selectedSeasonId} openOrders={clOrders} onRefresh={loadChickenLicks} />
         </div>
     );
 }

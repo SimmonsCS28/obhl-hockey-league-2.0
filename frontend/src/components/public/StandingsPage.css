@@ -249,6 +249,77 @@
     color: var(--obi-text-muted);
 }
 
+/* Segmented view control (Standings / Chicken Licks Orders) */
+.obi-segmented {
+    display: flex;
+    gap: 6px;
+    background: var(--obi-bg-card);
+    border: 1px solid var(--obi-card-border);
+    border-radius: var(--obi-radius-btn);
+    padding: 4px;
+}
+
+.obi-segmented-btn {
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--obi-text-secondary);
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 7px;
+    padding: 9px 16px;
+}
+
+.obi-segmented-btn.is-active {
+    color: #0b0c0f;
+    background: var(--obi-accent);
+}
+
+.obi-segmented-btn--cl.is-active {
+    color: #1a0d05;
+    background: #FF7A45;
+}
+
+.obi-cl-intro {
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-icy);
+    margin: 0 0 16px;
+}
+
+/* Chicken Licks Orders columns */
+.obi-col-bar {
+    flex: 1;
+    padding: 0 20px;
+}
+
+.obi-col-bar-track {
+    display: block;
+    height: 8px;
+    border-radius: 4px;
+    background: rgba(157, 185, 205, 0.15);
+    overflow: hidden;
+}
+
+.obi-col-bar-fill {
+    display: block;
+    height: 100%;
+    background: #FF7A45;
+}
+
+.obi-col-dollar {
+    width: 90px;
+    text-align: right;
+    flex: none;
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 16px;
+    color: #FF7A45;
+}
+
 /* Responsive: progressively hide secondary columns */
 @media (max-width: 760px) {
     .obi-col-md { display: none !important; }

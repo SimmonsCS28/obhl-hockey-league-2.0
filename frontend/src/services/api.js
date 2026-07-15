@@ -739,6 +739,61 @@ const api = {
     // Admin: stamp published_at / published_by
     async publishRules() {
         return request('/admin/rules/publish', { method: 'POST' });
+    },
+
+    // ============================================
+    // CHICKEN LICKS ORDERING API
+    // ============================================
+    async getChickenLicksOrders(seasonId) {
+        return request(`/chicken-licks/orders?seasonId=${seasonId}`);
+    },
+    async startChickenLicksPersonalOrder(seasonId) {
+        return request(`/chicken-licks/orders/personal?seasonId=${seasonId}`, { method: 'POST' });
+    },
+    async startChickenLicksTeamOrder(seasonId) {
+        return request(`/chicken-licks/orders/team?seasonId=${seasonId}`, { method: 'POST' });
+    },
+    // orderKey: 'personal' | 'team'. item: { itemKey, flavor, sauces, hotMode, hotMultiplier, celery, bacon, qty }
+    async addChickenLicksItem(orderKey, seasonId, item) {
+        return request(`/chicken-licks/orders/${orderKey}/items?seasonId=${seasonId}`, {
+            method: 'POST',
+            body: JSON.stringify(item)
+        });
+    },
+    async updateChickenLicksItemQty(itemId, qty) {
+        return request(`/chicken-licks/items/${itemId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ qty })
+        });
+    },
+    async removeChickenLicksItem(itemId) {
+        return request(`/chicken-licks/items/${itemId}`, { method: 'DELETE' });
+    },
+    async moveChickenLicksToTeam(seasonId) {
+        return request(`/chicken-licks/orders/personal/move-to-team?seasonId=${seasonId}`, { method: 'POST' });
+    },
+    async closeChickenLicksTeamOrder(seasonId) {
+        return request(`/chicken-licks/orders/team/close?seasonId=${seasonId}`, { method: 'POST' });
+    },
+    async placeChickenLicksPersonalOrder() {
+        return request('/chicken-licks/orders/personal/place', { method: 'POST' });
+    },
+    // orderKey: 'personal' | 'team'
+    async cancelChickenLicksOrder(orderKey, seasonId) {
+        return request(`/chicken-licks/orders/${orderKey}/cancel?seasonId=${seasonId}`, { method: 'POST' });
+    },
+    async getChickenLicksHistory(seasonId) {
+        return request(`/chicken-licks/history?seasonId=${seasonId}`);
+    },
+    async reorderChickenLicks(orderId, seasonId) {
+        return request(`/chicken-licks/history/${orderId}/reorder?seasonId=${seasonId}`, { method: 'POST' });
+    },
+    async getChickenLicksMyTotal(seasonId) {
+        return request(`/chicken-licks/my-total?seasonId=${seasonId}`);
+    },
+    // Public — no auth required
+    async getChickenLicksStandings(seasonId) {
+        return request(`/chicken-licks/standings?seasonId=${seasonId}`);
     }
 };
 
@@ -831,7 +886,21 @@ export const {
     getRules,
     getAdminRules,
     saveRules,
-    publishRules
+    publishRules,
+    getChickenLicksOrders,
+    startChickenLicksPersonalOrder,
+    startChickenLicksTeamOrder,
+    addChickenLicksItem,
+    updateChickenLicksItemQty,
+    removeChickenLicksItem,
+    moveChickenLicksToTeam,
+    closeChickenLicksTeamOrder,
+    placeChickenLicksPersonalOrder,
+    cancelChickenLicksOrder,
+    getChickenLicksHistory,
+    reorderChickenLicks,
+    getChickenLicksMyTotal,
+    getChickenLicksStandings
 } = api;
 
 export default api;

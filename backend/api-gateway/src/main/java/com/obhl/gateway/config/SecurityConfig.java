@@ -53,6 +53,7 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/users/*/name").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/announcements", "/api/v1/announcements/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/rules").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/chicken-licks/standings").permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

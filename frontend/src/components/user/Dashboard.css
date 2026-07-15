@@ -61,6 +61,12 @@
 .dash-btn--gold { background: var(--obi-accent); color: #10131a; }
 .dash-btn--ghost { background: rgba(255, 255, 255, 0.05); border-color: rgba(157, 185, 205, 0.25); color: var(--obi-text-secondary); }
 .dash-btn--ghost:hover:not(:disabled) { background: rgba(255, 255, 255, 0.1); color: #fff; }
+.dash-btn--cl { background: #FF7A45; color: #1a0d05; text-decoration: none; display: inline-block; }
+
+/* Chicken Licks teammate-notice banner — same shell as Action Needed, CL accent */
+.dash-action-card--cl { background: linear-gradient(150deg, rgba(255, 122, 69, 0.15), rgba(255, 122, 69, 0.04)); border-color: rgba(255, 122, 69, 0.45); }
+.dash-action-bang--cl { background: #FF7A45; font-size: 12px; letter-spacing: 0.5px; }
+.dash-action-sub--cl { color: #FF7A45; }
 
 /* ── Cards (next / last game) ── */
 .dash-card { background: linear-gradient(160deg, var(--obi-bg-card), #10141a); border: 1px solid var(--obi-card-border); border-radius: 18px; padding: 24px 26px; display: flex; flex-direction: column; }

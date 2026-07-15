@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSeason } from '../../contexts/SeasonContext';
 import SeasonSelector from '../common/SeasonSelector';
+import api from '../../services/api';
 import heroBg from '../../assets/images/buzzard-full.jpg';
 import './StandingsPage.css';
 
@@ -24,6 +25,11 @@ function StandingsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const [view, setView] = useState('standings'); // 'standings' | 'chickenlicks'
+    const [clRows, setClRows] = useState([]);
+    const [clLoading, setClLoading] = useState(false);
+    const [clError, setClError] = useState(null);
+
     // Always open on the active season (the selection is app-global and otherwise sticks).
     useEffect(() => { resetToActiveSeason(); }, [resetToActiveSeason]);
 
@@ -32,6 +38,15 @@ function StandingsPage() {
             fetchTeams(selectedSeasonId);
         }
     }, [selectedSeasonId]);
+
+    useEffect(() => {
+        if (view !== 'chickenlicks' || !selectedSeasonId) return;
+        setClLoading(true);
+        api.getChickenLicksStandings(selectedSeasonId)
+            .then(setClRows)
+            .catch(err => setClError(err.message))
+            .finally(() => setClLoading(false));
+    }, [view, selectedSeasonId]);
 
     const fetchTeams = async (seasonId) => {
         try {
@@ -118,15 +133,66 @@ function StandingsPage() {
                                 onChange={setSelectedSeasonId}
                             />
                         )}
-                        <div className="obi-legend">
-                            <span><b>PTS</b> = points · Win = 2 · OT Loss = 1 · Loss = 0</span>
-                            <span className="obi-legend-cut">
-                                <span className="obi-legend-line" />Playoff cut line
-                            </span>
+                        <div className="obi-segmented">
+                            <button
+                                type="button"
+                                className={`obi-segmented-btn${view === 'standings' ? ' is-active' : ''}`}
+                                onClick={() => setView('standings')}
+                            >Standings</button>
+                            <button
+                                type="button"
+                                className={`obi-segmented-btn obi-segmented-btn--cl${view === 'chickenlicks' ? ' is-active' : ''}`}
+                                onClick={() => setView('chickenlicks')}
+                            >Chicken Licks Orders</button>
                         </div>
+                        {view === 'standings' && (
+                            <div className="obi-legend">
+                                <span><b>PTS</b> = points · Win = 2 · OT Loss = 1 · Loss = 0</span>
+                                <span className="obi-legend-cut">
+                                    <span className="obi-legend-line" />Playoff cut line
+                                </span>
+                            </div>
+                        )}
                     </div>
 
-                    {loading ? (
+                    {view === 'chickenlicks' ? (
+                        <>
+                            <p className="obi-cl-intro">Season-to-date Chicken Licks order totals, ranked highest to lowest.</p>
+                            {clLoading ? (
+                                <div className="obi-standings-msg">Loading orders…</div>
+                            ) : clError ? (
+                                <div className="obi-standings-msg obi-neg">Error: {clError}</div>
+                            ) : clRows.length === 0 ? (
+                                <div className="obi-standings-msg">No Chicken Licks orders yet this season.</div>
+                            ) : (
+                                <div className="obi-table-card">
+                                    <div className="obi-srow obi-srow-head">
+                                        <span className="obi-col-rank">#</span>
+                                        <span className="obi-col-team">Team</span>
+                                        <span className="obi-col-bar" />
+                                        <span className="obi-col-dollar">Total</span>
+                                    </div>
+                                    {(() => {
+                                        const max = Math.max(...clRows.map(r => Number(r.total) || 0), 1);
+                                        return clRows.map((row, index) => (
+                                            <div key={row.teamId} className="obi-srow" onClick={() => navigate(`/teams/${row.teamId}`)} title="View team roster">
+                                                <span className="obi-col-rank">{index + 1}</span>
+                                                <span className="obi-col-team">
+                                                    <span className="obi-team-name">{row.teamName}</span>
+                                                </span>
+                                                <span className="obi-col-bar">
+                                                    <span className="obi-col-bar-track">
+                                                        <span className="obi-col-bar-fill" style={{ width: `${(Number(row.total) / max) * 100}%` }} />
+                                                    </span>
+                                                </span>
+                                                <span className="obi-col-dollar">${Number(row.total).toFixed(2)}</span>
+                                            </div>
+                                        ));
+                                    })()}
+                                </div>
+                            )}
+                        </>
+                    ) : loading ? (
                         <div className="obi-standings-msg">Loading standings…</div>
                     ) : error ? (
                         <div className="obi-standings-msg obi-neg">Error: {error}</div>
