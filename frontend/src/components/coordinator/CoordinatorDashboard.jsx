@@ -86,11 +86,9 @@ function CoordinatorDashboard() {
                         <span className="cc-banner-badge">Gated · Coordinator</span>
                         <span className="cc-banner-label">Assignment Console</span>
                     </div>
-                    <h1 className="cc-banner-title">Scheduling Console</h1>
+                    <h1 className="cc-banner-title">Coordinator Console</h1>
                     <p className="cc-banner-sub">
-                        Assign players to each game&apos;s open slots, confirm self sign-ups, and track who&apos;s confirmed.
-                        Assigning sends an email and shows pending until the player accepts.
-                        Confirmed slots publish to live score entry and game management.
+                        Schedule goalies, referees, and scorekeepers, and track goalie performance — all in one place.
                     </p>
                 </div>
             </section>
@@ -135,6 +133,14 @@ function CoordinatorDashboard() {
 
                     {/* Board */}
                     <div className="cc-content">
+                        <div style={{ marginBottom: 22 }}>
+                            <div className="cc-banner-title" style={{ fontSize: 'clamp(28px, 4vw, 40px)', margin: '6px 0 8px' }}>Scheduling</div>
+                            <p className="cc-banner-sub" style={{ margin: 0, maxWidth: 700 }}>
+                                Assign players to each game&apos;s open slots, confirm self sign-ups, and track who&apos;s confirmed.
+                                Assigning sends an email and shows pending until the player accepts.
+                                Confirmed slots publish to live score entry and game management.
+                            </p>
+                        </div>
                         <CoordinatorBoard key={activeRole} role={activeRole} />
                     </div>
                 </>
