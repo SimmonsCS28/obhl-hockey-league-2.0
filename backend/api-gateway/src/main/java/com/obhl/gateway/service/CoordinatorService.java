@@ -88,13 +88,15 @@ public class CoordinatorService {
         if (game == null) {
             throw new RuntimeException("Game not found");
         }
-        Long seasonId = req.getSeasonId() != null ? req.getSeasonId() : game.getSeasonId();
 
         // One proposal per (game, role, slot): supersede any existing one.
         ShiftAssignment a = assignmentRepository.findByGameIdAndRoleAndSlot(req.getGameId(), role, slot)
                 .orElseGet(ShiftAssignment::new);
         a.setGameId(req.getGameId());
-        a.setSeasonId(seasonId);
+        // Always the game's own season, never the client-supplied one — a stale/mismatched
+        // client season here would make publishWeek's season-scoped game lookup miss this
+        // row silently (see publishWeek's game==null handling).
+        a.setSeasonId(game.getSeasonId());
         a.setRole(role);
         a.setSlot(slot);
         a.setUserId(req.getUserId());
@@ -215,7 +217,17 @@ public class CoordinatorService {
 
         for (ShiftAssignment a : rows) {
             GameResponseDTO game = games.get(a.getGameId());
-            if (game == null || week != null && !week.equals(game.getWeek())) {
+            if (game == null) {
+                // The assignment's season doesn't match its game's actual season (or the
+                // game was deleted) — surface it instead of silently dropping a CONFIRMED
+                // row that will otherwise never get published.
+                if (ShiftAssignment.STATUS_CONFIRMED.equals(a.getStatus())) {
+                    unconfirmed.add("Game #" + a.getGameId() + " — " + r + " slot " + a.getSlot()
+                            + " (assignment's season doesn't match game; not published)");
+                }
+                continue;
+            }
+            if (week != null && !week.equals(game.getWeek())) {
                 continue;
             }
             if (ShiftAssignment.STATUS_CONFIRMED.equals(a.getStatus())) {
