@@ -137,7 +137,7 @@ function GoalieStatsPanel({ seasonId, canEdit }) {
                                     <div className="gp-stepper">
                                         <button
                                             disabled={savingRating}
-                                            onClick={() => applyRating(selected.playerId, Math.max(1, selected.rating - 1))}
+                                            onClick={() => applyRating(selected.playerId, Math.max(0, selected.rating - 1))}
                                         >&minus;</button>
                                         <span className={`gp-stepper-value gp-rating-${band}`}>{selected.rating}</span>
                                         <button

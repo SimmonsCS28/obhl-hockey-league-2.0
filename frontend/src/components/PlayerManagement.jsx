@@ -317,7 +317,7 @@ function PlayerManagement() {
             jerseyNumber: player.jerseyNumber || '',
             position: player.position,
             shoots: player.shoots || 'L',
-            skillRating: player.skillRating || 5,
+            skillRating: player.skillRating != null ? player.skillRating : 5,
             email: player.email || '',
             isVeteran: player.isVeteran || false,
             birthDate: player.birthDate || '',
@@ -453,7 +453,7 @@ function PlayerManagement() {
                 jerseyNumber: null,
                 position: player.position,
                 shoots: player.shoots || 'L',
-                skillRating: player.skillRating || 5,
+                skillRating: player.skillRating != null ? player.skillRating : 5,
                 email: player.email || '',
                 isVeteran: player.isVeteran || false,
                 birthDate: player.birthDate || null,
@@ -611,13 +611,13 @@ function PlayerManagement() {
                                     </select>
                                 </div>
                                 <div className="form-group">
-                                    <label>Skill Rating (1-10)</label>
+                                    <label>Skill Rating ({formData.position === 'G' ? '0-10' : '1-10'})</label>
                                     <input
                                         type="number"
                                         value={formData.skillRating}
                                         onChange={(e) => setFormData({ ...formData, skillRating: e.target.value })}
                                         required
-                                        min="1"
+                                        min={formData.position === 'G' ? '0' : '1'}
                                         max="10"
                                     />
                                 </div>

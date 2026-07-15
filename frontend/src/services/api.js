@@ -596,7 +596,7 @@ const api = {
     },
 
     async updateGoalieRating(playerId, skillRating) {
-        // skillRating: integer 1-10, or null to clear
+        // skillRating: integer 1-10 for skaters, 0-10 for goalies, or null to clear
         return request(`/gm/players/${playerId}/skill`, {
             method: 'PATCH',
             body: JSON.stringify({ skillRating })

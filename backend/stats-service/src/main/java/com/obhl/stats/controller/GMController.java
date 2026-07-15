@@ -70,8 +70,9 @@ public class GMController {
 
     /**
      * Update player skill rating (GM can only update their team's players)
-     * Valid range: 1–10, or null to clear (used for goalies not yet rated by
-     * a Goalie Coordinator).
+     * Valid range: 1–10 for skaters, 0–10 for goalies (a Goalie Coordinator rating a
+     * goalie 0 is meaningful; a skater's rating drives the 2-goal-limit rule and has
+     * no 0 case), or null to clear (used for goalies not yet rated).
      */
     @PatchMapping("/players/{playerId}/skill")
     @PreAuthorize("hasAnyRole('ADMIN','GM','GOALIE_COORDINATOR')")
@@ -96,7 +97,8 @@ public class GMController {
                         int rating = skillObj instanceof Number
                                 ? ((Number) skillObj).intValue()
                                 : Integer.parseInt(skillObj.toString());
-                        rating = Math.max(1, Math.min(10, rating));
+                        int min = "G".equals(player.getPosition()) ? 0 : 1;
+                        rating = Math.max(min, Math.min(10, rating));
                         player.setSkillRating(rating);
                     }
                     Player updated = playerRepository.save(player);
