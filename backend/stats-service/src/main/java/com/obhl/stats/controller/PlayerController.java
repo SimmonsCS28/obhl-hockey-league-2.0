@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.json.MappingJacksonValue;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.obhl.stats.config.PlayerAccess;
 import com.obhl.stats.model.Player;
 import com.obhl.stats.repository.PlayerRepository;
 
@@ -28,45 +31,62 @@ public class PlayerController {
     private final PlayerRepository playerRepository;
 
     @GetMapping
-    public ResponseEntity<List<Player>> getPlayers(
+    public MappingJacksonValue getPlayers(
             @RequestParam(required = false) Long teamId,
             @RequestParam(required = false) Long seasonId,
             @RequestParam(required = false) String position,
             @RequestParam(required = false) Boolean active,
-            @RequestParam(required = false) Boolean unassigned) {
+            @RequestParam(required = false) Boolean unassigned,
+            Authentication authentication) {
 
+        return maskedResponse(resolvePlayers(teamId, seasonId, position, active, unassigned), authentication);
+    }
+
+    private List<Player> resolvePlayers(Long teamId, Long seasonId, String position, Boolean active, Boolean unassigned) {
         if (Boolean.TRUE.equals(unassigned)) {
             if (seasonId != null && Boolean.TRUE.equals(active)) {
-                return ResponseEntity.ok(playerRepository.findBySeasonIdAndTeamIdIsNullAndIsActiveTrue(seasonId));
+                return playerRepository.findBySeasonIdAndTeamIdIsNullAndIsActiveTrue(seasonId);
             } else if (seasonId != null) {
-                return ResponseEntity.ok(playerRepository.findBySeasonIdAndTeamIdIsNull(seasonId));
+                return playerRepository.findBySeasonIdAndTeamIdIsNull(seasonId);
             } else {
-                return ResponseEntity.ok(playerRepository.findByTeamIdIsNull());
+                return playerRepository.findByTeamIdIsNull();
             }
         } else if (seasonId != null && teamId != null && Boolean.TRUE.equals(active)) {
-            return ResponseEntity.ok(playerRepository.findBySeasonIdAndTeamIdAndIsActiveTrue(seasonId, teamId));
+            return playerRepository.findBySeasonIdAndTeamIdAndIsActiveTrue(seasonId, teamId);
         } else if (seasonId != null && teamId != null) {
-            return ResponseEntity.ok(playerRepository.findBySeasonIdAndTeamId(seasonId, teamId));
+            return playerRepository.findBySeasonIdAndTeamId(seasonId, teamId);
         } else if (seasonId != null) {
-            return ResponseEntity.ok(playerRepository.findBySeasonId(seasonId));
+            return playerRepository.findBySeasonId(seasonId);
         } else if (teamId != null && Boolean.TRUE.equals(active)) {
-            return ResponseEntity.ok(playerRepository.findByTeamIdAndIsActiveTrue(teamId));
+            return playerRepository.findByTeamIdAndIsActiveTrue(teamId);
         } else if (teamId != null) {
-            return ResponseEntity.ok(playerRepository.findByTeamId(teamId));
+            return playerRepository.findByTeamId(teamId);
         } else if (position != null) {
-            return ResponseEntity.ok(playerRepository.findByPosition(position));
+            return playerRepository.findByPosition(position);
         } else if (Boolean.TRUE.equals(active)) {
-            return ResponseEntity.ok(playerRepository.findByIsActiveTrue());
+            return playerRepository.findByIsActiveTrue();
         }
-
-        return ResponseEntity.ok(playerRepository.findAll());
+        return playerRepository.findAll();
     }
 
     @GetMapping("/{playerId}")
-    public ResponseEntity<Player> getPlayer(@PathVariable Long playerId) {
+    public ResponseEntity<?> getPlayer(@PathVariable Long playerId, Authentication authentication) {
         return playerRepository.findById(playerId)
-                .map(ResponseEntity::ok)
+                .<ResponseEntity<?>>map(player -> ResponseEntity.ok(maskedResponse(player, authentication)))
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    /**
+     * Wraps a Player/List&lt;Player&gt; so Jackson drops skillRating/email/birthDate
+     * for anyone who isn't staff (ADMIN/GM/GOALIE_COORDINATOR) or a trusted internal
+     * service call — see PlayerAccess and Player.Views.
+     */
+    private MappingJacksonValue maskedResponse(Object body, Authentication authentication) {
+        MappingJacksonValue wrapper = new MappingJacksonValue(body);
+        wrapper.setSerializationView(PlayerAccess.isPrivileged(authentication)
+                ? Player.Views.Privileged.class
+                : Player.Views.Public.class);
+        return wrapper;
     }
 
     @GetMapping("/exists")
@@ -76,18 +96,19 @@ public class PlayerController {
     }
 
     @GetMapping("/by-email")
-    public ResponseEntity<Player> getPlayerByEmail(@RequestParam String email) {
+    public ResponseEntity<?> getPlayerByEmail(@RequestParam String email, Authentication authentication) {
         return playerRepository.findByEmail(email)
-                .map(ResponseEntity::ok)
+                .<ResponseEntity<?>>map(player -> ResponseEntity.ok(maskedResponse(player, authentication)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @GetMapping("/by-email-season")
-    public ResponseEntity<Player> getPlayerByEmailAndSeason(
+    public ResponseEntity<?> getPlayerByEmailAndSeason(
             @RequestParam String email,
-            @RequestParam Long seasonId) {
+            @RequestParam Long seasonId,
+            Authentication authentication) {
         return playerRepository.findByEmailAndSeasonId(email, seasonId)
-                .map(ResponseEntity::ok)
+                .<ResponseEntity<?>>map(player -> ResponseEntity.ok(maskedResponse(player, authentication)))
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -128,9 +149,14 @@ public class PlayerController {
     @PutMapping("/{playerId}")
     public ResponseEntity<Player> updatePlayer(
             @PathVariable Long playerId,
-            @RequestBody java.util.Map<String, Object> updates) {
+            @RequestBody java.util.Map<String, Object> updates,
+            Authentication authentication) {
         return playerRepository.findById(playerId)
                 .map(existing -> {
+                    if (updates.containsKey("skillRating")
+                            && !PlayerAccess.canRateSkill(authentication, existing.getPosition())) {
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN).<Player>build();
+                    }
                     if (updates.containsKey("teamId")) {
                         Object val = updates.get("teamId");
                         existing.setTeamId(val == null ? null : ((Number) val).longValue());

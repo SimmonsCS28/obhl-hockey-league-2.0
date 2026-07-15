@@ -17,6 +17,7 @@ public class PlayerDto {
     private String jerseyNumber;
     private Long teamId;
     private Boolean isActive;
+    private Integer skillRating;
 
     public Long getId() {
         return id;

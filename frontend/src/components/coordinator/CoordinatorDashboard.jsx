@@ -6,6 +6,7 @@ import api from '../../services/api';
 import logo from '../../assets/images/buzzard-logo.png';
 import bannerBg from '../../assets/images/buzzard-banner.png';
 import CoordinatorBoard from './CoordinatorBoard';
+import GoalieStatsPanel from '../goalie/GoalieStatsPanel';
 import UserPill from '../common/UserPill';
 import './Coordinator.css';
 
@@ -25,6 +26,7 @@ function CoordinatorDashboard() {
 
     const [activeRole, setActiveRole] = useState(roleTabs[0]?.key || 'GOALIE');
     const [alertCounts, setAlertCounts] = useState({});
+    const [activeSection, setActiveSection] = useState('scheduling');
 
     useEffect(() => {
         const loadAlerts = async () => {
@@ -93,30 +95,61 @@ function CoordinatorDashboard() {
                 </div>
             </section>
 
-            {/* Role tabs */}
-            <div className="cc-tabs-bar">
-                <div className="cc-tabs-inner">
-                    {roleTabs.map(t => {
-                        const count = alertCounts[t.key] || 0;
-                        const active = activeRole === t.key;
-                        return (
-                            <button
-                                key={t.key}
-                                className={`cc-role-tab${active ? ' is-active' : ''}`}
-                                onClick={() => setActiveRole(t.key)}
-                            >
-                                {t.label} Coordinator
-                                {count > 0 && <span className="cc-tab-badge">{count}</span>}
-                            </button>
-                        );
-                    })}
+            {/* Sub-nav */}
+            {canGoalie && (
+                <div className="cc-subnav-bar">
+                    <div className="cc-tabs-inner">
+                        <button
+                            className={`cc-nav-link${activeSection === 'scheduling' ? ' is-active' : ''}`}
+                            onClick={() => setActiveSection('scheduling')}
+                        >Scheduling</button>
+                        <button
+                            className={`cc-nav-link${activeSection === 'goalie-management' ? ' is-active' : ''}`}
+                            onClick={() => setActiveSection('goalie-management')}
+                        >Goalie Management</button>
+                    </div>
                 </div>
-            </div>
+            )}
 
-            {/* Board */}
-            <div className="cc-content">
-                <CoordinatorBoard key={activeRole} role={activeRole} />
-            </div>
+            {activeSection === 'scheduling' ? (
+                <>
+                    {/* Role tabs */}
+                    <div className="cc-tabs-bar">
+                        <div className="cc-tabs-inner">
+                            {roleTabs.map(t => {
+                                const count = alertCounts[t.key] || 0;
+                                const active = activeRole === t.key;
+                                return (
+                                    <button
+                                        key={t.key}
+                                        className={`cc-role-tab${active ? ' is-active' : ''}`}
+                                        onClick={() => setActiveRole(t.key)}
+                                    >
+                                        {t.label} Coordinator
+                                        {count > 0 && <span className="cc-tab-badge">{count}</span>}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Board */}
+                    <div className="cc-content">
+                        <CoordinatorBoard key={activeRole} role={activeRole} />
+                    </div>
+                </>
+            ) : (
+                <div className="cc-content">
+                    <div style={{ marginBottom: 22 }}>
+                        <div className="cc-banner-title" style={{ fontSize: 'clamp(28px, 4vw, 40px)', margin: '6px 0 8px' }}>Goalie Management</div>
+                        <p className="cc-banner-sub" style={{ margin: 0, maxWidth: 640 }}>
+                            Season GAA, recent form, and coordinator ratings for every rostered goalie.
+                            Ratings are visible to GMs as read-only Goalie Stats.
+                        </p>
+                    </div>
+                    <GoalieStatsPanel seasonId={seasonId} canEdit={true} />
+                </div>
+            )}
 
             {/* Footer */}
             <footer className="cc-footer">

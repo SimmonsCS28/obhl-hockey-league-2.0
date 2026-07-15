@@ -589,6 +589,21 @@ const api = {
     },
 
     // ============================================
+    // GOALIE STATS (season GAA/W-L/last-5, derived from completed games)
+    // ============================================
+    async getGoaliePerformance(seasonId) {
+        return request(`/goalies/performance?seasonId=${seasonId}`);
+    },
+
+    async updateGoalieRating(playerId, skillRating) {
+        // skillRating: integer 1-10, or null to clear
+        return request(`/gm/players/${playerId}/skill`, {
+            method: 'PATCH',
+            body: JSON.stringify({ skillRating })
+        });
+    },
+
+    // ============================================
     // SHIFT CONFIRMATIONS (in-app + public token)
     // ============================================
     async getPendingShifts() {
@@ -770,6 +785,8 @@ export const {
     dropSlotSignup,
     getGoalieAvailability,
     setGoalieAvailability,
+    getGoaliePerformance,
+    updateGoalieRating,
     getPendingShifts,
     respondToShift,
     getShiftByToken,

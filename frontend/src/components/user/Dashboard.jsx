@@ -5,6 +5,7 @@ import { useSeason } from '../../contexts/SeasonContext';
 import { resolveTeamColor, textOn } from '../../constants/teamColors';
 import api from '../../services/api';
 import GMTeam from '../gm/GMTeam';
+import GoalieStatsPanel from '../goalie/GoalieStatsPanel';
 import './Dashboard.css';
 
 const TZ = 'America/Chicago';
@@ -33,6 +34,7 @@ function Dashboard() {
     const officialRoles = useMemo(() => roles.filter(r => OFFICIAL_ROLES.includes(r)), [roles]);
     const isOfficial = officialRoles.length > 0;
     const isGM = roles.includes('GM');
+    const isAdmin = roles.includes('ADMIN');
 
     const [dash, setDash] = useState(null);
     const [teams, setTeams] = useState([]);
@@ -170,6 +172,7 @@ function Dashboard() {
                     <a href="#my-week" className="dash-subnav-link">My Week</a>
                     {isOfficial && <a href="#signups" className="dash-subnav-link">Signups</a>}
                     {isGM && <a href="#team" className="dash-subnav-link">Team Management</a>}
+                    {(isGM || isAdmin) && <a href="#goalie-stats" className="dash-subnav-link">Goalie Stats</a>}
                 </div>
             </div>
 
@@ -378,6 +381,23 @@ function Dashboard() {
                         <div className="dash-team-editor">
                             <GMTeam />
                         </div>
+                    </div>
+                </section>
+            )}
+
+            {/* ── GOALIE STATS (read-only) ── */}
+            {(isGM || isAdmin) && (
+                <section id="goalie-stats" className="dash-zone dash-zone--alt">
+                    <div className="obi-container">
+                        <h2 className="dash-zone-h2">
+                            Goalie Stats
+                            <span className="gp-readonly-pill">Read-Only</span>
+                        </h2>
+                        <p className="dash-zone-intro">
+                            Season GAA, recent form, and the Goalie Coordinator&apos;s rating for every rostered goalie.
+                            Ratings are set by the coordinator.
+                        </p>
+                        <GoalieStatsPanel seasonId={selectedSeasonId} canEdit={false} />
                     </div>
                 </section>
             )}

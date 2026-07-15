@@ -290,6 +290,41 @@
     color: #0b0c0f;
 }
 
+/* ---------- Sub-nav (Scheduling / Goalie Management) ---------- */
+
+.cc-subnav-bar {
+    position: sticky;
+    top: 74px;
+    z-index: 41;
+    background: rgba(11, 12, 15, 0.97);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--obi-divider);
+}
+
+.cc-subnav-bar .cc-tabs-inner {
+    padding: 0 28px;
+    gap: 4px;
+}
+
+.cc-subnav-bar .cc-nav-link {
+    cursor: pointer;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 15px 14px;
+    border-radius: 0;
+}
+
+.cc-subnav-bar .cc-nav-link:hover {
+    background: none;
+    border-bottom-color: rgba(246, 169, 28, 0.5);
+}
+
+.cc-subnav-bar .cc-nav-link.is-active {
+    color: #fff;
+    border-bottom-color: var(--obi-accent);
+}
+
 /* ---------- Main content area ---------- */
 
 .cc-content {

@@ -3,6 +3,9 @@ package com.obhl.game.service;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
@@ -25,7 +28,18 @@ public class GoalLimitValidator {
     private final GameEventRepository gameEventRepository;
     private final RestTemplate restTemplate = new RestTemplate();
 
-    private static final String STATS_SERVICE_URL = "http://localhost:8003/api/v1/players";
+    // Was hardcoded to http://localhost:8003 — inside a Docker container that never
+    // reaches the stats-service container (each has its own "localhost"), silently
+    // failing every call (caught below, defaulting to skillRating=5). Use the same
+    // configured URL every other stats-service caller in this app uses.
+    @Value("${stats.service.url}")
+    private String statsServiceUrl;
+
+    // stats-service now masks skillRating unless the caller is staff or a trusted
+    // internal service call — this rule engine needs the real value to enforce the
+    // 2-goal limit, so it authenticates as an internal service.
+    @Value("${internal.service.key:obhl-internal-service-key-change-in-production}")
+    private String internalServiceKey;
 
     /**
      * Validates if a player can score a goal based on:
@@ -131,9 +145,12 @@ public class GoalLimitValidator {
      */
     private Map<String, Object> getPlayerDetails(Long playerId) {
         try {
-            String url = STATS_SERVICE_URL + "/" + playerId;
+            String url = statsServiceUrl + "/players/" + playerId;
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("X-Internal-Service-Key", internalServiceKey);
             @SuppressWarnings("unchecked")
-            Map<String, Object> player = restTemplate.getForObject(url, Map.class);
+            Map<String, Object> player = restTemplate.exchange(
+                    url, org.springframework.http.HttpMethod.GET, new HttpEntity<>(headers), Map.class).getBody();
             return player != null ? player : Map.of("skillRating", 5);
         } catch (RestClientException e) {
             log.warn("Could not fetch player details for ID {}: {}", playerId, e.getMessage());

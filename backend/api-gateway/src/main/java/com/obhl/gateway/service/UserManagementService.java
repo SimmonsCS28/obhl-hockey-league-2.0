@@ -41,6 +41,12 @@ public class UserManagementService {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private com.obhl.gateway.client.LeagueClient leagueClient;
+
+    @Autowired
+    private com.obhl.gateway.client.StatsClient statsClient;
+
     @org.springframework.beans.factory.annotation.Value("${app.frontend.url:https://oldbuzzardhockey.com}")
     private String frontendUrl;
 
@@ -452,6 +458,16 @@ public class UserManagementService {
 
         String defaultPasswordHash = passwordEncoder.encode("Welcome1!");
 
+        Long activeSeasonId = null;
+        try {
+            Map<String, Object> activeSeason = leagueClient.getActiveSeason();
+            activeSeasonId = ((Number) activeSeason.get("id")).longValue();
+        } catch (Exception e) {
+            // No active season resolvable — goalies will still be created as users,
+            // just without a players row (same as any other onboarding gap); the
+            // admin can add them to the Players page manually once a season is active.
+        }
+
         for (com.obhl.gateway.dto.GoalieImportDTO dto : goalieDtos) {
             String email = dto.getEmail().trim();
             if (userRepository.findByEmail(email).isPresent() || userRepository.findByUsername(email).isPresent()) {
@@ -474,12 +490,31 @@ public class UserManagementService {
             com.obhl.gateway.model.GoalieProfile profile = new com.obhl.gateway.model.GoalieProfile();
             profile.setUser(savedUser);
             profile.setEmail(email);
-            profile.setSkillRating(dto.getSkillRating());
-            profile.setWins(0);
-            profile.setLosses(0);
             profile.setIsActive(true);
 
             goalieProfileRepository.save(profile);
+
+            // Goalies are treated like regular players (position='G') so they show up
+            // on the Players page with the same editable skill rating.
+            if (activeSeasonId != null) {
+                Map<String, Object> playerMap = new java.util.HashMap<>();
+                playerMap.put("firstName", dto.getFirstName());
+                playerMap.put("lastName", dto.getLastName());
+                playerMap.put("email", email);
+                playerMap.put("position", "G");
+                playerMap.put("skillRating", dto.getSkillRating());
+                playerMap.put("seasonId", activeSeasonId);
+                playerMap.put("teamId", null);
+                playerMap.put("isActive", true);
+                try {
+                    statsClient.createPlayers(List.of(playerMap));
+                } catch (Exception e) {
+                    // Player creation failure shouldn't block the user account from
+                    // being created; the goalie just won't appear on the Players page
+                    // until an admin adds them manually.
+                }
+            }
+
             createdUsers.add(convertToDTO(savedUser));
         }
         return createdUsers;

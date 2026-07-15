@@ -13,7 +13,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 
-@FeignClient(name = "stats-service", url = "${application.config.stats-service-url:http://localhost:8082}")
+@FeignClient(name = "stats-service", url = "${application.config.stats-service-url:http://localhost:8082}",
+                configuration = StatsClientConfig.class)
 public interface StatsClient {
 
         @GetMapping("/api/v1/players")

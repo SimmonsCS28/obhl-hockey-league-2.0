@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.obhl.gateway.dto.PlayerDto;
 
-@FeignClient(name = "stats-service", url = "${stats.service.url:http://localhost:8003}")
+@FeignClient(name = "stats-service", url = "${stats.service.url:http://localhost:8003}", configuration = StatsClientConfig.class)
 public interface StatsClient {
 
     @PostMapping("/api/v1/players/batch")
@@ -20,6 +20,9 @@ public interface StatsClient {
 
     @GetMapping("/api/v1/players/{playerId}")
     PlayerDto getPlayer(@PathVariable("playerId") Long playerId);
+
+    @GetMapping("/api/v1/players")
+    List<PlayerDto> getPlayersBySeason(@RequestParam("seasonId") Long seasonId);
 
     @GetMapping("/api/v1/players/by-email-season")
     PlayerDto getPlayerByEmailAndSeason(@RequestParam("email") String email, @RequestParam("seasonId") Long seasonId);

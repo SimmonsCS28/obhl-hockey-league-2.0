@@ -1,0 +1,547 @@
+/* ============================================================
+   Goalie Stats Panel — shared grid/detail view used by both the
+   Coordinator Console (editable) and the Dashboard (read-only).
+   ============================================================ */
+
+.gp-panel {
+    font-family: var(--obi-font-body);
+    color: var(--obi-text);
+}
+
+.gp-empty {
+    padding: 46px 20px;
+    text-align: center;
+    font-family: var(--obi-font-body);
+    font-size: 15px;
+    color: var(--obi-text-muted);
+}
+
+.gp-empty-error {
+    color: var(--obi-error);
+}
+
+/* ---------- Controls row ---------- */
+
+.gp-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.gp-search {
+    flex: 1;
+    min-width: 220px;
+    max-width: 340px;
+    background: #0e1116;
+    border: 1px solid var(--obi-card-border);
+    border-radius: var(--obi-radius-btn);
+    padding: 10px 14px;
+    color: var(--obi-text);
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    outline: none;
+}
+
+.gp-search:focus {
+    border-color: rgba(246, 169, 28, 0.5);
+}
+
+.gp-sort {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.gp-sort-label {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.3px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+}
+
+.gp-sort-btn {
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12.5px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #C8D0D8;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    padding: 7px 13px;
+    border-radius: var(--obi-radius-btn);
+    transition: transform 0.1s, color 0.15s, background 0.15s, border-color 0.15s;
+}
+
+.gp-sort-btn:hover {
+    transform: translateY(-1px);
+}
+
+.gp-sort-btn.is-active {
+    color: #0b0c0f;
+    background: var(--obi-accent);
+    border-color: var(--obi-accent);
+}
+
+.gp-count {
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    color: var(--obi-text-muted);
+}
+
+/* ---------- Grid + cards ---------- */
+
+.gp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 14px;
+}
+
+.gp-card {
+    cursor: pointer;
+    background: linear-gradient(160deg, var(--obi-bg-deep-card), #10141a);
+    border: 1px solid var(--obi-card-border);
+    border-radius: var(--obi-radius-card);
+    padding: 18px 20px;
+    transition: border-color 0.12s;
+}
+
+.gp-card:hover {
+    border-color: rgba(246, 169, 28, 0.4);
+}
+
+.gp-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.gp-card-name {
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 18px;
+    color: #fff;
+}
+
+.gp-card-stats {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 12px;
+}
+
+.gp-card-stat-value {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 22px;
+    color: var(--obi-text);
+}
+
+.gp-card-stat-label {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+}
+
+.gp-card-bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.gp-detail-link {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--obi-accent);
+}
+
+/* ---------- Rating badges (unrated / low / mid / high) ---------- */
+
+.gp-rating-pill {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 11.5px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    padding: 5px 11px;
+    border-radius: var(--obi-radius-badge);
+    flex: none;
+    border: 1px solid transparent;
+}
+
+.gp-rating-unrated {
+    color: #9AA6B0;
+    background: rgba(157, 185, 205, 0.08);
+    border-color: rgba(157, 185, 205, 0.22);
+}
+
+.gp-rating-low {
+    color: var(--obi-error);
+    background: rgba(224, 138, 138, 0.12);
+    border-color: rgba(224, 138, 138, 0.32);
+}
+
+.gp-rating-mid {
+    color: var(--obi-accent);
+    background: rgba(246, 169, 28, 0.1);
+    border-color: rgba(246, 169, 28, 0.35);
+}
+
+.gp-rating-high {
+    color: var(--obi-success);
+    background: rgba(127, 181, 154, 0.12);
+    border-color: rgba(127, 181, 154, 0.35);
+}
+
+/* ---------- W/L dots ---------- */
+
+.gp-dots {
+    display: flex;
+    gap: 5px;
+}
+
+.gp-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 10.5px;
+    border: 1px solid transparent;
+}
+
+.gp-dot-win {
+    color: var(--obi-success);
+    background: rgba(127, 181, 154, 0.14);
+    border-color: rgba(127, 181, 154, 0.32);
+}
+
+.gp-dot-loss {
+    color: var(--obi-error);
+    background: rgba(224, 138, 138, 0.14);
+    border-color: rgba(224, 138, 138, 0.32);
+}
+
+.gp-dot-tie {
+    color: var(--obi-icy);
+    background: rgba(157, 185, 205, 0.1);
+    border-color: rgba(157, 185, 205, 0.28);
+}
+
+/* ---------- Detail view ---------- */
+
+.gp-back {
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
+    padding: 0 0 16px;
+}
+
+.gp-back:hover {
+    color: #fff;
+}
+
+.gp-detail-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: stretch;
+    margin-bottom: 26px;
+}
+
+.gp-detail-name-card {
+    flex: 1;
+    min-width: 220px;
+    background: linear-gradient(150deg, var(--obi-bg-deep-card), #10141a);
+    border: 1px solid rgba(246, 169, 28, 0.22);
+    border-radius: var(--obi-radius-card);
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.gp-detail-name {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 28px;
+    color: #fff;
+    margin: 0;
+}
+
+.gp-detail-record {
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    color: var(--obi-icy);
+    margin-top: 4px;
+}
+
+.gp-detail-header .gp-dots {
+    margin-top: 12px;
+}
+
+.gp-detail-header .gp-dot {
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+}
+
+.gp-stat-tile {
+    background: var(--obi-bg-card);
+    border: 1px solid var(--obi-card-border);
+    border-radius: var(--obi-radius-card);
+    padding: 18px 22px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 130px;
+}
+
+.gp-stat-value {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 26px;
+    color: #fff;
+}
+
+.gp-stat-label {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    margin-top: 2px;
+}
+
+.gp-rating-tile {
+    min-width: 210px;
+    gap: 9px;
+}
+
+.gp-stepper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 4px;
+}
+
+.gp-stepper button {
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--obi-radius-btn);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(157, 185, 205, 0.25);
+    color: #fff;
+    font-size: 17px;
+    line-height: 1;
+}
+
+.gp-stepper button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.gp-stepper-value {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 24px;
+    min-width: 26px;
+    text-align: center;
+}
+
+.gp-clear-rating {
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: var(--obi-font-body);
+    font-size: 11px;
+    color: var(--obi-text-dim);
+    margin-top: 8px;
+    padding: 0;
+}
+
+.gp-clear-rating:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.gp-add-rating {
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #0b0c0f;
+    background: var(--obi-accent);
+    border: none;
+    padding: 9px 16px;
+    border-radius: var(--obi-radius-btn);
+    margin-top: 4px;
+}
+
+.gp-add-rating:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+/* ---------- Last 5 games list ---------- */
+
+.gp-games-heading {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 16px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #fff;
+    margin-bottom: 12px;
+}
+
+.gp-games-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.gp-game-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 14px;
+    background: linear-gradient(160deg, var(--obi-bg-deep-card), #10141a);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 12px;
+    padding: 14px 18px;
+}
+
+.gp-game-date {
+    width: 70px;
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    color: var(--obi-icy);
+    flex: none;
+}
+
+.gp-game-team {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--obi-text);
+    flex: none;
+}
+
+.gp-team-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+    flex: none;
+}
+
+.gp-game-vs {
+    font-family: var(--obi-font-display);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 1px;
+    color: var(--obi-text-dim);
+    flex: none;
+}
+
+.gp-game-opp-goalie {
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    color: var(--obi-text-muted);
+    flex: 1;
+    min-width: 120px;
+}
+
+.gp-game-score {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 15px;
+    color: #fff;
+    flex: none;
+}
+
+.gp-result-pill {
+    flex: none;
+    display: inline-block;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 11.5px;
+    padding: 3px 10px;
+    border-radius: 5px;
+    border: 1px solid transparent;
+}
+
+.gp-result-win {
+    color: var(--obi-success);
+    background: rgba(127, 181, 154, 0.14);
+    border-color: rgba(127, 181, 154, 0.32);
+}
+
+.gp-result-loss {
+    color: var(--obi-error);
+    background: rgba(224, 138, 138, 0.14);
+    border-color: rgba(224, 138, 138, 0.32);
+}
+
+.gp-result-tie {
+    color: var(--obi-icy);
+    background: rgba(157, 185, 205, 0.1);
+    border-color: rgba(157, 185, 205, 0.28);
+}
+
+/* ---------- Read-only pill (Dashboard) ---------- */
+
+.gp-readonly-pill {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    padding: 4px 10px;
+    border-radius: var(--obi-radius-badge);
+    margin-left: 10px;
+}

@@ -6,6 +6,8 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonView;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -24,6 +26,17 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class Player {
 
+    /**
+     * Fields not annotated with @JsonView are always serialized, in every view.
+     * {@link Privileged} is only activated (via MappingJacksonValue) for callers that
+     * PlayerAccess#isPrivileged approves — everyone else gets {@link Public}, which
+     * silently drops these fields from the JSON entirely (not just nulled).
+     */
+    public static class Views {
+        public static class Public {}
+        public static class Privileged {}
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -35,6 +48,7 @@ public class Player {
     private Long seasonId;
 
     @Column(nullable = false)
+    @JsonView(Views.Privileged.class)
     private String email;
 
     @Column(name = "is_veteran")
@@ -56,6 +70,7 @@ public class Player {
     private String shoots;
 
     @Column(name = "birth_date")
+    @JsonView(Views.Privileged.class)
     private LocalDate birthDate;
 
     @Column(length = 100)
@@ -64,7 +79,8 @@ public class Player {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
-    @Column(name = "skill_rating", nullable = false)
+    @Column(name = "skill_rating")
+    @JsonView(Views.Privileged.class)
     private Integer skillRating = 5;
 
     @CreationTimestamp
