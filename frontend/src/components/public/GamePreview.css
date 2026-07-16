@@ -77,6 +77,35 @@
     padding: 28px 30px 24px;
 }
 
+.obi-gd-navrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.obi-gd-navlink {
+    flex: none;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #9DB9CD;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color .15s;
+}
+
+.obi-gd-navlink:hover {
+    color: var(--obi-accent);
+}
+
+.obi-gd-navlink-spacer {
+    flex: none;
+}
+
 .obi-gd-chips {
     display: flex;
     flex-wrap: wrap;

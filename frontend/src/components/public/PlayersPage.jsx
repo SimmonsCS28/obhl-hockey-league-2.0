@@ -201,6 +201,7 @@ function PlayersPage() {
                                     <span className="obi-pcol-num">{player.jerseyNumber ?? '—'}</span>
                                     <span className="obi-pcol-name">
                                         {player.firstName} {player.lastName}
+                                        {teamById(player.teamId)?.gmId === player.id && <span className="obi-mini-badge">GM</span>}
                                         {player.twoGoalLimit && <span className="obi-mini-badge obi-mini-2gl">2GL</span>}
                                     </span>
                                     <span className="obi-pcol-team obi-col-sm">
