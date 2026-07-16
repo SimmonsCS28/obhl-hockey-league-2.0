@@ -233,7 +233,7 @@ function TeamRosterPage() {
                                 <span className="obi-trr-name">
                                     {p.firstName} {p.lastName}
                                     {team.gmId === p.id && <span className="obi-mini-badge">GM</span>}
-                                    {p.skillRating >= 9 && <span className="obi-mini-badge obi-mini-2gl">2GL</span>}
+                                    {p.twoGoalLimit && <span className="obi-mini-badge obi-mini-2gl">2GL</span>}
                                 </span>
                                 <span className="obi-trr-pos">
                                     <span className="obi-pos-badge">{posLabel(p.position)}</span>

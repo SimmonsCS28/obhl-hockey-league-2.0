@@ -6,7 +6,9 @@ import java.time.LocalDateTime;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonView;
+import jakarta.persistence.Transient;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -82,6 +84,20 @@ public class Player {
     @Column(name = "skill_rating")
     @JsonView(Views.Privileged.class)
     private Integer skillRating = 5;
+
+    public static final int TWO_GOAL_LIMIT_THRESHOLD = 9;
+
+    /**
+     * Whether this player is subject to the 2-goal-limit rule. Deliberately has no
+     * @JsonView so it serializes in every view (see Views javadoc above) — the raw
+     * skillRating number is staff-only, but the rule it enforces is public information
+     * everyone at the rink needs to see.
+     */
+    @Transient
+    @JsonProperty("twoGoalLimit")
+    public boolean isTwoGoalLimit() {
+        return skillRating != null && skillRating >= TWO_GOAL_LIMIT_THRESHOLD;
+    }
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

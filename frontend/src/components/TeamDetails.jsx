@@ -400,7 +400,7 @@ function TeamDetails({ team: propTeam, onBack }) {
                                     <td>
                                         {player.firstName} {player.lastName}
                                         {team.gmId === player.id && <span className="gm-badge">GM</span>}
-                                        {player.skillRating >= 9 && <span className="twogl-badge">2GL</span>}
+                                        {player.twoGoalLimit && <span className="twogl-badge">2GL</span>}
                                     </td>
                                     <td>{player.position}</td>
                                     <td>{player.skillRating ?? '—'}</td>
