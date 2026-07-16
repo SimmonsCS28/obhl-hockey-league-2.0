@@ -199,7 +199,10 @@ function PlayersPage() {
                             sorted.map(player => (
                                 <div key={player.id} className="obi-prow">
                                     <span className="obi-pcol-num">{player.jerseyNumber ?? '—'}</span>
-                                    <span className="obi-pcol-name">{player.firstName} {player.lastName}</span>
+                                    <span className="obi-pcol-name">
+                                        {player.firstName} {player.lastName}
+                                        {player.twoGoalLimit && <span className="obi-mini-badge obi-mini-2gl">2GL</span>}
+                                    </span>
                                     <span className="obi-pcol-team obi-col-sm">
                                         <span className="obi-team-dot" style={{ background: resolveTeamColor(teamById(player.teamId)?.teamColor) }} />
                                         <span className="obi-pcol-team-name">{teamName(player.teamId)}</span>
