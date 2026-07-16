@@ -1013,6 +1013,14 @@
     margin-top: 6px; text-align: center;
 }
 
+/* Prev/next-game nav (read-only public view) — .obi-gd-navrow is normally a
+   3-column row (link, chips, link) centered as a group; here there's no chips
+   block, just the two links, so they need to spread to the row's edges instead. */
+.obi-gd-navrow.lse-navrow {
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
 /* Start Game banner */
 .sk-start-banner {
     margin-top: 14px; display: flex; flex-wrap: wrap; align-items: center;

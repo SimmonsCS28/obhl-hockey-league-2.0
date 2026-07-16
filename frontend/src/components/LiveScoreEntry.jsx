@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useBlocker, useNavigate, useParams } from 'react-router-dom';
+import { Link, useBlocker, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import './LiveScoreEntry.css';
@@ -30,6 +30,7 @@ function LiveScoreEntry(props) {
     } = props;
     const { gameId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const { user } = useAuth();
 
     // Check if user is admin for editable scores
@@ -40,6 +41,8 @@ function LiveScoreEntry(props) {
     // State for game data (loaded from prop or route param)
     const [game, setGame] = useState(propGame || null);
     const [loading, setLoading] = useState(!propGame);
+    // Prev/next-game schedule nav (read-only public view only — see effect below)
+    const [seasonGames, setSeasonGames] = useState([]);
 
     const [homeScore, setHomeScore] = useState(game?.homeScore || 0);
     const [awayScore, setAwayScore] = useState(game?.awayScore || 0);
@@ -195,6 +198,13 @@ function LiveScoreEntry(props) {
             loadEvents();
         }
     }, [game]);
+
+    // Read-only public view: fetch the season's schedule for the Previous/Next Game
+    // nav, matching GamePreview/GameRecap. Skipped for the scorekeeper/embedded flow.
+    useEffect(() => {
+        if (!readOnly || !game?.seasonId) return;
+        api.getGames(game.seasonId).then(setSeasonGames).catch(() => setSeasonGames([]));
+    }, [readOnly, game?.seasonId]);
 
     // Read-only public view: poll for score/period/status/event updates so the page
     // reflects what the scorekeeper is entering live, without a websocket. Stops once
@@ -1086,6 +1096,24 @@ function LiveScoreEntry(props) {
         }
     };
 
+    const parseDate = (s) => new Date(s.endsWith('Z') ? s : s + 'Z');
+    // Same prev/next-game scoping as GamePreview/GameRecap: a team's own
+    // dashboard/schedule view steps through just that team's games; the public
+    // Schedule page (no fromTeamId in nav state) steps through the whole season.
+    const navTeamId = location.state?.fromTeamId;
+    const scopedGames = navTeamId
+        ? seasonGames.filter(g => g.homeTeamId === navTeamId || g.awayTeamId === navTeamId)
+        : seasonGames;
+    const sortedGames = [...scopedGames].sort((a, b) => parseDate(a.gameDate) - parseDate(b.gameDate));
+    const gameIndex = sortedGames.findIndex(g => Number(g.id) === Number(gameId));
+    const prevGame = gameIndex > 0 ? sortedGames[gameIndex - 1] : null;
+    const nextGame = gameIndex !== -1 && gameIndex < sortedGames.length - 1 ? sortedGames[gameIndex + 1] : null;
+    const navHref = (g) => {
+        if (g.status === 'completed') return `/game/${g.id}/recap`;
+        if (g.status === 'in_progress') return `/game/${g.id}/live`;
+        return `/game/${g.id}/preview`;
+    };
+
     if (loading) {
         return (
             <div className="live-score-entry">
@@ -1132,6 +1160,17 @@ function LiveScoreEntry(props) {
                     </span>
                 )}
             </div>
+
+            {readOnly && (prevGame || nextGame) && (
+                <div className="obi-gd-navrow lse-navrow">
+                    {prevGame ? (
+                        <Link to={navHref(prevGame)} state={location.state} className="obi-gd-navlink obi-gd-navlink--prev">‹ Previous Game</Link>
+                    ) : <span className="obi-gd-navlink-spacer" />}
+                    {nextGame ? (
+                        <Link to={navHref(nextGame)} state={location.state} className="obi-gd-navlink obi-gd-navlink--next">Next Game ›</Link>
+                    ) : <span className="obi-gd-navlink-spacer" />}
+                </div>
+            )}
 
             {/* Start Game banner — shown until the scorekeeper explicitly starts the
                 game or logs a goal/penalty (either flips status to in_progress).

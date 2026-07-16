@@ -14,6 +14,7 @@ function GameRecap() {
     const [game, setGame] = useState(null);
     const [events, setEvents] = useState([]);
     const [staffNames, setStaffNames] = useState(null);
+    const [seasonGames, setSeasonGames] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -26,6 +27,8 @@ function GameRecap() {
             setLoading(true);
             const [gameData, teamsData] = await Promise.all([api.getGame(gameId), api.getTeams()]);
             if (!gameData) throw new Error('Game not found');
+
+            api.getGames(gameData.seasonId).then(setSeasonGames).catch(() => setSeasonGames([]));
 
             const homeTeam = teamsData.find(t => t.id === gameData.homeTeamId);
             const awayTeam = teamsData.find(t => t.id === gameData.awayTeamId);
@@ -108,6 +111,24 @@ function GameRecap() {
         return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'America/Chicago' });
     };
 
+    const parseDate = (s) => new Date(s.endsWith('Z') ? s : s + 'Z');
+    // Scope prev/next to the entry point: a team's own dashboard/schedule view
+    // only steps through that team's games; the public Schedule page (no
+    // fromTeamId in nav state) steps through every game in the season.
+    const navTeamId = location.state?.fromTeamId;
+    const scopedGames = navTeamId
+        ? seasonGames.filter(g => g.homeTeamId === navTeamId || g.awayTeamId === navTeamId)
+        : seasonGames;
+    const sortedGames = [...scopedGames].sort((a, b) => parseDate(a.gameDate) - parseDate(b.gameDate));
+    const gameIndex = sortedGames.findIndex(g => Number(g.id) === Number(gameId));
+    const prevGame = gameIndex > 0 ? sortedGames[gameIndex - 1] : null;
+    const nextGame = gameIndex !== -1 && gameIndex < sortedGames.length - 1 ? sortedGames[gameIndex + 1] : null;
+    const navHref = (g) => {
+        if (g.status === 'completed') return `/game/${g.id}/recap`;
+        if (g.status === 'in_progress') return `/game/${g.id}/live`;
+        return `/game/${g.id}/preview`;
+    };
+
     if (loading) return <div className="obi-page obi-gd"><div className="obi-gd-msg">Loading game recap…</div></div>;
     if (error) return (
         <div className="obi-page obi-gd">
@@ -171,8 +192,16 @@ function GameRecap() {
 
             <section className="obi-gd-body">
                 <div className="obi-gd-detail">
-                    <div className="obi-gd-chips">
-                        {metaChips.map((c, i) => <span key={i} className="obi-gd-chip">{c}</span>)}
+                    <div className="obi-gd-navrow">
+                        {prevGame ? (
+                            <Link to={navHref(prevGame)} state={location.state} className="obi-gd-navlink obi-gd-navlink--prev">‹ Previous Game</Link>
+                        ) : <span className="obi-gd-navlink-spacer" />}
+                        <div className="obi-gd-chips">
+                            {metaChips.map((c, i) => <span key={i} className="obi-gd-chip">{c}</span>)}
+                        </div>
+                        {nextGame ? (
+                            <Link to={navHref(nextGame)} state={location.state} className="obi-gd-navlink obi-gd-navlink--next">Next Game ›</Link>
+                        ) : <span className="obi-gd-navlink-spacer" />}
                     </div>
 
                     <div className="obi-gd-rule" />

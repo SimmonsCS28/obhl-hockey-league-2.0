@@ -119,7 +119,11 @@ function GamePreview() {
     const gameIndex = sortedGames.findIndex(g => Number(g.id) === Number(gameId));
     const prevGame = gameIndex > 0 ? sortedGames[gameIndex - 1] : null;
     const nextGame = gameIndex !== -1 && gameIndex < sortedGames.length - 1 ? sortedGames[gameIndex + 1] : null;
-    const navHref = (g) => `/game/${g.id}/${g.status === 'completed' ? 'recap' : 'preview'}`;
+    const navHref = (g) => {
+        if (g.status === 'completed') return `/game/${g.id}/recap`;
+        if (g.status === 'in_progress') return `/game/${g.id}/live`;
+        return `/game/${g.id}/preview`;
+    };
 
     if (loading) return <div className="obi-page obi-gd"><div className="obi-gd-msg">Loading game preview…</div></div>;
     if (error) return (
