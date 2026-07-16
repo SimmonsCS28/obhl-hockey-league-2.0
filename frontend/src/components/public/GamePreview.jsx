@@ -18,6 +18,7 @@ function GamePreview() {
     const [homeRoster, setHomeRoster] = useState([]);
     const [awayRoster, setAwayRoster] = useState([]);
     const [staffNames, setStaffNames] = useState(null);
+    const [seasonGames, setSeasonGames] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -31,6 +32,8 @@ function GamePreview() {
             const gameData = await api.getGame(gameId);
             setGame(gameData);
             if (!gameData) throw new Error('Game not found');
+
+            api.getGames(gameData.seasonId).then(setSeasonGames).catch(() => setSeasonGames([]));
 
             const [homeTeamData, awayTeamData] = await Promise.all([
                 api.getTeam(gameData.homeTeamId),
@@ -58,13 +61,14 @@ function GamePreview() {
             setHomeTeam(homeTeamData);
             setAwayTeam(awayTeamData);
 
-            const playersResponse = await fetch(`/stats-api/players?seasonId=${gameData.seasonId}`);
-            if (!playersResponse.ok) throw new Error('Failed to fetch players');
-            const playersData = await playersResponse.json();
             const sortPlayers = (players) => players.sort((a, b) =>
                 (parseInt(a.jerseyNumber) || 999) - (parseInt(b.jerseyNumber) || 999));
-            setHomeRoster(sortPlayers(playersData.filter(p => p.teamId === gameData.homeTeamId)));
-            setAwayRoster(sortPlayers(playersData.filter(p => p.teamId === gameData.awayTeamId)));
+            const [homePlayersData, awayPlayersData] = await Promise.all([
+                api.getPlayers({ teamId: gameData.homeTeamId, seasonId: gameData.seasonId }),
+                api.getPlayers({ teamId: gameData.awayTeamId, seasonId: gameData.seasonId }),
+            ]);
+            setHomeRoster(sortPlayers(homePlayersData));
+            setAwayRoster(sortPlayers(awayPlayersData));
 
             const [goalie1Name, goalie2Name, ref1Name, ref2Name, skName] = await Promise.all([
                 api.getUserPublicName(gameData.goalie1Id),
@@ -102,6 +106,20 @@ function GamePreview() {
     const record = (t) => t
         ? `${(t.wins || 0) + (t.overtimeWins || 0)}-${t.losses || 0}-${t.overtimeLosses || 0}`
         : '—';
+
+    const parseDate = (s) => new Date(s.endsWith('Z') ? s : s + 'Z');
+    // Scope prev/next to the entry point: a team's own dashboard/schedule view
+    // only steps through that team's games; the public Schedule page (no
+    // fromTeamId in nav state) steps through every game in the season.
+    const navTeamId = location.state?.fromTeamId;
+    const scopedGames = navTeamId
+        ? seasonGames.filter(g => g.homeTeamId === navTeamId || g.awayTeamId === navTeamId)
+        : seasonGames;
+    const sortedGames = [...scopedGames].sort((a, b) => parseDate(a.gameDate) - parseDate(b.gameDate));
+    const gameIndex = sortedGames.findIndex(g => Number(g.id) === Number(gameId));
+    const prevGame = gameIndex > 0 ? sortedGames[gameIndex - 1] : null;
+    const nextGame = gameIndex !== -1 && gameIndex < sortedGames.length - 1 ? sortedGames[gameIndex + 1] : null;
+    const navHref = (g) => `/game/${g.id}/${g.status === 'completed' ? 'recap' : 'preview'}`;
 
     if (loading) return <div className="obi-page obi-gd"><div className="obi-gd-msg">Loading game preview…</div></div>;
     if (error) return (
@@ -189,8 +207,16 @@ function GamePreview() {
 
             <section className="obi-gd-body">
                 <div className="obi-gd-detail">
-                    <div className="obi-gd-chips">
-                        {metaChips.map((c, i) => <span key={i} className="obi-gd-chip">{c}</span>)}
+                    <div className="obi-gd-navrow">
+                        {prevGame ? (
+                            <Link to={navHref(prevGame)} state={location.state} className="obi-gd-navlink obi-gd-navlink--prev">‹ Previous Game</Link>
+                        ) : <span className="obi-gd-navlink-spacer" />}
+                        <div className="obi-gd-chips">
+                            {metaChips.map((c, i) => <span key={i} className="obi-gd-chip">{c}</span>)}
+                        </div>
+                        {nextGame ? (
+                            <Link to={navHref(nextGame)} state={location.state} className="obi-gd-navlink obi-gd-navlink--next">Next Game ›</Link>
+                        ) : <span className="obi-gd-navlink-spacer" />}
                     </div>
 
                     <div className="obi-gd-rule" />

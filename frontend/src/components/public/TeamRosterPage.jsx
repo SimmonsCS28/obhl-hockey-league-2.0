@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import * as api from '../../services/api';
 import { resolveTeamColor } from '../../constants/teamColors';
 import './TeamRosterPage.css';
 
@@ -61,11 +62,8 @@ function TeamRosterPage() {
                 setSchedule(teamGames);
             }
 
-            const playersResponse = await fetch(`/stats-api/players?seasonId=${teamData.seasonId}`);
-            if (!playersResponse.ok) throw new Error('Failed to fetch players');
-            const playersData = await playersResponse.json();
-            const teamPlayers = playersData
-                .filter(p => p.teamId === parseInt(teamId))
+            const playersData = await api.getPlayers({ teamId, seasonId: teamData.seasonId });
+            const teamPlayers = [...playersData]
                 .sort((a, b) => (parseInt(a.jerseyNumber) || 999) - (parseInt(b.jerseyNumber) || 999));
             setRoster(teamPlayers);
         } catch (err) {
