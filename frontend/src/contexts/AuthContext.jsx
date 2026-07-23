@@ -3,6 +3,22 @@ import * as api from '../services/api';
 
 const AuthContext = createContext(null);
 
+// Decode a JWT and report whether it's missing, malformed, or past its `exp`.
+// The backend collapses expired/invalid tokens into 403s on every protected call, so
+// we check expiry client-side to avoid ever presenting a stale session as "logged in".
+const isTokenExpired = (token) => {
+    if (!token) return true;
+    try {
+        const payload = JSON.parse(
+            atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))
+        );
+        if (!payload.exp) return false; // no expiry claim — treat as non-expiring
+        return payload.exp * 1000 <= Date.now();
+    } catch {
+        return true; // malformed token — treat as unusable
+    }
+};
+
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {
@@ -16,28 +32,46 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Check if user is logged in on mount
+        // Check if user is logged in on mount. A token whose `exp` has passed (or that is
+        // malformed) would only surface as a burst of 403s on the first protected call, so
+        // clear it up front instead of presenting a false "logged in" state that then boots
+        // the user mid-navigation.
         const storedUser = localStorage.getItem('user');
         const storedToken = localStorage.getItem('token');
 
-        if (storedUser && storedToken) {
+        if (storedUser && storedToken && !isTokenExpired(storedToken)) {
             setUser(JSON.parse(storedUser));
+        } else if (storedUser || storedToken) {
+            // Stale/expired session — clean up silently (no alert; the user wasn't mid-action).
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
         }
         setLoading(false);
 
+        // A single expired token makes every parallel dashboard request 403 at once, each
+        // firing its own auth-error. Guard so the burst produces exactly one logout + one
+        // message rather than a stack of "session expired" dialogs.
+        let handlingAuthError = false;
         const handleAuthError = () => {
+            if (handlingAuthError) return;
+            handlingAuthError = true;
+
             console.warn('Authentication error detected, logging out');
             // Full cleanup
             localStorage.removeItem('token');
             localStorage.removeItem('user');
             setUser(null);
-            
+
             // Redirect to home/login if we're on a protected route
             // The router will handle this if we reset the user state,
             // but a hard redirect ensures a clean state.
             if (!window.location.pathname.startsWith('/login') && window.location.pathname !== '/') {
                 alert('Your session has expired. Please log in again.');
                 window.location.href = '/';
+            } else {
+                // Not redirecting (already on a public route) — release the guard so a later,
+                // genuinely-new expiry can still trigger a logout.
+                handlingAuthError = false;
             }
         };
 
