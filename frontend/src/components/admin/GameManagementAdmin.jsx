@@ -162,6 +162,7 @@ function GameManagementAdmin() {
             ) : (
                 <div className="obi-gmgmt-editor">
                     <LiveScoreEntry
+                        key={selectedGame.id}
                         game={selectedGame}
                         teams={teams}
                         onBack={() => { setSelectedGameId(''); setSelectedGame(null); }}
