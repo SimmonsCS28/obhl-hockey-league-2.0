@@ -55,6 +55,20 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/rules").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/chicken-licks/standings").permitAll()
                         .anyRequest().authenticated())
+                // Distinguish authentication from authorization failures so the client can react
+                // correctly. A missing/expired/invalid token fails the .authenticated() check at
+                // this HTTP layer (before method security runs) and lands here → 401, which the
+                // frontend treats as an expired session. An authenticated caller who merely lacks
+                // a required role fails a controller @PreAuthorize instead, yielding the default
+                // AccessDeniedHandler's 403 — which the frontend surfaces WITHOUT logging out.
+                // Without this, Spring's default collapses both into 403 and every authz hiccup
+                // looks like a session timeout.
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(jakarta.servlet.http.HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\":\"Not authenticated or session expired\"}");
+                        }))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

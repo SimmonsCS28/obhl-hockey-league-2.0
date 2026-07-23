@@ -32,13 +32,13 @@ const request = async (url, options = {}) => {
         });
 
         if (!response.ok) {
-            // Handle session expiration/authorization errors
-            if (response.status === 401 || response.status === 403) {
-                console.warn(`Auth error (${response.status}) for ${url}`);
-                if (!url.includes('/auth/login')) {
-                    window.dispatchEvent(new Event('auth-error'));
-                    throw new Error('Your session has expired. Please log in again.');
-                }
+            // 401 = not authenticated: a missing/expired/invalid token. End the session.
+            // 403 = authenticated but forbidden (insufficient role): surface the error WITHOUT
+            // logging out — being told "you can't do that" is not a reason to boot the user.
+            if (response.status === 401 && !url.includes('/auth/login')) {
+                console.warn(`Session expired (401) for ${url}`);
+                window.dispatchEvent(new Event('auth-error'));
+                throw new Error('Your session has expired. Please log in again.');
             }
 
             const errorBody = await response.text();
