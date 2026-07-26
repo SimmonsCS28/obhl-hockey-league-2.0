@@ -60,15 +60,22 @@ function ChickenLicksSection({ seasonId, openOrders, onRefresh }) {
     const [wingsDraft, setWingsDraft] = useState(null);
     const [burgerDraft, setBurgerDraft] = useState(null);
     const [history, setHistory] = useState([]);
+    const [seasonTotal, setSeasonTotal] = useState(0);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState('');
     const [notice, setNotice] = useState('');
 
     const loadHistory = useCallback(() => {
-        if (!seasonId) return;
-        api.getChickenLicksHistory(seasonId).then(setHistory).catch(() => setHistory([]));
+        if (!seasonId) return Promise.resolve();
+        return api.getChickenLicksHistory(seasonId).then(setHistory).catch(() => setHistory([]));
     }, [seasonId]);
     useEffect(() => { loadHistory(); }, [loadHistory]);
+
+    const loadTotal = useCallback(() => {
+        if (!seasonId) return Promise.resolve();
+        return api.getChickenLicksMyTotal(seasonId).then(r => setSeasonTotal(Number(r?.total) || 0)).catch(() => {});
+    }, [seasonId]);
+    useEffect(() => { loadTotal(); }, [loadTotal]);
 
     const personalOrder = openOrders?.personalOrder || null;
     const teamOrder = openOrders?.teamOrder || null;
@@ -77,7 +84,7 @@ function ChickenLicksSection({ seasonId, openOrders, onRefresh }) {
         setBusy(true); setError('');
         try {
             await fn();
-            await Promise.all([onRefresh(), loadHistory()]);
+            await Promise.all([onRefresh(), loadHistory(), loadTotal()]);
         } catch (e) {
             setError(e.message || 'Something went wrong');
         } finally {
@@ -138,7 +145,14 @@ function ChickenLicksSection({ seasonId, openOrders, onRefresh }) {
                             screen so whoever's calling can read it straight off the phone. Personal and team orders
                             are separate and can both be open at once.</p>
                     </div>
-                    <div className="cl-contact">Chicken Licks Bar &amp; Grill · (608) 837-6721 · 11am–2am</div>
+                    <div className="cl-header-meta">
+                        <span className="cl-contact">Chicken Licks Bar &amp; Grill · (608) 837-6721 · 11am–2am</span>
+                        {seasonTotal > 0 ? (
+                            <span className="cl-total-badge cl-total-badge--has">You've ordered <b>${money(seasonTotal)}</b> this season</span>
+                        ) : (
+                            <span className="cl-total-badge cl-total-badge--zero">No orders yet this season</span>
+                        )}
+                    </div>
                 </header>
 
                 {error && <div className="cl-alert cl-alert--error">{error}</div>}
