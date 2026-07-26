@@ -1290,3 +1290,78 @@
     color: var(--obi-error);
     border-color: rgba(224, 138, 138, 0.35);
 }
+
+/* ---- Playoff bracket slot designation (see BRACKET_SLOT_UI_HANDOFF.md) ----
+   Amber = this slot hosts a bracket fixture; grey = consolation, the normal case in later rounds. */
+
+.sched-bracket-legend {
+    margin: 0 0 12px;
+    font-family: 'Saira', sans-serif;
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: #7E8A94;
+}
+
+.sched-role-cell {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.sched-role-select,
+.sched-role-badge {
+    font-family: 'Saira Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 6px !important;
+    /* Consolation is the neutral default — not an error state. */
+    color: #9DB9CD;
+    background: rgba(157, 185, 205, 0.08);
+    border: 1px solid rgba(157, 185, 205, 0.22);
+}
+
+.sched-role-select {
+    padding: 5px 8px;
+    cursor: pointer;
+}
+.sched-role-select.is-bracket,
+.sched-role-badge.is-bracket {
+    color: var(--obi-accent, #F6A91C);
+    background: rgba(232, 194, 106, 0.12);
+    border: 1px solid rgba(232, 194, 106, 0.35);
+}
+
+.sched-role-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 9px;
+    cursor: default;
+}
+
+.sched-swap-flash {
+    font-family: 'Saira', sans-serif;
+    font-size: 10.5px;
+    font-style: italic;
+    color: var(--obi-accent, #F6A91C);
+    white-space: nowrap;
+}
+
+.sched-week-bracket-init {
+    font-family: 'Saira Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #0b0c0f;
+    background: var(--obi-accent, #F6A91C);
+    border: none;
+    border-radius: 5px !important;
+    padding: 4px 10px;
+    cursor: pointer;
+}
+.sched-week-bracket-init:hover:not(:disabled) { filter: brightness(1.08); }
+.sched-week-bracket-init:disabled { opacity: 0.6; cursor: default; }

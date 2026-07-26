@@ -232,8 +232,15 @@ public class GameController {
             Object roundRaw = body.get("round");
             Object posRaw = body.get("position");
             String round = roundRaw == null ? null : roundRaw.toString();
-            Integer position = posRaw instanceof Number ? ((Number) posRaw).intValue()
-                    : (posRaw == null ? null : Integer.parseInt(posRaw.toString()));
+            // Written out rather than nested ternaries on purpose: mixing an `int` branch with a
+            // `null` branch promotes the whole conditional to `int`, so an absent "position" would
+            // be unboxed from null and throw — which is exactly the consolation case.
+            Integer position = null;
+            if (posRaw instanceof Number) {
+                position = ((Number) posRaw).intValue();
+            } else if (posRaw != null) {
+                position = Integer.parseInt(posRaw.toString());
+            }
             return ResponseEntity.ok(gameService.designateBracketSlot(gameId, round, position));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(java.util.Map.of(

@@ -428,6 +428,23 @@ public class GameService {
             throw new RuntimeException("Only playoff-week games can be designated");
         }
         if (round == null || round.isBlank()) {
+            // Demoting a bracket slot to consolation would leave the round a game short, so hand
+            // its role to a consolation slot in the same week instead. The round always keeps
+            // exactly its required number of games (4 QF / 2 SF / 1 final).
+            String vacatedRound = g.getPlayoffRound();
+            Integer vacatedPos = g.getBracketPosition();
+            if (vacatedRound != null) {
+                gameRepository.findBySeasonId(g.getSeasonId()).stream()
+                        .filter(o -> !o.getId().equals(g.getId()))
+                        .filter(o -> java.util.Objects.equals(o.getWeek(), g.getWeek()))
+                        .filter(o -> "PLAYOFF".equals(o.getGameType()) && o.getPlayoffRound() == null)
+                        .findFirst()
+                        .ifPresent(other -> {
+                            other.setPlayoffRound(vacatedRound);
+                            other.setBracketPosition(vacatedPos);
+                            gameRepository.save(other);
+                        });
+            }
             clearBracketRole(g);
             return toResponse(gameRepository.save(g));
         }

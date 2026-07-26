@@ -7,6 +7,35 @@ const API_BASE_URL = '/api/v1';
 // TODO: Fix API Gateway multipart proxy and use API_BASE_URL for all requests
 const GAME_SERVICE_URL = '/games-api'; // Proxy through Nginx
 
+// Bracket fixtures available in each playoff round. A playoff week offers a slot for every team,
+// but only these are actual bracket games — the rest are consolation. Options are always scoped to
+// the week's own round, so a "Final" can never be picked inside the quarterfinal week.
+const ROLE_DEFS = {
+    QUARTERFINAL: [[1, 'QF #1'], [2, 'QF #2'], [3, 'QF #3'], [4, 'QF #4']],
+    SEMIFINAL: [[1, 'SF #1'], [2, 'SF #2']],
+    FINAL: [[1, 'Final']],
+};
+const CONSOLATION = 'CONS';
+const ROUND_LABELS = { QUARTERFINAL: 'Quarterfinals', SEMIFINAL: 'Semifinals', FINAL: 'Final' };
+
+/** The round a playoff week belongs to, taken from whichever of its games carries one. */
+function weekRoundOf(weekGames) {
+    return weekGames.find(g => g.playoffRound)?.playoffRound || null;
+}
+
+/** A game's current select value: its bracket position, or CONSOLATION. */
+function roleValueOf(game, round) {
+    if (!game.playoffRound || game.bracketPosition == null) return CONSOLATION;
+    const valid = (ROLE_DEFS[round] || []).some(([pos]) => pos === game.bracketPosition);
+    return valid ? String(game.bracketPosition) : CONSOLATION;
+}
+
+function roleLabelOf(game, round) {
+    const v = roleValueOf(game, round);
+    if (v === CONSOLATION) return 'Consolation';
+    return (ROLE_DEFS[round] || []).find(([pos]) => String(pos) === v)?.[1] || 'Consolation';
+}
+
 // Add auth token to all axios requests
 axios.interceptors.request.use(config => {
     const token = localStorage.getItem('token');
@@ -26,6 +55,9 @@ const ScheduleManager = () => {
     const [isDragging, setIsDragging] = useState(false);
     const [parsedSlots, setParsedSlots] = useState([]);
     const [games, setGames] = useState([]);
+    // Transient "⇄ swapped with…" note on the two rows that traded bracket roles.
+    const [swapFlash, setSwapFlash] = useState(null);
+    const swapTimerRef = useRef(null);
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState({ type: '', text: '' });
     const [editingGame, setEditingGame] = useState(null);
@@ -596,6 +628,55 @@ const ScheduleManager = () => {
         });
     };
 
+    /**
+     * Reassign which time slot hosts a bracket fixture. Roles are unique within a week, so taking
+     * one another slot holds swaps the two; demoting a slot to consolation hands its role to a
+     * consolation slot. Both are enforced server-side in a single call, so the UI just mirrors the
+     * result optimistically rather than issuing two PATCHes.
+     */
+    const handleBracketRole = async (game, weekGames, rawValue) => {
+        const round = weekRoundOf(weekGames);
+        if (!round) return;
+        const toConsolation = rawValue === CONSOLATION;
+        const newPos = toConsolation ? null : parseInt(rawValue);
+        if (!toConsolation && game.bracketPosition === newPos && game.playoffRound === round) return;
+
+        // Whichever slot has to give something up: the current holder of the target role, or (when
+        // demoting) the first consolation slot, which inherits this one's role.
+        const partner = toConsolation
+            ? weekGames.find(g => g.id !== game.id && !g.playoffRound)
+            : weekGames.find(g => g.id !== game.id && g.playoffRound === round && g.bracketPosition === newPos);
+
+        const priorRound = game.playoffRound;
+        const priorPos = game.bracketPosition;
+
+        setGames(prev => prev.map(g => {
+            if (g.id === game.id) {
+                return { ...g, playoffRound: toConsolation ? null : round, bracketPosition: newPos };
+            }
+            if (partner && g.id === partner.id) {
+                return toConsolation
+                    ? { ...g, playoffRound: priorRound, bracketPosition: priorPos }
+                    : { ...g, playoffRound: priorRound || null, bracketPosition: priorRound ? priorPos : null };
+            }
+            return g;
+        }));
+
+        if (partner) {
+            setSwapFlash({ a: game.id, b: partner.id });
+            clearTimeout(swapTimerRef.current);
+            swapTimerRef.current = setTimeout(() => setSwapFlash(null), 1800);
+        }
+
+        try {
+            await axios.patch(`${API_BASE_URL}/games/${game.id}/bracket-slot`,
+                toConsolation ? { round: null } : { round, position: newPos });
+        } catch (error) {
+            showMessage('error', error.response?.data?.error || 'Failed to change bracket slot');
+            await fetchGames(selectedSeason, true);   // resync — the swap is all-or-nothing
+        }
+    };
+
     const handleInitializeBracket = async () => {
         if (!selectedSeason || !teams.length) return;
 
@@ -952,6 +1033,14 @@ const ScheduleManager = () => {
                     {/* Responsive Schedule Display */}
                     {isDesktop ? (
                         // Desktop: Inline per-week editor (design)
+                        <>
+                        {games.some(g => g.gameType === 'PLAYOFF') && (
+                            <p className="sched-bracket-legend">
+                                Amber = bracket game slot · grey &ldquo;Consolation&rdquo; is the normal case in later
+                                rounds. Reassigning a slot&apos;s role swaps it with whichever slot currently holds
+                                that role — the matchup stays tied to the bracket position, not the time.
+                            </p>
+                        )}
                         <div className="sched-weeks">
                             {weeks
                                 .filter(week => selectedWeek === 'all' || week === String(selectedWeek))
@@ -974,8 +1063,23 @@ const ScheduleManager = () => {
                                                     />
                                                 )}
                                                 <span className={`sched-week-tag${isPlayoffWeek ? ' is-playoff' : ''}`}>
-                                                    {isPlayoffWeek ? 'Playoff' : 'Regular'}
+                                                    {isPlayoffWeek
+                                                        ? (ROUND_LABELS[weekRoundOf(weekGames)] || 'Playoff')
+                                                        : 'Regular'}
                                                 </span>
+                                                {/* Seeding is a first-round action, so it belongs on that week, not the page. */}
+                                                {isPlayoffWeek && isActiveSeason && scheduleMode === 'saved'
+                                                    && weekRoundOf(weekGames) === 'QUARTERFINAL'
+                                                    && weekGames.some(g => !g.homeTeamId) && (
+                                                    <button
+                                                        className="sched-week-bracket-init"
+                                                        onClick={handleInitializeBracket}
+                                                        disabled={loading}
+                                                        title="Seed the playoff bracket based on current regular season standings"
+                                                    >
+                                                        🏆 Initialize Playoff Bracket
+                                                    </button>
+                                                )}
                                                 {week !== 'Unassigned' && (
                                                     <button
                                                         className="sched-week-remove"
@@ -1011,7 +1115,45 @@ const ScheduleManager = () => {
                                                                     <option value="Cardinal">Cardinal</option>
                                                                 </select>
                                                             </span>
-                                                            {isReserved ? (
+                                                            {isPlayoffWeek && (() => {
+                                                                const round = weekRoundOf(weekGames);
+                                                                if (!round) return null;
+                                                                const isLocked = game.status === 'completed';
+                                                                const value = roleValueOf(game, round);
+                                                                const isBracket = value !== CONSOLATION;
+                                                                if (isLocked) {
+                                                                    // Game already played — the designation is frozen.
+                                                                    return (
+                                                                        <span className={`sched-role-badge${isBracket ? ' is-bracket' : ''}`}>
+                                                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none"
+                                                                                stroke="currentColor" strokeWidth="2.5">
+                                                                                <rect x="4" y="11" width="16" height="10" rx="2" />
+                                                                                <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                                                                            </svg>
+                                                                            {roleLabelOf(game, round)}
+                                                                        </span>
+                                                                    );
+                                                                }
+                                                                return (
+                                                                    <span className="sched-role-cell">
+                                                                        <select
+                                                                            className={`sched-role-select${isBracket ? ' is-bracket' : ''}`}
+                                                                            value={value}
+                                                                            onChange={(e) => handleBracketRole(game, weekGames, e.target.value)}
+                                                                            title="Which bracket fixture is played in this slot"
+                                                                        >
+                                                                            {(ROLE_DEFS[round] || []).map(([pos, label]) => (
+                                                                                <option key={pos} value={String(pos)}>{label}</option>
+                                                                            ))}
+                                                                            <option value={CONSOLATION}>Consolation</option>
+                                                                        </select>
+                                                                        {swapFlash && (swapFlash.a === game.id || swapFlash.b === game.id) && (
+                                                                            <span className="sched-swap-flash">⇄ swapped</span>
+                                                                        )}
+                                                                    </span>
+                                                                );
+                                                            })()}
+                                                            {isReserved && !isPlayoffWeek ? (
                                                                 <span className="sched-reserved">Playoff — reserved (TBD)</span>
                                                             ) : (
                                                                 <span className="sched-game-teams">
@@ -1055,6 +1197,7 @@ const ScheduleManager = () => {
                                     );
                                 })}
                         </div>
+                        </>
                     ) : (
                         // Mobile: Card View
                         <div className="schedule-grid">
@@ -1126,17 +1269,8 @@ const ScheduleManager = () => {
                     )}
 
 
-                    {/* Initialize Playoff Bracket — shown when saved schedule has TBD playoff games */}
-                    {isActiveSeason && scheduleMode === 'saved' && games.some(g => g.gameType === 'PLAYOFF' && !g.homeTeamId) && (
-                        <button
-                            onClick={handleInitializeBracket}
-                            className="btn-bracket-init"
-                            disabled={loading}
-                            title="Seed the playoff bracket based on current regular season standings"
-                        >
-                            🏆 Initialize Playoff Bracket
-                        </button>
-                    )}
+                    {/* Bracket seeding now lives on the quarterfinal week's header, where the
+                        coordinator is already working, rather than at the bottom of the page. */}
                 </div >
             )}
             </div>{/* /.sched-generated */}
