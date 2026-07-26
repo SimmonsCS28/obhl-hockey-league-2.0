@@ -220,6 +220,27 @@ public class GameController {
         }
     }
 
+    /**
+     * Designate which playoff-week slot hosts a bracket game. Body:
+     * { "round": "SEMIFINAL", "position": 1 } — or { "round": null } to make it a consolation game.
+     */
+    @PatchMapping("/{gameId}/bracket-slot")
+    public ResponseEntity<?> designateBracketSlot(
+            @PathVariable Long gameId,
+            @RequestBody java.util.Map<String, Object> body) {
+        try {
+            Object roundRaw = body.get("round");
+            Object posRaw = body.get("position");
+            String round = roundRaw == null ? null : roundRaw.toString();
+            Integer position = posRaw instanceof Number ? ((Number) posRaw).intValue()
+                    : (posRaw == null ? null : Integer.parseInt(posRaw.toString()));
+            return ResponseEntity.ok(gameService.designateBracketSlot(gameId, round, position));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of(
+                    "error", e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName()));
+        }
+    }
+
     // Game Events Endpoints (nested under games)
     @PostMapping("/{gameId}/events")
     public ResponseEntity<?> createGameEvent(

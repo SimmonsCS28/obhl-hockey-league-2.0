@@ -2,6 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useSeason } from '../../contexts/SeasonContext';
 import { resolveTeamColor } from '../../constants/teamColors';
+import GoalieProposerBar from '../coordinator/GoalieProposerBar';
+import {
+    GOALIE_SELECT_STYLE,
+    goalieCounts,
+    isGoalieWeekPublished,
+} from '../coordinator/goalieProposerStatus';
 import api from '../../services/api';
 import './AdminAssignments.css';
 
@@ -25,6 +31,30 @@ const FIELD_TO_SLOT = {
     scorekeeperId: { role: 'SCOREKEEPER', slot: 1 },
 };
 
+// A week is past (proposer hidden) once all its games are Final.
+function weekIsPast(games) {
+    if (!games.length) return false;
+    return games.every(g => String(g.status || '').toUpperCase() === 'FINAL');
+}
+
+// The auto-proposer is regular-season only — playoff matchups are TBD until the bracket is set.
+function weekIsPlayoff(games) {
+    if (!games.length) return false;
+    return games.every(g => String(g.gameType || 'REGULAR_SEASON').toUpperCase() === 'PLAYOFF');
+}
+
+// Design select styling: PENDING (awaiting), CONFIRMED, DECLINED, or UNASSIGNED (needs attention).
+// A pre-filled name with no coordinator row reads as CONFIRMED; an empty slot reads as UNASSIGNED.
+function goalieSelectStatus(assignment, hasName) {
+    if (assignment) {
+        if (assignment.status === 'CONFIRMED') return 'CONFIRMED';
+        if (assignment.status === 'DECLINED') return 'DECLINED';
+        // AUTO_PROPOSED, PROPOSED, SIGNED_UP all read as "pending / awaiting".
+        return 'PENDING';
+    }
+    return hasName ? 'CONFIRMED' : 'UNASSIGNED';
+}
+
 function AdminAssignments() {
     const { selectedSeasonId } = useSeason();
 
@@ -37,6 +67,11 @@ function AdminAssignments() {
     // Per-row pending saves: gameId → { field: value }
     const [saving, setSaving] = useState({});
     const [errors, setErrors] = useState({});
+    // Coordinator goalie assignments drive the status-colored goalie selects + proposer bar.
+    const [goalieAssignments, setGoalieAssignments] = useState([]);
+    const [proposerBusy, setProposerBusy] = useState(null); // 'generate' | 'send' | 'publish' | null
+    const [banner, setBanner] = useState(null);
+    const [proposerRun, setProposerRun] = useState(null);   // last auto-propose result ("why" data)
 
     useEffect(() => {
         if (!selectedSeasonId) return;
@@ -44,14 +79,16 @@ function AdminAssignments() {
         const load = async () => {
             setLoading(true);
             try {
-                const [gamesData, teamsData, goalies, refs, scorers] = await Promise.all([
+                const [gamesData, teamsData, goalies, refs, scorers, goalieAsgn] = await Promise.all([
                     api.getGames(selectedSeasonId),
                     api.getTeams(),
                     api.getUsers({ role: 'GOALIE' }),
                     api.getUsers({ role: 'REF' }),
                     api.getUsers({ role: 'SCOREKEEPER' }),
+                    api.getCoordinatorAssignments(selectedSeasonId, 'GOALIE'),
                 ]);
                 if (cancelled) return;
+                setGoalieAssignments(goalieAsgn || []);
                 const teamMap = Object.fromEntries(teamsData.map(t => [String(t.id), t]));
                 const enriched = gamesData.map(g => ({
                     ...g,
@@ -104,6 +141,97 @@ function AdminAssignments() {
         }
     }, []);
 
+    const reloadGoalieAssignments = useCallback(async () => {
+        const data = await api.getCoordinatorAssignments(selectedSeasonId, 'GOALIE');
+        setGoalieAssignments(data || []);
+    }, [selectedSeasonId]);
+
+    const goalieSlotFor = useCallback(
+        (gameId, slot) => goalieAssignments.find(a => a.gameId === gameId && a.slot === slot),
+        [goalieAssignments],
+    );
+
+    // Goalie select change routes through the coordinator lifecycle (not admin direct-assign):
+    // picking a name proposes it as pending (awaiting the goalie's confirmation); clearing withdraws.
+    const handleGoalieChange = useCallback(async (gameId, slot, value) => {
+        setErrors(prev => { const n = { ...prev }; delete n[gameId]; return n; });
+        setSaving(prev => ({ ...prev, [gameId]: true }));
+        try {
+            if (value === '') {
+                const existing = goalieAssignments.find(a => a.gameId === gameId && a.slot === slot);
+                if (existing) {
+                    await api.withdrawShift(existing.id, 'GOALIE');
+                } else {
+                    // No coordinator row but a published game column — clear it directly.
+                    await api.adminAssignShift({ gameId, role: 'GOALIE', slot, userId: null });
+                }
+            } else {
+                await api.proposeShift({ gameId, seasonId: selectedSeasonId, role: 'GOALIE', slot, userId: Number(value) });
+            }
+            await reloadGoalieAssignments();
+        } catch (err) {
+            console.error('Goalie assignment error:', err);
+            setErrors(prev => ({ ...prev, [gameId]: 'Save failed' }));
+        } finally {
+            setSaving(prev => { const n = { ...prev }; delete n[gameId]; return n; });
+        }
+    }, [goalieAssignments, selectedSeasonId, reloadGoalieAssignments]);
+
+    // Dev-only: simulate the goalie's email confirm/decline so the flow is testable locally.
+    const handleSimulate = useCallback(async (assignmentId, action) => {
+        try {
+            await api.simulateShiftResponse(assignmentId, action, 'GOALIE');
+            await reloadGoalieAssignments();
+        } catch (err) {
+            console.error('Simulate response error:', err);
+        }
+    }, [reloadGoalieAssignments]);
+
+    // ---- Proposer bar actions ----
+    const handleGenerate = useCallback(async (week) => {
+        setProposerBusy('generate');
+        try {
+            const result = await api.autoProposeGoalies(selectedSeasonId, week);
+            await reloadGoalieAssignments();
+            setProposerRun({ week, ...result });
+            const sat = (result.sitting || []).map(s => s.name).join(', ');
+            setBanner(
+                `Proposed ${result.filledCount} goalie slot(s) for Week ${week}` +
+                (result.openCount ? ` · ${result.openCount} still open` : '') +
+                (sat ? ` · sitting out: ${sat}` : ''));
+        } catch (err) {
+            setBanner(err.message || 'Failed to generate proposals');
+        } finally {
+            setProposerBusy(null);
+        }
+    }, [selectedSeasonId, reloadGoalieAssignments]);
+
+    const handleSend = useCallback(async (week) => {
+        setProposerBusy('send');
+        try {
+            const result = await api.sendGoalieConfirmations(selectedSeasonId, week);
+            await reloadGoalieAssignments();
+            setBanner(`Sent ${result.sentCount} confirmation email(s) for Week ${week}.`);
+        } catch (err) {
+            setBanner(err.message || 'Failed to send confirmation emails');
+        } finally {
+            setProposerBusy(null);
+        }
+    }, [selectedSeasonId, reloadGoalieAssignments]);
+
+    const handleProposerPublish = useCallback(async (week) => {
+        setProposerBusy('publish');
+        try {
+            const result = await api.publishShiftWeek(selectedSeasonId, 'GOALIE', week);
+            await reloadGoalieAssignments();
+            setBanner(`Published ${result.publishedCount} final assignment(s) for Week ${week}. Assignment emails sent.`);
+        } catch (err) {
+            setBanner(err.message || 'Failed to publish');
+        } finally {
+            setProposerBusy(null);
+        }
+    }, [selectedSeasonId, reloadGoalieAssignments]);
+
     const formatGameDate = (dateString) => {
         if (!dateString) return '—';
         try {
@@ -112,6 +240,16 @@ function AdminAssignments() {
                 ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
         } catch { return '—'; }
     };
+
+    // Goalie auto-proposer: only for a single, non-past week.
+    const weekGameIds = new Set(filteredGames.map(g => g.id));
+    const weekGoalieAssignments = goalieAssignments.filter(a => weekGameIds.has(a.gameId));
+    // Playoff weeks are supported too — the backend switches to best-available-goalie mode.
+    const isPlayoffWeek = weekIsPlayoff(filteredGames);
+    const showProposer = selectedWeek !== 'all' && filteredGames.length > 0 && !weekIsPast(filteredGames);
+    const proposerCounts = goalieCounts(weekGoalieAssignments, filteredGames.length * 2);
+    const proposerPublished = isGoalieWeekPublished(weekGoalieAssignments);
+    const anyFilled = weekGoalieAssignments.some(a => a.status !== 'DECLINED');
 
     if (loading) {
         return <div className="obi-asgn-loading">Loading assignments…</div>;
@@ -142,10 +280,48 @@ function AdminAssignments() {
                 confirm → publish workflow, use the <Link to="/coordinator">Coordinator Console</Link>.
             </div>
 
+            {/* Goalie auto-proposer bar (single non-past week) */}
+            {showProposer && (
+                <GoalieProposerBar
+                    week={Number(selectedWeek)}
+                    variant="admin"
+                    playoff={isPlayoffWeek}
+                    counts={proposerCounts}
+                    published={proposerPublished}
+                    publishedSummary={`Final game & team assignment emails sent to ${proposerCounts.confirmed} goalie(s) for Week ${selectedWeek}.`}
+                    busy={proposerBusy}
+                    anyFilled={anyFilled}
+                    banner={banner}
+                    onDismissBanner={() => setBanner(null)}
+                    onGenerate={() => handleGenerate(Number(selectedWeek))}
+                    onSend={() => handleSend(Number(selectedWeek))}
+                    onPublish={() => handleProposerPublish(Number(selectedWeek))}
+                    reasoning={proposerRun?.week === Number(selectedWeek) ? proposerRun.reasoning : null}
+                    sitting={proposerRun?.week === Number(selectedWeek) ? proposerRun.sitting : null}
+                />
+            )}
+
             {filteredGames.length === 0 ? (
                 <div className="obi-asgn-empty">No games for this week.</div>
             ) : (
                 <div className="obi-asgn-table-wrap">
+                    {/* Goalie confirmation-status legend */}
+                    <div className="obi-asgn-legend">
+                        <span className="obi-asgn-legend-label">Goalie Status</span>
+                        <span className="obi-asgn-legend-item">
+                            <span className="obi-asgn-swatch" style={{ background: 'rgba(246,169,28,0.55)' }} />
+                            Pending
+                        </span>
+                        <span className="obi-asgn-legend-item">
+                            <span className="obi-asgn-swatch" style={{ background: 'rgba(127,181,154,0.5)' }} />
+                            Confirmed
+                        </span>
+                        <span className="obi-asgn-legend-item">
+                            <span className="obi-asgn-swatch" style={{ background: 'rgba(224,138,138,0.5)' }} />
+                            Declined
+                        </span>
+                    </div>
+
                     {/* Table header */}
                     <div className="obi-asgn-header">
                         <span className="obi-asgn-col-game">Game</span>
@@ -173,38 +349,57 @@ function AdminAssignments() {
 
                             {/* Goalies */}
                             <div className="obi-asgn-col-goalies">
-                                <div className="obi-asgn-goalie-row">
-                                    <span className="obi-asgn-team-label">
-                                        <span className="obi-asgn-tdot" style={{ background: game.homeTeamColor }} />
-                                        <span className="obi-asgn-team-abbr">{game.homeTeamName}</span>
-                                    </span>
-                                    <select
-                                        className={`obi-asgn-select${game.goalie1Id ? '' : ' is-unset'}`}
-                                        value={game.goalie1Id ?? ''}
-                                        onChange={e => handleAssign(game.id, 'goalie1Id', e.target.value)}
-                                    >
-                                        <option value="">— unassigned —</option>
-                                        {goaliePool.map(u => (
-                                            <option key={u.id} value={u.id}>{displayName(u)}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="obi-asgn-goalie-row">
-                                    <span className="obi-asgn-team-label">
-                                        <span className="obi-asgn-tdot" style={{ background: game.awayTeamColor }} />
-                                        <span className="obi-asgn-team-abbr">{game.awayTeamName}</span>
-                                    </span>
-                                    <select
-                                        className={`obi-asgn-select${game.goalie2Id ? '' : ' is-unset'}`}
-                                        value={game.goalie2Id ?? ''}
-                                        onChange={e => handleAssign(game.id, 'goalie2Id', e.target.value)}
-                                    >
-                                        <option value="">— unassigned —</option>
-                                        {goaliePool.map(u => (
-                                            <option key={u.id} value={u.id}>{displayName(u)}</option>
-                                        ))}
-                                    </select>
-                                </div>
+                                {[1, 2].map(slot => {
+                                    const assignment = goalieSlotFor(game.id, slot);
+                                    const gameValue = slot === 1 ? game.goalie1Id : game.goalie2Id;
+                                    // The coordinator row is the source of truth once one exists.
+                                    const value = assignment?.userId ?? gameValue ?? '';
+                                    const statusKey = goalieSelectStatus(assignment, !!value);
+                                    // Simulating a reply only makes sense once the goalie has
+                                    // actually been emailed (PROPOSED), not while auto-proposed.
+                                    const awaitingReply = assignment?.status === 'PROPOSED';
+                                    return (
+                                        <div className="obi-asgn-goalie-row" key={slot}>
+                                            <span className="obi-asgn-team-label">
+                                                <span
+                                                    className="obi-asgn-tdot"
+                                                    style={{ background: slot === 1 ? game.homeTeamColor : game.awayTeamColor }}
+                                                />
+                                                <span className="obi-asgn-team-abbr">
+                                                    {slot === 1 ? game.homeTeamName : game.awayTeamName}
+                                                </span>
+                                            </span>
+                                            <select
+                                                className="obi-asgn-select obi-asgn-select--goalie"
+                                                style={GOALIE_SELECT_STYLE[statusKey]}
+                                                value={value}
+                                                onChange={e => handleGoalieChange(game.id, slot, e.target.value)}
+                                            >
+                                                <option value="">— unassigned —</option>
+                                                {goaliePool.map(u => (
+                                                    <option key={u.id} value={u.id}>{displayName(u)}</option>
+                                                ))}
+                                            </select>
+                                            {/* Dev-only: stand in for the goalie's real email confirm/decline. */}
+                                            {import.meta.env.DEV && awaitingReply && (
+                                                <span className="obi-asgn-sim">
+                                                    <button
+                                                        type="button"
+                                                        className="obi-asgn-sim-btn is-confirm"
+                                                        title="Simulate: goalie confirms"
+                                                        onClick={() => handleSimulate(assignment.id, 'confirm')}
+                                                    >✓</button>
+                                                    <button
+                                                        type="button"
+                                                        className="obi-asgn-sim-btn is-decline"
+                                                        title="Simulate: goalie declines"
+                                                        onClick={() => handleSimulate(assignment.id, 'decline')}
+                                                    >✕</button>
+                                                </span>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
 
                             {/* Referees */}

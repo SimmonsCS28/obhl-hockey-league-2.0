@@ -326,52 +326,169 @@ public class GameService {
     // Playoff Bracket Methods
     // -------------------------------------------------------------------------
 
+    /** Only the top 8 teams make the playoffs; everyone else plays consolation games. */
+    private static final int MAX_BRACKET_TEAMS = 8;
+
     /**
-     * Seed the first playoff round from an ordered standings list.
-     * teamIds must be ordered seed-1 first (best record first).
-     * Assigns standard top-8 bracket matchups:
-     *   Slot 1: seed1 (home) vs seed8 (away)
-     *   Slot 2: seed2 (home) vs seed7 (away)
-     *   Slot 3: seed3 (home) vs seed6 (away)
-     *   Slot 4: seed4 (home) vs seed5 (away)
+     * Seed the playoffs from an ordered standings list (seed 1 = best record first).
+     *
+     * <p>A playoff week has a slot for every team, but only some of those games are actual
+     * bracket games. With 10 teams the first playoff week is four quarterfinals plus one
+     * consolation game; the next week is two semifinals, then one final. A game is a bracket
+     * game if and only if {@code playoff_round} is set — consolation games have it cleared,
+     * which is also what keeps them out of the bracket display and the goalie auto-proposer.
+     *
+     * <p>Bracket matchups: seed1 vs seed8, seed2 vs seed7, seed3 vs seed6, seed4 vs seed5.
+     * Later rounds are pre-designated to the earliest slots as a sensible default so winners
+     * have somewhere to advance to; the coordinator can move them with
+     * {@link #designateBracketSlot}.
      */
     @Transactional
     public List<GameDto.Response> initializePlayoffBracket(Long seasonId, List<Long> seededTeamIds) {
-        // Find the first playoff round games (lowest week number with PLAYOFF type)
         List<Game> allPlayoffGames = gameRepository.findBySeasonId(seasonId).stream()
                 .filter(g -> "PLAYOFF".equals(g.getGameType()))
-                .sorted(Comparator.comparingInt(Game::getWeek).thenComparingInt(Game::getBracketPosition))
+                .sorted(Comparator.comparingInt(Game::getWeek)
+                        .thenComparing(Game::getGameDate, Comparator.nullsLast(Comparator.naturalOrder())))
                 .toList();
 
         if (allPlayoffGames.isEmpty()) {
             throw new RuntimeException("No playoff games found for season " + seasonId);
         }
 
-        // Get the first round's week
-        int firstPlayoffWeek = allPlayoffGames.get(0).getWeek();
-        List<Game> firstRoundGames = allPlayoffGames.stream()
-                .filter(g -> g.getWeek() == firstPlayoffWeek)
-                .sorted(Comparator.comparingInt(Game::getBracketPosition))
-                .toList();
+        // Playoff weeks in order: [0] = first round, [1] = next, ...
+        List<Integer> playoffWeeks = allPlayoffGames.stream()
+                .map(Game::getWeek).distinct().sorted().toList();
 
-        // Top-8 seeding: positions pair as (1v8, 2v7, 3v6, 4v5)
-        int numSeeds = Math.min(seededTeamIds.size(), firstRoundGames.size() * 2);
-        List<Long> seeds = seededTeamIds.subList(0, numSeeds);
+        // Bracket size: top 8, or the largest power of two that fits a smaller league.
+        int bracketTeams = largestPowerOfTwo(Math.min(MAX_BRACKET_TEAMS, seededTeamIds.size()));
+        if (bracketTeams < 2) {
+            throw new RuntimeException("Not enough teams to seed a playoff bracket");
+        }
 
         List<Game> updated = new ArrayList<>();
-        for (int i = 0; i < firstRoundGames.size(); i++) {
-            int homeIdx = i;              // seed 1, 2, 3, 4
-            int awayIdx = seeds.size() - 1 - i;  // seed 8, 7, 6, 5
-            if (homeIdx < seeds.size() && awayIdx >= 0 && awayIdx < seeds.size()) {
-                Game g = firstRoundGames.get(i);
-                g.setHomeTeamId(seeds.get(homeIdx));
-                g.setAwayTeamId(seeds.get(awayIdx));
+
+        // --- Round 1: seed the bracket games, then pair the non-qualifiers into consolation ---
+        int firstWeek = playoffWeeks.get(0);
+        List<Game> firstRoundSlots = gamesInWeek(allPlayoffGames, firstWeek);
+        int roundGames = bracketTeams / 2;
+
+        for (int i = 0; i < firstRoundSlots.size(); i++) {
+            Game g = firstRoundSlots.get(i);
+            if (i < roundGames) {
+                g.setPlayoffRound(roundNameFor(playoffWeeks.size(), 0));
+                g.setBracketPosition(i + 1);
+                g.setHomeTeamId(seededTeamIds.get(i));                    // seeds 1..4
+                g.setAwayTeamId(seededTeamIds.get(bracketTeams - 1 - i)); // seeds 8..5
+            } else {
+                // Consolation: the teams that missed the cut, paired off in standings order.
+                int leftoverIdx = bracketTeams + (i - roundGames) * 2;
+                clearBracketRole(g);
+                g.setHomeTeamId(seededTeamIds.size() > leftoverIdx ? seededTeamIds.get(leftoverIdx) : null);
+                g.setAwayTeamId(seededTeamIds.size() > leftoverIdx + 1 ? seededTeamIds.get(leftoverIdx + 1) : null);
+            }
+            updated.add(gameRepository.save(g));
+        }
+
+        // --- Later rounds: designate the right number of slots, teams TBD until winners advance ---
+        for (int r = 1; r < playoffWeeks.size(); r++) {
+            int weekGames = roundGames >> r;   // 4 quarterfinals -> 2 semifinals -> 1 final
+            if (weekGames < 1) {
+                break;
+            }
+            List<Game> slots = gamesInWeek(allPlayoffGames, playoffWeeks.get(r));
+            for (int i = 0; i < slots.size(); i++) {
+                Game g = slots.get(i);
+                if (i < weekGames) {
+                    g.setPlayoffRound(roundNameFor(playoffWeeks.size(), r));
+                    g.setBracketPosition(i + 1);
+                } else {
+                    clearBracketRole(g);
+                }
+                g.setHomeTeamId(null);   // decided by advancement
+                g.setAwayTeamId(null);
                 updated.add(gameRepository.save(g));
             }
         }
 
-        log.info("Initialized playoff bracket for season {} with {} first-round games", seasonId, updated.size());
+        log.info("Seeded playoff bracket for season {}: {} bracket teams, {} first-round games",
+                seasonId, bracketTeams, roundGames);
         return updated.stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    /**
+     * Make a playoff game a bracket game at the given round/position, or a consolation game
+     * when {@code round} is blank. Lets the coordinator choose which slots host the semifinals
+     * and final — they're often moved to the best times for the teams involved.
+     */
+    @Transactional
+    public GameDto.Response designateBracketSlot(Long gameId, String round, Integer position) {
+        Game g = gameRepository.findById(gameId)
+                .orElseThrow(() -> new RuntimeException("Game not found: " + gameId));
+        if (!"PLAYOFF".equals(g.getGameType())) {
+            throw new RuntimeException("Only playoff-week games can be designated");
+        }
+        if (round == null || round.isBlank()) {
+            clearBracketRole(g);
+            return toResponse(gameRepository.save(g));
+        }
+
+        String r = round.trim().toUpperCase();
+        if (!r.equals("QUARTERFINAL") && !r.equals("SEMIFINAL") && !r.equals("FINAL")) {
+            throw new RuntimeException("Unsupported playoff round: " + round);
+        }
+        int pos = position == null ? 1 : position;
+
+        // A bracket position may only be held by one slot. If another slot in this week already
+        // holds it, SWAP the two roles rather than duplicating — a duplicate would leave the week
+        // with the wrong number of bracket games, and advancement (which resolves a winner's next
+        // game by round+position) would place them into an arbitrary one of the two.
+        String priorRound = g.getPlayoffRound();
+        Integer priorPos = g.getBracketPosition();
+
+        gameRepository.findBySeasonId(g.getSeasonId()).stream()
+                .filter(o -> !o.getId().equals(g.getId()))
+                .filter(o -> java.util.Objects.equals(o.getWeek(), g.getWeek()))
+                .filter(o -> r.equals(o.getPlayoffRound())
+                        && o.getBracketPosition() != null && o.getBracketPosition() == pos)
+                .findFirst()
+                .ifPresent(other -> {
+                    other.setPlayoffRound(priorRound);       // may be null -> becomes consolation
+                    other.setBracketPosition(priorRound == null ? null : priorPos);
+                    gameRepository.save(other);
+                });
+
+        g.setPlayoffRound(r);
+        g.setBracketPosition(pos);
+        return toResponse(gameRepository.save(g));
+    }
+
+    /** Consolation games keep gameType PLAYOFF (they're in a playoff week) but hold no bracket role. */
+    private void clearBracketRole(Game g) {
+        g.setPlayoffRound(null);
+        g.setBracketPosition(null);
+    }
+
+    private List<Game> gamesInWeek(List<Game> games, int week) {
+        return games.stream()
+                .filter(g -> g.getWeek() != null && g.getWeek() == week)
+                .sorted(Comparator.comparing(Game::getGameDate, Comparator.nullsLast(Comparator.naturalOrder())))
+                .toList();
+    }
+
+    /** With 3 playoff weeks the rounds run QUARTERFINAL, SEMIFINAL, FINAL; fewer weeks start later. */
+    private String roundNameFor(int totalPlayoffWeeks, int weekIndex) {
+        String[] all = { "QUARTERFINAL", "SEMIFINAL", "FINAL" };
+        int start = Math.max(0, all.length - totalPlayoffWeeks);
+        int idx = start + weekIndex;
+        return idx < all.length ? all[idx] : "FINAL";
+    }
+
+    private static int largestPowerOfTwo(int n) {
+        int p = 1;
+        while (p * 2 <= n) {
+            p *= 2;
+        }
+        return p;
     }
 
     /**

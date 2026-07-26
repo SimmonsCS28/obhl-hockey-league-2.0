@@ -29,6 +29,8 @@ public class GameResponseDTO {
     private Integer week;
     private String rink;
     private String gameNotes;
+    private String gameType;      // REGULAR_SEASON | PLAYOFF
+    private String playoffRound;  // QUARTERFINAL | SEMIFINAL | FINAL (playoff games only)
     private Long goalie1Id;
     private Long goalie2Id;
     private Long referee1Id;

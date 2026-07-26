@@ -205,6 +205,32 @@ public class CoordinatorService {
         return toView(a, game);
     }
 
+    /**
+     * Testing aid: force a proposed/auto-proposed slot to CONFIRMED or DECLINED, standing in for
+     * the goalie's real email confirm/decline. Coordinator-authorized (see controller); the UI only
+     * exposes it in dev builds. No email is sent — this simulates the goalie's own response.
+     */
+    @Transactional
+    public CoordinatorDto.AssignmentView simulateResponse(Long assignmentId, String action) {
+        ShiftAssignment a = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new RuntimeException("Assignment not found"));
+        String act = action == null ? "" : action.trim().toLowerCase();
+        if ("confirm".equals(act)) {
+            a.setStatus(ShiftAssignment.STATUS_CONFIRMED);
+            a.setDeclineReason(null);
+        } else if ("decline".equals(act)) {
+            a.setStatus(ShiftAssignment.STATUS_DECLINED);
+            a.setDeclineReason("Simulated decline");
+        } else {
+            throw new RuntimeException("action must be confirm or decline");
+        }
+        a.setRespondedAt(LocalDateTime.now());
+        a.setConfirmTokenHash(null);
+        a.setTokenExpiresAt(null);
+        a = assignmentRepository.save(a);
+        return toView(a, gameProxyService.getGameById(a.getGameId()));
+    }
+
     /** Write all CONFIRMED, not-yet-published assignments for a week onto the games. */
     @Transactional
     public CoordinatorDto.PublishResult publishWeek(Long seasonId, String role, Integer week) {
@@ -236,6 +262,10 @@ public class CoordinatorService {
                     a.setPublished(true);
                     assignmentRepository.save(a);
                     published++;
+                    // Email B — final goalie assignment with the exact game + team (best-effort).
+                    if ("GOALIE".equals(r)) {
+                        sendGoalieFinalAssignment(a, game);
+                    }
                 }
             } else {
                 unconfirmed.add(describeGame(game) + " — " + r + " slot " + a.getSlot()
@@ -259,6 +289,24 @@ public class CoordinatorService {
         String roleLabel = roleLabel(a.getRole());
         String link = frontendUrl + "/shift-confirm?id=" + a.getId() + "&token=" + rawToken;
         emailService.sendShiftProposalEmail(user.getEmail(), name, roleLabel, describeGame(game), link);
+    }
+
+    /** Email B: goalie's exact game + team once the week is published (slot 1 = home, slot 2 = away). */
+    private void sendGoalieFinalAssignment(ShiftAssignment a, GameResponseDTO game) {
+        try {
+            Optional<User> userOpt = userRepository.findById(a.getUserId());
+            if (userOpt.isEmpty() || userOpt.get().getEmail() == null) {
+                return;
+            }
+            User user = userOpt.get();
+            String name = (user.getFirstName() != null && !user.getFirstName().isBlank())
+                    ? user.getFirstName()
+                    : user.getUsername();
+            Long teamId = a.getSlot() != null && a.getSlot() == 2 ? game.getAwayTeamId() : game.getHomeTeamId();
+            emailService.sendGoalieFinalAssignmentEmail(user.getEmail(), name, describeGame(game), teamName(teamId));
+        } catch (RuntimeException e) {
+            // Final-assignment email is best-effort; publish already persisted.
+        }
     }
 
     private Map<Long, GameResponseDTO> gamesById(Long seasonId) {

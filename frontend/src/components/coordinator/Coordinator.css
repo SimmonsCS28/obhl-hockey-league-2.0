@@ -1085,3 +1085,32 @@
         grid-template-columns: 1fr 1fr;
     }
 }
+
+/* Dev-only simulate confirm/decline links under a pending goalie slot (not shipped to prod UI). */
+.cc-slot-sim {
+    display: flex;
+    gap: 16px;
+    padding: 4px 14px 10px;
+}
+.cc-sim-link {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: var(--obi-font-body);
+    font-size: 11.5px;
+}
+.cc-sim-link:hover { text-decoration: underline; }
+.cc-sim-confirm { color: #7FB59A; }
+.cc-sim-decline { color: #E08A8A; }
+
+/* "Add a Substitute" row at the bottom of the goalie assign picker (dashed affordance). */
+.cc-candidate-sub-add {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border: 1px dashed rgba(157, 185, 205, 0.3) !important;
+}
+.cc-candidate-avatar-dashed {
+    border: 1px dotted #9DB9CD;
+    background: transparent;
+    color: #9DB9CD;
+}

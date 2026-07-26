@@ -22,6 +22,7 @@ import com.obhl.gateway.model.User;
 import com.obhl.gateway.repository.UserRepository;
 import com.obhl.gateway.service.CoordinatorService;
 import com.obhl.gateway.service.GoalieAvailabilityService;
+import com.obhl.gateway.service.GoalieProposerService;
 import com.obhl.gateway.service.StaffAvailabilityService;
 
 @RestController
@@ -31,6 +32,9 @@ public class CoordinatorController {
 
     @Autowired
     private CoordinatorService coordinatorService;
+
+    @Autowired
+    private GoalieProposerService goalieProposerService;
 
     @Autowired
     private StaffAvailabilityService availabilityService;
@@ -81,7 +85,44 @@ public class CoordinatorController {
             Long coordinatorId = currentUserId(auth);
             return ResponseEntity.ok(coordinatorService.propose(req, coordinatorId));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+            return badRequest(e);
+        }
+    }
+
+    /** Auto-propose full-time goalies into a single week's open goalie slots (AUTO_PROPOSED, no email). */
+    @PostMapping("/goalie/auto-propose")
+    public ResponseEntity<?> autoProposeGoalies(@RequestParam Long seasonId, @RequestParam Integer week,
+            Authentication auth) {
+        if (!canActOn(auth, "GOALIE")) {
+            return forbidden("GOALIE");
+        }
+        try {
+            return ResponseEntity.ok(goalieProposerService.autoPropose(seasonId, week, currentUserId(auth)));
+        } catch (RuntimeException e) {
+            return badRequest(e);
+        }
+    }
+
+    /** The season's goalie roster split full-time vs substitute (drives the picker's "Add a Substitute"). */
+    @GetMapping("/goalie/season-roster")
+    public ResponseEntity<?> seasonGoalieRoster(@RequestParam Long seasonId, Authentication auth) {
+        if (!canActOn(auth, "GOALIE")) {
+            return forbidden("GOALIE");
+        }
+        return ResponseEntity.ok(goalieProposerService.getSeasonRoster(seasonId));
+    }
+
+    /** Send Email A (confirm-your-time) for the week's auto-proposed goalie slots (AUTO_PROPOSED -> PROPOSED). */
+    @PostMapping("/goalie/send-confirmations")
+    public ResponseEntity<?> sendGoalieConfirmations(@RequestParam Long seasonId, @RequestParam Integer week,
+            Authentication auth) {
+        if (!canActOn(auth, "GOALIE")) {
+            return forbidden("GOALIE");
+        }
+        try {
+            return ResponseEntity.ok(goalieProposerService.sendConfirmations(seasonId, week, currentUserId(auth)));
+        } catch (RuntimeException e) {
+            return badRequest(e);
         }
     }
 
@@ -104,7 +145,22 @@ public class CoordinatorController {
         try {
             return ResponseEntity.ok(coordinatorService.confirmSignup(id, currentUserId(auth)));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+            return badRequest(e);
+        }
+    }
+
+    /** Testing aid (dev UI only): force a slot to CONFIRMED/DECLINED, simulating the goalie's email response. */
+    @PostMapping("/assignments/{id}/simulate")
+    public ResponseEntity<?> simulate(@PathVariable Long id, @RequestParam String action,
+            @RequestParam String role, Authentication auth) {
+        String r = role.trim().toUpperCase();
+        if (!canActOn(auth, r)) {
+            return forbidden(r);
+        }
+        try {
+            return ResponseEntity.ok(coordinatorService.simulateResponse(id, action));
+        } catch (RuntimeException e) {
+            return badRequest(e);
         }
     }
 
@@ -120,7 +176,7 @@ public class CoordinatorController {
                     req.getGameId(), req.getRole(), req.getSlot(), req.getUserId(), adminId);
             return ResponseEntity.ok(view != null ? view : java.util.Map.of("message", "Assignment cleared"));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+            return badRequest(e);
         }
     }
 
@@ -134,7 +190,7 @@ public class CoordinatorController {
         try {
             return ResponseEntity.ok(coordinatorService.publishWeek(seasonId, r, week));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+            return badRequest(e);
         }
     }
 
@@ -175,5 +231,15 @@ public class CoordinatorController {
     private ResponseEntity<?> forbidden(String role) {
         return ResponseEntity.status(403)
                 .body(java.util.Map.of("error", "Not authorized to manage " + role + " assignments"));
+    }
+
+    /**
+     * 400 with the exception's message. Falls back to the exception type when the message is null —
+     * {@code Map.of} rejects null values, so building the body naively turns any null-message
+     * failure (an NPE, say) into an opaque 500 and throws the real cause away.
+     */
+    private ResponseEntity<?> badRequest(RuntimeException e) {
+        String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+        return ResponseEntity.badRequest().body(java.util.Map.of("error", msg));
     }
 }

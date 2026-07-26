@@ -540,6 +540,35 @@ const api = {
         return request(`/coordinator/assignments/${id}?role=${role}`, { method: 'DELETE' });
     },
 
+    // Weekly goalie auto-proposer: fill open goalie slots as AUTO_PROPOSED (no email sent yet).
+    async autoProposeGoalies(seasonId, week) {
+        return request(`/coordinator/goalie/auto-propose?seasonId=${seasonId}&week=${week}`, { method: 'POST' });
+    },
+
+    // Season goalie roster split full-time vs substitute (picker's "Add a Substitute").
+    async getSeasonGoalieRoster(seasonId) {
+        return request(`/coordinator/goalie/season-roster?seasonId=${seasonId}`);
+    },
+
+    // Send Email A (confirm-your-time) for the week's auto-proposed goalie slots.
+    async sendGoalieConfirmations(seasonId, week) {
+        return request(`/coordinator/goalie/send-confirmations?seasonId=${seasonId}&week=${week}`, { method: 'POST' });
+    },
+
+    // Dev-only testing aid: force a slot to CONFIRMED/DECLINED, simulating the goalie's email response.
+    async simulateShiftResponse(id, action, role) {
+        return request(`/coordinator/assignments/${id}/simulate?action=${action}&role=${role}`, { method: 'POST' });
+    },
+
+    // Designate which playoff-week slot hosts a bracket game; a null round makes it a consolation
+    // game. Taking a position another slot already holds swaps the two (enforced server-side).
+    async designateBracketSlot(gameId, round, position) {
+        return request(`/games/${gameId}/bracket-slot`, {
+            method: 'PATCH',
+            body: JSON.stringify({ round, position })
+        });
+    },
+
     // Coordinator confirms an official's self-signup (SIGNED_UP -> CONFIRMED)
     async confirmSignup(id, role) {
         return request(`/coordinator/assignments/${id}/confirm?role=${role}`, { method: 'POST' });
@@ -833,6 +862,11 @@ export const {
     getCoordinatorGoalieAvailability,
     proposeShift,
     withdrawShift,
+    autoProposeGoalies,
+    getSeasonGoalieRoster,
+    sendGoalieConfirmations,
+    simulateShiftResponse,
+    designateBracketSlot,
     confirmSignup,
     publishShiftWeek,
     getOpenSlots,

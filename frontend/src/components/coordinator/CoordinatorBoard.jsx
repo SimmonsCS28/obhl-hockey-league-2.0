@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import api from '../../services/api';
 import { useSeason } from '../../contexts/SeasonContext';
 import { resolveTeamColor } from '../../constants/teamColors';
+import GoalieProposerBar from './GoalieProposerBar';
+import { GOALIE_STATUS_STYLE, goalieCounts, isGoalieWeekPublished } from './goalieProposerStatus';
 import './Coordinator.css';
 
 const SLOTS_PER_ROLE = { GOALIE: 2, REF: 2, SCOREKEEPER: 1 };
@@ -10,9 +12,24 @@ const SLOTS_PER_ROLE = { GOALIE: 2, REF: 2, SCOREKEEPER: 1 };
 const STATUS_STYLE = {
     OPEN:      { label: 'Open',          color: 'var(--obi-icy)',     bg: 'rgba(157,185,205,0.1)',  border: 'rgba(157,185,205,0.28)' },
     SIGNED_UP: { label: 'Signed Up',     color: '#0b0c0f',            bg: 'var(--obi-accent)',       border: 'var(--obi-accent)' },
+    // Auto-proposer filled, email not yet sent (amber).
+    AUTO_PROPOSED: GOALIE_STATUS_STYLE.AUTO_PROPOSED,
     PROPOSED:  { label: 'Awaiting',      color: 'var(--obi-icy)',     bg: 'rgba(157,185,205,0.12)', border: 'rgba(157,185,205,0.32)' },
     CONFIRMED: { label: 'Set · Confirmed',color:'var(--obi-success)', bg: 'rgba(127,181,154,0.14)', border: 'rgba(127,181,154,0.32)' },
+    DECLINED:  GOALIE_STATUS_STYLE.DECLINED,
 };
+
+// A week is past (feature hidden) once all its games are Final.
+function weekIsPast(games) {
+    if (!games.length) return false;
+    return games.every(g => String(g.status || '').toUpperCase() === 'FINAL');
+}
+
+// The auto-proposer is regular-season only — playoff matchups are TBD until the bracket is set.
+function weekIsPlayoff(games) {
+    if (!games.length) return false;
+    return games.every(g => String(g.gameType || 'REGULAR_SEASON').toUpperCase() === 'PLAYOFF');
+}
 
 function getName(u) {
     return u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.username || `User ${u.id}`;
@@ -62,12 +79,16 @@ function CoordinatorBoard({ role }) {
     const [staff, setStaff] = useState([]);
     const [assignments, setAssignments] = useState([]);
     const [goaliePool, setGoaliePool] = useState([]);
+    const [seasonRoster, setSeasonRoster] = useState([]); // full-time vs substitute split
     const [weekFilter, setWeekFilter] = useState('all');
     const [openPicker, setOpenPicker] = useState(null); // "gameId:slot"
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [publishing, setPublishing] = useState(false);
     const [publishResult, setPublishResult] = useState(null);
+    const [proposerBusy, setProposerBusy] = useState(null); // 'generate' | 'send' | 'publish' | null
+    const [banner, setBanner] = useState(null);
+    const [proposerRun, setProposerRun] = useState(null);   // last auto-propose result ("why" data)
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -92,6 +113,13 @@ function CoordinatorBoard({ role }) {
     }, [seasonId, role]);
 
     useEffect(() => { load(); }, [load]);
+
+    useEffect(() => {
+        if (role !== 'GOALIE') { setSeasonRoster([]); return; }
+        api.getSeasonGoalieRoster(seasonId)
+            .then(data => setSeasonRoster(data || []))
+            .catch(() => setSeasonRoster([]));
+    }, [role, seasonId]);
 
     useEffect(() => {
         if (role !== 'GOALIE' || weekFilter === 'all') { setGoaliePool([]); return; }
@@ -152,6 +180,78 @@ function CoordinatorBoard({ role }) {
             setError(e.message || 'Failed to publish');
         } finally {
             setPublishing(false);
+        }
+    };
+
+    // ---- Goalie auto-proposer (single non-past week) ----
+
+    const handleGenerate = async (week) => {
+        setProposerBusy('generate');
+        setError('');
+        try {
+            const result = await api.autoProposeGoalies(seasonId, week);
+            await reloadAssignments();
+            setProposerRun({ week, ...result });
+            const sat = (result.sitting || []).map(s => s.name).join(', ');
+            setBanner(
+                `Proposed ${result.filledCount} goalie slot(s) for Week ${week}` +
+                (result.openCount ? ` · ${result.openCount} still open` : '') +
+                (sat ? ` · sitting out: ${sat}` : ''));
+        } catch (e) {
+            setError(e.message || 'Failed to generate proposals');
+        } finally {
+            setProposerBusy(null);
+        }
+    };
+
+    const handleSendConfirmations = async (week) => {
+        setProposerBusy('send');
+        setError('');
+        try {
+            const result = await api.sendGoalieConfirmations(seasonId, week);
+            await reloadAssignments();
+            setBanner(`Sent ${result.sentCount} confirmation email(s) for Week ${week}.`);
+        } catch (e) {
+            setError(e.message || 'Failed to send confirmation emails');
+        } finally {
+            setProposerBusy(null);
+        }
+    };
+
+    const handleProposerPublish = async (week) => {
+        setProposerBusy('publish');
+        setError('');
+        try {
+            const result = await api.publishShiftWeek(seasonId, role, week);
+            await reloadAssignments();
+            setBanner(
+                `Published ${result.publishedCount} final assignment(s) for Week ${week}. Assignment emails sent.`);
+        } catch (e) {
+            setError(e.message || 'Failed to publish');
+        } finally {
+            setProposerBusy(null);
+        }
+    };
+
+    // Per-row: email one auto-proposed goalie their confirmation request (AUTO_PROPOSED -> PROPOSED).
+    const handleSendOne = async (gameId, slot, userId) => {
+        setError('');
+        try {
+            await api.proposeShift({ gameId, seasonId, role, slot, userId });
+            await reloadAssignments();
+        } catch (e) {
+            setError(e.message || 'Failed to send confirmation');
+        }
+    };
+
+    // Dev-only: simulate the goalie's email confirm/decline so the flow is testable locally.
+    const handleSimulate = async (assignmentId, action) => {
+        setError('');
+        try {
+            await api.simulateShiftResponse(assignmentId, action, role);
+            await reloadAssignments();
+        } catch (e) {
+            setError(e.message || 'Failed to simulate response');
         }
     };
 
@@ -219,6 +319,14 @@ function CoordinatorBoard({ role }) {
 
     const roleLabel = role === 'GOALIE' ? 'Goalie' : role === 'REF' ? 'Referee' : 'Scorekeeper';
     const scopeLabel = weekFilter === 'all' ? 'Full Season' : `Week ${weekFilter}`;
+
+    // Goalie auto-proposer: only for a single, non-past week.
+    // Playoff weeks are supported too — the backend switches to best-available-goalie mode.
+    const isPlayoffWeek = weekIsPlayoff(filteredGames);
+    const showProposer = role === 'GOALIE' && weekFilter !== 'all' && !weekIsPast(filteredGames);
+    const proposerCounts = goalieCounts(filteredAssignments, totalSlots);
+    const proposerPublished = isGoalieWeekPublished(filteredAssignments);
+    const anyFilled = filteredAssignments.some(a => a.status !== 'DECLINED');
 
     if (loading) return <div className="cc-loading">Loading…</div>;
 
@@ -299,6 +407,27 @@ function CoordinatorBoard({ role }) {
                 </div>
             )}
 
+            {/* Goalie auto-proposer bar (single non-past week) */}
+            {showProposer && (
+                <GoalieProposerBar
+                    week={parseInt(weekFilter)}
+                    variant="console"
+                    playoff={isPlayoffWeek}
+                    counts={proposerCounts}
+                    published={proposerPublished}
+                    publishedSummary={`Final game & team assignment emails sent to ${proposerCounts.confirmed} goalie(s) for Week ${weekFilter}.`}
+                    busy={proposerBusy}
+                    anyFilled={anyFilled}
+                    banner={banner}
+                    onDismissBanner={() => setBanner(null)}
+                    onGenerate={() => handleGenerate(parseInt(weekFilter))}
+                    onSend={() => handleSendConfirmations(parseInt(weekFilter))}
+                    onPublish={() => handleProposerPublish(parseInt(weekFilter))}
+                    reasoning={proposerRun?.week === parseInt(weekFilter) ? proposerRun.reasoning : null}
+                    sitting={proposerRun?.week === parseInt(weekFilter) ? proposerRun.sitting : null}
+                />
+            )}
+
             {/* Error */}
             {error && <div className="cc-error">{error}</div>}
 
@@ -345,12 +474,16 @@ function CoordinatorBoard({ role }) {
                                                     assignmentFor={assignmentFor}
                                                     staff={staff}
                                                     goaliePool={goaliePool}
+                        seasonRoster={seasonRoster}
+                                                    seasonRoster={seasonRoster}
                                                     weekFilter={weekFilter}
                                                     openPicker={openPicker}
                                                     setOpenPicker={setOpenPicker}
                                                     onAssign={handleAssign}
                                                     onConfirm={handleConfirm}
                                                     onClear={handleClear}
+                                                    onSendOne={handleSendOne}
+                                                    onSimulate={handleSimulate}
                                                     slotsPerGame={slotsPerGame}
                                                 />
                                             ))}
@@ -370,7 +503,7 @@ function CoordinatorBoard({ role }) {
     );
 }
 
-function GameCard({ game, role, teamById, assignmentFor, staff, goaliePool, weekFilter, openPicker, setOpenPicker, onAssign, onConfirm, onClear, slotsPerGame }) {
+function GameCard({ game, role, teamById, assignmentFor, staff, goaliePool, seasonRoster, weekFilter, openPicker, setOpenPicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, slotsPerGame }) {
     const homeTeam = teamById(game.homeTeamId);
     const awayTeam = teamById(game.awayTeamId);
     const d = toChicago(game.gameDate);
@@ -423,9 +556,12 @@ function GameCard({ game, role, teamById, assignmentFor, staff, goaliePool, week
                         onAssign={(userId) => onAssign(game.id, s.slot, userId)}
                         onConfirm={() => onConfirm(assignment?.id)}
                         onClear={() => onClear(assignment?.id)}
+                        onSendOne={() => onSendOne(game.id, s.slot, assignment?.userId)}
+                        onSimulate={(action) => onSimulate(assignment?.id, action)}
                         staff={staff}
                         role={role}
                         goaliePool={goaliePool}
+                        seasonRoster={seasonRoster}
                         weekFilter={weekFilter}
                     />
                 );
@@ -434,7 +570,7 @@ function GameCard({ game, role, teamById, assignmentFor, staff, goaliePool, week
     );
 }
 
-function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker, onAssign, onConfirm, onClear, staff, role, goaliePool, weekFilter }) {
+function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, staff, role, goaliePool, seasonRoster, weekFilter }) {
     const status = assignment?.status ?? 'OPEN';
     const style = STATUS_STYLE[status] ?? STATUS_STYLE.OPEN;
     const playerName = assignment?.userName ?? null;
@@ -444,18 +580,32 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
         return style.label;
     })();
 
+    const reassignAction = { label: 'Reassign', color: '#C8D0D8', bg: 'rgba(255,255,255,0.05)', border: 'rgba(157,185,205,0.25)', onClick: onOpenPicker };
+
     const actions = [];
     if (status === 'OPEN') {
         actions.push({ label: 'Assign', color: '#0b0c0f', bg: 'var(--obi-accent)', border: 'var(--obi-accent)', onClick: onOpenPicker });
     } else if (status === 'SIGNED_UP') {
         actions.push({ label: 'Confirm', color: '#0b0c0f', bg: 'var(--obi-accent)', border: 'var(--obi-accent)', onClick: onConfirm });
-        actions.push({ label: 'Reassign', color: '#C8D0D8', bg: 'rgba(255,255,255,0.05)', border: 'rgba(157,185,205,0.25)', onClick: onOpenPicker });
+        actions.push(reassignAction);
+    } else if (status === 'AUTO_PROPOSED') {
+        // Auto-proposed, email not yet sent: email this one now, or swap the pick first.
+        actions.push({ label: 'Send Confirmation', color: '#fff', bg: '#2C8C94', border: '#2C8C94', onClick: onSendOne });
+        actions.push({ label: 'Swap', color: '#C8D0D8', bg: 'rgba(255,255,255,0.05)', border: 'rgba(157,185,205,0.25)', onClick: onOpenPicker });
     } else if (status === 'PROPOSED') {
-        actions.push({ label: 'Reassign', color: '#C8D0D8', bg: 'rgba(255,255,255,0.05)', border: 'rgba(157,185,205,0.25)', onClick: onOpenPicker });
+        actions.push(reassignAction);
         actions.push({ label: 'Clear', color: 'var(--obi-error)', bg: 'rgba(224,138,138,0.1)', border: 'rgba(224,138,138,0.3)', onClick: onClear });
+    } else if (status === 'DECLINED') {
+        actions.push(reassignAction);
     } else if (status === 'CONFIRMED') {
-        actions.push({ label: 'Reassign', color: '#C8D0D8', bg: 'rgba(255,255,255,0.05)', border: 'rgba(157,185,205,0.25)', onClick: onOpenPicker });
+        actions.push(reassignAction);
     }
+
+    // Dev-only: stand in for the goalie's real email confirm/decline while testing the flow.
+    const showSimulate = import.meta.env.DEV && status === 'PROPOSED' && role === 'GOALIE';
+
+    // "Add a Substitute" expands the sub roster inside the picker.
+    const [showSubs, setShowSubs] = useState(false);
 
     const pickerTitle = (() => {
         const verb = status === 'OPEN' ? 'Assign' : 'Reassign';
@@ -482,6 +632,17 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
             : 'var(--obi-icy)';
         return { id: u.id, name, unavailable, sub, subColor };
     });
+
+    // Goalie picker splits the roster: full-timers listed directly, substitutes revealed by
+    // "Add a Substitute" (ad hoc fill-ins, not part of the weekly auto-assignment).
+    const substituteIds = new Set(
+        role === 'GOALIE' ? seasonRoster.filter(r => !r.fulltime).map(r => r.userId) : []);
+    const primaryCandidates = role === 'GOALIE' && seasonRoster.length
+        ? candidates.filter(c => !substituteIds.has(c.id))
+        : candidates;
+    const substituteCandidates = role === 'GOALIE' && seasonRoster.length
+        ? candidates.filter(c => substituteIds.has(c.id))
+        : [];
 
     return (
         <div className="cc-slot-row">
@@ -525,11 +686,22 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
                 </div>
             </div>
 
+            {showSimulate && (
+                <div className="cc-slot-sim">
+                    <button type="button" className="cc-sim-link cc-sim-confirm" onClick={() => onSimulate('confirm')}>
+                        Simulate: goalie confirms
+                    </button>
+                    <button type="button" className="cc-sim-link cc-sim-decline" onClick={() => onSimulate('decline')}>
+                        Simulate: goalie declines
+                    </button>
+                </div>
+            )}
+
             {pickerOpen && (
                 <div className="cc-picker">
                     <div className="cc-picker-title">{pickerTitle}</div>
                     <div className="cc-picker-candidates">
-                        {candidates.map(c => (
+                        {primaryCandidates.map(c => (
                             <button
                                 key={c.id}
                                 className="cc-candidate-btn"
@@ -543,8 +715,38 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
                                 </span>
                             </button>
                         ))}
+
+                        {/* Substitutes are ad hoc fill-ins — hidden until asked for. */}
+                        {showSubs && substituteCandidates.map(c => (
+                            <button
+                                key={c.id}
+                                className="cc-candidate-btn"
+                                disabled={c.unavailable}
+                                onClick={() => !c.unavailable && onAssign(c.id)}
+                            >
+                                <span className="cc-candidate-avatar">{initials(c.name)}</span>
+                                <span>
+                                    <span className="cc-candidate-name">{c.name}</span>
+                                    <span className="cc-candidate-sub" style={{ color: c.subColor }}>{c.sub}</span>
+                                </span>
+                            </button>
+                        ))}
+
+                        {substituteCandidates.length > 0 && !showSubs && (
+                            <button
+                                type="button"
+                                className="cc-candidate-btn cc-candidate-sub-add"
+                                onClick={() => setShowSubs(true)}
+                            >
+                                <span className="cc-candidate-avatar cc-candidate-avatar-dashed">+</span>
+                                <span>
+                                    <span className="cc-candidate-name">Add a Substitute</span>
+                                    <span className="cc-candidate-sub">Ad hoc fill-in for this game only</span>
+                                </span>
+                            </button>
+                        )}
                     </div>
-                    <button className="cc-picker-cancel" onClick={onClosePicker}>Cancel</button>
+                    <button className="cc-picker-cancel" onClick={() => { setShowSubs(false); onClosePicker(); }}>Cancel</button>
                 </div>
             )}
         </div>

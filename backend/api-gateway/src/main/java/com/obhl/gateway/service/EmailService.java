@@ -57,6 +57,25 @@ public class EmailService {
         send(toEmail, subject, html);
     }
 
+    /**
+     * Email B — final goalie assignment (post-publish). The goalie's exact game AND team are now
+     * locked, unlike the earlier confirm-your-time email which only pinned the time slot.
+     */
+    public void sendGoalieFinalAssignmentEmail(String toEmail, String name, String gameDescription, String teamName) {
+        String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";
+        String subject = "OBHL goalie assignment — you're set for " + (teamName != null ? teamName : "your game");
+        String team = (teamName != null && !teamName.isBlank())
+                ? ("<p>You're in net for <strong>" + teamName + "</strong>.</p>")
+                : "";
+        String html = "<p>" + greeting + "</p>"
+                + "<p>Your goalie assignment is final:</p>"
+                + "<p><strong>" + gameDescription + "</strong></p>"
+                + team
+                + "<p>Thanks for playing — see you at the rink. No further action is needed.</p>";
+
+        send(toEmail, subject, html);
+    }
+
     /** Courtesy confirmation when a coordinator confirms a shift the official signed up for (no action needed). */
     public void sendShiftConfirmedEmail(String toEmail, String name, String roleLabel, String gameDescription) {
         String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";

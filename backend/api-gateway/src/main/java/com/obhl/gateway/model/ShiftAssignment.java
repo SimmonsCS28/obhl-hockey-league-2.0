@@ -27,8 +27,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ShiftAssignment {
 
-    public static final String STATUS_SIGNED_UP = "SIGNED_UP";  // official self-signed; awaiting coordinator Confirm
-    public static final String STATUS_PROPOSED = "PROPOSED";    // coordinator-assigned; awaiting the person's accept
+    public static final String STATUS_SIGNED_UP = "SIGNED_UP";        // official self-signed; awaiting coordinator Confirm
+    public static final String STATUS_AUTO_PROPOSED = "AUTO_PROPOSED"; // auto-proposer filled the slot; email not yet sent
+    public static final String STATUS_PROPOSED = "PROPOSED";          // coordinator-assigned; awaiting the person's accept
     public static final String STATUS_CONFIRMED = "CONFIRMED";
     public static final String STATUS_DECLINED = "DECLINED";
 
