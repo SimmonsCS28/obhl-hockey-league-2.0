@@ -91,17 +91,22 @@ public class UserManagementService {
      */
     @Transactional
     public UserDTO createUser(CreateUserRequest request) {
-        // Check if username or email already exists
-        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-            throw new RuntimeException("Username already exists: " + request.getUsername());
+        // Login matches on username/email case-insensitively, so these checks must too.
+        // A case-sensitive check lets "A_user@x.com" and "a_user@x.com" both be created,
+        // after which neither account can log in.
+        String username = request.getUsername() != null ? request.getUsername().trim() : null;
+        String email = request.getEmail() != null ? request.getEmail().trim() : null;
+
+        if (username != null && userRepository.findByUsernameIgnoreCase(username).isPresent()) {
+            throw new RuntimeException("Username already exists: " + username);
         }
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already exists: " + request.getEmail());
+        if (email != null && userRepository.findByEmailIgnoreCase(email).isPresent()) {
+            throw new RuntimeException("Email already exists: " + email);
         }
 
         User user = new User();
-        user.setUsername(request.getUsername());
-        user.setEmail(request.getEmail());
+        user.setUsername(username);
+        user.setEmail(email);
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
@@ -137,7 +142,7 @@ public class UserManagementService {
             user.setSecurityQuestion(request.getSecurityQuestion());
         }
         if (request.getSecurityAnswer() != null) {
-            user.setSecurityAnswerHash(passwordEncoder.encode(request.getSecurityAnswer()));
+            user.setSecurityAnswerHash(passwordEncoder.encode(normalizeSecurityAnswer(request.getSecurityAnswer())));
         }
 
         User savedUser = userRepository.save(user);
@@ -157,25 +162,26 @@ public class UserManagementService {
 
         // Update fields if provided
         if (request.getUsername() != null && !request.getUsername().isBlank()) {
-            // Check if new username conflicts with another user
-            userRepository.findByUsername(request.getUsername())
+            // Case-insensitive, to match how login resolves the account.
+            String newUsername = request.getUsername().trim();
+            userRepository.findByUsernameIgnoreCase(newUsername)
                     .ifPresent(existingUser -> {
                         if (!existingUser.getId().equals(id)) {
-                            throw new RuntimeException("Username already exists: " + request.getUsername());
+                            throw new RuntimeException("Username already exists: " + newUsername);
                         }
                     });
-            user.setUsername(request.getUsername());
+            user.setUsername(newUsername);
         }
 
         if (request.getEmail() != null && !request.getEmail().isBlank()) {
-            // Check if new email conflicts with another user
-            userRepository.findByEmail(request.getEmail())
+            String newEmail = request.getEmail().trim();
+            userRepository.findByEmailIgnoreCase(newEmail)
                     .ifPresent(existingUser -> {
                         if (!existingUser.getId().equals(id)) {
-                            throw new RuntimeException("Email already exists: " + request.getEmail());
+                            throw new RuntimeException("Email already exists: " + newEmail);
                         }
                     });
-            user.setEmail(request.getEmail());
+            user.setEmail(newEmail);
         }
 
         if (request.getRoles() != null) {
@@ -269,11 +275,15 @@ public class UserManagementService {
      */
     @Transactional(readOnly = true)
     public String getSecurityQuestion(String username) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        User user = findForPasswordReset(username);
 
         if (user.getSecurityQuestion() == null || user.getSecurityQuestion().isBlank()) {
-            throw new RuntimeException("No security question set for this user. Please contact admin.");
+            // Most accounts have no security question yet (it's only set during the forced
+            // first-login flow), so this is the common path, not an edge case. Point at the
+            // email option one click away rather than dead-ending them at "contact admin".
+            throw new RuntimeException(
+                    "You haven't set a security question yet. Choose \"Email Me a Reset Link\" instead — "
+                            + "we'll send a reset link to your account email.");
         }
 
         return user.getSecurityQuestion();
@@ -282,16 +292,37 @@ public class UserManagementService {
     /**
      * Verify security answer and reset password
      */
+    /**
+     * Resolve the account for a self-service password reset. Accepts either a username or an
+     * email, case-insensitively, because the Forgot Password form asks for "username" and most
+     * members' username *is* their email — a case-sensitive, username-only lookup left them
+     * with "User not found" and no way back into their account.
+     */
+    /**
+     * Security answers are compared case- and whitespace-insensitively. Every write and every
+     * comparison must run through this, or an answer set on one screen won't verify on another.
+     */
+    static String normalizeSecurityAnswer(String answer) {
+        return answer == null ? null : answer.trim().toLowerCase();
+    }
+
+    private User findForPasswordReset(String usernameOrEmail) {
+        String identifier = usernameOrEmail != null ? usernameOrEmail.trim() : "";
+        return userRepository.findByUsernameIgnoreCaseOrEmailIgnoreCase(identifier, identifier)
+                .orElseThrow(() -> new RuntimeException("User not found: " + identifier));
+    }
+
     @Transactional
     public void verifyAndResetPassword(String username, String answer, String newPassword) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        User user = findForPasswordReset(username);
 
         if (user.getSecurityAnswerHash() == null) {
             throw new RuntimeException("Security answer not set. Cannot reset password.");
         }
 
-        if (!passwordEncoder.matches(answer, user.getSecurityAnswerHash())) {
+        // Answers are stored normalised (see normalizeSecurityAnswer) and the UI promises
+        // "not case-sensitive", so normalise on the way in too rather than matching raw.
+        if (!passwordEncoder.matches(normalizeSecurityAnswer(answer), user.getSecurityAnswerHash())) {
             throw new RuntimeException("Incorrect security answer.");
         }
 
@@ -374,9 +405,11 @@ public class UserManagementService {
         for (PlayerDto player : uniqueByEmail.values()) {
             String email = player.getEmail().toLowerCase().trim();
 
-            // Skip if a user with this exact email already exists
-            if (userRepository.findByEmail(email).isPresent() ||
-                    userRepository.findByUsername(email).isPresent()) {
+            // Skip if a user with this email already exists. Must be case-insensitive: the
+            // lookup key is lowercased above, so a case-sensitive check misses accounts stored
+            // with any capitalisation and reports them as new.
+            if (userRepository.findByEmailIgnoreCase(email).isPresent() ||
+                    userRepository.findByUsernameIgnoreCase(email).isPresent()) {
                 continue;
             }
 
@@ -425,9 +458,11 @@ public class UserManagementService {
         for (PlayerDto player : uniqueByEmail.values()) {
             String email = player.getEmail().toLowerCase().trim();
 
-            // Check if user already exists by email or username
-            if (userRepository.findByEmail(email).isPresent() ||
-                    userRepository.findByUsername(email).isPresent()) {
+            // Check if user already exists by email or username. Case-insensitive — this check
+            // being case-sensitive against a lowercased key is what created duplicate accounts
+            // for members whose original rows were stored capitalised.
+            if (userRepository.findByEmailIgnoreCase(email).isPresent() ||
+                    userRepository.findByUsernameIgnoreCase(email).isPresent()) {
                 continue;
             }
 
@@ -470,7 +505,8 @@ public class UserManagementService {
 
         for (com.obhl.gateway.dto.GoalieImportDTO dto : goalieDtos) {
             String email = dto.getEmail().trim();
-            if (userRepository.findByEmail(email).isPresent() || userRepository.findByUsername(email).isPresent()) {
+            if (userRepository.findByEmailIgnoreCase(email).isPresent()
+                    || userRepository.findByUsernameIgnoreCase(email).isPresent()) {
                 continue; // Skip if user exists
             }
 

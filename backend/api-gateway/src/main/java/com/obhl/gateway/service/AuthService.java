@@ -33,48 +33,54 @@ public class AuthService {
     private final JwtUtil jwtUtil;
 
     public AuthDto.LoginResponse login(AuthDto.LoginRequest request) {
-        log.info("Login attempt for: {}", request.getUsernameOrEmail());
+        // Trim before lookup: mobile autofill and copy/paste routinely append a trailing
+        // space, which would otherwise fail the lookup and surface as "invalid credentials".
+        String identifier = request.getUsernameOrEmail() != null
+                ? request.getUsernameOrEmail().trim()
+                : "";
+
+        log.info("Login attempt for: {}", identifier);
 
         // Find user by username or email (case-insensitive)
-        User user = userRepository.findByUsernameIgnoreCaseOrEmailIgnoreCase(
-                request.getUsernameOrEmail(),
-                request.getUsernameOrEmail())
-                .orElseThrow(() -> {
-                    log.warn("User not found: {}", request.getUsernameOrEmail());
-                    return new RuntimeException("Invalid credentials");
-                });
+        java.util.List<User> matches = userRepository
+                .findAllByUsernameIgnoreCaseOrEmailIgnoreCase(identifier, identifier);
 
-        System.out.println("DEBUG: AuthService.login called for user: " + user.getUsername());
+        if (matches.isEmpty()) {
+            log.warn("User not found: {}", identifier);
+            throw new RuntimeException("Invalid credentials");
+        }
 
-        log.info("User found: id={}, username={}, email={}, role={}",
-                user.getId(), user.getUsername(), user.getEmail(), user.getRole());
+        User user;
+        if (matches.size() == 1) {
+            user = matches.get(0);
+        } else {
+            // Duplicate rows that differ only by case. Don't lock the person out — authenticate
+            // against whichever row their password actually belongs to — but make the data
+            // problem loud so it gets cleaned up rather than sitting silent.
+            log.error("Duplicate accounts for identifier '{}': ids={}. Merge these rows.",
+                    identifier,
+                    matches.stream().map(u -> String.valueOf(u.getId()))
+                            .collect(java.util.stream.Collectors.joining(", ")));
 
-        // Check if user is active
-        if (!user.getIsActive()) {
+            user = matches.stream()
+                    .filter(u -> Boolean.TRUE.equals(u.getIsActive()))
+                    .filter(u -> passwordEncoder.matches(request.getPassword(), u.getPasswordHash()))
+                    // Most recently created wins: later rows carry the current onboarding state.
+                    .max(java.util.Comparator.comparing(User::getId))
+                    .orElse(matches.get(matches.size() - 1));
+        }
+
+        log.info("User found: id={}, username={}", user.getId(), user.getUsername());
+
+        // Check if user is active. Legacy rows can carry a NULL is_active, which would
+        // otherwise NPE on unboxing and get swallowed as a generic credentials failure.
+        if (!Boolean.TRUE.equals(user.getIsActive())) {
             log.warn("User account is inactive: {}", user.getUsername());
             throw new RuntimeException("User account is inactive");
         }
 
-        // Log password verification details
-        String providedPassword = request.getPassword();
-        String storedHash = user.getPasswordHash();
-
-        log.info("Password verification:");
-        log.info("  Provided password length: {}", providedPassword.length());
-        log.info("  Stored hash: {}", storedHash);
-        log.info("  Hash starts with: {}",
-                storedHash != null ? storedHash.substring(0, Math.min(10, storedHash.length())) : "null");
-
-        // Generate a test hash to verify encoder is working
-        String testHash = passwordEncoder.encode(providedPassword);
-        log.info("  Test hash of provided password: {}", testHash);
-        log.info("  Test hash starts with: {}", testHash.substring(0, Math.min(10, testHash.length())));
-
-        // Verify password
-        boolean passwordMatches = passwordEncoder.matches(providedPassword, storedHash);
-        log.info("  Password matches: {}", passwordMatches);
-
-        if (!passwordMatches) {
+        // Never log password material — the stored hash and any derived hash stay out of the logs.
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             log.warn("Password verification failed for user: {}", user.getUsername());
             throw new RuntimeException("Invalid credentials");
         }
@@ -145,7 +151,8 @@ public class AuthService {
         if (request.getSecurityQuestion() != null && !request.getSecurityQuestion().isBlank()
                 && request.getSecurityAnswer() != null && !request.getSecurityAnswer().isBlank()) {
             user.setSecurityQuestion(request.getSecurityQuestion());
-            user.setSecurityAnswerHash(passwordEncoder.encode(request.getSecurityAnswer().trim().toLowerCase()));
+            user.setSecurityAnswerHash(passwordEncoder
+                    .encode(UserManagementService.normalizeSecurityAnswer(request.getSecurityAnswer())));
             log.info("Security question set for user: {}", user.getUsername());
         }
 
@@ -228,7 +235,8 @@ public class AuthService {
         if (request.getSecurityQuestion() != null && !request.getSecurityQuestion().isBlank()
                 && request.getSecurityAnswer() != null && !request.getSecurityAnswer().isBlank()) {
             user.setSecurityQuestion(request.getSecurityQuestion());
-            user.setSecurityAnswerHash(passwordEncoder.encode(request.getSecurityAnswer().trim().toLowerCase()));
+            user.setSecurityAnswerHash(passwordEncoder
+                    .encode(UserManagementService.normalizeSecurityAnswer(request.getSecurityAnswer())));
         }
 
         // Self-service volunteer roles (GOALIE/REF/SCOREKEEPER). When provided, reconcile the

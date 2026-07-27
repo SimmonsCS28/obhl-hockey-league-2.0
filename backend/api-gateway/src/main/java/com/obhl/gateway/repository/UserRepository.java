@@ -24,6 +24,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByUsernameIgnoreCaseOrEmailIgnoreCase(String username, String email);
 
+    // Login lookup. Returns a List rather than an Optional on purpose: case-variant duplicate
+    // rows have reached production before, and an Optional-returning query throws on >1 match,
+    // which surfaced as a permanent, unexplained "invalid credentials" for those accounts.
+    List<User> findAllByUsernameIgnoreCaseOrEmailIgnoreCase(String username, String email);
+
     List<User> findByIsActive(Boolean isActive);
 
     List<User> findByRole(String role);

@@ -4,6 +4,10 @@ import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import './ChangePassword.css';
 
+// Survives a refresh of the forced password-change screen; cleared as soon as the change lands
+// or the screen is abandoned. sessionStorage (not localStorage) so it dies with the tab.
+const EPHEMERAL_KEY = 'obhl.pendingPasswordChange';
+
 const SECURITY_QUESTIONS = [
     "What was the name of your first pet?",
     "What city were you born in?",
@@ -27,20 +31,44 @@ export default function ChangePassword() {
     const location = useLocation();
     const { completeLogin } = useAuth();
 
-    // Ephemeral state from Login
-    const ephemeralToken = location.state?.ephemeralToken;
-    const ephemeralUser = location.state?.ephemeralUser;
+    // Ephemeral state from Login. Router state alone doesn't survive a refresh or a back/forward
+    // navigation, which silently bounced people to the homepage mid-password-change and read as
+    // "my login didn't work". Mirror it into sessionStorage so a reload resumes instead.
+    const stashed = (() => {
+        if (location.state?.ephemeralToken) return null;
+        try {
+            const raw = sessionStorage.getItem(EPHEMERAL_KEY);
+            return raw ? JSON.parse(raw) : null;
+        } catch {
+            return null;
+        }
+    })();
+
+    const ephemeralToken = location.state?.ephemeralToken ?? stashed?.ephemeralToken;
+    const ephemeralUser = location.state?.ephemeralUser ?? stashed?.ephemeralUser;
     // False means they have never set one — show the section
-    const hasSecurityQuestion = location.state?.hasSecurityQuestion ?? true;
+    const hasSecurityQuestion =
+        location.state?.hasSecurityQuestion ?? stashed?.hasSecurityQuestion ?? true;
     const isFirstLogin = !hasSecurityQuestion;
 
     useEffect(() => {
-        // Redir if no ephemeral session
         if (!ephemeralToken || !ephemeralUser) {
             console.warn('No ephemeral session found, redirecting to home');
+            sessionStorage.removeItem(EPHEMERAL_KEY);
             navigate('/', { replace: true });
+            return;
         }
-    }, [ephemeralToken, ephemeralUser, navigate]);
+
+        try {
+            sessionStorage.setItem(
+                EPHEMERAL_KEY,
+                JSON.stringify({ ephemeralToken, ephemeralUser, hasSecurityQuestion })
+            );
+        } catch {
+            // Private-mode / quota failure — the in-memory router state still works for this
+            // page view, we just lose the ability to resume after a refresh.
+        }
+    }, [ephemeralToken, ephemeralUser, hasSecurityQuestion, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -73,6 +101,7 @@ export default function ChangePassword() {
             );
 
             // Success: Finalize login
+            sessionStorage.removeItem(EPHEMERAL_KEY);
             completeLogin(ephemeralToken, ephemeralUser);
 
             const roles = ephemeralUser.roles || [ephemeralUser.role];
