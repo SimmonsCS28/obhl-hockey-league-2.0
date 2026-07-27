@@ -474,7 +474,6 @@ function CoordinatorBoard({ role }) {
                                                     assignmentFor={assignmentFor}
                                                     staff={staff}
                                                     goaliePool={goaliePool}
-                        seasonRoster={seasonRoster}
                                                     seasonRoster={seasonRoster}
                                                     weekFilter={weekFilter}
                                                     openPicker={openPicker}
