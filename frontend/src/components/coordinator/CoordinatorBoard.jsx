@@ -613,16 +613,18 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
         return `${verb} ${who} — they'll get an email to confirm`;
     })();
 
-    // Candidates: for goalie, disable unavailable goalies (not in available pool this week)
-    const availableGoalieIds = new Set(
+    // Candidates: only goalies who explicitly marked themselves UNAVAILABLE are disabled. A goalie
+    // with unknown / not-set availability stays selectable — they can still be assigned and will get
+    // an email to confirm the time (people routinely just forget to mark the week).
+    const unavailableGoalieIds = new Set(
         role === 'GOALIE' && weekFilter !== 'all'
-            ? goaliePool.filter(g => g.status === 'AVAILABLE').map(g => g.userId)
+            ? goaliePool.filter(g => g.status === 'UNAVAILABLE').map(g => g.userId)
             : []
     );
 
     const candidates = staff.map(u => {
         const name = getName(u);
-        const unavailable = role === 'GOALIE' && weekFilter !== 'all' && !availableGoalieIds.has(u.id);
+        const unavailable = role === 'GOALIE' && weekFilter !== 'all' && unavailableGoalieIds.has(u.id);
         const poolEntry = role === 'GOALIE' && weekFilter !== 'all' ? goaliePool.find(g => g.userId === u.id) : null;
         const sub = role === 'GOALIE'
             ? (poolEntry ? (poolEntry.status === 'AVAILABLE' ? 'Available this week' : 'Not available') : 'Availability unknown')
