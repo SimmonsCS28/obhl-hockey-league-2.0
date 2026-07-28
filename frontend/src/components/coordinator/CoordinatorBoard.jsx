@@ -4,6 +4,7 @@ import { useSeason } from '../../contexts/SeasonContext';
 import { resolveTeamColor } from '../../constants/teamColors';
 import GoalieProposerBar from './GoalieProposerBar';
 import { GOALIE_STATUS_STYLE, goalieCounts, isGoalieWeekPublished } from './goalieProposerStatus';
+import { rankTeams, goaliePickTeamId } from '../../utils/goaliePick';
 import './Coordinator.css';
 
 const SLOTS_PER_ROLE = { GOALIE: 2, REF: 2, SCOREKEEPER: 1 };
@@ -76,6 +77,7 @@ function CoordinatorBoard({ role }) {
 
     const [games, setGames] = useState([]);
     const [teams, setTeams] = useState([]);
+    const [rankByTeam, setRankByTeam] = useState(new Map()); // teamId -> standings rank, for goalie-pick label
     const [staff, setStaff] = useState([]);
     const [assignments, setAssignments] = useState([]);
     const [goaliePool, setGoaliePool] = useState([]);
@@ -95,16 +97,18 @@ function CoordinatorBoard({ role }) {
         setError('');
         setPublishResult(null);
         try {
-            const [gamesData, teamsData, staffData, assignData] = await Promise.all([
+            const [gamesData, teamsData, staffData, assignData, standingsData] = await Promise.all([
                 api.getGames(seasonId),
                 api.getTeams(),
                 api.getUsers({ role }),
                 api.getCoordinatorAssignments(seasonId, role),
+                api.getStandings(seasonId).catch(() => null),
             ]);
             setGames(gamesData || []);
             setTeams(teamsData || []);
             setStaff([...(staffData || [])].sort((a, b) => getName(a).localeCompare(getName(b))));
             setAssignments(assignData || []);
+            setRankByTeam(rankTeams(standingsData || teamsData || []));
         } catch {
             setError('Failed to load data');
         } finally {
@@ -255,6 +259,17 @@ function CoordinatorBoard({ role }) {
         }
     };
 
+    // Move both goalies to the other team's slot — keeps their confirmation, sends no email.
+    const handleSwap = async (gameId) => {
+        setError('');
+        try {
+            await api.swapGoalieSlots(gameId);
+            await reloadAssignments();
+        } catch (e) {
+            setError(e.message || 'Failed to swap goalies');
+        }
+    };
+
     // ---- Derived data ----
 
     const weeks = [...new Set(games.map(g => g.week).filter(w => w != null))].sort((a, b) => a - b);
@@ -351,6 +366,13 @@ function CoordinatorBoard({ role }) {
                     ))}
                 </div>
             </div>
+
+            {role === 'GOALIE' && (
+                <div className="cc-pick-legend">
+                    <span className="cc-pick-legend-swatch" />
+                    Outlined team has goalie pick this week
+                </div>
+            )}
 
             {/* Summary */}
             <div className="cc-summary-grid">
@@ -471,6 +493,7 @@ function CoordinatorBoard({ role }) {
                                                     game={g}
                                                     role={role}
                                                     teamById={teamById}
+                                                    rankByTeam={rankByTeam}
                                                     assignmentFor={assignmentFor}
                                                     staff={staff}
                                                     goaliePool={goaliePool}
@@ -483,6 +506,7 @@ function CoordinatorBoard({ role }) {
                                                     onClear={handleClear}
                                                     onSendOne={handleSendOne}
                                                     onSimulate={handleSimulate}
+                                                    onSwap={handleSwap}
                                                     slotsPerGame={slotsPerGame}
                                                 />
                                             ))}
@@ -502,14 +526,30 @@ function CoordinatorBoard({ role }) {
     );
 }
 
-function GameCard({ game, role, teamById, assignmentFor, staff, goaliePool, seasonRoster, weekFilter, openPicker, setOpenPicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, slotsPerGame }) {
+// Pill outline in a team's own color, marking the team that has goalie pick this matchup. The
+// non-pick side gets a transparent border of the same box size so the row doesn't shift.
+function pickPillStyle(isPick, teamColor) {
+    if (!isPick) return { border: '1px solid transparent', background: 'transparent' };
+    const c = resolveTeamColor(teamColor);
+    return { border: `1px solid ${c}`, background: `color-mix(in srgb, ${c} 14%, transparent)` };
+}
+
+function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goaliePool, seasonRoster, weekFilter, openPicker, setOpenPicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, onSwap, slotsPerGame }) {
     const homeTeam = teamById(game.homeTeamId);
     const awayTeam = teamById(game.awayTeamId);
     const d = toChicago(game.gameDate);
 
+    // Which team picks their goalie this matchup (regular season: lower in standings; playoffs: higher).
+    const pickTeamId = role === 'GOALIE' ? goaliePickTeamId(game, rankByTeam) : null;
+    const pickTitle = String(game.gameType || 'REGULAR_SEASON').toUpperCase() === 'PLAYOFF'
+        ? 'Playoffs: higher seed in the standings has goalie pick'
+        : 'Lower in the standings has goalie pick this week';
+
     const slots = buildSlots(game, role, homeTeam, awayTeam);
     const totalSlots = slotsPerGame;
     const gameAssignments = slots.map(s => assignmentFor(game.id, s.slot)).filter(Boolean);
+    // One swap button per matchup (header), enabled once either goalie slot has someone in it.
+    const canSwapGoalies = role === 'GOALIE' && gameAssignments.some(a => a?.userId);
     const confirmedCount = gameAssignments.filter(a => a.status === 'CONFIRMED').length;
     const openCount = totalSlots - gameAssignments.length;
     const allSet = confirmedCount === totalSlots && openCount === 0;
@@ -528,11 +568,27 @@ function GameCard({ game, role, teamById, assignmentFor, staff, goaliePool, seas
                 </div>
                 <div className="cc-game-matchup">
                     <div className="cc-game-teams">
-                        <span className="cc-team-dot" style={{ background: resolveTeamColor(homeTeam?.teamColor) }} />
-                        <span className="cc-team-name">{homeTeam?.name || `Team ${game.homeTeamId}`}</span>
+                        <span className="cc-team-pill" style={pickPillStyle(pickTeamId === game.homeTeamId, homeTeam?.teamColor)}
+                            title={pickTeamId === game.homeTeamId ? pickTitle : undefined}>
+                            <span className="cc-team-dot" style={{ background: resolveTeamColor(homeTeam?.teamColor) }} />
+                            <span className="cc-team-name">{homeTeam?.name || `Team ${game.homeTeamId}`}</span>
+                        </span>
                         <span className="cc-vs">vs</span>
-                        <span className="cc-team-name">{awayTeam?.name || `Team ${game.awayTeamId}`}</span>
-                        <span className="cc-team-dot" style={{ background: resolveTeamColor(awayTeam?.teamColor) }} />
+                        <span className="cc-team-pill" style={pickPillStyle(pickTeamId === game.awayTeamId, awayTeam?.teamColor)}
+                            title={pickTeamId === game.awayTeamId ? pickTitle : undefined}>
+                            <span className="cc-team-name">{awayTeam?.name || `Team ${game.awayTeamId}`}</span>
+                            <span className="cc-team-dot" style={{ background: resolveTeamColor(awayTeam?.teamColor) }} />
+                        </span>
+                        {canSwapGoalies && (
+                            <button
+                                type="button"
+                                className="cc-swap-btn"
+                                title="Swap the two teams' goalies — keeps each goalie's confirmation, no new email sent"
+                                onClick={() => onSwap(game.id)}
+                            >
+                                ⇄ Swap Goalies
+                            </button>
+                        )}
                     </div>
                     <div className="cc-game-meta">{formatTime(d)} · {game.rink || 'TBD'}</div>
                 </div>
@@ -557,6 +613,8 @@ function GameCard({ game, role, teamById, assignmentFor, staff, goaliePool, seas
                         onClear={() => onClear(assignment?.id)}
                         onSendOne={() => onSendOne(game.id, s.slot, assignment?.userId)}
                         onSimulate={(action) => onSimulate(assignment?.id, action)}
+                        isPickTeam={pickTeamId != null && pickTeamId === (s.slot === 1 ? game.homeTeamId : game.awayTeamId)}
+                        pickTitle={pickTitle}
                         staff={staff}
                         role={role}
                         goaliePool={goaliePool}
@@ -569,7 +627,7 @@ function GameCard({ game, role, teamById, assignmentFor, staff, goaliePool, seas
     );
 }
 
-function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, staff, role, goaliePool, seasonRoster, weekFilter }) {
+function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, isPickTeam, pickTitle, staff, role, goaliePool, seasonRoster, weekFilter }) {
     const status = assignment?.status ?? 'OPEN';
     const style = STATUS_STYLE[status] ?? STATUS_STYLE.OPEN;
     const playerName = assignment?.userName ?? null;
@@ -649,10 +707,13 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
         <div className="cc-slot-row">
             <div className="cc-slot-inner">
                 <div className="cc-slot-label-col">
-                    {slotDef.showDot && (
-                        <span className="cc-slot-dot" style={{ background: slotDef.teamColor }} />
-                    )}
-                    <span className="cc-slot-label">{slotDef.label}</span>
+                    <span className="cc-slot-team-pill" style={pickPillStyle(isPickTeam, slotDef.teamColor)}
+                        title={isPickTeam ? pickTitle : undefined}>
+                        {slotDef.showDot && (
+                            <span className="cc-slot-dot" style={{ background: slotDef.teamColor }} />
+                        )}
+                        <span className="cc-slot-label">{slotDef.label}</span>
+                    </span>
                 </div>
 
                 <div className="cc-slot-player-col">
@@ -697,6 +758,7 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
                     </button>
                 </div>
             )}
+
 
             {pickerOpen && (
                 <div className="cc-picker">

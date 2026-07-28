@@ -717,6 +717,67 @@
     white-space: nowrap;
 }
 
+/* Goalie-pick outline: the picked team's name + dot get a pill outline in the team's own color.
+   The non-pick side gets a transparent border of the same box size, so the row never shifts. */
+.cc-team-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    padding: 3px 10px;
+    border-radius: 13px;
+    box-sizing: border-box;
+}
+
+.cc-slot-team-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 9px;
+    border-radius: 12px;
+    box-sizing: border-box;
+}
+
+/* "Swap Goalies" — a low-frequency neutral override in the matchup header, not a primary CTA. */
+.cc-swap-btn {
+    flex: none;
+    color: #9DB9CD;
+    background: rgba(157, 185, 205, 0.06);
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    border-radius: 7px;
+    padding: 5px 11px;
+    font-family: 'Saira Condensed', var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.cc-swap-btn:hover {
+    color: #fff;
+    border-color: rgba(157, 185, 205, 0.4);
+}
+
+/* Legend explaining the pick-outline convention once. */
+.cc-pick-legend {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 2px 0 12px;
+    font-family: var(--obi-font-body);
+    font-size: 12px;
+    color: var(--obi-text-dim);
+}
+
+.cc-pick-legend-swatch {
+    width: 22px;
+    height: 13px;
+    border-radius: 7px;
+    border: 1px solid var(--obi-accent);
+    background: color-mix(in srgb, var(--obi-accent) 14%, transparent);
+}
+
 /* ---------- Slot rows ---------- */
 
 .cc-slot-row {

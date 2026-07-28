@@ -178,6 +178,11 @@ const api = {
         return request('/teams');
     },
 
+    // Teams with this season's precomputed stats (points/wins/GF/GA), for standings ranking.
+    async getStandings(seasonId) {
+        return request(`/teams?seasonId=${seasonId}`);
+    },
+
     async getTeam(id) {
         return request(`/teams/${id}`);
     },
@@ -555,6 +560,12 @@ const api = {
         return request(`/coordinator/goalie/send-confirmations?seasonId=${seasonId}&week=${week}`, { method: 'POST' });
     },
 
+    // Swap the two goalie slots in a matchup — moves each goalie (and their confirmation) to the
+    // other team's slot without re-confirming or sending an email.
+    async swapGoalieSlots(gameId) {
+        return request(`/coordinator/goalie/swap?gameId=${gameId}`, { method: 'POST' });
+    },
+
     // Dev-only testing aid: force a slot to CONFIRMED/DECLINED, simulating the goalie's email response.
     async simulateShiftResponse(id, action, role) {
         return request(`/coordinator/assignments/${id}/simulate?action=${action}&role=${role}`, { method: 'POST' });
@@ -832,6 +843,7 @@ export const {
     logout,
     getPlayers,
     getTeams,
+    getStandings,
     getTeam,
     updateTeam,
     createTeam,
@@ -865,6 +877,7 @@ export const {
     autoProposeGoalies,
     getSeasonGoalieRoster,
     sendGoalieConfirmations,
+    swapGoalieSlots,
     simulateShiftResponse,
     designateBracketSlot,
     confirmSignup,

@@ -124,6 +124,91 @@ public class CoordinatorService {
     }
 
     /**
+     * Swap the two goalie slots within a game: each goalie — and their entire confirmation state
+     * (status, confirm token, published flag) — moves to the other team's slot. Slot→team identity
+     * is fixed; only the occupant changes. No confirmation is re-sent and no status is reset, because
+     * a goalie confirmed a TIME, not a team, so the confirmation still holds after the move. If only
+     * one slot is filled, that goalie moves to the other slot and the original is left empty.
+     */
+    @Transactional
+    public List<CoordinatorDto.AssignmentView> swapGoalieSlots(Long gameId) {
+        GameResponseDTO game = gameProxyService.getGameById(gameId);
+        if (game == null) {
+            throw new RuntimeException("Game not found");
+        }
+        Optional<ShiftAssignment> s1 = assignmentRepository.findByGameIdAndRoleAndSlot(gameId, "GOALIE", 1);
+        Optional<ShiftAssignment> s2 = assignmentRepository.findByGameIdAndRoleAndSlot(gameId, "GOALIE", 2);
+        if (s1.isEmpty() && s2.isEmpty()) {
+            throw new RuntimeException("No goalie assignments to swap for this game");
+        }
+
+        if (s1.isPresent() && s2.isPresent()) {
+            // Both filled: swap occupants, keeping slots fixed so the (game,role,slot) uniqueness holds.
+            swapOccupant(s1.get(), s2.get());
+            assignmentRepository.save(s1.get());
+            assignmentRepository.save(s2.get());
+        } else {
+            // One filled: move it to the empty slot (no uniqueness conflict — the target slot is free).
+            ShiftAssignment lone = s1.orElseGet(s2::get);
+            lone.setSlot(lone.getSlot() != null && lone.getSlot() == 1 ? 2 : 1);
+            assignmentRepository.save(lone);
+        }
+
+        // Keep the game's goalie columns consistent with any PUBLISHED slot after the move.
+        reconcileGoalieColumns(gameId, game);
+
+        GameResponseDTO fresh = gameProxyService.getGameById(gameId);
+        List<CoordinatorDto.AssignmentView> out = new ArrayList<>();
+        assignmentRepository.findByGameIdAndRoleAndSlot(gameId, "GOALIE", 1).ifPresent(a -> out.add(toView(a, fresh)));
+        assignmentRepository.findByGameIdAndRoleAndSlot(gameId, "GOALIE", 2).ifPresent(a -> out.add(toView(a, fresh)));
+        return out;
+    }
+
+    /** Move the occupant and their whole confirmation state between two slot rows; slots stay put. */
+    private void swapOccupant(ShiftAssignment a, ShiftAssignment b) {
+        Long uid = a.getUserId();
+        String status = a.getStatus();
+        Boolean published = a.getPublished();
+        String token = a.getConfirmTokenHash();
+        LocalDateTime tokenExpires = a.getTokenExpiresAt();
+        LocalDateTime responded = a.getRespondedAt();
+        String decline = a.getDeclineReason();
+        Long by = a.getAssignedBy();
+
+        a.setUserId(b.getUserId());
+        a.setStatus(b.getStatus());
+        a.setPublished(b.getPublished());
+        a.setConfirmTokenHash(b.getConfirmTokenHash());
+        a.setTokenExpiresAt(b.getTokenExpiresAt());
+        a.setRespondedAt(b.getRespondedAt());
+        a.setDeclineReason(b.getDeclineReason());
+        a.setAssignedBy(b.getAssignedBy());
+
+        b.setUserId(uid);
+        b.setStatus(status);
+        b.setPublished(published);
+        b.setConfirmTokenHash(token);
+        b.setTokenExpiresAt(tokenExpires);
+        b.setRespondedAt(responded);
+        b.setDeclineReason(decline);
+        b.setAssignedBy(by);
+    }
+
+    /** After a slot move, mirror published slots onto the game's goalie columns and clear vacated ones. */
+    private void reconcileGoalieColumns(Long gameId, GameResponseDTO before) {
+        for (int slot = 1; slot <= 2; slot++) {
+            Optional<ShiftAssignment> a = assignmentRepository.findByGameIdAndRoleAndSlot(gameId, "GOALIE", slot);
+            boolean published = a.map(x -> Boolean.TRUE.equals(x.getPublished())).orElse(false);
+            Long currentCol = slot == 1 ? before.getGoalie1Id() : before.getGoalie2Id();
+            if (published) {
+                gameProxyService.updateGameStaff(gameId, Map.of(slotColumn("GOALIE", slot), a.get().getUserId()));
+            } else if (currentCol != null && currentCol > 0) {
+                gameProxyService.updateGameStaff(gameId, Map.of(slotColumn("GOALIE", slot), -1L));
+            }
+        }
+    }
+
+    /**
      * Admin direct-assign override: upserts a shift_assignments row that's already
      * CONFIRMED and published, and writes the game's staff column in the same step —
      * bypassing propose/confirm/publish entirely so the assignment shows up immediately

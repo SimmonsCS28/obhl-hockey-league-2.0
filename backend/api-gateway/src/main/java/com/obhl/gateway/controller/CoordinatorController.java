@@ -180,6 +180,19 @@ public class CoordinatorController {
         }
     }
 
+    /** Swap the two goalie slots in a matchup (moves goalies + their status; no email, no re-confirm). */
+    @PostMapping("/goalie/swap")
+    public ResponseEntity<?> swapGoalie(@RequestParam Long gameId, Authentication auth) {
+        if (!canActOn(auth, "GOALIE")) {
+            return forbidden("GOALIE");
+        }
+        try {
+            return ResponseEntity.ok(coordinatorService.swapGoalieSlots(gameId));
+        } catch (RuntimeException e) {
+            return badRequest(e);
+        }
+    }
+
     @PostMapping("/publish")
     public ResponseEntity<?> publish(@RequestParam Long seasonId, @RequestParam String role,
             @RequestParam(required = false) Integer week, Authentication auth) {

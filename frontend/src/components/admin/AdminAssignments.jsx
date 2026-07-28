@@ -9,6 +9,7 @@ import {
     isGoalieWeekPublished,
 } from '../coordinator/goalieProposerStatus';
 import api from '../../services/api';
+import { rankTeams, goaliePickTeamId } from '../../utils/goaliePick';
 import './AdminAssignments.css';
 
 function displayName(user) {
@@ -43,6 +44,20 @@ function weekIsPlayoff(games) {
     return games.every(g => String(g.gameType || 'REGULAR_SEASON').toUpperCase() === 'PLAYOFF');
 }
 
+// Tooltip explaining why a team has the goalie pick this matchup.
+function goaliePickTitle(game) {
+    return String(game?.gameType || 'REGULAR_SEASON').toUpperCase() === 'PLAYOFF'
+        ? 'Playoffs: higher seed in the standings has goalie pick'
+        : 'Lower in the standings has goalie pick this week';
+}
+
+// Pill outline in a team's own (already-resolved) color, marking the team with goalie pick this
+// matchup. The non-pick side gets a transparent border of the same box size so nothing shifts.
+function pickPillStyle(isPick, teamColor) {
+    if (!isPick || !teamColor) return { border: '1px solid transparent', background: 'transparent' };
+    return { border: `1px solid ${teamColor}`, background: `color-mix(in srgb, ${teamColor} 14%, transparent)` };
+}
+
 // Design select styling: PENDING (awaiting), CONFIRMED, DECLINED, or UNASSIGNED (needs attention).
 // A pre-filled name with no coordinator row reads as CONFIRMED; an empty slot reads as UNASSIGNED.
 function goalieSelectStatus(assignment, hasName) {
@@ -59,6 +74,7 @@ function AdminAssignments() {
     const { selectedSeasonId } = useSeason();
 
     const [games, setGames] = useState([]);
+    const [rankByTeam, setRankByTeam] = useState(new Map()); // teamId -> standings rank, for goalie-pick label
     const [goaliePool, setGoaliePool] = useState([]);
     const [refPool, setRefPool] = useState([]);
     const [scorerPool, setScorerPool] = useState([]);
@@ -79,16 +95,18 @@ function AdminAssignments() {
         const load = async () => {
             setLoading(true);
             try {
-                const [gamesData, teamsData, goalies, refs, scorers, goalieAsgn] = await Promise.all([
+                const [gamesData, teamsData, goalies, refs, scorers, goalieAsgn, standingsData] = await Promise.all([
                     api.getGames(selectedSeasonId),
                     api.getTeams(),
                     api.getUsers({ role: 'GOALIE' }),
                     api.getUsers({ role: 'REF' }),
                     api.getUsers({ role: 'SCOREKEEPER' }),
                     api.getCoordinatorAssignments(selectedSeasonId, 'GOALIE'),
+                    api.getStandings(selectedSeasonId).catch(() => null),
                 ]);
                 if (cancelled) return;
                 setGoalieAssignments(goalieAsgn || []);
+                setRankByTeam(rankTeams(standingsData || teamsData || []));
                 const teamMap = Object.fromEntries(teamsData.map(t => [String(t.id), t]));
                 const enriched = gamesData.map(g => ({
                     ...g,
@@ -176,6 +194,21 @@ function AdminAssignments() {
             setSaving(prev => { const n = { ...prev }; delete n[gameId]; return n; });
         }
     }, [goalieAssignments, selectedSeasonId, reloadGoalieAssignments]);
+
+    // Move both goalies to the other team's slot — keeps their confirmation, sends no email.
+    const handleSwap = useCallback(async (gameId) => {
+        setErrors(prev => { const n = { ...prev }; delete n[gameId]; return n; });
+        setSaving(prev => ({ ...prev, [gameId]: true }));
+        try {
+            await api.swapGoalieSlots(gameId);
+            await reloadGoalieAssignments();
+        } catch (err) {
+            console.error('Goalie swap error:', err);
+            setErrors(prev => ({ ...prev, [gameId]: 'Swap failed' }));
+        } finally {
+            setSaving(prev => { const n = { ...prev }; delete n[gameId]; return n; });
+        }
+    }, [reloadGoalieAssignments]);
 
     // Dev-only: simulate the goalie's email confirm/decline so the flow is testable locally.
     const handleSimulate = useCallback(async (assignmentId, action) => {
@@ -335,11 +368,19 @@ function AdminAssignments() {
                             {/* Game info */}
                             <div className="obi-asgn-col-game">
                                 <div className="obi-asgn-matchup">
-                                    <span className="obi-asgn-tdot" style={{ background: game.homeTeamColor }} />
-                                    <span>{game.homeTeamName}</span>
+                                    <span className="obi-asgn-team-box"
+                                        style={pickPillStyle(goaliePickTeamId(game, rankByTeam) === game.homeTeamId, game.homeTeamColor)}
+                                        title={goaliePickTeamId(game, rankByTeam) === game.homeTeamId ? goaliePickTitle(game) : undefined}>
+                                        <span className="obi-asgn-tdot" style={{ background: game.homeTeamColor }} />
+                                        <span>{game.homeTeamName}</span>
+                                    </span>
                                     <span className="obi-asgn-vs">vs</span>
-                                    <span>{game.awayTeamName}</span>
-                                    <span className="obi-asgn-tdot" style={{ background: game.awayTeamColor }} />
+                                    <span className="obi-asgn-team-box"
+                                        style={pickPillStyle(goaliePickTeamId(game, rankByTeam) === game.awayTeamId, game.awayTeamColor)}
+                                        title={goaliePickTeamId(game, rankByTeam) === game.awayTeamId ? goaliePickTitle(game) : undefined}>
+                                        <span>{game.awayTeamName}</span>
+                                        <span className="obi-asgn-tdot" style={{ background: game.awayTeamColor }} />
+                                    </span>
                                 </div>
                                 <div className="obi-asgn-when">{formatGameDate(game.gameDate)}</div>
                                 {errors[game.id] && (
@@ -358,9 +399,14 @@ function AdminAssignments() {
                                     // Simulating a reply only makes sense once the goalie has
                                     // actually been emailed (PROPOSED), not while auto-proposed.
                                     const awaitingReply = assignment?.status === 'PROPOSED';
+                                    const slotTeamId = slot === 1 ? game.homeTeamId : game.awayTeamId;
+                                    const slotTeamColor = slot === 1 ? game.homeTeamColor : game.awayTeamColor;
+                                    const slotHasPick = goaliePickTeamId(game, rankByTeam) === slotTeamId;
                                     return (
                                         <div className="obi-asgn-goalie-row" key={slot}>
-                                            <span className="obi-asgn-team-label">
+                                            <span className="obi-asgn-team-label"
+                                                style={pickPillStyle(slotHasPick, slotTeamColor)}
+                                                title={slotHasPick ? goaliePickTitle(game) : undefined}>
                                                 <span
                                                     className="obi-asgn-tdot"
                                                     style={{ background: slot === 1 ? game.homeTeamColor : game.awayTeamColor }}
@@ -400,6 +446,16 @@ function AdminAssignments() {
                                         </div>
                                     );
                                 })}
+                                {(goalieSlotFor(game.id, 1) || goalieSlotFor(game.id, 2)) && (
+                                    <button
+                                        type="button"
+                                        className="obi-asgn-swap-btn"
+                                        title="Move each goalie to the other team — keeps their confirmation, no new email"
+                                        onClick={() => handleSwap(game.id)}
+                                    >
+                                        ⇄ Swap Teams
+                                    </button>
+                                )}
                             </div>
 
                             {/* Referees */}
