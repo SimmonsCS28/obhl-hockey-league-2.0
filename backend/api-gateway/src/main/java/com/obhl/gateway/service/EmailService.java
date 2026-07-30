@@ -43,12 +43,16 @@ public class EmailService {
     }
 
     public void sendShiftProposalEmail(String toEmail, String name, String roleLabel, String gameDescription,
-            String confirmLink) {
+            String confirmLink, String gamePreviewLink) {
         String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";
         String subject = "OBHL " + roleLabel + " shift — please confirm";
+        String previewBlock = (gamePreviewLink != null && !gamePreviewLink.isBlank())
+                ? "<p>See the matchup details: <a href=\"" + gamePreviewLink + "\">view the game preview</a>.</p>"
+                : "";
         String html = "<p>" + greeting + "</p>"
                 + "<p>You've been assigned a " + roleLabel + " shift:</p>"
                 + "<p><strong>" + gameDescription + "</strong></p>"
+                + previewBlock
                 + "<p>Please let us know if you can make it:</p>"
                 + "<p><a href=\"" + confirmLink + "\">Confirm or decline this shift</a></p>"
                 + "<p>If you can't make the link work, copy and paste this into your browser:<br>"
@@ -61,16 +65,21 @@ public class EmailService {
      * Email B — final goalie assignment (post-publish). The goalie's exact game AND team are now
      * locked, unlike the earlier confirm-your-time email which only pinned the time slot.
      */
-    public void sendGoalieFinalAssignmentEmail(String toEmail, String name, String gameDescription, String teamName) {
+    public void sendGoalieFinalAssignmentEmail(String toEmail, String name, String gameDescription, String teamName,
+            String gamePreviewLink) {
         String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";
         String subject = "OBHL goalie assignment — you're set for " + (teamName != null ? teamName : "your game");
         String team = (teamName != null && !teamName.isBlank())
                 ? ("<p>You're in net for <strong>" + teamName + "</strong>.</p>")
                 : "";
+        String previewBlock = (gamePreviewLink != null && !gamePreviewLink.isBlank())
+                ? "<p>See the matchup details: <a href=\"" + gamePreviewLink + "\">view the game preview</a>.</p>"
+                : "";
         String html = "<p>" + greeting + "</p>"
                 + "<p>Your goalie assignment is final:</p>"
                 + "<p><strong>" + gameDescription + "</strong></p>"
                 + team
+                + previewBlock
                 + "<p>Thanks for playing — see you at the rink. No further action is needed.</p>";
 
         send(toEmail, subject, html);

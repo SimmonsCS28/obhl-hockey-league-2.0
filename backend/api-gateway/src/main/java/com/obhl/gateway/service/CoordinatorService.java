@@ -373,7 +373,15 @@ public class CoordinatorService {
                 : user.getUsername();
         String roleLabel = roleLabel(a.getRole());
         String link = frontendUrl + "/shift-confirm?id=" + a.getId() + "&token=" + rawToken;
-        emailService.sendShiftProposalEmail(user.getEmail(), name, roleLabel, describeGame(game), link);
+        // Goalies get a link to the public game-preview page; other roles' emails are unchanged.
+        String gamePreviewLink = "GOALIE".equals(a.getRole()) ? gamePreviewLink(game) : null;
+        emailService.sendShiftProposalEmail(user.getEmail(), name, roleLabel, describeGame(game), link, gamePreviewLink);
+    }
+
+    /** Public game-preview page URL for a game (no auth required). */
+    private String gamePreviewLink(GameResponseDTO game) {
+        return (game == null || game.getId() == null) ? null
+                : frontendUrl + "/game/" + game.getId() + "/preview";
     }
 
     /** Email B: goalie's exact game + team once the week is published (slot 1 = home, slot 2 = away). */
@@ -388,7 +396,8 @@ public class CoordinatorService {
                     ? user.getFirstName()
                     : user.getUsername();
             Long teamId = a.getSlot() != null && a.getSlot() == 2 ? game.getAwayTeamId() : game.getHomeTeamId();
-            emailService.sendGoalieFinalAssignmentEmail(user.getEmail(), name, describeGame(game), teamName(teamId));
+            emailService.sendGoalieFinalAssignmentEmail(user.getEmail(), name, describeGame(game), teamName(teamId),
+                    gamePreviewLink(game));
         } catch (RuntimeException e) {
             // Final-assignment email is best-effort; publish already persisted.
         }
