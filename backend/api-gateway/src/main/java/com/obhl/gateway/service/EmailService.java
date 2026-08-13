@@ -43,12 +43,13 @@ public class EmailService {
     }
 
     public void sendShiftProposalEmail(String toEmail, String name, String roleLabel, String gameDescription,
-            String confirmLink, String gamePreviewLink) {
+            String confirmLink, String gamePreviewLink, String weekScheduleHtml) {
         String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";
         String subject = "OBHL " + roleLabel + " shift — please confirm";
         String previewBlock = (gamePreviewLink != null && !gamePreviewLink.isBlank())
                 ? "<p>See the matchup details: <a href=\"" + gamePreviewLink + "\">view the game preview</a>.</p>"
                 : "";
+        String scheduleBlock = (weekScheduleHtml != null && !weekScheduleHtml.isBlank()) ? weekScheduleHtml : "";
         String html = "<p>" + greeting + "</p>"
                 + "<p>You've been assigned a " + roleLabel + " shift:</p>"
                 + "<p><strong>" + gameDescription + "</strong></p>"
@@ -56,7 +57,8 @@ public class EmailService {
                 + "<p>Please let us know if you can make it:</p>"
                 + "<p><a href=\"" + confirmLink + "\">Confirm or decline this shift</a></p>"
                 + "<p>If you can't make the link work, copy and paste this into your browser:<br>"
-                + confirmLink + "</p>";
+                + confirmLink + "</p>"
+                + scheduleBlock;
 
         send(toEmail, subject, html);
     }
@@ -66,7 +68,7 @@ public class EmailService {
      * locked, unlike the earlier confirm-your-time email which only pinned the time slot.
      */
     public void sendGoalieFinalAssignmentEmail(String toEmail, String name, String gameDescription, String teamName,
-            String gamePreviewLink) {
+            String gamePreviewLink, String weekScheduleHtml) {
         String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";
         String subject = "OBHL goalie assignment — you're set for " + (teamName != null ? teamName : "your game");
         String team = (teamName != null && !teamName.isBlank())
@@ -75,12 +77,14 @@ public class EmailService {
         String previewBlock = (gamePreviewLink != null && !gamePreviewLink.isBlank())
                 ? "<p>See the matchup details: <a href=\"" + gamePreviewLink + "\">view the game preview</a>.</p>"
                 : "";
+        String scheduleBlock = (weekScheduleHtml != null && !weekScheduleHtml.isBlank()) ? weekScheduleHtml : "";
         String html = "<p>" + greeting + "</p>"
                 + "<p>Your goalie assignment is final:</p>"
                 + "<p><strong>" + gameDescription + "</strong></p>"
                 + team
                 + previewBlock
-                + "<p>Thanks for playing — see you at the rink. No further action is needed.</p>";
+                + "<p>Thanks for playing — see you at the rink. No further action is needed.</p>"
+                + scheduleBlock;
 
         send(toEmail, subject, html);
     }

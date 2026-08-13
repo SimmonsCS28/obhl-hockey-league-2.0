@@ -373,9 +373,15 @@ public class CoordinatorService {
                 : user.getUsername();
         String roleLabel = roleLabel(a.getRole());
         String link = frontendUrl + "/shift-confirm?id=" + a.getId() + "&token=" + rawToken;
-        // Goalies get a link to the public game-preview page; other roles' emails are unchanged.
-        String gamePreviewLink = "GOALIE".equals(a.getRole()) ? gamePreviewLink(game) : null;
-        emailService.sendShiftProposalEmail(user.getEmail(), name, roleLabel, describeGame(game), link, gamePreviewLink);
+        // Goalies get a link to the public game-preview page + the week's goalie schedule; other
+        // roles' emails are unchanged.
+        boolean isGoalie = "GOALIE".equals(a.getRole());
+        String gamePreviewLink = isGoalie ? gamePreviewLink(game) : null;
+        String weekSchedule = isGoalie
+                ? weekScheduleBlockHtml(game.getSeasonId(), game.getWeek(), game.getId(), a.getSlot())
+                : null;
+        emailService.sendShiftProposalEmail(user.getEmail(), name, roleLabel, describeGame(game), link,
+                gamePreviewLink, weekSchedule);
     }
 
     /** Public game-preview page URL for a game (no auth required). */
@@ -396,8 +402,9 @@ public class CoordinatorService {
                     ? user.getFirstName()
                     : user.getUsername();
             Long teamId = a.getSlot() != null && a.getSlot() == 2 ? game.getAwayTeamId() : game.getHomeTeamId();
+            String weekSchedule = weekScheduleBlockHtml(game.getSeasonId(), game.getWeek(), game.getId(), a.getSlot());
             emailService.sendGoalieFinalAssignmentEmail(user.getEmail(), name, describeGame(game), teamName(teamId),
-                    gamePreviewLink(game));
+                    gamePreviewLink(game), weekSchedule);
         } catch (RuntimeException e) {
             // Final-assignment email is best-effort; publish already persisted.
         }
@@ -498,5 +505,189 @@ public class CoordinatorService {
             return slot == 2 ? "referee2Id" : "referee1Id";
         }
         return slot == 2 ? "goalie2Id" : "goalie1Id";
+    }
+
+    // ---- Week schedule block for goalie emails (email-safe HTML, per Claude Design handoff) ----
+
+    private static final DateTimeFormatter SCHED_DATE_FMT =
+            DateTimeFormatter.ofPattern("EEE MMM d", java.util.Locale.ENGLISH);
+    private static final DateTimeFormatter SCHED_TIME_FMT =
+            DateTimeFormatter.ofPattern("h:mm a", java.util.Locale.ENGLISH);
+
+    // Stored team colors are names (e.g. "Lt. Blu"); mirror the frontend map to hex for the swatches.
+    private static final Map<String, String> TEAM_HEX = Map.ofEntries(
+            Map.entry("Red", "#FF0000"), Map.entry("Blue", "#0000FF"), Map.entry("Orange", "#FFA500"),
+            Map.entry("Green", "#008000"), Map.entry("Dk. Gre", "#006400"), Map.entry("Black", "#000000"),
+            Map.entry("Maroon", "#800000"), Map.entry("Gray", "#808080"), Map.entry("Grey", "#808080"),
+            Map.entry("Lt. Blu", "#ADD8E6"), Map.entry("Lt. Blue", "#ADD8E6"), Map.entry("Tan", "#D2B48C"),
+            Map.entry("White", "#FFFFFF"), Map.entry("Yellow", "#FFD700"), Map.entry("Gold", "#FFD700"),
+            Map.entry("Purple", "#800080"), Map.entry("Navy", "#000080"));
+
+    private static final String SCHED_WRAPPER = """
+<table id="week-schedule-block" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;margin:16px auto 0 auto;border-collapse:collapse;">
+<tr><td style="padding:0 8px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #dfe3e8;border-radius:8px;">
+<tr><td style="padding:16px 20px 10px 20px;border-bottom:1px solid #e8ebee;">
+<span style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1.2px;text-transform:uppercase;color:#8a929b;">__WEEK__</span><br>
+<span style="font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;color:#1a1d21;">Goalie Schedule</span>
+</td></tr>
+__ROWS__
+</table>
+</td></tr>
+</table>
+""";
+
+    private static final String SCHED_ROW = """
+<tr><td style="padding:14px 20px;__BORDER__">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr><td style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6b7480;padding-bottom:8px;">__DATE__ &nbsp;&middot;&nbsp; __TIME__ &nbsp;&middot;&nbsp; __RINK__</td></tr>
+<tr>
+<td width="50%" valign="top" style="padding-right:6px;">__HOME__</td>
+<td width="50%" valign="top" style="padding-left:6px;">__AWAY__</td>
+</tr>
+</table>
+</td></tr>
+""";
+
+    private static final String SCHED_ROW_RECIPIENT = """
+<tr><td style="padding:0;background-color:#fdf6e8;__BORDER__">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td width="3" style="background-color:#F6A91C;font-size:0;line-height:1px;">&nbsp;</td>
+<td style="padding:14px 20px 14px 17px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6b7480;padding-bottom:2px;">__DATE__ &nbsp;&middot;&nbsp; __TIME__ &nbsp;&middot;&nbsp; __RINK__</td>
+<td align="right" style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:bold;letter-spacing:0.6px;text-transform:uppercase;color:#b8860b;padding-bottom:2px;">Your Game</td>
+</tr>
+</table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:6px;">
+<tr>
+<td width="50%" valign="top" style="padding-right:6px;">__HOME__</td>
+<td width="50%" valign="top" style="padding-left:6px;">__AWAY__</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</td></tr>
+""";
+
+    /**
+     * Email-safe HTML block showing the whole week's goalie matchups and who is currently in each
+     * net (any status; empty = "Unassigned"). Highlights the recipient's own game. Returns "" when
+     * there are no games. See GOALIE_WEEK_SCHEDULE_EMAIL_HANDOFF.md.
+     */
+    private String weekScheduleBlockHtml(Long seasonId, Integer week, Long recipientGameId, Integer recipientSlot) {
+        if (week == null) {
+            return "";
+        }
+        List<GameResponseDTO> all = gameProxyService.getGamesBySeason(seasonId);
+        if (all == null) {
+            return "";
+        }
+        List<GameResponseDTO> weekGames = all.stream()
+                .filter(g -> week.equals(g.getWeek()))
+                .sorted(java.util.Comparator.comparing(GameResponseDTO::getGameDate,
+                        java.util.Comparator.nullsLast(java.util.Comparator.naturalOrder())))
+                .collect(Collectors.toList());
+        if (weekGames.isEmpty()) {
+            return "";
+        }
+
+        List<Long> gameIds = weekGames.stream().map(GameResponseDTO::getId).collect(Collectors.toList());
+        Map<String, Long> goalieBySlot = new java.util.HashMap<>();
+        for (ShiftAssignment a : assignmentRepository.findByGameIdInAndRole(gameIds, "GOALIE")) {
+            if (a.getUserId() != null && a.getSlot() != null) {
+                goalieBySlot.put(a.getGameId() + ":" + a.getSlot(), a.getUserId());
+            }
+        }
+
+        StringBuilder rows = new StringBuilder();
+        for (int i = 0; i < weekGames.size(); i++) {
+            GameResponseDTO g = weekGames.get(i);
+            boolean last = i == weekGames.size() - 1;
+            boolean recipientGame = recipientGameId != null && recipientGameId.equals(g.getId());
+            String border = last ? "" : "border-bottom:1px solid #eef0f2;";
+
+            String date;
+            String time;
+            if (g.getGameDate() != null) {
+                java.time.ZonedDateTime z = g.getGameDate().atZone(ZoneOffset.UTC).withZoneSameInstant(LEAGUE_TZ);
+                date = z.format(SCHED_DATE_FMT);
+                time = z.format(SCHED_TIME_FMT);
+            } else {
+                date = "TBD";
+                time = "";
+            }
+            String rink = (g.getRink() != null && !g.getRink().isBlank()) ? g.getRink() : "TBD";
+
+            Long homeUid = goalieBySlot.get(g.getId() + ":1");
+            Long awayUid = goalieBySlot.get(g.getId() + ":2");
+            boolean homeIsYou = recipientGame && recipientSlot != null && recipientSlot == 1;
+            boolean awayIsYou = recipientGame && recipientSlot != null && recipientSlot == 2;
+
+            String home = teamSwatchHtml(teamName(g.getHomeTeamId()), teamHex(g.getHomeTeamId()))
+                    + goalieDivHtml(homeUid, homeIsYou);
+            String away = teamSwatchHtml(teamName(g.getAwayTeamId()), teamHex(g.getAwayTeamId()))
+                    + goalieDivHtml(awayUid, awayIsYou);
+
+            rows.append((recipientGame ? SCHED_ROW_RECIPIENT : SCHED_ROW)
+                    .replace("__BORDER__", border)
+                    .replace("__DATE__", htmlEscape(date))
+                    .replace("__TIME__", htmlEscape(time))
+                    .replace("__RINK__", htmlEscape(rink))
+                    .replace("__HOME__", home)
+                    .replace("__AWAY__", away));
+        }
+
+        return SCHED_WRAPPER
+                .replace("__WEEK__", htmlEscape("Week " + week))
+                .replace("__ROWS__", rows.toString());
+    }
+
+    private String teamSwatchHtml(String name, String hex) {
+        return "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" width=\"100%\"><tr>"
+                + "<td width=\"12\" style=\"background-color:" + hex
+                + ";border:1px solid #c7ccd2;border-radius:3px;font-size:0;line-height:12px;\">&nbsp;</td>"
+                + "<td style=\"width:8px;font-size:0;line-height:1px;\">&nbsp;</td>"
+                + "<td style=\"font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;color:#1a1d21;\">"
+                + htmlEscape(name) + "</td></tr></table>";
+    }
+
+    private String goalieDivHtml(Long userId, boolean isYou) {
+        if (isYou) {
+            return "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:bold;"
+                    + "color:#1a1d21;padding:4px 0 0 20px;\">You</div>";
+        }
+        if (userId != null) {
+            return "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#1a1d21;"
+                    + "padding:4px 0 0 20px;\">" + htmlEscape(userName(userId)) + "</div>";
+        }
+        return "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:13px;font-style:italic;"
+                + "color:#9aa2ab;padding:4px 0 0 20px;\">Unassigned</div>";
+    }
+
+    private String teamHex(Long teamId) {
+        if (teamId == null) {
+            return "#808080";
+        }
+        String c = teamService.getTeamById(teamId).map(t -> t.getTeamColor()).orElse(null);
+        if (c == null || c.isBlank()) {
+            return "#808080";
+        }
+        String hex = TEAM_HEX.get(c.trim());
+        if (hex != null) {
+            return hex;
+        }
+        return c.trim().startsWith("#") ? c.trim() : "#808080";
+    }
+
+    private static String htmlEscape(String s) {
+        if (s == null) {
+            return "";
+        }
+        return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                .replace("\"", "&quot;").replace("'", "&#39;");
     }
 }
