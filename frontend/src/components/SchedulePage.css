@@ -321,6 +321,37 @@ a.obi-game-team-name:hover {
     border: 1px solid var(--obi-success);
 }
 
+/* Consolation games — playoff-week games that sit outside the bracket */
+.obi-consolation {
+    margin-top: 44px;
+}
+
+.obi-consolation-head {
+    margin-bottom: 22px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.18);
+}
+
+.obi-consolation-title {
+    margin: 0;
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 22px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: #fff;
+}
+
+.obi-consolation-sub {
+    margin: 6px 0 0;
+    max-width: 62ch;
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--obi-text-muted);
+}
+
 .obi-schedule-msg {
     padding: 48px;
     text-align: center;

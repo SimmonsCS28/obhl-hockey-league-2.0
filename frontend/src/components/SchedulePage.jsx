@@ -8,16 +8,17 @@ import './SchedulePage.css';
 
 const parseGameDate = (s) => new Date(s.endsWith('Z') ? s : s + 'Z');
 
-// Current week = earliest week whose games haven't all already happened (by
-// date, not by whether someone's finalized the score), falling back to the
-// last week once every game date in the season is in the past.
-const computeCurrentWeek = (gamesList) => {
-    const regular = gamesList.filter(g => g.gameType !== 'PLAYOFF');
-    const weeks = [...new Set(regular.map(g => g.week).filter(w => w != null))].sort((a, b) => a - b);
+const ROUND_LABELS = { QUARTERFINAL: 'Quarterfinal', SEMIFINAL: 'Semifinal', FINAL: 'Championship' };
+
+// Earliest week whose games haven't all already happened (by date, not by
+// whether someone's finalized the score), falling back to the last week once
+// every game date in the list is in the past.
+const earliestUpcomingWeek = (gamesList) => {
+    const weeks = [...new Set(gamesList.map(g => g.week).filter(w => w != null))].sort((a, b) => a - b);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     for (const w of weeks) {
-        const wkGames = regular.filter(g => g.week === w);
+        const wkGames = gamesList.filter(g => g.week === w);
         const lastGameDay = wkGames.reduce((max, g) => {
             const d = parseGameDate(g.gameDate);
             d.setHours(0, 0, 0, 0);
@@ -27,6 +28,9 @@ const computeCurrentWeek = (gamesList) => {
     }
     return weeks.length ? weeks[weeks.length - 1] : null;
 };
+
+const computeCurrentWeek = (gamesList) =>
+    earliestUpcomingWeek(gamesList.filter(g => g.gameType !== 'PLAYOFF'));
 
 const SchedulePage = () => {
     const navigate = useNavigate();
@@ -94,17 +98,26 @@ const SchedulePage = () => {
     const playoffGames = games.filter(g => g.gameType === 'PLAYOFF');
     const hasPlayoffs = playoffGames.length > 0;
 
+    // A playoff week has an ice slot for every team but only a handful of bracket
+    // fixtures; the leftovers are consolation games, which carry no playoffRound
+    // and so never reach the bracket. Listed under it so they're still findable.
+    const bracketGames = playoffGames.filter(g => g.playoffRound);
+    const consolationGames = playoffGames.filter(g => !g.playoffRound);
+    const consolationWeeks = [...new Set(consolationGames.map(g => g.week).filter(w => w != null))]
+        .sort((a, b) => a - b);
+    const currentConsolationWeek = earliestUpcomingWeek(consolationGames);
+    const roundOfWeek = (w) => ROUND_LABELS[bracketGames.find(g => g.week === w)?.playoffRound];
+
     const availableWeeks = [...new Set(regularSeasonGames.map(g => g.week).filter(w => w != null))]
         .sort((a, b) => a - b);
 
     const currentWeek = computeCurrentWeek(games);
 
-    const weekStatus = (w) => {
-        const wkGames = regularSeasonGames.filter(g => g.week === w);
+    const weekStatus = (wkGames, isCurrent) => {
         if (wkGames.length > 0 && wkGames.every(g => g.status === 'completed')) {
             return { label: 'Completed', cls: 'is-completed' };
         }
-        if (w === currentWeek) return { label: 'This Week', cls: 'is-thisweek' };
+        if (isCurrent) return { label: 'This Week', cls: 'is-thisweek' };
         return { label: 'Scheduled', cls: 'is-scheduled' };
     };
 
@@ -306,7 +319,44 @@ const SchedulePage = () => {
                     {loading ? (
                         <div className="obi-schedule-msg">Loading games…</div>
                     ) : activeTab === 'playoffs' ? (
-                        <PlayoffBracket games={playoffGames} teams={teams} />
+                        <>
+                            <PlayoffBracket games={bracketGames} teams={teams} />
+                            {consolationGames.length > 0 && (
+                                <div className="obi-consolation">
+                                    <div className="obi-consolation-head">
+                                        <h2 className="obi-consolation-title">Consolation Games</h2>
+                                        <p className="obi-consolation-sub">
+                                            Playoff-week games for teams outside the bracket. These don't
+                                            affect the bracket, but they're on the ice all the same.
+                                        </p>
+                                    </div>
+                                    <div className="obi-weeks">
+                                        {consolationWeeks.map(w => {
+                                            const wkGames = consolationGames
+                                                .filter(g => g.week === w)
+                                                .sort((a, b) => parseGameDate(a.gameDate) - parseGameDate(b.gameDate));
+                                            const status = weekStatus(wkGames, w === currentConsolationWeek);
+                                            const round = roundOfWeek(w);
+                                            return (
+                                                <div key={w} className="obi-week-block">
+                                                    <div className="obi-week-block-head">
+                                                        <span className="obi-week-block-label">Week {w}</span>
+                                                        <span className="obi-week-block-range">
+                                                            {weekRange(wkGames)}{round ? ` · ${round} week` : ''}
+                                                        </span>
+                                                        <span className={`obi-week-badge ${status.cls}`}>{status.label}</span>
+                                                        <span className="obi-week-rule" />
+                                                    </div>
+                                                    <div className="obi-week-games">
+                                                        {wkGames.map(renderGameRow)}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </>
                     ) : weeksToShow.length === 0 ? (
                         <div className="obi-schedule-msg">No games scheduled yet.</div>
                     ) : (
@@ -315,7 +365,7 @@ const SchedulePage = () => {
                                 const wkGames = filtered
                                     .filter(g => g.week === w)
                                     .sort((a, b) => parseGameDate(a.gameDate) - parseGameDate(b.gameDate));
-                                const status = weekStatus(w);
+                                const status = weekStatus(regularSeasonGames.filter(g => g.week === w), w === currentWeek);
                                 return (
                                     <div key={w} className="obi-week-block">
                                         <div className="obi-week-block-head">
