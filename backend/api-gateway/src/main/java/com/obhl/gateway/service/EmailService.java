@@ -263,6 +263,53 @@ public class EmailService {
         send(toEmail, subject, html);
     }
 
+    /**
+     * Tells a coordinator that someone has given up a shift they had already confirmed.
+     *
+     * <p>Deliberately louder than the decline notice. A decline means "I never agreed to this"; a drop
+     * means the person had agreed, and if the slot was published their name was on the public
+     * schedule until a moment ago — so the coordinator has to find a replacement <em>and</em>
+     * republish the matchup. The subject line says "dropped" rather than "declined" for the same
+     * reason: the two need to be tellable apart in an inbox.
+     */
+    public void sendShiftDroppedEmail(String toEmail, String coordinatorName, String whoDropped,
+            String roleLabel, String gameDescription, boolean wasPublished, String consoleLink) {
+        String greeting = (coordinatorName != null && !coordinatorName.isBlank())
+                ? ("Hi " + coordinatorName + ",") : "Hi,";
+        String subject = whoDropped + " dropped a confirmed " + roleLabel + " shift — " + gameDescription;
+
+        String impact = wasPublished
+                ? "This shift was already published, so they have been taken off the public schedule "
+                        + "and the slot is open again. The matchup will need republishing once you fill it."
+                : "This shift had not been published yet, so nothing public has changed — the slot is "
+                        + "simply open again.";
+
+        String html = "<div style=\"max-width:600px;margin:0 auto;padding:0 8px;\">"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 16px;\">"
+                + greeting + "</p>"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\""
+                + " style=\"max-width:600px;width:100%;border-collapse:collapse;background:#fdecea;"
+                + "border:1px solid #f0c4bf;border-radius:8px;margin:0 0 18px;\">"
+                + "<tr><td width=\"4\" style=\"background-color:#B3261E;font-size:0;line-height:1px;\">&nbsp;</td>"
+                + "<td style=\"padding:16px 20px;\">"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1.2px;"
+                + "text-transform:uppercase;color:#B3261E;padding-bottom:6px;\">Confirmed shift dropped</div>"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;line-height:1.3;"
+                + "color:#1a1d21;\">" + whoDropped + "</div>"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#41474e;padding-top:4px;\">"
+                + gameDescription + "</div>"
+                + "</td></tr></table>"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 14px;\">"
+                + impact + "</p>"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 14px;\">"
+                + "<a href=\"" + consoleLink + "\" style=\"color:#1a5fb4;\">Open the coordinator console</a> to fill the slot.</p>"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0;\">"
+                + "Thanks,<br>Old Buzzard Hockey League</p>"
+                + "</div>";
+
+        send(toEmail, subject, html);
+    }
+
     /** Courtesy confirmation when a coordinator confirms a shift the official signed up for (no action needed). */
     public void sendShiftConfirmedEmail(String toEmail, String name, String roleLabel, String gameDescription) {
         String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";

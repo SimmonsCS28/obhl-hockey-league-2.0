@@ -4,14 +4,10 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,10 +42,7 @@ public class ShiftConfirmationService {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    private EmailService emailService;
-
-    @Value("${app.frontend.url:https://oldbuzzardhockey.com}")
-    private String frontendUrl;
+    private CoordinatorNotifyService coordinatorNotifyService;
 
     private static final DateTimeFormatter GAME_FMT = DateTimeFormatter.ofPattern("EEE MMM d, h:mm a");
     private static final ZoneId LEAGUE_TZ = ZoneId.of("America/Chicago");
@@ -116,101 +109,33 @@ public class ShiftConfirmationService {
             throw new RuntimeException("Action must be 'confirm' or 'decline'");
         }
         a.setRespondedAt(LocalDateTime.now());
+        // Burn the confirm link. It was live for its full 7-day life even after being used, so the
+        // original email could be reopened and used to decline a shift that was already confirmed and
+        // published — flipping the row without taking anyone off the game. Changing your mind after
+        // confirming is a drop, which goes through the dashboard and unpublishes properly.
+        a.setConfirmTokenHash(null);
+        a.setTokenExpiresAt(null);
         assignmentRepository.save(a);
 
         // A decline is the only response that needs the coordinator to do something. Confirms stay
         // silent on purpose: mailing those too would teach her to ignore this sender.
         if (declined) {
-            notifyCoordinatorOfDecline(a);
-        }
-    }
-
-    /**
-     * Email whoever has to find a replacement. Best-effort — the official's decline is already
-     * recorded and must stand even if Resend is down; a lost notice degrades to "she sees it on the
-     * board", which is exactly the status quo this improves on.
-     */
-    private void notifyCoordinatorOfDecline(ShiftAssignment a) {
-        try {
-            List<User> recipients = coordinatorsFor(a);
-            if (recipients.isEmpty()) {
-                return;
-            }
-            String who = userName(a.getUserId());
-            String game = describeGame(a);
-            String link = frontendUrl + "/coordinator";
-            for (User c : recipients) {
-                if (c.getEmail() == null || c.getEmail().isBlank()) {
-                    continue;
-                }
-                String name = (c.getFirstName() != null && !c.getFirstName().isBlank())
-                        ? c.getFirstName() : c.getUsername();
-                emailService.sendDeclineNoticeEmail(c.getEmail(), name, who, roleLabel(a.getRole()),
-                        game, a.getDeclineReason(), link);
-            }
-        } catch (RuntimeException e) {
-            // Notice is best-effort; the decline itself is already persisted.
-        }
-    }
-
-    /**
-     * Who to tell. The coordinator who proposed the shift is the right person, but that column is
-     * null on self-signups and on rows predating it, and they may no longer hold the role — so fall
-     * back to everyone currently holding the matching coordinator role.
-     */
-    private List<User> coordinatorsFor(ShiftAssignment a) {
-        String coordRole = coordinatorRole(a.getRole());
-        if (a.getAssignedBy() != null) {
-            User assigner = userRepository.findById(a.getAssignedBy()).orElse(null);
-            if (assigner != null && holdsRole(assigner, coordRole)) {
-                return List.of(assigner);
+            try {
+                coordinatorNotifyService.notifyDecline(a, userName(a.getUserId()), describeGame(a));
+            } catch (RuntimeException e) {
+                // Notice is best-effort; the decline itself is already persisted.
             }
         }
-        List<User> holders = usersWithRole(coordRole);
-        if (!holders.isEmpty()) {
-            return holders;
-        }
-        // Nobody holds this coordinator role — which is the live state for goalies and scorekeepers,
-        // managed from the admin console instead. Without this the decline would be sent to nobody
-        // and vanish, which is the exact failure this notice exists to prevent. Admins are the
-        // last resort only: while a real coordinator exists they are left out of it, so holding
-        // ADMIN keeps granting access without signing you up for the mail.
-        return usersWithRole("ADMIN");
     }
 
-    /** Holders of a role, reading both the roles table and the deprecated single-role column. */
-    private List<User> usersWithRole(String roleName) {
-        Map<Long, User> byId = new LinkedHashMap<>();
-        userRepository.findByRoles_Name(roleName).forEach(u -> byId.put(u.getId(), u));
-        userRepository.findByRole(roleName).forEach(u -> byId.put(u.getId(), u));
-        return new ArrayList<>(byId.values());
-    }
-
-    private boolean holdsRole(User u, String roleName) {
-        if (u.getRoles() != null && u.getRoles().stream().anyMatch(r -> roleName.equals(r.getName()))) {
-            return true;
-        }
-        return roleName.equals(u.getRole());
-    }
-
-    private String coordinatorRole(String role) {
-        if ("REF".equals(role)) {
-            return "REF_COORDINATOR";
-        }
-        if ("SCOREKEEPER".equals(role)) {
-            return "SCOREKEEPER_COORDINATOR";
-        }
-        return "GOALIE_COORDINATOR";
-    }
-
-    private String roleLabel(String role) {
-        if ("REF".equals(role)) {
-            return "referee";
-        }
-        if ("SCOREKEEPER".equals(role)) {
-            return "scorekeeper";
-        }
-        return "goalie";
+    /** Every shift this person currently holds, at any stage — the source for their own dashboard. */
+    public List<CoordinatorDto.AssignmentView> getMyAssignments(Long userId) {
+        return assignmentRepository.findByUserIdAndStatusIn(userId, List.of(
+                        ShiftAssignment.STATUS_PROPOSED,
+                        ShiftAssignment.STATUS_AUTO_PROPOSED,
+                        ShiftAssignment.STATUS_SIGNED_UP,
+                        ShiftAssignment.STATUS_CONFIRMED))
+                .stream().map(this::toView).collect(Collectors.toList());
     }
 
     /** Game line for the notice, in league-local time. */

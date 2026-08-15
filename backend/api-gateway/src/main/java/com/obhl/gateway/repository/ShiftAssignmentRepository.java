@@ -19,6 +19,9 @@ public interface ShiftAssignmentRepository extends JpaRepository<ShiftAssignment
 
     List<ShiftAssignment> findByUserIdAndStatus(Long userId, String status);
 
+    /** Every shift a person currently holds, whatever stage it's at (drives their own dashboard). */
+    List<ShiftAssignment> findByUserIdAndStatusIn(Long userId, List<String> statuses);
+
     Optional<ShiftAssignment> findByGameIdAndRoleAndSlot(Long gameId, String role, Integer slot);
 
     Optional<ShiftAssignment> findByConfirmTokenHash(String confirmTokenHash);

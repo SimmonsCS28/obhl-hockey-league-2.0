@@ -56,6 +56,9 @@ public class CoordinatorService {
     private PlayerService playerService;
 
     @Autowired
+    private CoordinatorNotifyService coordinatorNotifyService;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     @Value("${app.frontend.url:https://oldbuzzardhockey.com}")
@@ -161,6 +164,47 @@ public class CoordinatorService {
                 gameProxyService.getGameById(a.getGameId()), actingUserId);
         assignmentRepository.deleteById(assignmentId);
         return new CoordinatorDto.WithdrawResult(true, hadCommitted, notifySent);
+    }
+
+    /**
+     * An official gives up a shift they had already committed to. Same unpublish as the coordinator's
+     * Remove — one write to the game's staff column takes them off the public schedule, the game
+     * preview, score entry and their own dashboard together — but the mail goes the other way: they
+     * initiated this, so they get no "you're off this game" notice, and the coordinator is told
+     * instead, because someone now has to fill the slot.
+     *
+     * <p>Only committed shifts can be dropped. An unanswered proposal is declined, not dropped: that
+     * keeps a DECLINED row as a record of the ask, where a drop returns the slot cleanly to Open.
+     */
+    @Transactional
+    public CoordinatorDto.WithdrawResult dropOwnShift(Long assignmentId, Long userId) {
+        ShiftAssignment a = assignmentRepository.findById(assignmentId)
+                .orElseThrow(() -> new RuntimeException("Shift not found"));
+        if (!userId.equals(a.getUserId())) {
+            throw new RuntimeException("This shift is not assigned to you");
+        }
+        boolean committed = ShiftAssignment.STATUS_CONFIRMED.equals(a.getStatus())
+                || ShiftAssignment.STATUS_SIGNED_UP.equals(a.getStatus());
+        if (!committed) {
+            throw new RuntimeException("Only a shift you've confirmed or signed up for can be dropped");
+        }
+
+        boolean wasPublished = Boolean.TRUE.equals(a.getPublished());
+        if (wasPublished) {
+            clearSlotColumn(a.getGameId(), a.getRole(), a.getSlot());
+        }
+
+        boolean notified = false;
+        try {
+            coordinatorNotifyService.notifyDrop(a, userName(a.getUserId()),
+                    describeGame(gameProxyService.getGameById(a.getGameId())), wasPublished);
+            notified = true;
+        } catch (RuntimeException e) {
+            // Best-effort: the drop stands regardless, and the console still shows the open slot.
+        }
+
+        assignmentRepository.deleteById(assignmentId);
+        return new CoordinatorDto.WithdrawResult(true, true, notified);
     }
 
     /**
