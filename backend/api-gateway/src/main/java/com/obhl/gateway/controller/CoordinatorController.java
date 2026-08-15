@@ -45,6 +45,31 @@ public class CoordinatorController {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private com.obhl.gateway.service.CoordinatorNotifyService coordinatorNotifyService;
+
+    /**
+     * This coordinator's own notification settings — one card per role they hold, plus which roles
+     * nobody holds. Not role-gated beyond the class-level check: an admin with no coordinator role
+     * gets an empty list, which is the screen that tells them what they are and aren't subscribed to.
+     */
+    @GetMapping("/notification-settings")
+    public ResponseEntity<?> getNotificationSettings(Authentication auth) {
+        return ResponseEntity.ok(coordinatorNotifyService.getSettings(currentUser(auth)));
+    }
+
+    /** Save one role's settings. Rejects roles the caller doesn't hold. */
+    @PostMapping("/notification-settings")
+    public ResponseEntity<?> saveNotificationSettings(@RequestBody CoordinatorDto.NotificationPrefView req,
+            Authentication auth) {
+        try {
+            coordinatorNotifyService.saveSettings(currentUser(auth), req);
+            return ResponseEntity.ok(coordinatorNotifyService.getSettings(currentUser(auth)));
+        } catch (RuntimeException e) {
+            return badRequest(e);
+        }
+    }
+
     @GetMapping("/assignments")
     public ResponseEntity<?> getAssignments(@RequestParam Long seasonId, @RequestParam String role,
             @RequestParam(required = false) Integer week, Authentication auth) {
@@ -263,9 +288,12 @@ public class CoordinatorController {
     }
 
     private Long currentUserId(Authentication auth) {
-        User user = userRepository.findByUsername(auth.getName())
+        return currentUser(auth).getId();
+    }
+
+    private User currentUser(Authentication auth) {
+        return userRepository.findByUsername(auth.getName())
                 .orElseThrow(() -> new RuntimeException("User not found"));
-        return user.getId();
     }
 
     private ResponseEntity<?> forbidden(String role) {

@@ -310,6 +310,45 @@ public class EmailService {
         send(toEmail, subject, html);
     }
 
+    /**
+     * Tells a coordinator that someone accepted a shift. Opt-in only, and off by default: a five-game
+     * week produces roughly ten of these per role, and on by default would train the recipient to
+     * filter the sender — taking the drop and decline notices down with it.
+     *
+     * <p>Deliberately the quietest of the three: green rather than red, and no call to action,
+     * because nothing needs doing.
+     */
+    public void sendShiftAcceptedNoticeEmail(String toEmail, String coordinatorName, String whoConfirmed,
+            String roleLabel, String gameDescription, String consoleLink) {
+        String greeting = (coordinatorName != null && !coordinatorName.isBlank())
+                ? ("Hi " + coordinatorName + ",") : "Hi,";
+        String subject = whoConfirmed + " confirmed a " + roleLabel + " shift — " + gameDescription;
+
+        String html = "<div style=\"max-width:600px;margin:0 auto;padding:0 8px;\">"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 16px;\">"
+                + greeting + "</p>"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\""
+                + " style=\"max-width:600px;width:100%;border-collapse:collapse;background:#f1f8f4;"
+                + "border:1px solid #cfe6da;border-radius:8px;margin:0 0 18px;\">"
+                + "<tr><td width=\"4\" style=\"background-color:#2E8B57;font-size:0;line-height:1px;\">&nbsp;</td>"
+                + "<td style=\"padding:16px 20px;\">"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1.2px;"
+                + "text-transform:uppercase;color:#2E8B57;padding-bottom:6px;\">Shift confirmed</div>"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;line-height:1.3;"
+                + "color:#1a1d21;\">" + whoConfirmed + "</div>"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#41474e;padding-top:4px;\">"
+                + gameDescription + "</div>"
+                + "</td></tr></table>"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 14px;\">"
+                + "No action needed — this slot is set. You're getting this because you asked for confirmations; "
+                + "you can turn them off in <a href=\"" + consoleLink + "\" style=\"color:#1a5fb4;\">the coordinator console</a>.</p>"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0;\">"
+                + "Thanks,<br>Old Buzzard Hockey League</p>"
+                + "</div>";
+
+        send(toEmail, subject, html);
+    }
+
     /** Courtesy confirmation when a coordinator confirms a shift the official signed up for (no action needed). */
     public void sendShiftConfirmedEmail(String toEmail, String name, String roleLabel, String gameDescription) {
         String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";

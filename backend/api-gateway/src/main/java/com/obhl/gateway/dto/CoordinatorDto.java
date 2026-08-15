@@ -65,6 +65,13 @@ public class CoordinatorDto {
         private LocalDateTime gameDate;
         private String homeTeam;
         private String awayTeam;
+        /**
+         * Team ids as well as names: a goalie's own dashboard shows the colour of the net they're in,
+         * and matching a team by name to find its colour breaks the moment two seasons spell one
+         * differently.
+         */
+        private Long homeTeamId;
+        private Long awayTeamId;
         private String rink;
     }
 
@@ -136,6 +143,42 @@ public class CoordinatorDto {
         private Long teamId;
         private String teamName;
         private String teamColor;
+    }
+
+    /** One role's notification settings, as the panel shows and saves them. */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class NotificationPrefView {
+        private String role;                 // GOALIE | REF | SCOREKEEPER
+        private boolean notifyOnDecline;
+        private boolean notifyOnConfirm;
+        private String emailOverride;        // null = the account's own address
+        private String accountEmail;         // what null falls back to, so the panel can name it
+        /**
+         * Everyone else holding this coordinator role. Drives "You're the only one" vs "With Amy
+         * Cole" — which is what makes the last-recipient warning intelligible: turning declines off
+         * matters very differently depending on whether anyone else would still get them.
+         */
+        private List<String> otherHolders;
+    }
+
+    /**
+     * The whole settings panel for one person. {@code roles} is empty for an admin who holds no
+     * coordinator role — a real state with its own screen, not an error.
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class NotificationSettingsView {
+        private List<NotificationPrefView> roles;
+        /**
+         * Coordinator roles nobody currently holds, so their notices fall back to admins. Lets the
+         * admin screen say exactly which mail is reaching them and why — the confusion this whole
+         * feature was asked for.
+         */
+        private List<String> unfilledRoles;
+        private boolean isAdmin;
     }
 
     /** A season roster goalie: full-time (auto-assigned) or substitute (ad hoc fill-in). */

@@ -780,6 +780,8 @@ public class CoordinatorService {
             v.setRink(game.getRink());
             v.setHomeTeam(teamName(game.getHomeTeamId()));
             v.setAwayTeam(teamName(game.getAwayTeamId()));
+            v.setHomeTeamId(game.getHomeTeamId());
+            v.setAwayTeamId(game.getAwayTeamId());
         }
         return v;
     }

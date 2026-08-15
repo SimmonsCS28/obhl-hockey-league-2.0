@@ -117,14 +117,16 @@ public class ShiftConfirmationService {
         a.setTokenExpiresAt(null);
         assignmentRepository.save(a);
 
-        // A decline is the only response that needs the coordinator to do something. Confirms stay
-        // silent on purpose: mailing those too would teach her to ignore this sender.
-        if (declined) {
-            try {
+        // A decline needs the coordinator to act, so it notifies by default. A confirm doesn't, so it
+        // only goes out to coordinators who explicitly asked for confirmations.
+        try {
+            if (declined) {
                 coordinatorNotifyService.notifyDecline(a, userName(a.getUserId()), describeGame(a));
-            } catch (RuntimeException e) {
-                // Notice is best-effort; the decline itself is already persisted.
+            } else {
+                coordinatorNotifyService.notifyConfirm(a, userName(a.getUserId()), describeGame(a));
             }
+        } catch (RuntimeException e) {
+            // Notices are best-effort; the response itself is already persisted.
         }
     }
 
@@ -178,6 +180,8 @@ public class ShiftConfirmationService {
                 v.setRink(game.getRink());
                 v.setHomeTeam(teamName(game.getHomeTeamId()));
                 v.setAwayTeam(teamName(game.getAwayTeamId()));
+                v.setHomeTeamId(game.getHomeTeamId());
+                v.setAwayTeamId(game.getAwayTeamId());
             }
         } catch (Exception ignored) {
             // Game lookup is best-effort enrichment; the shift is still valid without it.

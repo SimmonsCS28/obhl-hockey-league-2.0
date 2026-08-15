@@ -5,12 +5,18 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import java.util.regex.Pattern;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import com.obhl.gateway.dto.CoordinatorDto;
+import com.obhl.gateway.model.CoordinatorNotificationPref;
 import com.obhl.gateway.model.ShiftAssignment;
 import com.obhl.gateway.model.User;
+import com.obhl.gateway.repository.CoordinatorNotificationPrefRepository;
 import com.obhl.gateway.repository.UserRepository;
 
 /**
@@ -29,20 +35,44 @@ import com.obhl.gateway.repository.UserRepository;
 @Service
 public class CoordinatorNotifyService {
 
+    // Deliberately permissive. This is a typo guard on a field the coordinator types for themselves,
+    // not an authority on what an address may look like; rejecting a valid oddity would be worse
+    // than accepting a wrong-but-plausible one, which they can see and correct.
+    private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
+
     @Autowired
     private UserRepository userRepository;
 
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private CoordinatorNotificationPrefRepository prefRepository;
+
     @Value("${app.frontend.url:https://oldbuzzardhockey.com}")
     private String frontendUrl;
 
-    /** Someone turned down a shift they had not yet agreed to. */
+    /** Someone turned down a shift they had not yet agreed to. Opt-out via preferences; on by default. */
     public void notifyDecline(ShiftAssignment a, String whoDeclined, String gameDescription) {
         for (User c : recipientsFor(a)) {
-            emailService.sendDeclineNoticeEmail(c.getEmail(), firstName(c), whoDeclined,
+            CoordinatorNotificationPref p = prefFor(c.getId(), a.getRole());
+            if (p != null && Boolean.FALSE.equals(p.getNotifyOnDecline())) {
+                continue;
+            }
+            emailService.sendDeclineNoticeEmail(addressFor(c, p), firstName(c), whoDeclined,
                     roleLabel(a.getRole()), gameDescription, a.getDeclineReason(), consoleLink());
+        }
+    }
+
+    /** Someone accepted a shift. Off by default — the happy path, and there are a lot of them. */
+    public void notifyConfirm(ShiftAssignment a, String whoConfirmed, String gameDescription) {
+        for (User c : recipientsFor(a)) {
+            CoordinatorNotificationPref p = prefFor(c.getId(), a.getRole());
+            if (p == null || !Boolean.TRUE.equals(p.getNotifyOnConfirm())) {
+                continue;
+            }
+            emailService.sendShiftAcceptedNoticeEmail(addressFor(c, p), firstName(c), whoConfirmed,
+                    roleLabel(a.getRole()), gameDescription, consoleLink());
         }
     }
 
@@ -53,9 +83,91 @@ public class CoordinatorNotifyService {
      */
     public void notifyDrop(ShiftAssignment a, String whoDropped, String gameDescription, boolean wasPublished) {
         for (User c : recipientsFor(a)) {
-            emailService.sendShiftDroppedEmail(c.getEmail(), firstName(c), whoDropped,
-                    roleLabel(a.getRole()), gameDescription, wasPublished, consoleLink());
+            // No preference check: this one cannot be switched off, so there is no column for it.
+            // A silent drop means somebody does not turn up to a game that may already be public.
+            emailService.sendShiftDroppedEmail(addressFor(c, prefFor(c.getId(), a.getRole())), firstName(c),
+                    whoDropped, roleLabel(a.getRole()), gameDescription, wasPublished, consoleLink());
         }
+    }
+
+    /**
+     * The settings panel for one person: one card per coordinator role they hold, plus the roles
+     * nobody holds. An admin holding no coordinator role gets an empty {@code roles} list — a real
+     * state with its own screen, since their only exposure is the unfilled-role fallback.
+     */
+    public CoordinatorDto.NotificationSettingsView getSettings(User user) {
+        List<CoordinatorDto.NotificationPrefView> held = new ArrayList<>();
+        List<String> unfilled = new ArrayList<>();
+
+        for (String shiftRole : List.of("GOALIE", "REF", "SCOREKEEPER")) {
+            String coordRole = coordinatorRole(shiftRole);
+            List<User> holders = usersWithRole(coordRole);
+            if (holders.isEmpty()) {
+                unfilled.add(shiftRole);
+            }
+            if (!holdsRole(user, coordRole)) {
+                continue;
+            }
+            CoordinatorNotificationPref p = prefFor(user.getId(), shiftRole);
+            held.add(new CoordinatorDto.NotificationPrefView(
+                    shiftRole,
+                    p == null || Boolean.TRUE.equals(p.getNotifyOnDecline()),
+                    p != null && Boolean.TRUE.equals(p.getNotifyOnConfirm()),
+                    p == null ? null : p.getEmailOverride(),
+                    user.getEmail(),
+                    holders.stream()
+                            .filter(h -> !h.getId().equals(user.getId()))
+                            .map(this::displayName)
+                            .toList()));
+        }
+        return new CoordinatorDto.NotificationSettingsView(held, unfilled, holdsRole(user, "ADMIN"));
+    }
+
+    /**
+     * Save one role's settings. Refuses roles the caller doesn't hold, so the panel can't be used to
+     * redirect somebody else's mail.
+     */
+    @Transactional
+    public void saveSettings(User user, CoordinatorDto.NotificationPrefView in) {
+        String shiftRole = in.getRole() == null ? "" : in.getRole().trim().toUpperCase();
+        if (!holdsRole(user, coordinatorRole(shiftRole))) {
+            throw new RuntimeException("You don't hold the " + shiftRole + " coordinator role");
+        }
+        String override = in.getEmailOverride() == null ? null : in.getEmailOverride().trim();
+        if (override != null && override.isEmpty()) {
+            override = null;
+        }
+        if (override != null && !EMAIL_PATTERN.matcher(override).matches()) {
+            throw new RuntimeException("That doesn't look like an email address");
+        }
+
+        CoordinatorNotificationPref p = prefRepository.findByUserIdAndRole(user.getId(), shiftRole)
+                .orElseGet(CoordinatorNotificationPref::new);
+        p.setUserId(user.getId());
+        p.setRole(shiftRole);
+        p.setNotifyOnDecline(in.isNotifyOnDecline());
+        p.setNotifyOnConfirm(in.isNotifyOnConfirm());
+        p.setEmailOverride(override);
+        prefRepository.save(p);
+    }
+
+    private String displayName(User u) {
+        if (u.getFirstName() != null && u.getLastName() != null) {
+            return u.getFirstName() + " " + u.getLastName();
+        }
+        return u.getUsername();
+    }
+
+    private CoordinatorNotificationPref prefFor(Long userId, String role) {
+        return prefRepository.findByUserIdAndRole(userId, role).orElse(null);
+    }
+
+    /** Where this person's mail for this role goes — their override, else their account address. */
+    private String addressFor(User u, CoordinatorNotificationPref p) {
+        if (p != null && p.getEmailOverride() != null && !p.getEmailOverride().isBlank()) {
+            return p.getEmailOverride().trim();
+        }
+        return u.getEmail();
     }
 
     /**
