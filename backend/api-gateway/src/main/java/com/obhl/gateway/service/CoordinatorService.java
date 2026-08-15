@@ -89,9 +89,15 @@ public class CoordinatorService {
             throw new RuntimeException("Game not found");
         }
 
-        // One proposal per (game, role, slot): supersede any existing one.
-        ShiftAssignment a = assignmentRepository.findByGameIdAndRoleAndSlot(req.getGameId(), role, slot)
-                .orElseGet(ShiftAssignment::new);
+        // One proposal per (game, role, slot): supersede any existing one. Capture who held it first —
+        // if they were published, they are live on the public schedule right now and have to be taken
+        // off it (and told), otherwise the old name lingers everywhere until the replacement confirms.
+        Optional<ShiftAssignment> existing = assignmentRepository.findByGameIdAndRoleAndSlot(req.getGameId(), role, slot);
+        Long previousUserId = existing.map(ShiftAssignment::getUserId).orElse(null);
+        boolean wasPublished = existing.map(x -> Boolean.TRUE.equals(x.getPublished())).orElse(false);
+        boolean occupantChanged = previousUserId != null && !previousUserId.equals(req.getUserId());
+
+        ShiftAssignment a = existing.orElseGet(ShiftAssignment::new);
         a.setGameId(req.getGameId());
         // Always the game's own season, never the client-supplied one — a stale/mismatched
         // client season here would make publishWeek's season-scoped game lookup miss this
@@ -113,14 +119,102 @@ public class CoordinatorService {
 
         a = assignmentRepository.save(a);
 
+        // Take the superseded person off the live game before the replacement is notified. Only when
+        // the occupant actually changed — re-proposing the same person is a resend, not a swap.
+        if (wasPublished && occupantChanged) {
+            clearSlotColumn(req.getGameId(), role, slot);
+            sendCancellation(previousUserId, role, slot, game, coordinatorUserId);
+        }
+
         notify(a, game, rawToken);
         return toView(a, game);
     }
 
-    /** Remove a proposal (does not affect an already-published game slot). */
+    /**
+     * Remove an assignment entirely, returning the slot to Open. When the row was published the
+     * person is live on the public schedule, game preview, score entry and their own dashboard — all
+     * of which read the game's staff column — so clearing that one column removes them from every
+     * surface at once. They are told by email; the rest of the week is untouched.
+     */
     @Transactional
-    public void withdraw(Long assignmentId) {
+    public CoordinatorDto.WithdrawResult withdraw(Long assignmentId, Long actingUserId) {
+        ShiftAssignment a = assignmentRepository.findById(assignmentId).orElse(null);
+        if (a == null) {
+            return new CoordinatorDto.WithdrawResult(false, false, false);
+        }
+        if (Boolean.TRUE.equals(a.getPublished())) {
+            clearSlotColumn(a.getGameId(), a.getRole(), a.getSlot());
+        }
+        // Tell anyone who had committed — published or not. Someone who confirmed, or signed up for
+        // the slot themselves, is expecting to work this game and has to hear that they aren't.
+        // Someone still sitting on an unanswered proposal never committed, so clearing their row
+        // stays silent, which keeps the existing harmless "Clear" on a pending row harmless.
+        boolean hadCommitted = Boolean.TRUE.equals(a.getPublished())
+                || ShiftAssignment.STATUS_CONFIRMED.equals(a.getStatus())
+                || ShiftAssignment.STATUS_SIGNED_UP.equals(a.getStatus());
+        boolean notifySent = hadCommitted && sendCancellation(a.getUserId(), a.getRole(), a.getSlot(),
+                gameProxyService.getGameById(a.getGameId()), actingUserId);
         assignmentRepository.deleteById(assignmentId);
+        return new CoordinatorDto.WithdrawResult(true, hadCommitted, notifySent);
+    }
+
+    /**
+     * Clear a game's staff column for a slot that is no longer published to anyone. game-service maps
+     * the {@code -1} sentinel to null (a plain null would be ignored as "field not supplied").
+     */
+    private void clearSlotColumn(Long gameId, String role, int slot) {
+        gameProxyService.updateGameStaff(gameId, Map.of(slotColumn(role, slot), -1L));
+    }
+
+    /**
+     * Tell someone they're off a game they were published to. Best-effort: the unpublish has already
+     * happened and must stand even if Resend is down, so a failure here never rolls anything back —
+     * the console surfaces the un-sent mail so the coordinator can retry or phone them.
+     */
+    private boolean sendCancellation(Long userId, String role, int slot, GameResponseDTO game, Long actingUserId) {
+        try {
+            Optional<User> userOpt = userRepository.findById(userId);
+            if (userOpt.isEmpty() || userOpt.get().getEmail() == null) {
+                return false;
+            }
+            User user = userOpt.get();
+            String name = (user.getFirstName() != null && !user.getFirstName().isBlank())
+                    ? user.getFirstName()
+                    : user.getUsername();
+
+            String shortDate = "";
+            String gameLine = "This game";
+            if (game != null && game.getGameDate() != null) {
+                java.time.ZonedDateTime local = game.getGameDate().atZone(ZoneOffset.UTC).withZoneSameInstant(LEAGUE_TZ);
+                shortDate = local.format(SCHED_DATE_FMT);
+                gameLine = htmlEscape(shortDate + "  ·  " + local.format(SCHED_TIME_FMT)
+                        + (game.getRink() != null ? ("  ·  " + game.getRink()) : ""));
+            }
+            String matchup = game == null ? "" : teamName(game.getHomeTeamId()) + " vs " + teamName(game.getAwayTeamId());
+            String matchupLine = htmlEscape(matchup + "  ·  " + slotLabel(role, slot));
+
+            User actor = actingUserId == null ? null : userRepository.findById(actingUserId).orElse(null);
+            String actorName = actor == null ? null
+                    : ((actor.getFirstName() != null && !actor.getFirstName().isBlank())
+                            ? actor.getFirstName() : actor.getUsername());
+
+            return emailService.sendShiftCancelledEmail(user.getEmail(), name, roleLabel(role), shortDate,
+                    gameLine, matchupLine, htmlEscape(actorName), actor == null ? null : actor.getEmail());
+        } catch (RuntimeException e) {
+            // Cancellation email is best-effort; the unpublish already persisted.
+            return false;
+        }
+    }
+
+    /** Human label for a slot, matching the console's own wording. */
+    private String slotLabel(String role, int slot) {
+        if ("SCOREKEEPER".equals(role)) {
+            return "Scorekeeper";
+        }
+        if ("REF".equals(role)) {
+            return "Ref " + slot;
+        }
+        return "Goalie " + slot;
     }
 
     /**
@@ -319,12 +413,33 @@ public class CoordinatorService {
     /** Write all CONFIRMED, not-yet-published assignments for a week onto the games. */
     @Transactional
     public CoordinatorDto.PublishResult publishWeek(Long seasonId, String role, Integer week) {
+        return publish(seasonId, role, week, null, false);
+    }
+
+    /**
+     * Write CONFIRMED, not-yet-published assignments onto their games.
+     *
+     * <p>Scope narrows left to right: season → week (optional) → single game (optional), so one
+     * late change can be republished on its own without touching the rest of the week. Rows that are
+     * already published are skipped — that is what makes re-publishing safe, and why nobody who has
+     * already been emailed hears about it twice.
+     *
+     * <p>{@code dryRun} walks exactly the same rows and builds exactly the same plan, but performs no
+     * write and sends no mail. The console shows that plan for approval before the real call, so the
+     * answer to "who is about to get an email" comes from the same code that will send them.
+     */
+    @Transactional
+    public CoordinatorDto.PublishResult publish(Long seasonId, String role, Integer week, Long gameId,
+            boolean dryRun) {
         String r = normalizeRole(role);
         Map<Long, GameResponseDTO> games = gamesById(seasonId);
         List<ShiftAssignment> rows = assignmentRepository.findBySeasonIdAndRole(seasonId, r);
 
         int published = 0;
         List<String> unconfirmed = new ArrayList<>();
+        List<CoordinatorDto.PublishTarget> willEmail = new ArrayList<>();
+        List<CoordinatorDto.PublishTarget> alreadyLive = new ArrayList<>();
+        List<CoordinatorDto.PublishTarget> blocked = new ArrayList<>();
 
         for (ShiftAssignment a : rows) {
             GameResponseDTO game = games.get(a.getGameId());
@@ -341,23 +456,74 @@ public class CoordinatorService {
             if (week != null && !week.equals(game.getWeek())) {
                 continue;
             }
+            if (gameId != null && !gameId.equals(a.getGameId())) {
+                continue;
+            }
+
             if (ShiftAssignment.STATUS_CONFIRMED.equals(a.getStatus())) {
-                if (!Boolean.TRUE.equals(a.getPublished())) {
-                    gameProxyService.updateGameStaff(a.getGameId(), Map.of(slotColumn(r, a.getSlot()), a.getUserId()));
-                    a.setPublished(true);
-                    assignmentRepository.save(a);
-                    published++;
-                    // Email B — final goalie assignment with the exact game + team (best-effort).
-                    if ("GOALIE".equals(r)) {
-                        sendGoalieFinalAssignment(a, game);
-                    }
+                if (Boolean.TRUE.equals(a.getPublished())) {
+                    alreadyLive.add(target(a, game, r, null));
+                    continue;
+                }
+                willEmail.add(target(a, game, r, null));
+                if (dryRun) {
+                    continue;
+                }
+                gameProxyService.updateGameStaff(a.getGameId(), Map.of(slotColumn(r, a.getSlot()), a.getUserId()));
+                a.setPublished(true);
+                assignmentRepository.save(a);
+                published++;
+                // Final assignment email — goalies get their team, everyone else the game (best-effort).
+                if ("GOALIE".equals(r)) {
+                    sendGoalieFinalAssignment(a, game);
+                } else {
+                    sendStaffFinalAssignment(a, game, r);
                 }
             } else {
+                blocked.add(target(a, game, r, blockedReason(a, r)));
                 unconfirmed.add(describeGame(game) + " — " + r + " slot " + a.getSlot()
                         + " (" + a.getStatus() + ")");
             }
         }
-        return new CoordinatorDto.PublishResult(published, unconfirmed);
+        return new CoordinatorDto.PublishResult(dryRun ? willEmail.size() : published, unconfirmed,
+                willEmail, alreadyLive, blocked, alreadyLive.size(), dryRun);
+    }
+
+    /** One row rendered for the publish plan, in the console's own wording. */
+    private CoordinatorDto.PublishTarget target(ShiftAssignment a, GameResponseDTO game, String role, String reason) {
+        String dayDate = "TBD";
+        String time = "";
+        if (game.getGameDate() != null) {
+            java.time.ZonedDateTime local = game.getGameDate().atZone(ZoneOffset.UTC).withZoneSameInstant(LEAGUE_TZ);
+            dayDate = local.format(SCHED_DATE_FMT);
+            time = local.format(SCHED_TIME_FMT);
+        }
+        // Goalies are team-attached, so their slot reads as the team whose net they're in.
+        String label = "GOALIE".equals(role)
+                ? teamName(a.getSlot() != null && a.getSlot() == 2 ? game.getAwayTeamId() : game.getHomeTeamId())
+                : slotLabel(role, a.getSlot() == null ? 1 : a.getSlot());
+        return new CoordinatorDto.PublishTarget(a.getId(), a.getGameId(), userName(a.getUserId()), label,
+                teamName(game.getHomeTeamId()) + " vs " + teamName(game.getAwayTeamId()),
+                dayDate, time, a.getStatus(), reason);
+    }
+
+    /** Why a slot won't publish, phrased for the coordinator rather than named by status constant. */
+    private String blockedReason(ShiftAssignment a, String role) {
+        String status = a.getStatus();
+        if (ShiftAssignment.STATUS_PROPOSED.equals(status)) {
+            String first = userName(a.getUserId()).split("\\s+")[0];
+            return "Awaiting " + first + "'s reply";
+        }
+        if (ShiftAssignment.STATUS_AUTO_PROPOSED.equals(status)) {
+            return "GOALIE".equals(role) ? "Proposed — confirmation not sent" : "Draft — not emailed yet";
+        }
+        if (ShiftAssignment.STATUS_SIGNED_UP.equals(status)) {
+            return "Signed up — you haven't confirmed them";
+        }
+        if (ShiftAssignment.STATUS_DECLINED.equals(status)) {
+            return "Declined — needs a replacement";
+        }
+        return status;
     }
 
     // ---- helpers ----
@@ -373,13 +539,13 @@ public class CoordinatorService {
                 : user.getUsername();
         String roleLabel = roleLabel(a.getRole());
         String link = frontendUrl + "/shift-confirm?id=" + a.getId() + "&token=" + rawToken;
-        // Goalies get a link to the public game-preview page + the week's goalie schedule; other
-        // roles' emails are unchanged.
+        // Every role gets the week's schedule for their own role — the block belongs in both the
+        // "please confirm" and final-assignment emails. The game-preview link stays goalie-only:
+        // that was a separate deliberate decision and widening it here isn't in scope.
         boolean isGoalie = "GOALIE".equals(a.getRole());
         String gamePreviewLink = isGoalie ? gamePreviewLink(game) : null;
-        String weekSchedule = isGoalie
-                ? weekScheduleBlockHtml(game.getSeasonId(), game.getWeek(), game.getId(), a.getSlot())
-                : null;
+        String weekSchedule = weekScheduleBlockHtml(a.getRole(), game.getSeasonId(), game.getWeek(),
+                game.getId(), a.getSlot());
         emailService.sendShiftProposalEmail(user.getEmail(), name, roleLabel, describeGame(game), link,
                 gamePreviewLink, weekSchedule);
     }
@@ -402,12 +568,76 @@ public class CoordinatorService {
                     ? user.getFirstName()
                     : user.getUsername();
             Long teamId = a.getSlot() != null && a.getSlot() == 2 ? game.getAwayTeamId() : game.getHomeTeamId();
-            String weekSchedule = weekScheduleBlockHtml(game.getSeasonId(), game.getWeek(), game.getId(), a.getSlot());
+            String weekSchedule = weekScheduleBlockHtml("GOALIE", game.getSeasonId(), game.getWeek(),
+                    game.getId(), a.getSlot());
             emailService.sendGoalieFinalAssignmentEmail(user.getEmail(), name, describeGame(game), teamName(teamId),
                     gamePreviewLink(game), weekSchedule);
         } catch (RuntimeException e) {
             // Final-assignment email is best-effort; publish already persisted.
         }
+    }
+
+    /**
+     * Email B for referees and scorekeepers: the shift is locked in once the week is published.
+     * Best-effort — publish has already persisted and must stand even if Resend is down.
+     */
+    private void sendStaffFinalAssignment(ShiftAssignment a, GameResponseDTO game, String role) {
+        try {
+            Optional<User> userOpt = userRepository.findById(a.getUserId());
+            if (userOpt.isEmpty() || userOpt.get().getEmail() == null) {
+                return;
+            }
+            User user = userOpt.get();
+            String name = (user.getFirstName() != null && !user.getFirstName().isBlank())
+                    ? user.getFirstName()
+                    : user.getUsername();
+
+            String dayDate = "TBD";
+            String time = "";
+            if (game.getGameDate() != null) {
+                java.time.ZonedDateTime local = game.getGameDate().atZone(ZoneOffset.UTC).withZoneSameInstant(LEAGUE_TZ);
+                dayDate = local.format(SCHED_DATE_FMT);
+                time = local.format(SCHED_TIME_FMT);
+            }
+            String weekLabel = game.getWeek() == null ? "" : ("Week " + game.getWeek());
+            String rink = htmlEscape(game.getRink() == null || game.getRink().isBlank() ? "TBD" : game.getRink());
+
+            User actor = a.getAssignedBy() == null ? null
+                    : userRepository.findById(a.getAssignedBy()).orElse(null);
+            String actorName = actor == null ? null
+                    : ((actor.getFirstName() != null && !actor.getFirstName().isBlank())
+                            ? actor.getFirstName() : actor.getUsername());
+
+            String weekSchedule = weekScheduleBlockHtml(role, game.getSeasonId(), game.getWeek(),
+                    game.getId(), a.getSlot());
+            emailService.sendStaffFinalAssignmentEmail(user.getEmail(), name, roleLabel(role), weekLabel,
+                    dayDate, time, rink, matchupInlineHtml(game),
+                    slotLabel(role, a.getSlot() == null ? 1 : a.getSlot()),
+                    weekSchedule, htmlEscape(actorName), actor == null ? null : actor.getEmail());
+        } catch (RuntimeException e) {
+            // Final-assignment email is best-effort; publish already persisted.
+        }
+    }
+
+    /** "▪ Green vs ▪ White" as a single inline email row — swatches describe the game, not a person. */
+    private String matchupInlineHtml(GameResponseDTO game) {
+        return "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr>"
+                + swatchCell(teamHex(game.getHomeTeamId()))
+                + "<td style=\"width:7px;font-size:0;line-height:1px;\">&nbsp;</td>"
+                + "<td style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;"
+                + "color:#1a1d21;white-space:nowrap;\">" + htmlEscape(teamName(game.getHomeTeamId())) + "</td>"
+                + "<td style=\"font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#8a929b;padding:0 9px;\">vs</td>"
+                + swatchCell(teamHex(game.getAwayTeamId()))
+                + "<td style=\"width:7px;font-size:0;line-height:1px;\">&nbsp;</td>"
+                + "<td style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;"
+                + "color:#1a1d21;white-space:nowrap;\">" + htmlEscape(teamName(game.getAwayTeamId())) + "</td>"
+                + "</tr></table>";
+    }
+
+    /** A team-color chip. The border keeps white and near-black teams visible on any email background. */
+    private String swatchCell(String hex) {
+        return "<td width=\"12\" style=\"background-color:" + hex
+                + ";border:1px solid #c7ccd2;border-radius:3px;font-size:0;line-height:12px;\">&nbsp;</td>";
     }
 
     private Map<Long, GameResponseDTO> gamesById(Long seasonId) {
@@ -434,6 +664,9 @@ public class CoordinatorService {
         v.setStatus(a.getStatus());
         v.setPublished(a.getPublished());
         v.setDeclineReason(a.getDeclineReason());
+        v.setRespondedAt(a.getRespondedAt());
+        v.setUpdatedAt(a.getUpdatedAt());
+        v.setTokenExpiresAt(a.getTokenExpiresAt());
         if (game != null) {
             v.setWeek(game.getWeek());
             v.setGameDate(game.getGameDate());
@@ -529,7 +762,7 @@ public class CoordinatorService {
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;border-collapse:collapse;background:#ffffff;border:1px solid #dfe3e8;border-radius:8px;">
 <tr><td style="padding:16px 20px 10px 20px;border-bottom:1px solid #e8ebee;">
 <span style="font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1.2px;text-transform:uppercase;color:#8a929b;">__WEEK__</span><br>
-<span style="font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;color:#1a1d21;">Goalie Schedule</span>
+<span style="font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;color:#1a1d21;">__HEADING__</span>
 </td></tr>
 __ROWS__
 </table>
@@ -574,11 +807,113 @@ __ROWS__
 """;
 
     /**
-     * Email-safe HTML block showing the whole week's goalie matchups and who is currently in each
-     * net (any status; empty = "Unassigned"). Highlights the recipient's own game. Returns "" when
-     * there are no games. See GOALIE_WEEK_SCHEDULE_EMAIL_HANDOFF.md.
+     * Referee row. Deliberately not the goalie row relabelled: a goalie belongs to a side, so their
+     * row is two team-paired columns. Referees work the whole game, so the matchup is one unit on its
+     * own line as context, and the two officials sit below it as staffing.
      */
-    private String weekScheduleBlockHtml(Long seasonId, Integer week, Long recipientGameId, Integer recipientSlot) {
+    private static final String SCHED_ROW_REF = """
+<tr><td style="padding:14px 20px;__BORDER__">
+<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6b7480;padding-bottom:7px;">__DATE__ &nbsp;&middot;&nbsp; __TIME__ &nbsp;&middot;&nbsp; __RINK__</div>
+__MATCHUP__
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:10px;">
+<tr>
+<td width="50%" valign="top" style="padding-right:10px;">
+<div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:bold;letter-spacing:1.1px;text-transform:uppercase;color:#8a929b;">Ref 1</div>
+__SLOT1__
+</td>
+<td width="50%" valign="top" style="padding-left:14px;border-left:1px solid #eef0f2;">
+<div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:bold;letter-spacing:1.1px;text-transform:uppercase;color:#8a929b;">Ref 2</div>
+__SLOT2__
+</td>
+</tr>
+</table>
+</td></tr>
+""";
+
+    private static final String SCHED_ROW_REF_RECIPIENT = """
+<tr><td style="padding:0;background-color:#fdf6e8;__BORDER__">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td width="3" style="background-color:#F6A91C;font-size:0;line-height:1px;">&nbsp;</td>
+<td style="padding:14px 20px 14px 17px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6b7480;padding-bottom:7px;">__DATE__ &nbsp;&middot;&nbsp; __TIME__ &nbsp;&middot;&nbsp; __RINK__</td>
+<td align="right" style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:bold;letter-spacing:0.6px;text-transform:uppercase;color:#b8860b;padding-bottom:7px;">Your Game</td>
+</tr>
+</table>
+__MATCHUP__
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:10px;">
+<tr>
+<td width="50%" valign="top" style="padding-right:10px;">
+<div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:bold;letter-spacing:1.1px;text-transform:uppercase;color:#8a929b;">Ref 1</div>
+__SLOT1__
+</td>
+<td width="50%" valign="top" style="padding-left:14px;border-left:1px solid #f0e4c8;">
+<div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:bold;letter-spacing:1.1px;text-transform:uppercase;color:#8a929b;">Ref 2</div>
+__SLOT2__
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</td></tr>
+""";
+
+    /** Scorekeeper row: one person, so there are no columns to balance — matchup left, name right. */
+    private static final String SCHED_ROW_SK = """
+<tr><td style="padding:14px 20px;__BORDER__">
+<div style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6b7480;padding-bottom:7px;">__DATE__ &nbsp;&middot;&nbsp; __TIME__ &nbsp;&middot;&nbsp; __RINK__</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td valign="middle">__MATCHUP__</td>
+<td align="right" valign="middle" style="padding-left:12px;">
+<div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:bold;letter-spacing:1.1px;text-transform:uppercase;color:#8a929b;">Scorekeeper</div>
+__SLOT1__
+</td>
+</tr>
+</table>
+</td></tr>
+""";
+
+    private static final String SCHED_ROW_SK_RECIPIENT = """
+<tr><td style="padding:0;background-color:#fdf6e8;__BORDER__">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td width="3" style="background-color:#F6A91C;font-size:0;line-height:1px;">&nbsp;</td>
+<td style="padding:14px 20px 14px 17px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#6b7480;padding-bottom:7px;">__DATE__ &nbsp;&middot;&nbsp; __TIME__ &nbsp;&middot;&nbsp; __RINK__</td>
+<td align="right" style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:bold;letter-spacing:0.6px;text-transform:uppercase;color:#b8860b;padding-bottom:7px;">Your Game</td>
+</tr>
+</table>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+<tr>
+<td valign="middle">__MATCHUP__</td>
+<td align="right" valign="middle" style="padding-left:12px;">
+<div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:bold;letter-spacing:1.1px;text-transform:uppercase;color:#8a929b;">Scorekeeper</div>
+__SLOT1__
+</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</td></tr>
+""";
+
+    /**
+     * Email-safe HTML block showing the whole week's matchups and who is currently filling each slot
+     * for {@code role} (any status; empty = "Unassigned"). Highlights the recipient's own game.
+     * Returns "" when there are no games. See GOALIE_WEEK_SCHEDULE_EMAIL_HANDOFF.md and
+     * COORDINATOR_CONSOLE_HANDOFF.md §7.
+     *
+     * <p>The wrapper is shared across all three roles; only the heading and the row template differ.
+     */
+    private String weekScheduleBlockHtml(String role, Long seasonId, Integer week, Long recipientGameId,
+            Integer recipientSlot) {
         if (week == null) {
             return "";
         }
@@ -595,11 +930,13 @@ __ROWS__
             return "";
         }
 
+        boolean goalie = "GOALIE".equals(role);
+
         List<Long> gameIds = weekGames.stream().map(GameResponseDTO::getId).collect(Collectors.toList());
-        Map<String, Long> goalieBySlot = new java.util.HashMap<>();
-        for (ShiftAssignment a : assignmentRepository.findByGameIdInAndRole(gameIds, "GOALIE")) {
+        Map<String, Long> staffBySlot = new java.util.HashMap<>();
+        for (ShiftAssignment a : assignmentRepository.findByGameIdInAndRole(gameIds, role)) {
             if (a.getUserId() != null && a.getSlot() != null) {
-                goalieBySlot.put(a.getGameId() + ":" + a.getSlot(), a.getUserId());
+                staffBySlot.put(a.getGameId() + ":" + a.getSlot(), a.getUserId());
             }
         }
 
@@ -622,28 +959,66 @@ __ROWS__
             }
             String rink = (g.getRink() != null && !g.getRink().isBlank()) ? g.getRink() : "TBD";
 
-            Long homeUid = goalieBySlot.get(g.getId() + ":1");
-            Long awayUid = goalieBySlot.get(g.getId() + ":2");
-            boolean homeIsYou = recipientGame && recipientSlot != null && recipientSlot == 1;
-            boolean awayIsYou = recipientGame && recipientSlot != null && recipientSlot == 2;
+            Long slot1Uid = staffBySlot.get(g.getId() + ":1");
+            Long slot2Uid = staffBySlot.get(g.getId() + ":2");
+            boolean slot1IsYou = recipientGame && recipientSlot != null && recipientSlot == 1;
+            boolean slot2IsYou = recipientGame && recipientSlot != null && recipientSlot == 2;
 
-            String home = teamSwatchHtml(teamName(g.getHomeTeamId()), teamHex(g.getHomeTeamId()))
-                    + goalieDivHtml(homeUid, homeIsYou);
-            String away = teamSwatchHtml(teamName(g.getAwayTeamId()), teamHex(g.getAwayTeamId()))
-                    + goalieDivHtml(awayUid, awayIsYou);
+            String template;
+            if (goalie) {
+                template = recipientGame ? SCHED_ROW_RECIPIENT : SCHED_ROW;
+            } else if ("SCOREKEEPER".equals(role)) {
+                template = recipientGame ? SCHED_ROW_SK_RECIPIENT : SCHED_ROW_SK;
+            } else {
+                template = recipientGame ? SCHED_ROW_REF_RECIPIENT : SCHED_ROW_REF;
+            }
 
-            rows.append((recipientGame ? SCHED_ROW_RECIPIENT : SCHED_ROW)
+            String row = template
                     .replace("__BORDER__", border)
                     .replace("__DATE__", htmlEscape(date))
                     .replace("__TIME__", htmlEscape(time))
-                    .replace("__RINK__", htmlEscape(rink))
-                    .replace("__HOME__", home)
-                    .replace("__AWAY__", away));
+                    .replace("__RINK__", htmlEscape(rink));
+
+            if (goalie) {
+                // Each goalie is paired with the team whose net they're in.
+                row = row
+                        .replace("__HOME__", teamSwatchHtml(teamName(g.getHomeTeamId()), teamHex(g.getHomeTeamId()))
+                                + goalieDivHtml(slot1Uid, slot1IsYou))
+                        .replace("__AWAY__", teamSwatchHtml(teamName(g.getAwayTeamId()), teamHex(g.getAwayTeamId()))
+                                + goalieDivHtml(slot2Uid, slot2IsYou));
+            } else {
+                // The matchup is context for the whole game; the officials aren't attached to a side.
+                row = row
+                        .replace("__MATCHUP__", matchupInlineHtml(g))
+                        .replace("__SLOT1__", staffNameDivHtml(slot1Uid, slot1IsYou))
+                        .replace("__SLOT2__", staffNameDivHtml(slot2Uid, slot2IsYou));
+            }
+            rows.append(row);
         }
+
+        String heading = goalie ? "Goalie Schedule"
+                : "SCOREKEEPER".equals(role) ? "Scorekeeper Schedule" : "Referee Schedule";
 
         return SCHED_WRAPPER
                 .replace("__WEEK__", htmlEscape("Week " + week))
+                .replace("__HEADING__", heading)
                 .replace("__ROWS__", rows.toString());
+    }
+
+    /**
+     * A ref/scorekeeper name cell. Same rules as the goalie one — bold "You" for the recipient,
+     * italic "Unassigned" for an empty slot, never a blank cell — but sits under a label rather than
+     * beside a team swatch, so it carries no left indent.
+     */
+    private String staffNameDivHtml(Long userId, boolean isYou) {
+        String base = "font-family:Arial,Helvetica,sans-serif;font-size:13px;padding-top:3px;";
+        if (isYou) {
+            return "<div style=\"" + base + "font-weight:bold;color:#1a1d21;\">You</div>";
+        }
+        if (userId != null) {
+            return "<div style=\"" + base + "color:#1a1d21;\">" + htmlEscape(userName(userId)) + "</div>";
+        }
+        return "<div style=\"" + base + "font-style:italic;color:#9aa2ab;\">Unassigned</div>";
     }
 
     private String teamSwatchHtml(String name, String hex) {

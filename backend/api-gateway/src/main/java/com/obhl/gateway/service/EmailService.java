@@ -89,6 +89,135 @@ public class EmailService {
         send(toEmail, subject, html);
     }
 
+    /**
+     * Final assignment for a referee or scorekeeper, sent on publish. Informational — no confirm or
+     * decline links, because by this point they've already agreed.
+     *
+     * <p>Deliberately not modelled on the goalie version. A goalie's email leads with the team whose
+     * net they're in; refs and scorekeepers have no side, so the card leads with <em>when and
+     * where</em> — the only things they act on — and keeps the matchup and slot below as context.
+     *
+     * <p>{@code matchupHtml} and {@code weekScheduleHtml} arrive pre-rendered and pre-escaped from
+     * {@code CoordinatorService}, which owns the team-color map and the schedule templates.
+     */
+    public void sendStaffFinalAssignmentEmail(String toEmail, String name, String roleLabel, String weekLabel,
+            String dayDate, String time, String rink, String matchupHtml, String slotLabel,
+            String weekScheduleHtml, String coordinatorName, String coordinatorEmail) {
+        String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";
+        String when = dayDate + (time == null || time.isBlank() ? "" : ("  &middot;  " + time));
+        String subject = "OBHL " + roleLabel + " assignment — you're set for " + dayDate;
+        String weekPhrase = (weekLabel != null && !weekLabel.isBlank()) ? (" for " + weekLabel) : "";
+        String scheduleBlock = (weekScheduleHtml != null && !weekScheduleHtml.isBlank()) ? weekScheduleHtml : "";
+
+        String contact = (coordinatorEmail != null && !coordinatorEmail.isBlank())
+                ? "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 14px;\">"
+                        + "If something comes up and you can't work this game, tell "
+                        + (coordinatorName != null && !coordinatorName.isBlank() ? coordinatorName : "your coordinator")
+                        + " as early as you can — <a href=\"mailto:" + coordinatorEmail
+                        + "\" style=\"color:#1a5fb4;\">" + coordinatorEmail + "</a>.</p>"
+                : "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 14px;\">"
+                        + "If something comes up and you can't work this game, tell your coordinator as early as you can.</p>";
+
+        String html = "<div style=\"max-width:600px;margin:0 auto;padding:0 8px;\">"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 14px;\">"
+                + greeting + "</p>"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 18px;\">"
+                + "Your " + roleLabel + " shift" + weekPhrase + " is final. Nothing to confirm — this is just so you have it.</p>"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\""
+                + " style=\"max-width:600px;width:100%;border-collapse:collapse;background:#ffffff;"
+                + "border:1px solid #dfe3e8;border-radius:8px;margin:0 0 20px;\">"
+                + "<tr><td style=\"padding:18px 20px 16px;\">"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1.2px;"
+                + "text-transform:uppercase;color:#8a929b;padding-bottom:6px;\">You're working</div>"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:bold;line-height:1.2;"
+                + "color:#1a1d21;\">" + when + "</div>"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#41474e;padding-top:4px;\">"
+                + rink + "</div>"
+                + "</td></tr>"
+                + "<tr><td style=\"padding:0 20px;\">"
+                + "<div style=\"height:1px;background:#e8ebee;font-size:0;line-height:1px;\">&nbsp;</div>"
+                + "</td></tr>"
+                + "<tr><td style=\"padding:14px 20px 18px;\">"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\"><tr>"
+                + "<td valign=\"middle\">"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:bold;letter-spacing:1.1px;"
+                + "text-transform:uppercase;color:#8a929b;padding-bottom:5px;\">Game</div>"
+                + matchupHtml
+                + "</td>"
+                + "<td align=\"right\" valign=\"middle\" style=\"padding-left:12px;\">"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:bold;letter-spacing:1.1px;"
+                + "text-transform:uppercase;color:#8a929b;padding-bottom:5px;\">Your slot</div>"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#1a1d21;\">"
+                + slotLabel + "</div>"
+                + "</td></tr></table>"
+                + "</td></tr></table>"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 20px;\">"
+                + "Please be at the rink 15 minutes before puck drop.</p>"
+                + scheduleBlock
+                + contact
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0;\">"
+                + "Thanks,<br>Old Buzzard Hockey League</p>"
+                + "</div>";
+
+        send(toEmail, subject, html);
+    }
+
+    /**
+     * Sent when a published official is removed from a game. Deliberately short: the failure mode is
+     * someone driving to a rink they're no longer working, so the struck-through game line plus the
+     * one bold sentence have to land in a two-second phone glance. No week-schedule block — anything
+     * below the fold competes with the one fact that stops the drive.
+     *
+     * <p>Callers pass pre-escaped, pre-formatted lines (see {@code CoordinatorService.htmlEscape}).
+     * {@code coordinatorName}/{@code coordinatorEmail} may be null when the acting coordinator can't
+     * be resolved; the copy degrades to an impersonal phrasing rather than printing "null".
+     */
+    public boolean sendShiftCancelledEmail(String toEmail, String name, String roleLabel, String shortDate,
+            String gameLine, String matchupLine, String coordinatorName, String coordinatorEmail) {
+        String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";
+        String subject = "OBHL " + roleLabel + " shift — you're no longer scheduled"
+                + (shortDate != null && !shortDate.isBlank() ? (" for " + shortDate) : "");
+        boolean hasCoordinator = coordinatorName != null && !coordinatorName.isBlank();
+        String who = hasCoordinator ? coordinatorName : "Your coordinator";
+
+        String contact = (coordinatorEmail != null && !coordinatorEmail.isBlank())
+                ? "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 14px;\">"
+                        + "If this looks like a mistake, reply to this email or contact "
+                        + (hasCoordinator ? coordinatorName : "your coordinator") + " at "
+                        + "<a href=\"mailto:" + coordinatorEmail + "\" style=\"color:#1a5fb4;\">" + coordinatorEmail + "</a>.</p>"
+                : "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 14px;\">"
+                        + "If this looks like a mistake, reply to this email.</p>";
+
+        String html = "<div style=\"max-width:600px;margin:0 auto;padding:0 8px;\">"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 16px;\">"
+                + greeting + "</p>"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\""
+                + " style=\"max-width:600px;width:100%;border-collapse:collapse;background:#fdecea;"
+                + "border:1px solid #f0c4bf;border-radius:8px;margin:0 0 20px;\">"
+                + "<tr>"
+                + "<td width=\"4\" style=\"background-color:#B3261E;font-size:0;line-height:1px;\">&nbsp;</td>"
+                + "<td style=\"padding:18px 20px;\">"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1.2px;"
+                + "text-transform:uppercase;color:#B3261E;padding-bottom:7px;\">You're off this game</div>"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:bold;line-height:1.25;"
+                + "color:#5c1d17;text-decoration:line-through;\">" + gameLine + "</div>"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#7a352e;padding-top:5px;"
+                + "text-decoration:line-through;\">" + matchupLine + "</div>"
+                + "<div style=\"height:1px;background:#f0c4bf;font-size:0;line-height:1px;margin:14px 0;\">&nbsp;</div>"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;line-height:1.45;"
+                + "color:#1a1d21;\">You are not needed at the rink for this game.</div>"
+                + "</td></tr></table>"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 14px;\">"
+                + who + " has taken you off this game and it's no longer on your schedule. "
+                + "Your other games this season are unchanged.</p>"
+                + contact
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0;\">"
+                + "Thanks,<br>Old Buzzard Hockey League</p>"
+                + "</div>";
+
+        return send(toEmail, subject, html);
+    }
+
     /** Courtesy confirmation when a coordinator confirms a shift the official signed up for (no action needed). */
     public void sendShiftConfirmedEmail(String toEmail, String name, String roleLabel, String gameDescription) {
         String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";
@@ -101,10 +230,15 @@ public class EmailService {
         send(toEmail, subject, html);
     }
 
-    private void send(String toEmail, String subject, String html) {
+    /**
+     * @return true only if the message was handed to Resend successfully. Most callers ignore this —
+     *         their email is best-effort — but the cancellation flow needs it, because "removed from
+     *         the game but never told" is a state the coordinator has to chase down by phone.
+     */
+    private boolean send(String toEmail, String subject, String html) {
         if (resendApiKey == null || resendApiKey.isBlank()) {
             logger.warn("RESEND_API_KEY is not configured; skipping email send to {}", toEmail);
-            return;
+            return false;
         }
 
         HttpHeaders headers = new HttpHeaders();
@@ -119,8 +253,10 @@ public class EmailService {
 
         try {
             restTemplate.postForEntity(RESEND_API_URL, new HttpEntity<>(body, headers), String.class);
+            return true;
         } catch (Exception e) {
             logger.error("Failed to send email to {}: {}", toEmail, e.getMessage());
+            return false;
         }
     }
 }

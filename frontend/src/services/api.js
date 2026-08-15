@@ -585,8 +585,16 @@ const api = {
         return request(`/coordinator/assignments/${id}/confirm?role=${role}`, { method: 'POST' });
     },
 
-    async publishShiftWeek(seasonId, role, week) {
-        const params = new URLSearchParams({ seasonId, role, ...(week != null && { week }) }).toString();
+    // Scope narrows season -> week -> single game. dryRun returns the same plan (who gets emailed,
+    // who's already live, what's blocked) without writing or sending anything.
+    async publishShiftWeek(seasonId, role, week, gameId, dryRun) {
+        const params = new URLSearchParams({
+            seasonId,
+            role,
+            ...(week != null && { week }),
+            ...(gameId != null && { gameId }),
+            ...(dryRun && { dryRun: 'true' }),
+        }).toString();
         return request(`/coordinator/publish?${params}`, { method: 'POST' });
     },
 

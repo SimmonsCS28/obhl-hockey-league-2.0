@@ -112,6 +112,9 @@ public class ShiftConfirmationService {
         v.setStatus(a.getStatus());
         v.setPublished(a.getPublished());
         v.setDeclineReason(a.getDeclineReason());
+        v.setRespondedAt(a.getRespondedAt());
+        v.setUpdatedAt(a.getUpdatedAt());
+        v.setTokenExpiresAt(a.getTokenExpiresAt());
         try {
             GameResponseDTO game = gameProxyService.getGameById(a.getGameId());
             if (game != null) {

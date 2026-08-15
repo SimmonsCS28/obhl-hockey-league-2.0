@@ -51,19 +51,70 @@ public class CoordinatorDto {
         private String status;        // PROPOSED | CONFIRMED | DECLINED
         private Boolean published;
         private String declineReason;
+        private LocalDateTime respondedAt;
+        /**
+         * Last write to the row. For a row still awaiting a reply this is when the confirmation
+         * email went out, which is what the console's "Emailed N days ago" line measures — {@code
+         * createdAt} can't serve that, because re-proposing a slot upserts the same row and its
+         * creation stamp is {@code updatable = false}, so it would report the slot's first-ever
+         * proposal rather than the current occupant's.
+         */
+        private LocalDateTime updatedAt;
+        /** Confirm-link expiry; drives the "link expires in N days" warning and the Link Expired chip. */
+        private LocalDateTime tokenExpiresAt;
         private LocalDateTime gameDate;
         private String homeTeam;
         private String awayTeam;
         private String rink;
     }
 
-    /** Result of publishing a week's confirmed assignments. */
+    /**
+     * Result of removing an assignment. The removal itself always stands — it is committed before the
+     * email is attempted — so the flags exist to describe the one genuinely ambiguous outcome: the
+     * person is off the game but was never told, which is the state a coordinator has to act on.
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class WithdrawResult {
+        private boolean removed;
+        private boolean notifyAttempted;  // did this person have a commitment worth telling them about
+        private boolean notifySent;       // false + attempted = they don't know yet
+    }
+
+    /** One slot in a publish plan — someone who will be emailed, is already live, or is blocked. */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class PublishTarget {
+        private Long assignmentId;
+        private Long gameId;
+        private String userName;
+        private String slotLabel;   // "Ref 1" | "Scorekeeper" | team name for goalies
+        private String matchup;     // "Red vs Green"
+        private String dayDate;     // "Sun Jun 28" (league-local)
+        private String time;        // "8:00 PM" (league-local)
+        private String status;      // blocked entries only
+        private String reason;      // blocked entries only, already phrased for display
+    }
+
+    /**
+     * Result of a publish. Doubles as the <em>plan</em> for a dry run: the same walk over the same
+     * rows, with the writes and emails skipped. The three lists exist because the coordinator's
+     * question before clicking is always "who exactly gets an email" — a bare count is what made the
+     * week-wide button feel unsafe.
+     */
     @Data
     @NoArgsConstructor
     @AllArgsConstructor
     public static class PublishResult {
         private int publishedCount;
         private List<String> unconfirmedSlots; // human-readable descriptions of slots not yet confirmed
+        private List<PublishTarget> willEmail;
+        private List<PublishTarget> alreadyLive;
+        private List<PublishTarget> blocked;
+        private int alreadyPublishedCount;
+        private boolean dryRun;
     }
 
     /** A season roster goalie: full-time (auto-assigned) or substitute (ad hoc fill-in). */

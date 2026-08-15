@@ -36,6 +36,133 @@ function getName(u) {
     return u.firstName && u.lastName ? `${u.firstName} ${u.lastName}` : u.username || `User ${u.id}`;
 }
 
+const MS_PER_DAY = 86400000;
+
+// Timestamps come back as naive UTC (no zone suffix), same as gameDate.
+function parseUtc(s) {
+    if (!s) return null;
+    const d = new Date(String(s).endsWith('Z') ? s : s + 'Z');
+    return isNaN(d.getTime()) ? null : d;
+}
+
+function daysSince(s) {
+    const d = parseUtc(s);
+    return d == null ? null : Math.floor((Date.now() - d.getTime()) / MS_PER_DAY);
+}
+
+function agoLabel(days) {
+    if (days == null) return '';
+    if (days <= 0) return 'just now';
+    return days === 1 ? '1 day ago' : `${days} days ago`;
+}
+
+function firstNameOf(name) {
+    return name ? name.split(/\s+/)[0] : '';
+}
+
+const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+/** How many slots a card would email, how many are already live, and how many are still waiting. */
+function publishCounts(assignments, slotTotal) {
+    const confirmed = assignments.filter(a => a.status === 'CONFIRMED');
+    const liveCount = confirmed.filter(a => a.published === true).length;
+    return {
+        toNotify: confirmed.length - liveCount,
+        liveCount,
+        waitingCount: assignments.filter(a =>
+            a.status === 'PROPOSED' || a.status === 'AUTO_PROPOSED' || a.status === 'SIGNED_UP').length,
+        openSlots: Math.max(0, slotTotal - assignments.length),
+        slotTotal,
+    };
+}
+
+/**
+ * Plain-English state of a card's publish button. The two disabled cases have to stay
+ * distinguishable — "already live" and "nobody has confirmed yet" are different kinds of nothing,
+ * and collapsing them into one greyed-out button is what made the old week button feel opaque.
+ */
+function publishNote({ toNotify, liveCount, waitingCount, openSlots, slotTotal }) {
+    if (toNotify > 0) {
+        if (liveCount > 0) {
+            return `${plural(liveCount, 'slot')} already live · ${toNotify} newly confirmed to send`;
+        }
+        if (waitingCount > 0) {
+            return `${toNotify} confirmed · ${waitingCount} still awaiting a reply`;
+        }
+        return 'Ready to publish';
+    }
+    if (liveCount > 0 && liveCount === slotTotal) {
+        if (slotTotal === 1) return 'Already live — nothing new to send';
+        if (slotTotal === 2) return 'Both slots are already live — nothing new to send';
+        return 'Every slot is already live — nothing new to send';
+    }
+    if (liveCount > 0) {
+        const rest = waitingCount > 0
+            ? `${waitingCount} still awaiting a reply`
+            : `${openSlots} still open`;
+        return `${plural(liveCount, 'slot')} already live · ${rest}`;
+    }
+    if (waitingCount > 0) {
+        return `Nobody has confirmed yet — ${waitingCount} awaiting a reply`;
+    }
+    return 'Nothing assigned yet';
+}
+
+/**
+ * Secondary detail line for a slot row: why someone declined, and how long a proposal has gone
+ * unanswered. Returns null for healthy rows — most rows are fine and the coordinator is scanning
+ * for the two that aren't, so a confirmed row stays exactly one line.
+ *
+ * Expiry is read from the row's own tokenExpiresAt rather than assuming the 7-day TTL, so the
+ * warning stays truthful if that lifetime is ever changed server-side.
+ */
+function slotMeta(assignment) {
+    if (!assignment) return null;
+    const { status, declineReason, userName } = assignment;
+
+    if (status === 'DECLINED') {
+        const who = firstNameOf(userName);
+        const when = agoLabel(daysSince(assignment.respondedAt || assignment.updatedAt));
+        return {
+            tone: 'bad',
+            line: `Declined ${when}${who ? ` by ${who}` : ''}`,
+            reason: declineReason || null,
+        };
+    }
+
+    // Filled but never emailed — the goalie auto-proposer's staging state.
+    if (status === 'AUTO_PROPOSED') {
+        return { tone: 'draft', line: 'Draft — nobody has been emailed', reason: null };
+    }
+
+    if (status === 'PROPOSED') {
+        const days = daysSince(assignment.updatedAt);
+        const expiry = parseUtc(assignment.tokenExpiresAt);
+        const msLeft = expiry ? expiry.getTime() - Date.now() : null;
+
+        if (msLeft != null && msLeft <= 0) {
+            return {
+                tone: 'bad',
+                expired: true,
+                line: `Emailed ${agoLabel(days)} · confirm link expired — re-send or reassign`,
+                reason: null,
+            };
+        }
+        const daysLeft = msLeft == null ? null : Math.ceil(msLeft / MS_PER_DAY);
+        if (daysLeft != null && daysLeft <= 2) {
+            return {
+                tone: 'warn',
+                line: `Emailed ${agoLabel(days)} · no reply yet · confirm link expires in `
+                    + `${daysLeft} ${daysLeft === 1 ? 'day' : 'days'}`,
+                reason: null,
+            };
+        }
+        return { tone: 'muted', line: `Emailed ${agoLabel(days)} · no reply yet`, reason: null };
+    }
+
+    return null;
+}
+
 function initials(name) {
     return name.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
 }
@@ -87,7 +214,9 @@ function CoordinatorBoard({ role }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [publishing, setPublishing] = useState(false);
-    const [publishResult, setPublishResult] = useState(null);
+    const [publishScope, setPublishScope] = useState(null); // null = panel closed
+    const [publishPlan, setPublishPlan] = useState(null);   // dry-run result backing the panel
+    const [publishError, setPublishError] = useState('');
     const [proposerBusy, setProposerBusy] = useState(null); // 'generate' | 'send' | 'publish' | null
     const [banner, setBanner] = useState(null);
     const [proposerRun, setProposerRun] = useState(null);   // last auto-propose result ("why" data)
@@ -95,7 +224,7 @@ function CoordinatorBoard({ role }) {
     const load = useCallback(async () => {
         setLoading(true);
         setError('');
-        setPublishResult(null);
+        setBanner(null);
         try {
             const [gamesData, teamsData, staffData, assignData, standingsData] = await Promise.all([
                 api.getGames(seasonId),
@@ -163,29 +292,79 @@ function CoordinatorBoard({ role }) {
         }
     };
 
+    // Returns the removal outcome so the row's confirm can tell apart "nothing happened" from
+    // "they're off the game but were never told" — only the second needs the coordinator to chase it.
     const handleClear = async (assignmentId) => {
         setError('');
         try {
-            await api.withdrawShift(assignmentId, role);
+            const result = await api.withdrawShift(assignmentId, role);
             await reloadAssignments();
+            // A 2xx means the removal happened; the flags only refine what to say about the email.
+            // Defaults first so an empty/legacy body still reads as the success it is.
+            return { removed: true, notifyAttempted: false, notifySent: false, ...(result || {}) };
         } catch (e) {
             setError(e.message || 'Failed to clear');
+            return { removed: false, notifyAttempted: false, notifySent: false };
         }
     };
 
-    const handlePublish = async (week) => {
+    /**
+     * Publishing always goes through the preview: the dry run and the real send walk the same rows
+     * server-side, so what the panel promises is what actually goes out. Nothing is sent until the
+     * coordinator confirms the named list.
+     */
+    const openPublishPreview = async (scope) => {
+        setPublishScope(scope);
+        setPublishPlan(null);
+        setPublishError('');
         setPublishing(true);
-        setPublishResult(null);
-        setError('');
         try {
-            const result = await api.publishShiftWeek(seasonId, role, week);
-            setPublishResult({ week, ...result });
+            const plan = await api.publishShiftWeek(seasonId, role, scope.week, scope.gameId, true);
+            setPublishPlan(plan);
         } catch (e) {
-            setError(e.message || 'Failed to publish');
+            setPublishError(e.message || 'Could not work out what would be sent.');
         } finally {
             setPublishing(false);
         }
     };
+
+    const openMatchupPublish = (game) => {
+        const d = toChicago(game.gameDate);
+        openPublishPreview({
+            kind: 'matchup',
+            gameId: game.id,
+            week: game.week,
+            title: `${teamById(game.homeTeamId)?.name || 'Home'} vs ${teamById(game.awayTeamId)?.name || 'Away'}`,
+            sub: `${formatDay(d)} ${formatDateShort(d)} · ${formatTime(d)} · ${game.rink || 'TBD'}`,
+        });
+    };
+
+    const openWeekPublish = (week, gameCount) => openPublishPreview({
+        kind: 'week',
+        week,
+        title: `Week ${week}`,
+        sub: `${roleLabel} assignments · ${plural(gameCount, 'game')}`,
+    });
+
+    const confirmPublish = async () => {
+        setPublishing(true);
+        setPublishError('');
+        try {
+            const result = await api.publishShiftWeek(seasonId, role, publishScope.week, publishScope.gameId, false);
+            await reloadAssignments();
+            setPublishScope(null);
+            setPublishPlan(null);
+            setBanner(`Published ${result.publishedCount} assignment(s) for ${publishScope.title}.`
+                + (result.publishedCount ? ' Assignment emails sent.' : ''));
+        } catch (e) {
+            // The panel stays open — closing it would leave her guessing who got mail.
+            setPublishError(e.message || 'Publish failed. Nothing was sent.');
+        } finally {
+            setPublishing(false);
+        }
+    };
+
+    const closePublish = () => { setPublishScope(null); setPublishPlan(null); setPublishError(''); };
 
     // ---- Goalie auto-proposer (single non-past week) ----
 
@@ -217,21 +396,6 @@ function CoordinatorBoard({ role }) {
             setBanner(`Sent ${result.sentCount} confirmation email(s) for Week ${week}.`);
         } catch (e) {
             setError(e.message || 'Failed to send confirmation emails');
-        } finally {
-            setProposerBusy(null);
-        }
-    };
-
-    const handleProposerPublish = async (week) => {
-        setProposerBusy('publish');
-        setError('');
-        try {
-            const result = await api.publishShiftWeek(seasonId, role, week);
-            await reloadAssignments();
-            setBanner(
-                `Published ${result.publishedCount} final assignment(s) for Week ${week}. Assignment emails sent.`);
-        } catch (e) {
-            setError(e.message || 'Failed to publish');
         } finally {
             setProposerBusy(null);
         }
@@ -324,7 +488,15 @@ function CoordinatorBoard({ role }) {
             const wAssign = assignments.filter(a => wGames.some(g => g.id === a.gameId));
             const wSlots = wGames.length * slotsPerGame;
             const wOpen = Math.max(0, wSlots - wAssign.length);
-            const entry = { week: wNum, label: `Week ${wNum}`, range: formatWeekRange(weekDates[wNum] || []), games: wGames, openCount: wOpen };
+            const wConfirmed = wAssign.filter(a => a.status === 'CONFIRMED');
+            const entry = {
+                week: wNum,
+                label: `Week ${wNum}`,
+                range: formatWeekRange(weekDates[wNum] || []),
+                games: wGames,
+                openCount: wOpen,
+                toNotify: wConfirmed.filter(a => a.published !== true).length,
+            };
             if (!byMonth[month]) { byMonth[month] = []; monthOrder.push(month); }
             byMonth[month].push(entry);
         });
@@ -357,8 +529,8 @@ function CoordinatorBoard({ role }) {
                             role="button"
                             tabIndex={0}
                             className={`cc-week-chip${weekFilter === c.key ? ' is-active' : ''}`}
-                            onClick={() => { setWeekFilter(c.key); setOpenPicker(null); setPublishResult(null); }}
-                            onKeyDown={e => e.key === 'Enter' && (() => { setWeekFilter(c.key); setOpenPicker(null); setPublishResult(null); })()}
+                            onClick={() => { setWeekFilter(c.key); setOpenPicker(null); setBanner(null); }}
+                            onKeyDown={e => e.key === 'Enter' && (() => { setWeekFilter(c.key); setOpenPicker(null); setBanner(null); })()}
                         >
                             {c.label}
                             <span className="cc-week-chip-range">{c.range}</span>
@@ -384,13 +556,14 @@ function CoordinatorBoard({ role }) {
                 ))}
             </div>
 
-            {/* Publish result */}
-            {publishResult && (
-                <div className={`cc-publish-result ${publishResult.unconfirmedSlots?.length ? 'has-warnings' : 'is-ok'}`}>
-                    <strong>Published {publishResult.publishedCount} confirmed assignment(s) for Week {publishResult.week}.</strong>
-                    {publishResult.unconfirmedSlots?.length > 0 && (
-                        <ul>{publishResult.unconfirmedSlots.map((s, i) => <li key={i}>{s}</li>)}</ul>
-                    )}
+            {/* Result banner. The goalie proposer bar renders its own, so this covers the other roles
+                (and goalie weeks where the bar is hidden) rather than letting the message vanish. */}
+            {banner && !showProposer && (
+                <div className="cc-publish-result is-ok">
+                    <strong>{banner}</strong>
+                    <button type="button" className="cc-banner-dismiss" onClick={() => setBanner(null)}>
+                        Dismiss
+                    </button>
                 </div>
             )}
 
@@ -444,7 +617,7 @@ function CoordinatorBoard({ role }) {
                     onDismissBanner={() => setBanner(null)}
                     onGenerate={() => handleGenerate(parseInt(weekFilter))}
                     onSend={() => handleSendConfirmations(parseInt(weekFilter))}
-                    onPublish={() => handleProposerPublish(parseInt(weekFilter))}
+                    onPublish={() => openWeekPublish(parseInt(weekFilter), filteredGames.length)}
                     reasoning={proposerRun?.week === parseInt(weekFilter) ? proposerRun.reasoning : null}
                     sitting={proposerRun?.week === parseInt(weekFilter) ? proposerRun.sitting : null}
                 />
@@ -479,10 +652,15 @@ function CoordinatorBoard({ role }) {
                                                 </span>
                                                 <button
                                                     className="cc-publish-btn"
-                                                    onClick={() => handlePublish(wg.week)}
-                                                    disabled={publishing}
+                                                    onClick={() => openWeekPublish(wg.week, wg.games.length)}
+                                                    disabled={publishing || wg.toNotify === 0}
+                                                    title={wg.toNotify === 0
+                                                        ? 'Nothing new to publish — every confirmed slot in this week is already live.'
+                                                        : undefined}
                                                 >
-                                                    {publishing ? 'Publishing…' : `Publish Week ${wg.week}`}
+                                                    {wg.toNotify > 0
+                                                        ? `Publish Week ${wg.week} · ${wg.toNotify} to notify`
+                                                        : `Publish Week ${wg.week}`}
                                                 </button>
                                             </div>
                                         </div>
@@ -507,6 +685,7 @@ function CoordinatorBoard({ role }) {
                                                     onSendOne={handleSendOne}
                                                     onSimulate={handleSimulate}
                                                     onSwap={handleSwap}
+                                                    onPublishMatchup={openMatchupPublish}
                                                     slotsPerGame={slotsPerGame}
                                                 />
                                             ))}
@@ -519,10 +698,134 @@ function CoordinatorBoard({ role }) {
                 </div>
             )}
 
+            {publishScope && (
+                <PublishPreview
+                    scope={publishScope}
+                    plan={publishPlan}
+                    busy={publishing}
+                    error={publishError}
+                    onConfirm={confirmPublish}
+                    onCancel={closePublish}
+                />
+            )}
+
             <p className="cc-footer-note">
                 Confirmed assignments appear on the public schedule, live score entry, and game management pages.
             </p>
         </>
+    );
+}
+
+/**
+ * Shown before every publish, week or matchup. Answers the one question that made the week-wide
+ * button feel unsafe — "who exactly gets an email" — by naming them, and says plainly who will NOT
+ * be re-emailed. The plan comes from a server dry run, so it can't drift from what actually sends.
+ */
+function PublishPreview({ scope, plan, busy, error, onConfirm, onCancel }) {
+    const willEmail = plan?.willEmail || [];
+    const alreadyLive = plan?.alreadyLive || [];
+    const blocked = plan?.blocked || [];
+    const n = willEmail.length;
+
+    const headline = n === 0 ? 'Nobody gets an email'
+        : n === 1 ? '1 person will be emailed'
+            : `${n} people will be emailed`;
+
+    return (
+        <div className="cc-publish-preview" role="dialog" aria-modal="true" onClick={onCancel}>
+            <div className={`cc-pp-panel${error ? ' has-error' : ''}`} onClick={e => e.stopPropagation()}>
+                <div className="cc-pp-hd">
+                    <div className="cc-pp-kicker">
+                        {scope.kind === 'matchup' ? 'Publish one matchup' : 'Publish week'}
+                    </div>
+                    <div className="cc-pp-title">{scope.title}</div>
+                    <div className="cc-pp-sub">{scope.sub}</div>
+                </div>
+
+                {error && <div className="cc-pp-alert">{error}</div>}
+
+                {!plan && !error ? (
+                    <div className="cc-pp-body"><div className="cc-pp-loading">Working out what would be sent…</div></div>
+                ) : (
+                    <div className="cc-pp-body">
+                        <div className="cc-pp-headline">{headline}</div>
+                        {n > 0 && (
+                            <div className="cc-pp-headline-sub">
+                                Final assignment email — their shift is locked in, no action needed.
+                            </div>
+                        )}
+
+                        {n === 0 ? (
+                            <div className="cc-pp-empty">
+                                {alreadyLive.length > 0
+                                    ? 'Every confirmed assignment in this scope is already published. '
+                                      + 'Publishing again would send nothing — you can safely close this.'
+                                    : 'Nothing is confirmed here yet. Confirmed slots are the only ones that publish.'}
+                            </div>
+                        ) : (
+                            <div className="cc-pp-people">
+                                {willEmail.map(p => (
+                                    <div key={p.assignmentId} className="cc-pp-person">
+                                        <span className="cc-pp-avatar">{initials(p.userName)}</span>
+                                        <span>
+                                            <span className="cc-pp-name">{p.userName}</span>
+                                            <span className="cc-pp-detail">
+                                                {[p.slotLabel, p.matchup, p.dayDate, p.time].filter(Boolean).join(' · ')}
+                                            </span>
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {alreadyLive.length > 0 && (
+                            <div className="cc-pp-note is-ok">
+                                <span className="cc-pp-note-mark">&#10003;</span>
+                                <span>
+                                    <span className="cc-pp-note-line">
+                                        {plural(alreadyLive.length, 'assignment')}
+                                        {alreadyLive.length === 1 ? ' is' : ' are'} already published and will not be re-sent.
+                                    </span>
+                                    <span className="cc-pp-note-names">
+                                        {alreadyLive.map(p => `${p.userName} (${p.slotLabel})`).join(', ')}
+                                    </span>
+                                </span>
+                            </div>
+                        )}
+
+                        {blocked.length > 0 && (
+                            <div className="cc-pp-note">
+                                <span className="cc-pp-note-mark">&#8213;</span>
+                                <span>
+                                    <span className="cc-pp-note-line">
+                                        {plural(blocked.length, 'slot')} won&apos;t publish yet:
+                                    </span>
+                                    {blocked.map(p => (
+                                        <span key={p.assignmentId} className="cc-pp-note-names">
+                                            {p.userName} · {p.slotLabel}, {p.matchup} · {p.reason}
+                                        </span>
+                                    ))}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                <div className="cc-pp-ft">
+                    <button type="button" className="cc-pp-cancel" disabled={busy} onClick={onCancel}>
+                        {n === 0 && plan ? 'Close' : 'Cancel'}
+                    </button>
+                    <button
+                        type="button"
+                        className="cc-pp-go"
+                        disabled={busy || !plan || n === 0}
+                        onClick={onConfirm}
+                    >
+                        {busy ? 'Sending…' : n === 0 ? 'Nothing to send' : `Send ${plural(n, 'Email')}`}
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 }
 
@@ -534,7 +837,7 @@ function pickPillStyle(isPick, teamColor) {
     return { border: `1px solid ${c}`, background: `color-mix(in srgb, ${c} 14%, transparent)` };
 }
 
-function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goaliePool, seasonRoster, weekFilter, openPicker, setOpenPicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, onSwap, slotsPerGame }) {
+function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goaliePool, seasonRoster, weekFilter, openPicker, setOpenPicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, onSwap, onPublishMatchup, slotsPerGame }) {
     const homeTeam = teamById(game.homeTeamId);
     const awayTeam = teamById(game.awayTeamId);
     const d = toChicago(game.gameDate);
@@ -553,6 +856,9 @@ function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goal
     const confirmedCount = gameAssignments.filter(a => a.status === 'CONFIRMED').length;
     const openCount = totalSlots - gameAssignments.length;
     const allSet = confirmedCount === totalSlots && openCount === 0;
+
+    const counts = publishCounts(gameAssignments, totalSlots);
+    const note = publishNote(counts);
 
     const fillLabel = allSet ? 'All Set' : openCount > 0 ? `${openCount} Open` : `${confirmedCount} / ${totalSlots} Set`;
     const fillColor = allSet ? 'var(--obi-success)' : openCount > 0 ? 'var(--obi-icy)' : 'var(--obi-accent)';
@@ -579,16 +885,6 @@ function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goal
                             <span className="cc-team-name">{awayTeam?.name || `Team ${game.awayTeamId}`}</span>
                             <span className="cc-team-dot" style={{ background: resolveTeamColor(awayTeam?.teamColor) }} />
                         </span>
-                        {canSwapGoalies && (
-                            <button
-                                type="button"
-                                className="cc-swap-btn"
-                                title="Swap the two teams' goalies — keeps each goalie's confirmation, no new email sent"
-                                onClick={() => onSwap(game.id)}
-                            >
-                                ⇄ Swap Goalies
-                            </button>
-                        )}
                     </div>
                     <div className="cc-game-meta">{formatTime(d)} · {game.rink || 'TBD'}</div>
                 </div>
@@ -623,6 +919,31 @@ function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goal
                     />
                 );
             })}
+
+            {/* Card-level actions live below the slots, not in the header: the header answers "which
+                game is this", and an action belongs after you've read the slots it acts on. */}
+            <div className="cc-card-actions">
+                {canSwapGoalies && (
+                    <button
+                        type="button"
+                        className="cc-swap-btn"
+                        title="Swap the two teams' goalies — keeps each goalie's confirmation, no new email sent"
+                        onClick={() => onSwap(game.id)}
+                    >
+                        &#8646; Swap Goalies
+                    </button>
+                )}
+                <span className={`cc-card-note${counts.toNotify > 0 ? '' : ' is-dim'}`}>{note}</span>
+                <button
+                    type="button"
+                    className="cc-card-publish"
+                    disabled={counts.toNotify === 0}
+                    title={counts.toNotify === 0 ? note : undefined}
+                    onClick={() => onPublishMatchup(game)}
+                >
+                    {counts.toNotify > 0 ? `Publish Matchup · ${counts.toNotify} to notify` : 'Publish Matchup'}
+                </button>
+            </div>
         </div>
     );
 }
@@ -639,12 +960,32 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
 
     const reassignAction = { label: 'Reassign', color: '#C8D0D8', bg: 'rgba(255,255,255,0.05)', border: 'rgba(157,185,205,0.25)', onClick: onOpenPicker };
 
+    // Taking someone off a slot they committed to is destructive and emails them, so it expands an
+    // inline confirm rather than firing — unlike "Clear" on an unanswered proposal, which is harmless.
+    const [confirmingRemove, setConfirmingRemove] = useState(false);
+    const [removing, setRemoving] = useState(false);
+    const [removeError, setRemoveError] = useState('');
+    // True once the row is gone but the email failed: the removal must not be retried (there is no
+    // row left to remove), so the panel drops to an acknowledgement rather than offering a dead action.
+    const [unnotified, setUnnotified] = useState(false);
+    // Held separately because a successful removal empties the row: by the time the half-state
+    // message renders, the slot's own name is already gone.
+    const [removeName, setRemoveName] = useState('');
+    const removeAction = {
+        label: 'Remove',
+        color: 'var(--obi-error)',
+        bg: 'rgba(224,138,138,0.08)',
+        border: 'rgba(224,138,138,0.32)',
+        onClick: () => { setRemoveError(''); setRemoveName(playerName || ''); setConfirmingRemove(true); },
+    };
+
     const actions = [];
     if (status === 'OPEN') {
         actions.push({ label: 'Assign', color: '#0b0c0f', bg: 'var(--obi-accent)', border: 'var(--obi-accent)', onClick: onOpenPicker });
     } else if (status === 'SIGNED_UP') {
         actions.push({ label: 'Confirm', color: '#0b0c0f', bg: 'var(--obi-accent)', border: 'var(--obi-accent)', onClick: onConfirm });
         actions.push(reassignAction);
+        actions.push(removeAction);
     } else if (status === 'AUTO_PROPOSED') {
         // Auto-proposed, email not yet sent: email this one now, or swap the pick first.
         actions.push({ label: 'Send Confirmation', color: '#fff', bg: '#2C8C94', border: '#2C8C94', onClick: onSendOne });
@@ -656,7 +997,46 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
         actions.push(reassignAction);
     } else if (status === 'CONFIRMED') {
         actions.push(reassignAction);
+        actions.push(removeAction);
     }
+
+    const meta = slotMeta(assignment);
+    const isPublished = assignment?.published === true;
+
+    const removeBody = (() => {
+        const who = removeName || playerName || 'This person';
+        if (isPublished) {
+            return `${who} is published, so they come off the public schedule, game preview and score `
+                + 'entry immediately. They get a cancellation email, and the slot goes back to Open.';
+        }
+        if (status === 'SIGNED_UP') {
+            return `${who} signed up but hasn't been confirmed or published, so nothing public changes. `
+                + 'They get a cancellation email, and the slot goes back to Open.';
+        }
+        return `${who} has confirmed but was never published, so nothing public changes. `
+            + 'They get a cancellation email, and the slot goes back to Open.';
+    })();
+
+    const handleRemove = async () => {
+        setRemoving(true);
+        setRemoveError('');
+        const result = await onClear();
+        setRemoving(false);
+        if (!result?.removed) {
+            setRemoveError('Nothing changed — the removal itself failed. Try again.');
+            return;
+        }
+        if (result.notifyAttempted && !result.notifySent) {
+            // The dangerous half-state: off the game, but they don't know it yet.
+            setUnnotified(true);
+            setRemoveError(`${removeName || 'They'} was removed from the game, but the cancellation `
+                + 'email didn\'t send. They do not know yet — contact them directly.');
+            return;
+        }
+        setConfirmingRemove(false);
+    };
+
+    const closeRemove = () => { setConfirmingRemove(false); setRemoveError(''); setUnnotified(false); };
 
     // Dev-only: stand in for the goalie's real email confirm/decline while testing the flow.
     const showSimulate = import.meta.env.DEV && status === 'PROPOSED' && role === 'GOALIE';
@@ -727,11 +1107,14 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
                     )}
                 </div>
 
+                {/* An expired confirm link needs an action, not a warning, so the chip itself changes. */}
                 <span
                     className="cc-status-chip"
-                    style={{ color: style.color, background: style.bg, border: `1px solid ${style.border}` }}
+                    style={meta?.expired
+                        ? { color: 'var(--obi-error)', background: 'rgba(224,138,138,0.12)', border: '1px solid rgba(224,138,138,0.4)' }
+                        : { color: style.color, background: style.bg, border: `1px solid ${style.border}` }}
                 >
-                    {statusLabel}
+                    {meta?.expired ? 'Link Expired' : statusLabel}
                 </span>
 
                 <div className="cc-slot-actions">
@@ -747,6 +1130,76 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
                     ))}
                 </div>
             </div>
+
+            {meta && (
+                <div className="cc-slot-meta">
+                    <span className={`cc-slot-meta-line is-${meta.tone}`}>{meta.line}</span>
+                    {meta.reason !== null && (
+                        <span className="cc-slot-meta-reason">&ldquo;{meta.reason}&rdquo;</span>
+                    )}
+                    {meta.tone === 'bad' && !meta.expired && meta.reason === null && (
+                        <span className="cc-slot-meta-reason is-empty">No reason given.</span>
+                    )}
+                </div>
+            )}
+
+            {confirmingRemove && (
+                <div className="cc-remove-confirm">
+                    <div className="cc-remove-title">
+                        {unnotified
+                            ? `${removeName || 'They'} could not be notified`
+                            : `Remove ${removeName} from ${slotDef.label}${role === 'GOALIE' ? ' net' : ''}?`}
+                    </div>
+                    {removeError
+                        ? <div className="cc-remove-error">{removeError}</div>
+                        : <div className="cc-remove-body">{removing
+                            ? 'Pulling them off the game and sending the cancellation…'
+                            : removeBody}</div>}
+                    <div className="cc-remove-actions">
+                        {unnotified ? (
+                            <>
+                                <button type="button" className="cc-remove-go" onClick={closeRemove}>
+                                    Got It
+                                </button>
+                                <button
+                                    type="button"
+                                    className="cc-remove-alt"
+                                    onClick={() => { closeRemove(); onOpenPicker(); }}
+                                >
+                                    Fill This Slot
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <button
+                                    type="button"
+                                    className="cc-remove-go"
+                                    disabled={removing}
+                                    onClick={handleRemove}
+                                >
+                                    {removing ? 'Removing…' : removeError ? 'Try Again' : 'Remove & Send Cancellation'}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="cc-remove-alt"
+                                    disabled={removing}
+                                    onClick={() => { closeRemove(); onOpenPicker(); }}
+                                >
+                                    Reassign Instead
+                                </button>
+                                <button
+                                    type="button"
+                                    className="cc-remove-keep"
+                                    disabled={removing}
+                                    onClick={closeRemove}
+                                >
+                                    Keep Them
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {showSimulate && (
                 <div className="cc-slot-sim">

@@ -132,8 +132,7 @@ public class CoordinatorController {
         if (!canActOn(auth, r)) {
             return forbidden(r);
         }
-        coordinatorService.withdraw(id);
-        return ResponseEntity.ok().body(java.util.Map.of("message", "Assignment withdrawn"));
+        return ResponseEntity.ok(coordinatorService.withdraw(id, currentUserId(auth)));
     }
 
     @PostMapping("/assignments/{id}/confirm")
@@ -193,15 +192,23 @@ public class CoordinatorController {
         }
     }
 
+    /**
+     * Publish confirmed assignments. Scope narrows season → week → single game, so one late change
+     * can go out on its own. {@code dryRun=true} returns the same plan without writing or emailing,
+     * which is what the console's confirm panel shows before anything is sent.
+     */
     @PostMapping("/publish")
     public ResponseEntity<?> publish(@RequestParam Long seasonId, @RequestParam String role,
-            @RequestParam(required = false) Integer week, Authentication auth) {
+            @RequestParam(required = false) Integer week,
+            @RequestParam(required = false) Long gameId,
+            @RequestParam(required = false, defaultValue = "false") boolean dryRun,
+            Authentication auth) {
         String r = role.trim().toUpperCase();
         if (!canActOn(auth, r)) {
             return forbidden(r);
         }
         try {
-            return ResponseEntity.ok(coordinatorService.publishWeek(seasonId, r, week));
+            return ResponseEntity.ok(coordinatorService.publish(seasonId, r, week, gameId, dryRun));
         } catch (RuntimeException e) {
             return badRequest(e);
         }
