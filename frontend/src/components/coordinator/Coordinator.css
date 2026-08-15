@@ -1847,3 +1847,459 @@
     background: transparent;
     color: #9DB9CD;
 }
+
+/* ---- Notification settings ---- */
+
+/* Settings, not an inbox — so this never carries a count badge. */
+.cc-notify-open {
+    flex: none;
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--obi-text-secondary);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(157, 185, 205, 0.25);
+    padding: 10px 15px;
+    border-radius: 8px;
+    transition: color 0.12s, border-color 0.12s;
+}
+
+.cc-notify-open:hover {
+    color: #fff;
+    border-color: rgba(157, 185, 205, 0.45);
+}
+
+.cc-banner-inner--split {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.cc-banner-headings {
+    flex: 1;
+    min-width: 260px;
+}
+
+.cc-notify-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    background: rgba(4, 5, 7, 0.74);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 52px 18px;
+    overflow-y: auto;
+}
+
+.cc-notify-panel {
+    width: 100%;
+    max-width: 640px;
+    background: linear-gradient(180deg, #171c24, #10141a);
+    border: 1px solid rgba(246, 169, 28, 0.3);
+    border-radius: 16px;
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.65);
+}
+
+.cc-notify-panel.has-error {
+    border-color: rgba(224, 138, 138, 0.45);
+}
+
+/* An admin who holds no coordinator role is not setting anything, so the panel drops the gold. */
+.cc-notify-panel.is-plain {
+    border-color: rgba(157, 185, 205, 0.25);
+}
+
+.cc-notify-panel.is-plain .cc-notify-kicker {
+    color: var(--obi-icy);
+}
+
+.cc-notify-hd {
+    padding: 20px 24px 15px;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.14);
+}
+
+.cc-notify-kicker {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: var(--obi-accent);
+}
+
+.cc-notify-title {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 26px;
+    line-height: 1.06;
+    color: #fff;
+    margin-top: 4px;
+}
+
+.cc-notify-sub {
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    color: var(--obi-icy);
+    margin-top: 5px;
+}
+
+.cc-notify-alert {
+    padding: 11px 15px;
+    background: rgba(224, 138, 138, 0.1);
+    border-bottom: 1px solid rgba(224, 138, 138, 0.3);
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    color: #EAB3B3;
+}
+
+.cc-notify-body {
+    padding: 18px 24px 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* The whole card greys while loading: switches arriving a beat late invite a click on a value
+   that is about to change. */
+.cc-notify-skeleton {
+    height: 108px;
+    border-radius: 14px;
+    background: rgba(157, 185, 205, 0.1);
+}
+
+.cc-notify-role {
+    background: #13171d;
+    border: 1px solid rgba(157, 185, 205, 0.16);
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.cc-notify-role-hd {
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(157, 185, 205, 0.1);
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.cc-notify-role-name {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 17px;
+    text-transform: uppercase;
+    color: #fff;
+}
+
+/* Who else holds the role — without this the last-recipient warning below makes no sense. */
+.cc-notify-role-holders {
+    font-family: var(--obi-font-body);
+    font-size: 11.5px;
+    color: var(--obi-text-muted);
+}
+
+.cc-notify-rows {
+    padding: 0 16px;
+}
+
+.cc-notify-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 13px 0;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.08);
+}
+
+.cc-notify-row:last-child {
+    border-bottom: none;
+}
+
+.cc-notify-row-text {
+    flex: 1;
+}
+
+.cc-notify-row-title {
+    display: block;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 15px;
+    color: #fff;
+}
+
+.cc-notify-row-sub {
+    display: block;
+    font-family: var(--obi-font-body);
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--obi-icy);
+    margin-top: 2px;
+}
+
+/* An off row dims before you reach its switch, so the defaults read as an opinion, not a form. */
+.cc-notify-row.is-off .cc-notify-row-title {
+    color: var(--obi-icy);
+}
+
+.cc-notify-row.is-off .cc-notify-row-sub {
+    color: var(--obi-text-muted);
+}
+
+.cc-notify-always {
+    flex: none;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 10.5px;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+    color: var(--obi-accent);
+    background: rgba(246, 169, 28, 0.12);
+    border: 1px solid rgba(246, 169, 28, 0.4);
+    padding: 5px 10px;
+    border-radius: 6px;
+    white-space: nowrap;
+}
+
+.cc-notify-switch {
+    flex: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    background: none;
+    border: none;
+    padding: 0;
+}
+
+.cc-notify-switch-label {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--obi-text-dim);
+}
+
+.cc-notify-switch-label.is-on {
+    color: var(--obi-accent);
+}
+
+.cc-notify-track {
+    width: 34px;
+    height: 18px;
+    border-radius: 9px;
+    padding: 2px;
+    display: flex;
+    justify-content: flex-start;
+    background: rgba(157, 185, 205, 0.28);
+    transition: background 0.12s;
+}
+
+.cc-notify-track.is-on {
+    justify-content: flex-end;
+    background: var(--obi-accent);
+}
+
+.cc-notify-knob {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--obi-text-secondary);
+}
+
+.cc-notify-track.is-on .cc-notify-knob {
+    background: #0b0c0f;
+}
+
+/* Gold, not red: turning your own notices off is a consequence, not an error. */
+.cc-notify-note {
+    display: flex;
+    gap: 9px;
+    align-items: flex-start;
+    background: rgba(246, 169, 28, 0.07);
+    border: 1px solid rgba(246, 169, 28, 0.28);
+    border-radius: 9px;
+    padding: 10px 12px;
+    margin-bottom: 13px;
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--obi-text-secondary);
+}
+
+.cc-notify-note-mark {
+    flex: none;
+    color: var(--obi-accent);
+}
+
+.cc-notify-email {
+    padding: 13px 16px 15px;
+    background: rgba(157, 185, 205, 0.04);
+    border-top: 1px solid rgba(157, 185, 205, 0.1);
+}
+
+.cc-notify-email-label {
+    display: block;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    margin-bottom: 7px;
+}
+
+.cc-notify-email-input {
+    width: 100%;
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-text);
+    background: #0e1116;
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    border-radius: 8px;
+    padding: 10px 12px;
+}
+
+/* Italic placeholder, never a greyed-out address — that is indistinguishable from a saved value. */
+.cc-notify-email-input::placeholder {
+    font-style: italic;
+    color: var(--obi-text-dim);
+}
+
+.cc-notify-email-input.has-error {
+    border-color: rgba(224, 138, 138, 0.55);
+}
+
+.cc-notify-email-note {
+    display: block;
+    font-family: var(--obi-font-body);
+    font-size: 11.5px;
+    color: var(--obi-text-muted);
+    margin-top: 7px;
+}
+
+.cc-notify-email-note.is-bad {
+    color: #EAB3B3;
+}
+
+.cc-notify-email-fallback {
+    color: var(--obi-text-secondary);
+}
+
+.cc-notify-admin {
+    background: rgba(127, 181, 154, 0.07);
+    border: 1px solid rgba(127, 181, 154, 0.24);
+    border-radius: 11px;
+    padding: 13px 15px;
+}
+
+.cc-notify-admin.is-warn {
+    background: rgba(246, 169, 28, 0.07);
+    border-color: rgba(246, 169, 28, 0.28);
+}
+
+.cc-notify-admin-title {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 15px;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.cc-notify-admin-sub {
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--obi-text-secondary);
+}
+
+.cc-notify-ft {
+    padding: 18px 24px 20px;
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.cc-notify-status {
+    flex: 1;
+    min-width: 120px;
+    font-family: var(--obi-font-body);
+    font-size: 12px;
+}
+
+.cc-notify-status.is-quiet {
+    color: var(--obi-text-dim);
+}
+
+.cc-notify-status.is-dirty {
+    color: var(--obi-accent);
+}
+
+.cc-notify-status.is-saved {
+    color: var(--obi-success);
+}
+
+.cc-notify-ft button {
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    border-radius: 8px;
+    transition: transform 0.1s;
+}
+
+.cc-notify-ft button:hover:not(:disabled) {
+    transform: translateY(-1px);
+}
+
+.cc-notify-cancel {
+    color: var(--obi-icy);
+    background: transparent;
+    border: 1px solid rgba(157, 185, 205, 0.25);
+    padding: 10px 18px;
+}
+
+.cc-notify-save {
+    color: #0b0c0f;
+    background: var(--obi-success);
+    border: none;
+    padding: 11px 20px;
+}
+
+.cc-notify-save.is-retry {
+    background: var(--obi-accent);
+}
+
+.cc-notify-save:disabled {
+    cursor: default;
+    color: var(--obi-text-dim);
+    background: rgba(157, 185, 205, 0.1);
+}
+
+@media (max-width: 900px) {
+    .cc-notify-role-hd {
+        flex-direction: column;
+        gap: 3px;
+    }
+}
+
+@media (max-width: 540px) {
+    .cc-notify-hd,
+    .cc-notify-body,
+    .cc-notify-ft {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+}

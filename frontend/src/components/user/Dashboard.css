@@ -139,3 +139,180 @@
 .dash-deeplink:hover { background: rgba(255, 255, 255, 0.07); }
 .dash-deeplink span:first-child { font-family: var(--obi-font-display); font-weight: 800; font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: #fff; }
 .dash-deeplink-more { font-family: var(--obi-font-display); font-weight: 700; font-size: 12px; letter-spacing: 0.5px; color: var(--obi-accent); }
+
+/* ---- Dropping a confirmed shift ---- */
+
+.dash-drop-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 13px;
+}
+
+/* Secondary and right-aligned, never full width: a confirmed card's job is to reassure, and the
+   escape hatch should not outweigh it. Turns red only on hover, when intent is already clear. */
+.dash-drop-btn {
+    flex: none;
+    margin-left: auto;
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.9px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    padding: 9px 14px;
+    border-radius: 9px;
+    transition: color 0.12s, border-color 0.12s;
+}
+
+.dash-drop-btn:hover {
+    color: var(--obi-error);
+    border-color: rgba(224, 138, 138, 0.45);
+}
+
+/* Expands inside the card rather than opening a modal — one destructive control on screen at a
+   time, and nothing to dismiss before getting back to the schedule. */
+.dash-drop-confirm {
+    margin-top: 13px;
+    background: rgba(224, 138, 138, 0.07);
+    border: 1px solid rgba(224, 138, 138, 0.3);
+    border-radius: 10px;
+    padding: 13px 14px 14px;
+}
+
+.dash-drop-title {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 16px;
+    color: #fff;
+}
+
+.dash-drop-body {
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--obi-text-secondary);
+    margin-top: 5px;
+    text-wrap: pretty;
+}
+
+.dash-drop-actions {
+    display: flex;
+    gap: 9px;
+    flex-wrap: wrap;
+    margin-top: 13px;
+}
+
+/* Lighter than the console's Remove on purpose: a member acting on their own commitment, not a
+   coordinator acting on someone else's. */
+.dash-drop-go {
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12.5px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #EAB3B3;
+    background: rgba(224, 138, 138, 0.16);
+    border: 1px solid rgba(224, 138, 138, 0.45);
+    padding: 10px 16px;
+    border-radius: 9px;
+    transition: color 0.12s, background 0.12s;
+}
+
+.dash-drop-go:hover:not(:disabled) {
+    color: #fff;
+    background: rgba(224, 138, 138, 0.24);
+}
+
+.dash-drop-go:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+.dash-drop-keep {
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
+    background: transparent;
+    border: none;
+    padding: 10px 6px;
+}
+
+.dash-drop-retry {
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12.5px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #0b0c0f;
+    background: var(--obi-accent);
+    border: none;
+    padding: 10px 16px;
+    border-radius: 9px;
+}
+
+/* The card stays after a drop. Vanishing on click reads as a bug and leaves them wondering
+   whether anyone was actually told. It is gone on the next load. */
+.dash-commit-card.is-dropped {
+    border: 1px dashed rgba(157, 185, 205, 0.28);
+    background: linear-gradient(160deg, #13171d, #0e1116);
+}
+
+.dash-commit-card.is-dropped .dash-commit-game {
+    color: var(--obi-icy);
+    text-decoration: line-through;
+}
+
+.dash-commit-card.is-dropped .dash-commit-meta {
+    color: var(--obi-text-muted);
+}
+
+.dash-commit-card.has-error {
+    border-color: rgba(224, 138, 138, 0.45);
+}
+
+.dash-commit-status--dropped {
+    color: var(--obi-icy);
+    background: rgba(157, 185, 205, 0.12);
+    border: 1px solid rgba(157, 185, 205, 0.32);
+}
+
+.dash-drop-done {
+    margin-top: 11px;
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--obi-success);
+}
+
+.dash-drop-error {
+    margin-top: 11px;
+    background: rgba(224, 138, 138, 0.12);
+    border: 1px solid rgba(224, 138, 138, 0.4);
+    border-radius: 9px;
+    padding: 11px 13px;
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: #EAB3B3;
+}
+
+/* A goalie is in one team's net, where a ref works the whole game — so their card names which. */
+.dash-commit-team {
+    display: inline-block;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    margin-right: 8px;
+    vertical-align: middle;
+    box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.4);
+}

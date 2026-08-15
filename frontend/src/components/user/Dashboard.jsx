@@ -40,6 +40,9 @@ function Dashboard() {
     const [dash, setDash] = useState(null);
     const [teams, setTeams] = useState([]);
     const [pending, setPending] = useState([]);
+    const [myShifts, setMyShifts] = useState([]);
+    // commitmentId -> idle | confirm | dropping | dropped | error-email | error-none
+    const [dropStates, setDropStates] = useState({});
     const [loading, setLoading] = useState(true);
 
     // Officiating
@@ -77,6 +80,10 @@ function Dashboard() {
             setLoading(false);
         }
         api.getPendingShifts().then(setPending).catch(() => setPending([]));
+        // Every role's own shifts at any stage, from the assignments themselves. Goalies never
+        // self-sign, so before this they had no open-slot rows and their confirmed work vanished
+        // from this page the moment they accepted it.
+        api.getMyAssignments().then(setMyShifts).catch(() => setMyShifts([]));
     }, []);
 
     useEffect(() => { load(); }, [load]);
@@ -126,12 +133,9 @@ function Dashboard() {
     // so the preview should start at the current week rather than week 1.
     const isUpcoming = (s) => { const d = toDate(s.gameDate); return !d || d >= now; };
     const activeSlots = openSlotsByRole[activeRole] || [];
-    const myCommitments = activeRole === 'GOALIE'
-        ? pending.filter(p => p.role === 'GOALIE')
-        : [
-            ...pending.filter(p => p.role === activeRole),
-            ...activeSlots.filter(s => s.state === 'MINE'),
-        ];
+    // One source for every role. Previously goalies got pending proposals only and everyone else got
+    // pending plus their open-slot rows, so a confirmed goalie shift appeared nowhere at all.
+    const myCommitments = myShifts.filter(s => s.role === activeRole);
     const availableOpen = activeSlots.filter(s => s.state === 'OPEN' && isUpcoming(s)).slice(0, 3);
     const openCount = (r) => (openSlotsByRole[r] || []).filter(s => s.state === 'OPEN' && isUpcoming(s)).length;
     // A goalie week is still relevant until its last game has passed.
@@ -152,6 +156,36 @@ function Dashboard() {
         setBusy(week);
         try { const updated = await api.setGoalieAvailability(selectedSeasonId, week, status); setGoalieWeeks(updated); }
         catch { /* ignore */ } finally { setBusy(null); }
+    };
+
+    /** What slot this is, in the words the person would use: "Ref 1", "In net for Red". */
+    const slotLabel = (a) => {
+        if (a.role === 'GOALIE') {
+            const teamId = a.slot === 2 ? a.awayTeamId : a.homeTeamId;
+            return `In net for ${teamName(teamId)}`;
+        }
+        return a.role === 'SCOREKEEPER' ? 'Scorekeeper' : `Ref ${a.slot}`;
+    };
+
+    const setDrop = (id, s) => setDropStates(prev => ({ ...prev, [id]: s }));
+
+    const dropShift = async (a) => {
+        setDrop(a.id, 'dropping');
+        try {
+            const res = await api.dropMyShift(a.id);
+            if (!res?.removed) {
+                setDrop(a.id, 'error-none');
+                return;
+            }
+            // The unpublish is real either way; only the coordinator's notice is in doubt, and
+            // "you're off the game but nobody was told" is the state they have to act on.
+            setDrop(a.id, res.notifyAttempted && !res.notifySent ? 'error-email' : 'dropped');
+            // Deliberately no refetch: the row is gone server-side, so reloading here would delete
+            // the card mid-interaction. A shift vanishing on click reads as a bug and leaves them
+            // wondering whether anyone was actually told. It clears on the next page load.
+        } catch {
+            setDrop(a.id, 'error-none');
+        }
     };
 
     const commitmentStatus = (item) => {
@@ -323,22 +357,114 @@ function Dashboard() {
                                         {myCommitments.map((a, i) => {
                                             const s = commitmentStatus(a);
                                             const isPending = s.cls === 'pending';
+                                            const drop = dropStates[a.id] || 'idle';
+                                            const gone = drop === 'dropped' || drop === 'error-email';
+                                            const isGoalie = a.role === 'GOALIE';
+                                            const netTeamId = a.slot === 2 ? a.awayTeamId : a.homeTeamId;
                                             return (
-                                                <div key={a.id || a.slotId || i} className="dash-commit-card">
+                                                <div
+                                                    key={a.id || a.slotId || i}
+                                                    className={`dash-commit-card${gone ? ' is-dropped' : ''}${drop === 'error-none' ? ' has-error' : ''}`}
+                                                >
                                                     <div className="dash-commit-top">
-                                                        <span className="dash-commit-game">{(a.homeTeam || teamName(a.homeTeamId))} vs {(a.awayTeam || teamName(a.awayTeamId))}</span>
-                                                        <span className={`dash-commit-status dash-commit-status--${s.cls}`}>{s.label}</span>
+                                                        <span className="dash-commit-game">
+                                                            {isGoalie && (
+                                                                <span
+                                                                    className="dash-commit-team"
+                                                                    style={{ background: resolveTeamColor(teamById(netTeamId)?.teamColor) }}
+                                                                />
+                                                            )}
+                                                            {(a.homeTeam || teamName(a.homeTeamId))} vs {(a.awayTeam || teamName(a.awayTeamId))}
+                                                        </span>
+                                                        <span className={`dash-commit-status dash-commit-status--${gone ? 'dropped' : s.cls}`}>
+                                                            {gone ? 'Dropped' : s.label}
+                                                        </span>
                                                     </div>
-                                                    <div className="dash-commit-meta">{fmtWhen(a.gameDate)}{a.rink ? ` · ${a.rink}` : ''}</div>
+                                                    <div className="dash-commit-meta">
+                                                        {fmtWhen(a.gameDate)}{a.rink ? ` · ${a.rink}` : ''}
+                                                        {s.cls === 'confirmed' && !gone && (
+                                                            <> · {slotLabel(a)} · {a.published ? 'on the public schedule' : 'not published yet'}</>
+                                                        )}
+                                                    </div>
+
                                                     {isPending && a.id && (
                                                         <div className="dash-action-btns" style={{ marginTop: 12 }}>
                                                             <button className="dash-btn dash-btn--gold" disabled={busy === a.id} onClick={() => respondPending(a.id, 'confirm')}>Confirm</button>
                                                             <button className="dash-btn dash-btn--ghost" disabled={busy === a.id} onClick={() => respondPending(a.id, 'decline')}>Decline</button>
                                                         </div>
                                                     )}
-                                                    {activeRole === 'SCOREKEEPER' && s.cls === 'confirmed' && a.gameId && (
-                                                        <div className="dash-action-btns" style={{ marginTop: 12 }}>
-                                                            <button className="dash-btn dash-btn--gold" onClick={() => navigate(`/scorekeeper/game/${a.gameId}`)}>Score Game →</button>
+
+                                                    {/* Confirmed and not yet acted on: score-game (scorekeepers) sits
+                                                        first, destructive always last. */}
+                                                    {s.cls === 'confirmed' && drop === 'idle' && (
+                                                        <div className="dash-drop-row">
+                                                            {activeRole === 'SCOREKEEPER' && a.gameId && (
+                                                                <button className="dash-btn dash-btn--gold" onClick={() => navigate(`/scorekeeper/game/${a.gameId}`)}>Score Game →</button>
+                                                            )}
+                                                            <button className="dash-drop-btn" onClick={() => setDrop(a.id, 'confirm')}>
+                                                                {activeRole === 'SCOREKEEPER' ? 'Drop' : 'Drop Shift'}
+                                                            </button>
+                                                        </div>
+                                                    )}
+
+                                                    {(drop === 'confirm' || drop === 'dropping') && (
+                                                        <div className="dash-drop-confirm">
+                                                            <div className="dash-drop-title">Drop this shift?</div>
+                                                            <div className="dash-drop-body">
+                                                                {drop === 'dropping'
+                                                                    ? 'Taking you off the game and telling the coordinator…'
+                                                                    : a.published
+                                                                        ? `You're on the public schedule for this game, so you'll come off it and the `
+                                                                          + `${(ROLE_LABEL[a.role] || a.role).toLowerCase()} coordinator will need `
+                                                                          + `${isGoalie ? `another goalie for the ${teamName(netTeamId)} net` : 'a replacement'}. `
+                                                                          + `They're emailed straight away.`
+                                                                        : `This game hasn't been published yet, so nothing public changes. The `
+                                                                          + `${(ROLE_LABEL[a.role] || a.role).toLowerCase()} coordinator is emailed and the slot goes back to open.`}
+                                                            </div>
+                                                            <div className="dash-drop-actions">
+                                                                <button
+                                                                    className="dash-drop-go"
+                                                                    disabled={drop === 'dropping'}
+                                                                    onClick={() => dropShift(a)}
+                                                                >
+                                                                    {drop === 'dropping' ? 'Dropping…' : 'Yes, Drop It'}
+                                                                </button>
+                                                                {drop !== 'dropping' && (
+                                                                    <button className="dash-drop-keep" onClick={() => setDrop(a.id, 'idle')}>Keep It</button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {drop === 'dropped' && (
+                                                        <div className="dash-drop-done">
+                                                            ✓ The {(ROLE_LABEL[a.role] || a.role).toLowerCase()} coordinator has been emailed
+                                                            {a.published
+                                                                ? " and you're off the public schedule."
+                                                                : ' and the slot is open again.'} Nothing else to do.
+                                                        </div>
+                                                    )}
+
+                                                    {drop === 'error-email' && (
+                                                        <div className="dash-drop-error">
+                                                            You&apos;re off the game, but the email to the coordinator didn&apos;t
+                                                            send. <strong>They don&apos;t know yet — please tell them directly.</strong>
+                                                            {/* No retry: the shift row is already gone, so re-sending would
+                                                                fail and then claim nothing happened — worse than saying
+                                                                plainly that the message is outstanding. */}
+                                                            <div className="dash-drop-actions">
+                                                                <button className="dash-drop-keep" onClick={() => setDrop(a.id, 'dropped')}>Got It</button>
+                                                            </div>
+                                                        </div>
+                                                    )}
+
+                                                    {drop === 'error-none' && (
+                                                        <div className="dash-drop-error">
+                                                            That didn&apos;t go through — you&apos;re still on this game and nobody has been told.
+                                                            <div className="dash-drop-actions">
+                                                                <button className="dash-drop-retry" onClick={() => dropShift(a)}>Try Again</button>
+                                                                <button className="dash-drop-keep" onClick={() => setDrop(a.id, 'idle')}>Dismiss</button>
+                                                            </div>
                                                         </div>
                                                     )}
                                                 </div>

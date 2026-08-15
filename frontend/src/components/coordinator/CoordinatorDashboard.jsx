@@ -6,6 +6,7 @@ import api from '../../services/api';
 import logo from '../../assets/images/buzzard-logo.png';
 import bannerBg from '../../assets/images/buzzard-banner.png';
 import CoordinatorBoard from './CoordinatorBoard';
+import CoordinatorNotifications from './CoordinatorNotifications';
 import GoalieStatsPanel from '../goalie/GoalieStatsPanel';
 import UserPill from '../common/UserPill';
 import './Coordinator.css';
@@ -27,6 +28,7 @@ function CoordinatorDashboard() {
     const [activeRole, setActiveRole] = useState(roleTabs[0]?.key || 'GOALIE');
     const [alertCounts, setAlertCounts] = useState({});
     const [activeSection, setActiveSection] = useState('scheduling');
+    const [notifyOpen, setNotifyOpen] = useState(false);
 
     useEffect(() => {
         const loadAlerts = async () => {
@@ -84,15 +86,21 @@ function CoordinatorDashboard() {
             <section className="cc-banner">
                 <img src={bannerBg} alt="" className="cc-banner-bg" />
                 <div className="cc-banner-overlay" />
-                <div className="cc-banner-inner">
-                    <div className="cc-banner-eyebrow">
-                        <span className="cc-banner-badge">Gated · Coordinator</span>
-                        <span className="cc-banner-label">Assignment Console</span>
+                <div className="cc-banner-inner cc-banner-inner--split">
+                    <div className="cc-banner-headings">
+                        <div className="cc-banner-eyebrow">
+                            <span className="cc-banner-badge">Gated · Coordinator</span>
+                            <span className="cc-banner-label">Assignment Console</span>
+                        </div>
+                        <h1 className="cc-banner-title">Coordinator Console</h1>
+                        <p className="cc-banner-sub">
+                            Schedule goalies, referees, and scorekeepers, and track goalie performance — all in one place.
+                        </p>
                     </div>
-                    <h1 className="cc-banner-title">Coordinator Console</h1>
-                    <p className="cc-banner-sub">
-                        Schedule goalies, referees, and scorekeepers, and track goalie performance — all in one place.
-                    </p>
+                    {/* Settings, not an inbox — so it never carries a count badge. */}
+                    <button type="button" className="cc-notify-open" onClick={() => setNotifyOpen(true)}>
+                        &#9993; Notifications
+                    </button>
                 </div>
             </section>
 
@@ -159,6 +167,8 @@ function CoordinatorDashboard() {
                     <GoalieStatsPanel seasonId={seasonId} canEdit={true} />
                 </div>
             )}
+
+            {notifyOpen && <CoordinatorNotifications onClose={() => setNotifyOpen(false)} />}
 
             {/* Footer */}
             <footer className="cc-footer">

@@ -529,6 +529,31 @@ const api = {
         return request(`/coordinator/availability?role=${role}`);
     },
 
+    // This coordinator's own notification settings: one card per role they hold, plus which roles
+    // nobody holds (an admin with no coordinator role gets an empty roles list, which is a real state).
+    async getNotificationSettings() {
+        return request('/coordinator/notification-settings');
+    },
+
+    // Saves one role at a time; returns the whole settings payload so the panel restates truth.
+    async saveNotificationSettings(prefs) {
+        return request('/coordinator/notification-settings', {
+            method: 'POST',
+            body: JSON.stringify(prefs),
+        });
+    },
+
+    // Every shift the current user holds, at any stage and for every role — including goalies, who
+    // have no open-slot rows and so were previously invisible to their own dashboard once confirmed.
+    async getMyAssignments() {
+        return request('/shifts/my-assignments');
+    },
+
+    // Give up a shift you confirmed. Unpublishes the slot and emails the coordinator, not you.
+    async dropMyShift(id) {
+        return request(`/shifts/${id}`, { method: 'DELETE' });
+    },
+
     // Which team each staff member plays for this season, for the playing-conflict flag. Every user
     // comes back, unresolved ones with resolved:false — absent and unresolved must stay distinct.
     async getStaffTeams(seasonId, role) {
