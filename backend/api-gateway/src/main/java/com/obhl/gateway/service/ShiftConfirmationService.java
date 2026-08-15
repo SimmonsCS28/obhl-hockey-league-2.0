@@ -166,10 +166,23 @@ public class ShiftConfirmationService {
                 return List.of(assigner);
             }
         }
-        // Both sources, because the deprecated single-role column is still populated and read.
+        List<User> holders = usersWithRole(coordRole);
+        if (!holders.isEmpty()) {
+            return holders;
+        }
+        // Nobody holds this coordinator role — which is the live state for goalies and scorekeepers,
+        // managed from the admin console instead. Without this the decline would be sent to nobody
+        // and vanish, which is the exact failure this notice exists to prevent. Admins are the
+        // last resort only: while a real coordinator exists they are left out of it, so holding
+        // ADMIN keeps granting access without signing you up for the mail.
+        return usersWithRole("ADMIN");
+    }
+
+    /** Holders of a role, reading both the roles table and the deprecated single-role column. */
+    private List<User> usersWithRole(String roleName) {
         Map<Long, User> byId = new LinkedHashMap<>();
-        userRepository.findByRoles_Name(coordRole).forEach(u -> byId.put(u.getId(), u));
-        userRepository.findByRole(coordRole).forEach(u -> byId.put(u.getId(), u));
+        userRepository.findByRoles_Name(roleName).forEach(u -> byId.put(u.getId(), u));
+        userRepository.findByRole(roleName).forEach(u -> byId.put(u.getId(), u));
         return new ArrayList<>(byId.values());
     }
 
