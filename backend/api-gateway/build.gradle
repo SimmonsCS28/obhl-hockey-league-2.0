@@ -11,6 +11,13 @@ java {
 	sourceCompatibility = '21'
 }
 
+// Source files are UTF-8; without this javac falls back to the platform default (CP1252 on
+// Windows), which silently mangles every non-ASCII literal — em dashes in emails and coordinator
+// copy were reaching users as "a€”".
+tasks.withType(JavaCompile).configureEach {
+	options.encoding = 'UTF-8'
+}
+
 configurations {
 	compileOnly {
 		extendsFrom annotationProcessor
