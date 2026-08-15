@@ -117,6 +117,27 @@ public class CoordinatorDto {
         private boolean dryRun;
     }
 
+    /**
+     * Which team a staff member plays for this season, so the console can flag assigning someone to
+     * a game their own team is in.
+     *
+     * <p>An entry is returned for <em>every</em> staff user, including those we can't resolve —
+     * {@code resolved=false} is a real answer and must not be confused with "no conflict". The link
+     * is {@code lower(users.email)} against {@code players.email} for the season, which currently
+     * misses well over half of referees, so the console renders three states and the unresolved one
+     * has to be distinguishable. Omitting these entries would silently collapse it to two.
+     */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class StaffTeamView {
+        private Long userId;
+        private boolean resolved;   // false = no players row matched this email for this season
+        private Long teamId;
+        private String teamName;
+        private String teamColor;
+    }
+
     /** A season roster goalie: full-time (auto-assigned) or substitute (ad hoc fill-in). */
     @Data
     @NoArgsConstructor

@@ -65,6 +65,26 @@ public class CoordinatorController {
         return ResponseEntity.ok(data);
     }
 
+    /**
+     * Which team each staff member plays for this season, so the console can flag assigning someone
+     * to a game their own team is in. Returns an entry for every user of the role — unresolved ones
+     * carry {@code resolved=false} rather than being omitted, which is what lets the console tell
+     * "we don't know" apart from "no conflict".
+     */
+    @GetMapping("/staff-teams")
+    public ResponseEntity<?> getStaffTeams(@RequestParam Long seasonId, @RequestParam String role,
+            Authentication auth) {
+        String r = role.trim().toUpperCase();
+        if (!canActOn(auth, r)) {
+            return forbidden(r);
+        }
+        try {
+            return ResponseEntity.ok(coordinatorService.getStaffTeams(seasonId, r));
+        } catch (RuntimeException e) {
+            return badRequest(e);
+        }
+    }
+
     /** Coordinator goalie pool: each goalie's positive availability for a given week (v3). */
     @GetMapping("/goalie-availability")
     public ResponseEntity<?> getGoalieAvailability(@RequestParam Long seasonId, @RequestParam Integer week,

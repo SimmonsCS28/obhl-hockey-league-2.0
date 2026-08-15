@@ -18,6 +18,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.obhl.gateway.dto.CoordinatorDto;
 import com.obhl.gateway.dto.GameResponseDTO;
+import com.obhl.gateway.dto.PlayerDto;
+import com.obhl.gateway.dto.TeamDto;
 import com.obhl.gateway.model.ShiftAssignment;
 import com.obhl.gateway.model.User;
 import com.obhl.gateway.repository.ShiftAssignmentRepository;
@@ -49,6 +51,9 @@ public class CoordinatorService {
 
     @Autowired
     private EmailService emailService;
+
+    @Autowired
+    private PlayerService playerService;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -204,6 +209,64 @@ public class CoordinatorService {
             // Cancellation email is best-effort; the unpublish already persisted.
             return false;
         }
+    }
+
+    /**
+     * Which team each staff member of {@code role} plays for this season, for the console's
+     * playing-conflict flag. Someone who plays in the league is never assigned to a game their own
+     * team is in — for goalies that holds regardless of which net.
+     *
+     * <p>Returns one row per user, resolved or not. The join is email-based (there is no
+     * {@code players.user_id}) and case-insensitive, because case-variant duplicate accounts have
+     * locked people out of this league before. Anyone who doesn't resolve comes back with
+     * {@code resolved=false} rather than being dropped, so the console can say "we don't know"
+     * instead of implying "no conflict".
+     */
+    public List<CoordinatorDto.StaffTeamView> getStaffTeams(Long seasonId, String role) {
+        String r = normalizeRole(role);
+        List<User> staff = userRepository.findAll().stream()
+                .filter(u -> hasRole(u, r))
+                .collect(Collectors.toList());
+
+        Map<String, PlayerDto> byEmail = new java.util.HashMap<>();
+        try {
+            List<PlayerDto> players = playerService.getAllPlayers();
+            if (players != null) {
+                for (PlayerDto p : players) {
+                    if (seasonId.equals(p.getSeasonId()) && p.getEmail() != null) {
+                        byEmail.put(p.getEmail().trim().toLowerCase(), p);
+                    }
+                }
+            }
+        } catch (RuntimeException e) {
+            // Stats-service unavailable: every user comes back unresolved, which the console shows
+            // as "unknown" rather than inventing a clear/conflict verdict from missing data.
+            byEmail.clear();
+        }
+
+        List<CoordinatorDto.StaffTeamView> out = new ArrayList<>();
+        for (User u : staff) {
+            PlayerDto p = u.getEmail() == null ? null : byEmail.get(u.getEmail().trim().toLowerCase());
+            // A players row with no team is still not a usable answer for this question — they are
+            // on no roster, so there is no team to conflict with.
+            if (p == null || p.getTeamId() == null) {
+                out.add(new CoordinatorDto.StaffTeamView(u.getId(), false, null, null, null));
+                continue;
+            }
+            TeamDto.Response team = teamService.getTeamById(p.getTeamId()).orElse(null);
+            out.add(new CoordinatorDto.StaffTeamView(u.getId(), true, p.getTeamId(),
+                    team != null ? team.getName() : ("Team " + p.getTeamId()),
+                    team != null ? team.getTeamColor() : null));
+        }
+        return out;
+    }
+
+    /** Role check that reads both the roles set and the deprecated single-role column. */
+    private boolean hasRole(User u, String role) {
+        if (u.getRoles() != null && u.getRoles().stream().anyMatch(x -> role.equals(x.getName()))) {
+            return true;
+        }
+        return role.equals(u.getRole());
     }
 
     /** Human label for a slot, matching the console's own wording. */

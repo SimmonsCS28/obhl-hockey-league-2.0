@@ -529,6 +529,12 @@ const api = {
         return request(`/coordinator/availability?role=${role}`);
     },
 
+    // Which team each staff member plays for this season, for the playing-conflict flag. Every user
+    // comes back, unresolved ones with resolved:false — absent and unresolved must stay distinct.
+    async getStaffTeams(seasonId, role) {
+        return request(`/coordinator/staff-teams?seasonId=${seasonId}&role=${role}`);
+    },
+
     // v3 goalie pool: each goalie's positive availability for a week
     async getCoordinatorGoalieAvailability(seasonId, week) {
         return request(`/coordinator/goalie-availability?seasonId=${seasonId}&week=${week}`);

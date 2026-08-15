@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Fragment } from 'react';
 import api from '../../services/api';
 import { useSeason } from '../../contexts/SeasonContext';
 import { resolveTeamColor } from '../../constants/teamColors';
@@ -61,6 +61,59 @@ function firstNameOf(name) {
 }
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+
+const RINK_TBD = 'Rink TBD';
+
+// League-local calendar day, for telling "later tonight" from "a different night".
+function chicagoDayKey(dateStr) {
+    return toChicago(dateStr).toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
+}
+
+function formatGap(ms) {
+    const mins = Math.round(ms / 60000);
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    if (h && m) return `${h}h ${m}m`;
+    if (h) return `${h}h`;
+    return `${m}m`;
+}
+
+/**
+ * What separates two consecutive games on the same sheet. Within a night that's the interval between
+ * puck drops — deliberately "later", not "turnaround", because game length isn't in the data, so we
+ * can't claim to know when the first game ends. Across nights an interval would be meaningless
+ * ("72h later"), so the divider names the new night instead.
+ */
+function sheetGap(prev, next) {
+    if (chicagoDayKey(prev.gameDate) !== chicagoDayKey(next.gameDate)) {
+        const d = toChicago(next.gameDate);
+        return { night: true, label: `${formatDay(d)} ${formatDateShort(d)} — next night on this sheet` };
+    }
+    const ms = toChicago(next.gameDate) - toChicago(prev.gameDate);
+    return { night: false, label: `${formatGap(ms)} later on the same sheet` };
+}
+
+/** A week's games split per sheet of ice, each sheet in start-time order. */
+function groupByRink(games) {
+    const map = new Map();
+    for (const g of games) {
+        const key = (g.rink && g.rink.trim()) ? g.rink.trim() : RINK_TBD;
+        if (!map.has(key)) map.set(key, []);
+        map.get(key).push(g);
+    }
+    const groups = [...map.entries()].map(([rink, gs]) => ({
+        rink,
+        games: [...gs].sort((a, b) => toChicago(a.gameDate) - toChicago(b.gameDate)),
+    }));
+    // Earliest puck drop leads. Anything with no rink trails, so a data gap is visible rather than
+    // silently mixed into a real sheet — and a misspelling makes its own group, which is fixable.
+    groups.sort((a, b) => {
+        if (a.rink === RINK_TBD) return 1;
+        if (b.rink === RINK_TBD) return -1;
+        return toChicago(a.games[0].gameDate) - toChicago(b.games[0].gameDate);
+    });
+    return groups;
+}
 
 /** How many slots a card would email, how many are already live, and how many are still waiting. */
 function publishCounts(assignments, slotTotal) {
@@ -214,6 +267,10 @@ function CoordinatorBoard({ role }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [publishing, setPublishing] = useState(false);
+    // Ordering preference, not week data: kept across week switches and simply ignored in All Weeks,
+    // so returning to a single week restores the view she left rather than silently resetting.
+    const [rinkView, setRinkView] = useState(false);
+    const [staffTeams, setStaffTeams] = useState(null); // null = still loading; [] = resolved, none
     const [publishScope, setPublishScope] = useState(null); // null = panel closed
     const [publishPlan, setPublishPlan] = useState(null);   // dry-run result backing the panel
     const [publishError, setPublishError] = useState('');
@@ -246,6 +303,16 @@ function CoordinatorBoard({ role }) {
     }, [seasonId, role]);
 
     useEffect(() => { load(); }, [load]);
+
+    // Team-per-staff-member is a separate fetch from the board's own data. Until it lands the
+    // picker shows a skeleton chip rather than "not on a roster" — claiming we know before the
+    // answer arrives is the same false confidence, just slower.
+    useEffect(() => {
+        setStaffTeams(null);
+        api.getStaffTeams(seasonId, role)
+            .then(data => setStaffTeams(data || []))
+            .catch(() => setStaffTeams([]));
+    }, [seasonId, role]);
 
     useEffect(() => {
         if (role !== 'GOALIE') { setSeasonRoster([]); return; }
@@ -504,6 +571,35 @@ function CoordinatorBoard({ role }) {
         return monthOrder.map(name => ({ name, weeks: byMonth[name] }));
     })();
 
+    const singleWeek = weekFilter !== 'all';
+
+    // Both orderings render the same card, so the prop list lives in one place.
+    const renderCard = (g) => (
+        <GameCard
+            key={g.id}
+            game={g}
+            role={role}
+            teamById={teamById}
+            rankByTeam={rankByTeam}
+            assignmentFor={assignmentFor}
+            staff={staff}
+            goaliePool={goaliePool}
+            seasonRoster={seasonRoster}
+            staffTeams={staffTeams}
+            weekFilter={weekFilter}
+            openPicker={openPicker}
+            setOpenPicker={setOpenPicker}
+            onAssign={handleAssign}
+            onConfirm={handleConfirm}
+            onClear={handleClear}
+            onSendOne={handleSendOne}
+            onSimulate={handleSimulate}
+            onSwap={handleSwap}
+            onPublishMatchup={openMatchupPublish}
+            slotsPerGame={slotsPerGame}
+        />
+    );
+
     const roleLabel = role === 'GOALIE' ? 'Goalie' : role === 'REF' ? 'Referee' : 'Scorekeeper';
     const scopeLabel = weekFilter === 'all' ? 'Full Season' : `Week ${weekFilter}`;
 
@@ -650,6 +746,26 @@ function CoordinatorBoard({ role }) {
                                                 <span className="cc-week-scope-note">
                                                     {wg.openCount > 0 ? `${wg.openCount} open` : 'All assigned'}
                                                 </span>
+                                                {/* Ordering only means something within one week, so in
+                                                    All Weeks the control is absent rather than disabled. */}
+                                                {singleWeek && (
+                                                    <div className="cc-view-toggle" role="group" aria-label="Game order">
+                                                        <button
+                                                            type="button"
+                                                            className={rinkView ? '' : 'is-active'}
+                                                            onClick={() => setRinkView(false)}
+                                                        >
+                                                            By Time
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            className={rinkView ? 'is-active' : ''}
+                                                            onClick={() => setRinkView(true)}
+                                                        >
+                                                            By Rink
+                                                        </button>
+                                                    </div>
+                                                )}
                                                 <button
                                                     className="cc-publish-btn"
                                                     onClick={() => openWeekPublish(wg.week, wg.games.length)}
@@ -664,32 +780,54 @@ function CoordinatorBoard({ role }) {
                                                 </button>
                                             </div>
                                         </div>
-                                        <div className="cc-games">
-                                            {wg.games.map(g => (
-                                                <GameCard
-                                                    key={g.id}
-                                                    game={g}
-                                                    role={role}
-                                                    teamById={teamById}
-                                                    rankByTeam={rankByTeam}
-                                                    assignmentFor={assignmentFor}
-                                                    staff={staff}
-                                                    goaliePool={goaliePool}
-                                                    seasonRoster={seasonRoster}
-                                                    weekFilter={weekFilter}
-                                                    openPicker={openPicker}
-                                                    setOpenPicker={setOpenPicker}
-                                                    onAssign={handleAssign}
-                                                    onConfirm={handleConfirm}
-                                                    onClear={handleClear}
-                                                    onSendOne={handleSendOne}
-                                                    onSimulate={handleSimulate}
-                                                    onSwap={handleSwap}
-                                                    onPublishMatchup={openMatchupPublish}
-                                                    slotsPerGame={slotsPerGame}
-                                                />
-                                            ))}
-                                        </div>
+                                        {singleWeek && rinkView ? (
+                                            <div className="cc-rink-groups">
+                                                {groupByRink(wg.games).map(grp => {
+                                                    // One game on a sheet has nothing to be adjacent
+                                                    // to, so the timeline would be pure ornament —
+                                                    // but the header still renders, so the week's
+                                                    // uneven shape stays honest.
+                                                    const hasRail = grp.games.length > 1;
+                                                    const grpOpen = grp.games.reduce((n, g) => {
+                                                        const filled = assignments.filter(a => a.gameId === g.id).length;
+                                                        return n + Math.max(0, slotsPerGame - filled);
+                                                    }, 0);
+                                                    return (
+                                                        <div key={grp.rink} className="cc-rink-group">
+                                                            <div className="cc-rink-hd">
+                                                                <span className="cc-rink-dot" />
+                                                                <span className="cc-rink-name">{grp.rink}</span>
+                                                                <span className="cc-rink-meta">
+                                                                    {plural(grp.games.length, 'game')} · {grpOpen} open
+                                                                </span>
+                                                            </div>
+                                                            <div className={`cc-rink-body${hasRail ? ' has-rail' : ''}`}>
+                                                                {grp.games.map((g, i) => {
+                                                                    const gap = i > 0 ? sheetGap(grp.games[i - 1], g) : null;
+                                                                    return (
+                                                                        <Fragment key={g.id}>
+                                                                            {gap && (
+                                                                                <div className={`cc-rink-gap${gap.night ? ' is-night' : ''}`}>
+                                                                                    {gap.label}
+                                                                                </div>
+                                                                            )}
+                                                                            <div className="cc-rink-item">
+                                                                                {hasRail && <span className="cc-rink-node" />}
+                                                                                {renderCard(g)}
+                                                                            </div>
+                                                                        </Fragment>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <div className="cc-games">
+                                                {wg.games.map(g => renderCard(g))}
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -837,7 +975,7 @@ function pickPillStyle(isPick, teamColor) {
     return { border: `1px solid ${c}`, background: `color-mix(in srgb, ${c} 14%, transparent)` };
 }
 
-function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goaliePool, seasonRoster, weekFilter, openPicker, setOpenPicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, onSwap, onPublishMatchup, slotsPerGame }) {
+function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goaliePool, seasonRoster, staffTeams, weekFilter, openPicker, setOpenPicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, onSwap, onPublishMatchup, slotsPerGame }) {
     const homeTeam = teamById(game.homeTeamId);
     const awayTeam = teamById(game.awayTeamId);
     const d = toChicago(game.gameDate);
@@ -912,6 +1050,8 @@ function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goal
                         isPickTeam={pickTeamId != null && pickTeamId === (s.slot === 1 ? game.homeTeamId : game.awayTeamId)}
                         pickTitle={pickTitle}
                         staff={staff}
+                        staffTeams={staffTeams}
+                        gameTeamIds={[game.homeTeamId, game.awayTeamId]}
                         role={role}
                         goaliePool={goaliePool}
                         seasonRoster={seasonRoster}
@@ -948,7 +1088,7 @@ function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goal
     );
 }
 
-function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, isPickTeam, pickTitle, staff, role, goaliePool, seasonRoster, weekFilter }) {
+function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, isPickTeam, pickTitle, staff, staffTeams, gameTeamIds, role, goaliePool, seasonRoster, weekFilter }) {
     const status = assignment?.status ?? 'OPEN';
     const style = STATUS_STYLE[status] ?? STATUS_STYLE.OPEN;
     const playerName = assignment?.userName ?? null;
@@ -1002,6 +1142,15 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
 
     const meta = slotMeta(assignment);
     const isPublished = assignment?.published === true;
+
+    // Only ever set when the person actually resolved to a roster — an unknown never produces a
+    // warning, which is what keeps "we don't know" from masquerading as "we checked".
+    const assignedConflict = (() => {
+        if (!assignment?.userId) return null;
+        const t = (staffTeams || []).find(x => x.userId === assignment.userId);
+        if (!t?.resolved) return null;
+        return gameTeamIds.some(id => id != null && id === t.teamId) ? t : null;
+    })();
 
     const removeBody = (() => {
         const who = removeName || playerName || 'This person';
@@ -1059,6 +1208,12 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
             : []
     );
 
+    // Roster state per candidate. Three outcomes, and the difference that matters is between
+    // "clear" and "unknown": a chip means we actually resolved them. Blank would read as clear and
+    // hand out false confidence exactly where the coordinator is relying on memory today.
+    const teamsLoading = staffTeams === null;
+    const teamByUser = new Map((staffTeams || []).map(t => [t.userId, t]));
+
     const candidates = staff.map(u => {
         const name = getName(u);
         const unavailable = role === 'GOALIE' && weekFilter !== 'all' && unavailableGoalieIds.has(u.id);
@@ -1069,8 +1224,26 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
         const subColor = role === 'GOALIE'
             ? (poolEntry?.status === 'AVAILABLE' ? 'var(--obi-success)' : 'var(--obi-text-muted)')
             : 'var(--obi-icy)';
-        return { id: u.id, name, unavailable, sub, subColor };
+
+        const t = teamByUser.get(u.id);
+        const resolved = !!t?.resolved;
+        const conflict = resolved && gameTeamIds.some(id => id != null && id === t.teamId);
+        return {
+            id: u.id, name, unavailable, sub, subColor,
+            resolved, conflict,
+            teamName: t?.teamName || null,
+            teamColor: t?.teamColor || null,
+        };
     });
+
+    /** The roster line under a candidate. Suppressed when they can't be picked anyway. */
+    const rosterLine = (c) => {
+        if (c.unavailable) return null;              // availability already decided it; don't stack
+        if (teamsLoading) return { skeleton: true };
+        if (c.conflict) return { text: 'Playing in this game', tone: 'conflict' };
+        if (c.resolved) return { text: 'Not playing in this game', tone: 'clear' };
+        return { text: 'Not on a roster this season', tone: 'unknown' };
+    };
 
     // Goalie picker splits the roster: full-timers listed directly, substitutes revealed by
     // "Add a Substitute" (ad hoc fill-ins, not part of the weekly auto-assignment).
@@ -1130,6 +1303,19 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
                     ))}
                 </div>
             </div>
+
+            {/* The picker closes, so a conflict on someone already assigned has to be visible on the
+                row itself. The dot carries the team's own colour rather than red — it names which
+                team at a glance, and the red is spent on the sentence. */}
+            {assignedConflict && (
+                <div className="cc-slot-conflict">
+                    <span
+                        className="cc-slot-conflict-dot"
+                        style={{ background: resolveTeamColor(assignedConflict.teamColor) }}
+                    />
+                    Playing in this game for {assignedConflict.teamName}
+                </div>
+            )}
 
             {meta && (
                 <div className="cc-slot-meta">
@@ -1218,34 +1404,12 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
                     <div className="cc-picker-title">{pickerTitle}</div>
                     <div className="cc-picker-candidates">
                         {primaryCandidates.map(c => (
-                            <button
-                                key={c.id}
-                                className="cc-candidate-btn"
-                                disabled={c.unavailable}
-                                onClick={() => !c.unavailable && onAssign(c.id)}
-                            >
-                                <span className="cc-candidate-avatar">{initials(c.name)}</span>
-                                <span>
-                                    <span className="cc-candidate-name">{c.name}</span>
-                                    <span className="cc-candidate-sub" style={{ color: c.subColor }}>{c.sub}</span>
-                                </span>
-                            </button>
+                            <CandidateButton key={c.id} c={c} line={rosterLine(c)} onAssign={onAssign} />
                         ))}
 
                         {/* Substitutes are ad hoc fill-ins — hidden until asked for. */}
                         {showSubs && substituteCandidates.map(c => (
-                            <button
-                                key={c.id}
-                                className="cc-candidate-btn"
-                                disabled={c.unavailable}
-                                onClick={() => !c.unavailable && onAssign(c.id)}
-                            >
-                                <span className="cc-candidate-avatar">{initials(c.name)}</span>
-                                <span>
-                                    <span className="cc-candidate-name">{c.name}</span>
-                                    <span className="cc-candidate-sub" style={{ color: c.subColor }}>{c.sub}</span>
-                                </span>
-                            </button>
+                            <CandidateButton key={c.id} c={c} line={rosterLine(c)} onAssign={onAssign} />
                         ))}
 
                         {substituteCandidates.length > 0 && !showSubs && (
@@ -1266,6 +1430,43 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
                 </div>
             )}
         </div>
+    );
+}
+
+/**
+ * One person in the assign picker. Only a conflict is allowed colour — unknown gets no chip, no
+ * border and no icon, because it lands on most goalie rows and anything louder turns the list into
+ * a wall of alarms. Conflicts stay clickable: the roster join is wrong often enough that the
+ * coordinator, not the data, is the authority on her own league.
+ */
+function CandidateButton({ c, line, onAssign }) {
+    return (
+        <button
+            className={`cc-candidate-btn${c.conflict && !c.unavailable ? ' is-conflict' : ''}`}
+            disabled={c.unavailable}
+            onClick={() => !c.unavailable && onAssign(c.id)}
+        >
+            <span className="cc-candidate-avatar">{initials(c.name)}</span>
+            <span>
+                <span className="cc-candidate-name">
+                    {c.name}
+                    {c.teamName && !c.unavailable && (
+                        <span className={`cc-candidate-team${c.conflict ? ' is-conflict' : ''}`}>
+                            <span
+                                className="cc-candidate-team-dot"
+                                style={{ background: resolveTeamColor(c.teamColor) }}
+                            />
+                            {c.teamName}
+                        </span>
+                    )}
+                </span>
+                {c.unavailable
+                    ? <span className="cc-candidate-sub" style={{ color: c.subColor }}>{c.sub}</span>
+                    : line?.skeleton
+                        ? <span className="cc-candidate-skeleton" aria-label="Checking rosters" />
+                        : <span className={`cc-candidate-sub is-${line?.tone}`}>{line?.text}</span>}
+            </span>
+        </button>
     );
 }
 
