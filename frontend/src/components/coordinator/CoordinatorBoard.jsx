@@ -271,6 +271,7 @@ function CoordinatorBoard({ role }) {
     // so returning to a single week restores the view she left rather than silently resetting.
     const [rinkView, setRinkView] = useState(false);
     const [staffTeams, setStaffTeams] = useState(null); // null = still loading; [] = resolved, none
+    const [staffUnavailable, setStaffUnavailable] = useState(new Set()); // "userId|YYYY-MM-DD"
     const [publishScope, setPublishScope] = useState(null); // null = panel closed
     const [publishPlan, setPublishPlan] = useState(null);   // dry-run result backing the panel
     const [publishError, setPublishError] = useState('');
@@ -313,6 +314,15 @@ function CoordinatorBoard({ role }) {
             .then(data => setStaffTeams(data || []))
             .catch(() => setStaffTeams([]));
     }, [seasonId, role]);
+
+    // Refs and scorekeepers mark individual dates they can't work (goalies mark whole weeks, handled
+    // by the goalie pool above). This data was being collected and shown to nobody.
+    useEffect(() => {
+        if (role === 'GOALIE') { setStaffUnavailable(new Set()); return; }
+        api.getCoordinatorAvailability(role)
+            .then(rows => setStaffUnavailable(new Set((rows || []).map(r => `${r.userId}|${r.date}`))))
+            .catch(() => setStaffUnavailable(new Set()));
+    }, [role]);
 
     useEffect(() => {
         if (role !== 'GOALIE') { setSeasonRoster([]); return; }
@@ -586,6 +596,7 @@ function CoordinatorBoard({ role }) {
             goaliePool={goaliePool}
             seasonRoster={seasonRoster}
             staffTeams={staffTeams}
+            staffUnavailable={staffUnavailable}
             weekFilter={weekFilter}
             openPicker={openPicker}
             setOpenPicker={setOpenPicker}
@@ -975,7 +986,7 @@ function pickPillStyle(isPick, teamColor) {
     return { border: `1px solid ${c}`, background: `color-mix(in srgb, ${c} 14%, transparent)` };
 }
 
-function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goaliePool, seasonRoster, staffTeams, weekFilter, openPicker, setOpenPicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, onSwap, onPublishMatchup, slotsPerGame }) {
+function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goaliePool, seasonRoster, staffTeams, staffUnavailable, weekFilter, openPicker, setOpenPicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, onSwap, onPublishMatchup, slotsPerGame }) {
     const homeTeam = teamById(game.homeTeamId);
     const awayTeam = teamById(game.awayTeamId);
     const d = toChicago(game.gameDate);
@@ -1051,6 +1062,8 @@ function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goal
                         pickTitle={pickTitle}
                         staff={staff}
                         staffTeams={staffTeams}
+                        staffUnavailable={staffUnavailable}
+                        gameDayKey={chicagoDayKey(game.gameDate)}
                         gameTeamIds={[game.homeTeamId, game.awayTeamId]}
                         role={role}
                         goaliePool={goaliePool}
@@ -1088,7 +1101,7 @@ function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goal
     );
 }
 
-function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, isPickTeam, pickTitle, staff, staffTeams, gameTeamIds, role, goaliePool, seasonRoster, weekFilter }) {
+function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, isPickTeam, pickTitle, staff, staffTeams, staffUnavailable, gameDayKey, gameTeamIds, role, goaliePool, seasonRoster, weekFilter }) {
     const status = assignment?.status ?? 'OPEN';
     const style = STATUS_STYLE[status] ?? STATUS_STYLE.OPEN;
     const playerName = assignment?.userName ?? null;
@@ -1216,14 +1229,18 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
 
     const candidates = staff.map(u => {
         const name = getName(u);
-        const unavailable = role === 'GOALIE' && weekFilter !== 'all' && unavailableGoalieIds.has(u.id);
+        // Goalies mark whole weeks; refs and scorekeepers mark individual dates, so theirs is
+        // checked against this game's own night rather than the week it sits in.
+        const unavailable = role === 'GOALIE'
+            ? (weekFilter !== 'all' && unavailableGoalieIds.has(u.id))
+            : staffUnavailable.has(`${u.id}|${gameDayKey}`);
         const poolEntry = role === 'GOALIE' && weekFilter !== 'all' ? goaliePool.find(g => g.userId === u.id) : null;
         const sub = role === 'GOALIE'
             ? (poolEntry ? (poolEntry.status === 'AVAILABLE' ? 'Available this week' : 'Not available') : 'Availability unknown')
-            : `Eligible ${role.toLowerCase()}`;
+            : 'Not available this date';
         const subColor = role === 'GOALIE'
             ? (poolEntry?.status === 'AVAILABLE' ? 'var(--obi-success)' : 'var(--obi-text-muted)')
-            : 'var(--obi-icy)';
+            : 'var(--obi-text-muted)';
 
         const t = teamByUser.get(u.id);
         const resolved = !!t?.resolved;

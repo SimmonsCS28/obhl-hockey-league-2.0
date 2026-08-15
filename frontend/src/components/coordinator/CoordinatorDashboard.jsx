@@ -35,7 +35,10 @@ function CoordinatorDashboard() {
                 roleTabs.map(async t => {
                     try {
                         const assignments = await api.getCoordinatorAssignments(seasonId, t.key);
-                        results[t.key] = (assignments || []).filter(a => a.status === 'SIGNED_UP').length;
+                        // Anything waiting on the coordinator: a self-signup to confirm, or a
+                        // decline that has left a slot needing a replacement.
+                        results[t.key] = (assignments || []).filter(
+                            a => a.status === 'SIGNED_UP' || a.status === 'DECLINED').length;
                     } catch {
                         results[t.key] = 0;
                     }

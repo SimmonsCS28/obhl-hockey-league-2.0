@@ -218,6 +218,51 @@ public class EmailService {
         return send(toEmail, subject, html);
     }
 
+    /**
+     * Tells a coordinator that someone turned a shift down. Declines only — a confirm needs no
+     * action, and mailing those too would train the coordinator to ignore the sender, which would
+     * cost us the one message that actually needs a response.
+     *
+     * <p>The decline reason is the point of the email: without it the coordinator has to text the
+     * person to find out what happened, which is the situation this replaces.
+     */
+    public void sendDeclineNoticeEmail(String toEmail, String coordinatorName, String whoDeclined,
+            String roleLabel, String gameDescription, String reason, String consoleLink) {
+        String greeting = (coordinatorName != null && !coordinatorName.isBlank())
+                ? ("Hi " + coordinatorName + ",") : "Hi,";
+        String subject = whoDeclined + " declined a " + roleLabel + " shift — " + gameDescription;
+        String reasonBlock = (reason != null && !reason.isBlank())
+                ? "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;"
+                        + "color:#1a1d21;margin:0 0 14px;\">They said: &ldquo;" + reason + "&rdquo;</p>"
+                : "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;"
+                        + "color:#6b7480;margin:0 0 14px;\">They didn't give a reason.</p>";
+
+        String html = "<div style=\"max-width:600px;margin:0 auto;padding:0 8px;\">"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 16px;\">"
+                + greeting + "</p>"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\""
+                + " style=\"max-width:600px;width:100%;border-collapse:collapse;background:#fdecea;"
+                + "border:1px solid #f0c4bf;border-radius:8px;margin:0 0 18px;\">"
+                + "<tr><td width=\"4\" style=\"background-color:#B3261E;font-size:0;line-height:1px;\">&nbsp;</td>"
+                + "<td style=\"padding:16px 20px;\">"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1.2px;"
+                + "text-transform:uppercase;color:#B3261E;padding-bottom:6px;\">Shift declined</div>"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;line-height:1.3;"
+                + "color:#1a1d21;\">" + whoDeclined + "</div>"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#41474e;padding-top:4px;\">"
+                + gameDescription + "</div>"
+                + "</td></tr></table>"
+                + reasonBlock
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 14px;\">"
+                + "The slot is waiting for a replacement: <a href=\"" + consoleLink
+                + "\" style=\"color:#1a5fb4;\">open the coordinator console</a>.</p>"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0;\">"
+                + "Thanks,<br>Old Buzzard Hockey League</p>"
+                + "</div>";
+
+        send(toEmail, subject, html);
+    }
+
     /** Courtesy confirmation when a coordinator confirms a shift the official signed up for (no action needed). */
     public void sendShiftConfirmedEmail(String toEmail, String name, String roleLabel, String gameDescription) {
         String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";
