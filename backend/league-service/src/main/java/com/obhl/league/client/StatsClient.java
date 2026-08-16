@@ -45,6 +45,9 @@ public interface StatsClient {
         @DeleteMapping("/api/v1/players/{id}")
         void deletePlayer(@PathVariable("id") Long id);
 
+        /** seasonId is required -- without it this deactivates players across every season. */
         @PutMapping("/api/v1/players/deactivate-unregistered")
-        void deactivateUnregisteredPlayers(@RequestBody List<String> registeredEmails);
+        void deactivateUnregisteredPlayers(
+                        @RequestParam("seasonId") Long seasonId,
+                        @RequestBody List<String> registeredEmails);
 }

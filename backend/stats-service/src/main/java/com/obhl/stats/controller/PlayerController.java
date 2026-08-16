@@ -130,9 +130,20 @@ public class PlayerController {
         return ResponseEntity.status(HttpStatus.CREATED).body(created);
     }
 
+    /**
+     * Deactivates players in one season who are not in that season's registration list.
+     *
+     * <p>{@code seasonId} is required, and deliberately so. This previously walked
+     * findByIsActiveTrue() across EVERY season, so finalizing one season's draft deactivated every
+     * active player in every other season -- including players belonging to a tournament, who by
+     * definition never appear in a league registration list. Players are one row per person per
+     * season, so "unregistered" is only meaningful within a single season.
+     */
     @PutMapping("/deactivate-unregistered")
-    public ResponseEntity<Void> deactivateUnregisteredPlayers(@RequestBody List<String> registeredEmails) {
-        List<Player> activePlayers = playerRepository.findByIsActiveTrue();
+    public ResponseEntity<Void> deactivateUnregisteredPlayers(
+            @RequestParam Long seasonId,
+            @RequestBody List<String> registeredEmails) {
+        List<Player> activePlayers = playerRepository.findBySeasonIdAndIsActiveTrue(seasonId);
         int deactivatedCount = 0;
         for (Player p : activePlayers) {
             if (p.getEmail() != null && !registeredEmails.contains(p.getEmail())) {
@@ -141,7 +152,8 @@ public class PlayerController {
                 deactivatedCount++;
             }
         }
-        System.out.println("Deactivated " + deactivatedCount + " old player records not in current registration.");
+        System.out.println("Deactivated " + deactivatedCount + " player records in season " + seasonId
+                + " not in current registration.");
         return ResponseEntity.ok().build();
     }
 

@@ -27,6 +27,13 @@ public class SeasonDto {
         @Pattern(regexp = "^(upcoming|active|completed|cancelled)$")
         private String status = "upcoming";
 
+        /**
+         * LEAGUE (default) or TOURNAMENT. Set only when creating the season that backs a tournament;
+         * omitting it always yields a league season, so no existing caller changes behaviour.
+         */
+        @Pattern(regexp = "^(LEAGUE|TOURNAMENT)$")
+        private String type;
+
         private Boolean isActive = false;
     }
 
@@ -56,6 +63,7 @@ public class SeasonDto {
         private LocalDate startDate;
         private LocalDate endDate;
         private String status;
+        private String type;
         private Boolean isActive;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;

@@ -363,17 +363,6 @@ const api = {
     },
 
     // ============================================
-    // SEASON CRUD OPERATIONS
-    // ============================================
-    async getSeasons() {
-        const response = await fetch(`${API_BASE_URL}/seasons`, {
-            headers: getAuthHeaders()
-        });
-        if (!response.ok) throw new Error('Failed to fetch seasons');
-        return response.json();
-    },
-
-    // ============================================
     // PLAYER CRUD OPERATIONS
     // ============================================
     async createPlayer(data) {

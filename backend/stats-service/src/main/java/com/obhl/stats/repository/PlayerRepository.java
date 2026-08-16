@@ -25,6 +25,8 @@ public interface PlayerRepository extends JpaRepository<Player, Long> {
 
     List<Player> findBySeasonId(Long seasonId);
 
+    List<Player> findBySeasonIdAndIsActiveTrue(Long seasonId);
+
     List<Player> findBySeasonIdAndTeamId(Long seasonId, Long teamId);
 
     List<Player> findBySeasonIdAndTeamIdAndIsActiveTrue(Long seasonId, Long teamId);
