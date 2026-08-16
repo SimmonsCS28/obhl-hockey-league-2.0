@@ -1,0 +1,421 @@
+/*
+ * Tournament Setup — admin shell styling.
+ *
+ * Uses the admin's obi- tokens rather than the tournament microsite's crow theme: this screen sits
+ * with the rest of the league's administration, not with the public site.
+ *
+ * Class prefix obi-tsetup- : every stylesheet in this app is global with no scoping, so generic
+ * names silently collide across components. Verified free before use.
+ *
+ * Buttons here re-declare height / border-radius / white-space / justify-content / padding / color
+ * because DraftDashboard.css carries an UNSCOPED `button { ... }` rule (with border-radius
+ * !important) that is bundled globally and applies to every button in the app. Drop these overrides
+ * once that rule is scoped.
+ */
+
+.obi-tsetup {
+    font-family: var(--obi-font-body);
+    color: var(--obi-text);
+}
+
+.obi-tsetup-msg {
+    font-family: var(--obi-font-body);
+    color: var(--obi-text-muted);
+    padding: 32px 4px;
+}
+
+/* --- top bar --- */
+
+.obi-tsetup-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.obi-tsetup-spacer { flex: 1 1 auto; }
+
+.obi-tsetup-notice {
+    font-size: 13px;
+    color: var(--obi-success);
+}
+
+.obi-tsetup-dirty {
+    font-size: 13px;
+    color: var(--obi-warning);
+}
+
+.obi-tsetup-btn {
+    /* Defensive against the global button rule — see file header. */
+    height: auto !important;
+    border-radius: var(--obi-radius-btn) !important;
+    white-space: normal;
+    justify-content: center;
+    align-items: center;
+    display: inline-flex;
+    padding: 9px 16px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    line-height: 1.2;
+    cursor: pointer;
+    color: var(--obi-text);
+    background: rgba(157, 185, 205, 0.08);
+    border: 1px solid var(--obi-card-border);
+    transition: background 0.15s, border-color 0.15s, transform 0.1s;
+}
+
+.obi-tsetup-btn:hover:not(:disabled) {
+    background: rgba(157, 185, 205, 0.16);
+    border-color: var(--obi-accent);
+    transform: translateY(-1px);
+}
+
+.obi-tsetup-btn.is-primary {
+    color: #0b0c0f;
+    background: var(--obi-accent);
+    border-color: var(--obi-accent);
+}
+
+.obi-tsetup-btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* --- layout --- */
+
+.obi-tsetup-grid {
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 18px;
+    align-items: start;
+}
+
+.obi-tsetup-col {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-width: 0;
+}
+
+@media (max-width: 1000px) {
+    .obi-tsetup-grid { grid-template-columns: 1fr; }
+}
+
+/* --- panels --- */
+
+.obi-tsetup-panel {
+    background: var(--obi-bg-card);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 12px;
+    padding: 20px 22px;
+}
+
+.obi-tsetup-panel-title {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: #fff;
+    margin: 0 0 6px;
+}
+
+.obi-tsetup-hint {
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--obi-text-muted);
+    margin: 0 0 16px;
+}
+
+.obi-tsetup-hint code {
+    color: var(--obi-icy);
+    background: rgba(157, 185, 205, 0.1);
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+
+.obi-tsetup-error {
+    background: rgba(224, 138, 138, 0.12);
+    border: 1px solid rgba(224, 138, 138, 0.4);
+    color: var(--obi-error);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13.5px;
+    margin-bottom: 14px;
+}
+
+.obi-tsetup-warn {
+    background: rgba(232, 194, 106, 0.1);
+    border-left: 3px solid var(--obi-warning);
+    color: var(--obi-warning);
+    padding: 9px 12px;
+    font-size: 13px;
+    line-height: 1.45;
+    margin-top: 10px;
+    border-radius: 0 6px 6px 0;
+}
+
+/* --- stepper --- */
+
+.obi-tsetup-stepper {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.obi-tsetup-step {
+    height: 38px !important;
+    width: 38px;
+    border-radius: 8px !important;
+    padding: 0;
+    white-space: normal;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--obi-text);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--obi-card-border);
+}
+
+.obi-tsetup-step:hover {
+    border-color: var(--obi-accent);
+    color: #fff;
+}
+
+.obi-tsetup-step-value {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 26px;
+    color: var(--obi-accent);
+    min-width: 46px;
+    text-align: center;
+}
+
+.obi-tsetup-step-label {
+    font-size: 13px;
+    color: var(--obi-text-muted);
+}
+
+/* --- format radios --- */
+
+.obi-tsetup-stage + .obi-tsetup-stage {
+    margin-top: 20px;
+    padding-top: 18px;
+    border-top: 1px solid var(--obi-divider);
+}
+
+.obi-tsetup-stage-name {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
+    margin-bottom: 10px;
+}
+
+.obi-tsetup-radio {
+    /* Defensive against the global button rule — these are <button> elements with wrapping text. */
+    height: auto !important;
+    border-radius: 9px !important;
+    white-space: normal;
+    justify-content: flex-start;
+    align-items: flex-start;
+    display: flex;
+    width: 100%;
+    text-align: left;
+    gap: 11px;
+    padding: 11px 13px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    color: var(--obi-text);
+    background: transparent;
+    border: 1.5px solid var(--obi-card-border);
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    line-height: 1.35;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.obi-tsetup-radio:hover { border-color: rgba(246, 169, 28, 0.5); }
+
+.obi-tsetup-radio.is-active {
+    border-color: var(--obi-accent);
+    background: var(--obi-accent-soft);
+}
+
+.obi-tsetup-radio-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1.5px solid var(--obi-text-muted);
+    flex: none;
+    margin-top: 2px;
+    position: relative;
+}
+
+.obi-tsetup-radio.is-active .obi-tsetup-radio-dot {
+    border-color: var(--obi-accent);
+}
+
+.obi-tsetup-radio.is-active .obi-tsetup-radio-dot::after {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: var(--obi-accent);
+}
+
+.obi-tsetup-radio-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+.obi-tsetup-radio-label {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+}
+
+.obi-tsetup-radio-desc {
+    font-size: 12.5px;
+    color: var(--obi-text-muted);
+    white-space: normal;
+}
+
+/* --- fields --- */
+
+.obi-tsetup-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+}
+
+.obi-tsetup-row .obi-tsetup-field { flex: 1 1 150px; }
+
+.obi-tsetup-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 10px;
+    min-width: 0;
+}
+
+.obi-tsetup-field > span {
+    font-size: 11.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    font-family: var(--obi-font-display);
+    font-weight: 600;
+}
+
+.obi-tsetup-field input,
+.obi-tsetup-field select {
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-text);
+    background: var(--obi-bg-elevated);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 8px;
+    padding: 9px 11px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.obi-tsetup-field input:focus,
+.obi-tsetup-field select:focus {
+    outline: none;
+    border-color: var(--obi-accent);
+}
+
+.obi-tsetup-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    margin-top: 12px;
+    font-size: 13.5px;
+    line-height: 1.4;
+    color: var(--obi-text-secondary);
+    cursor: pointer;
+}
+
+.obi-tsetup-check input { margin-top: 2px; flex: none; }
+
+.obi-tsetup-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+/* --- preview --- */
+
+.obi-tsetup-preview-total {
+    display: flex;
+    align-items: baseline;
+    gap: 9px;
+}
+
+.obi-tsetup-preview-num {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 46px;
+    line-height: 1;
+    color: var(--obi-accent);
+}
+
+.obi-tsetup-preview-unit {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
+}
+
+.obi-tsetup-preview-break {
+    font-size: 13.5px;
+    color: var(--obi-text-secondary);
+    margin-top: 5px;
+}
+
+.obi-tsetup-facts {
+    margin: 16px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.obi-tsetup-facts > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--obi-divider);
+}
+
+.obi-tsetup-facts > div:last-child { border-bottom: none; }
+
+.obi-tsetup-facts dt {
+    font-size: 12.5px;
+    color: var(--obi-text-muted);
+}
+
+.obi-tsetup-facts dd {
+    margin: 0;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--obi-text);
+    text-align: right;
+}

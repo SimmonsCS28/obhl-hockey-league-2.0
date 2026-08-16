@@ -1,7 +1,4 @@
 import { useSearchParams } from 'react-router-dom';
-import GoalieSchedule from './admin/GoalieSchedule';
-import RefereeSchedule from './admin/RefereeSchedule';
-import ScorekeeperSchedule from './admin/ScorekeeperSchedule';
 import AdminOverview from './admin/AdminOverview';
 import AdminAssignments from './admin/AdminAssignments';
 import AdminStandings from './admin/AdminStandings';
@@ -15,6 +12,7 @@ import TeamManagement from './TeamManagement';
 import UserManagement from './UserManagement';
 import AnnouncementsManagement from './admin/AnnouncementsManagement';
 import LeagueRulesAdmin from './LeagueRulesAdmin';
+import TournamentAdmin from './admin/tournament/TournamentAdmin';
 
 function AdminDashboard() {
     const [searchParams] = useSearchParams();
@@ -36,9 +34,7 @@ function AdminDashboard() {
             {activeTab === 'users' && <UserManagement />}
             {activeTab === 'announcements' && <AnnouncementsManagement />}
             {activeTab === 'rules' && <LeagueRulesAdmin />}
-            {activeTab === 'goalies' && <GoalieSchedule />}
-            {activeTab === 'referees' && <RefereeSchedule />}
-            {activeTab === 'scorekeepers' && <ScorekeeperSchedule />}
+            {activeTab === 'tournament' && <TournamentAdmin />}
         </AdminLayout>
     );
 }

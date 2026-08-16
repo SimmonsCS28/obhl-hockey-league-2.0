@@ -9,8 +9,11 @@ const getAuthHeaders = () => {
     return token ? { 'Authorization': `Bearer ${token}` } : {};
 };
 
-// Centralized request helper
-const request = async (url, options = {}) => {
+// Centralized request helper.
+// Exported so sibling service modules (e.g. tournamentApi.js) get the same auth header, 401
+// session handling and server-error-message extraction, instead of hand-rolling fetch() the way
+// the public pages currently do.
+export const request = async (url, options = {}) => {
     // List prefixes that shouldn't be prepended with API_BASE_URL
     const PROXY_PREFIXES = ['/games-api', '/stats-api'];
     const isProxyPath = PROXY_PREFIXES.some(prefix => url.startsWith(prefix));

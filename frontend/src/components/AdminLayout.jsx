@@ -27,10 +27,12 @@ const NAV = [
     { id: 'rules', label: 'Rules Editor' },
     // Launcher — opens the role-scoped Coordinator Console (external to the admin shell), per v4 §2c
     { route: '/coordinator', label: 'Coordinator Console' },
-    { group: 'Scheduling' },
-    { id: 'goalies', label: 'Goalie Schedule' },
-    { id: 'referees', label: 'Referee Schedule' },
-    { id: 'scorekeepers', label: 'Scorekeeper Schedule' },
+    // The old "Scheduling" group (Goalie/Referee/Scorekeeper Schedule) was removed here: staffing
+    // now lives in Operations → Assignments for direct overrides, and in the Coordinator Console for
+    // the sign-up → confirm → publish workflow. The one thing not carried over is the old goalie
+    // page's assigned/unassigned filter.
+    { group: 'Conley Classic' },
+    { id: 'tournament', label: 'Tournament Setup' },
 ];
 
 function AdminLayout({ children, activeTab }) {
@@ -59,6 +61,7 @@ function AdminLayout({ children, activeTab }) {
         : activeItem?.id === 'livescore' ? 'Live game scoring'
         : activeItem?.id === 'gamemgmt' ? 'Box-score editor for completed games'
         : activeItem?.id === 'assignments' ? 'Assign goalies, referees and scorekeepers'
+        : activeItem?.id === 'tournament' ? 'Configure the annual tournament'
         : 'OBHL administration';
 
     const initials = (() => {
