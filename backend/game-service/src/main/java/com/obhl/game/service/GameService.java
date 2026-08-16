@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 public class GameService {
 
     private final GameRepository gameRepository;
-    private final PointsCalculator pointsCalculator;
+    private final com.obhl.game.service.scoring.GamePointsPolicyResolver pointsPolicyResolver;
     private final TeamStatsUpdater teamStatsUpdater;
     private final PlayerStatsAggregator playerStatsAggregator;
 
@@ -221,8 +221,9 @@ public class GameService {
         game.setForfeitTeamId(forfeitTeamId);
         game.setStatus("completed");
 
-        // Calculate points using PointsCalculator
-        pointsCalculator.calculateAndSetPoints(game);
+        // League and tournament games score differently; the resolver picks. For league games this
+        // still lands in PointsCalculator, unchanged.
+        pointsPolicyResolver.forGame(game).apply(game);
 
         // Save game first
         Game savedGame = gameRepository.save(game);
