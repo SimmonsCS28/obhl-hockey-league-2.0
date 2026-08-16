@@ -125,7 +125,13 @@ public class CoordinatorNotifyService {
 
     /**
      * Save one role's settings. Refuses roles the caller doesn't hold, so the panel can't be used to
-     * redirect somebody else's mail.
+     * redirect somebody else's mail. The row is keyed by the authenticated user and the request
+     * carries no user id, so there is no parameter here that could target another person.
+     *
+     * <p>Admins are deliberately <em>not</em> exempted: holding ADMIN grants console access without
+     * making you a coordinator, which is the separation the whole feature exists to preserve. The
+     * consequence is that nobody can fix a coordinator's typo'd address on their behalf from the app.
+     * Considered and accepted 2026-08-15 — revisit only if that actually causes trouble.
      */
     @Transactional
     public void saveSettings(User user, CoordinatorDto.NotificationPrefView in) {
