@@ -4,6 +4,7 @@ import { useSeason } from '../../contexts/SeasonContext';
 import SeasonSelector from '../common/SeasonSelector';
 import api from '../../services/api';
 import heroBg from '../../assets/images/buzzard-full.jpg';
+import { sortByStandings } from '../../utils/standings';
 import './StandingsPage.css';
 
 // Top N teams make the playoffs (drawn as a gold cut-line in the table).
@@ -55,16 +56,7 @@ function StandingsPage() {
             if (!response.ok) throw new Error('Failed to fetch teams');
             const data = await response.json();
 
-            // Sort: points desc, then total wins, then goals against asc, then goals for desc
-            const sorted = data.sort((a, b) => {
-                if (b.points !== a.points) return b.points - a.points;
-                const bWins = (b.wins || 0) + (b.overtimeWins || 0);
-                const aWins = (a.wins || 0) + (a.overtimeWins || 0);
-                if (bWins !== aWins) return bWins - aWins;
-                if (a.goalsAgainst !== b.goalsAgainst) return a.goalsAgainst - b.goalsAgainst;
-                return b.goalsFor - a.goalsFor;
-            });
-            setTeams(sorted);
+            setTeams(sortByStandings(data));
         } catch (err) {
             setError(err.message);
         } finally {

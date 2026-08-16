@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSeason } from '../../contexts/SeasonContext';
 import api from '../../services/api';
+import { sortByStandings } from '../../utils/standings';
 import '../public/StandingsPage.css';
 import './AdminStandings.css';
 
@@ -31,17 +32,7 @@ function AdminStandings() {
                 setLoading(true);
                 const all = await api.getTeams();
                 if (cancelled) return;
-                const sorted = (all || [])
-                    .filter(t => t.seasonId === selectedSeasonId)
-                    .sort((a, b) => {
-                        if (b.points !== a.points) return b.points - a.points;
-                        const bWins = (b.wins || 0) + (b.overtimeWins || 0);
-                        const aWins = (a.wins || 0) + (a.overtimeWins || 0);
-                        if (bWins !== aWins) return bWins - aWins;
-                        if (a.goalsAgainst !== b.goalsAgainst) return a.goalsAgainst - b.goalsAgainst;
-                        return b.goalsFor - a.goalsFor;
-                    });
-                setTeams(sorted);
+                setTeams(sortByStandings((all || []).filter(t => t.seasonId === selectedSeasonId)));
                 setError(null);
             } catch (err) {
                 if (!cancelled) setError(err.message || 'Failed to load standings');

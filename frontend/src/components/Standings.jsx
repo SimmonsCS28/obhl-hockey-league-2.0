@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { sortByStandings } from '../utils/standings';
 import './Standings.css';
 
 function Standings({ seasonId }) {
@@ -22,17 +23,7 @@ function Standings({ seasonId }) {
             const response = await axios.get(`/api/v1/teams?seasonId=${id}`);
             const data = response.data;
 
-            // Sort by: 1) points (desc), 2) wins (desc), 3) goals against (asc), 4) goals for (desc)
-            const sorted = data.sort((a, b) => {
-                if (b.points !== a.points) return b.points - a.points;
-                const bWins = (b.wins || 0) + (b.overtimeWins || 0);
-                const aWins = (a.wins || 0) + (a.overtimeWins || 0);
-                if (bWins !== aWins) return bWins - aWins;
-                if (a.goalsAgainst !== b.goalsAgainst) return a.goalsAgainst - b.goalsAgainst;
-                return b.goalsFor - a.goalsFor;
-            });
-
-            setTeams(sorted);
+            setTeams(sortByStandings(data));
         } catch (error) {
             console.error('Error loading standings:', error);
         } finally {
