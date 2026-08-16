@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import * as api from '../../services/api';
 import { resolveTeamColor, textOn } from '../../constants/teamColors';
+import { ordinal, sortByStandings } from '../../utils/standings';
 import heroBg from '../../assets/images/buzzard-full.jpg';
 import './GamePreview.css';
 
@@ -44,17 +45,11 @@ function GamePreview() {
             let homeRankStr = '';
             let awayRankStr = '';
             if (allTeamsResponse.ok) {
-                const allTeams = await allTeamsResponse.json();
-                allTeams.sort((a, b) => (b.points !== a.points ? b.points - a.points : b.wins - a.wins));
-                const getRankString = (n) => {
-                    const s = ['th', 'st', 'nd', 'rd'];
-                    const v = n % 100;
-                    return n + (s[(v - 20) % 10] || s[v] || s[0]);
-                };
+                const allTeams = sortByStandings(await allTeamsResponse.json());
                 const hIndex = allTeams.findIndex(t => t.id === gameData.homeTeamId);
                 const aIndex = allTeams.findIndex(t => t.id === gameData.awayTeamId);
-                if (hIndex !== -1) homeRankStr = getRankString(hIndex + 1);
-                if (aIndex !== -1) awayRankStr = getRankString(aIndex + 1);
+                if (hIndex !== -1) homeRankStr = ordinal(hIndex + 1);
+                if (aIndex !== -1) awayRankStr = ordinal(aIndex + 1);
             }
             setHomeRank(homeRankStr);
             setAwayRank(awayRankStr);

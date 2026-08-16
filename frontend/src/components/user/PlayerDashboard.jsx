@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import TeamBadge from '../common/TeamBadge';
 import PendingShifts from './PendingShifts';
+import { ordinal, sortByStandings } from '../../utils/standings';
 import './PlayerDashboard.css'; // Will create this next
 
 const PlayerDashboard = () => {
@@ -74,24 +75,12 @@ const PlayerDashboard = () => {
                             api.getGames(data.team.seasonId)
                         ]);
 
-                        const standings = teamsData
-                            .filter(t => t.seasonId === data.team.seasonId);
-
-                        standings.sort((a, b) => {
-                            if (b.points !== a.points) return b.points - a.points;
-                            const bTotalWins = (b.wins || 0) + (b.overtimeWins || 0);
-                            const aTotalWins = (a.wins || 0) + (a.overtimeWins || 0);
-                            if (bTotalWins !== aTotalWins) return bTotalWins - aTotalWins;
-                            if (a.goalsAgainst !== b.goalsAgainst) return a.goalsAgainst - b.goalsAgainst;
-                            return b.goalsFor - a.goalsFor;
-                        });
+                        const standings = sortByStandings(
+                            teamsData.filter(t => t.seasonId === data.team.seasonId)
+                        );
 
                         const index = standings.findIndex(s => s.id === data.team.id);
-                        if (index !== -1) {
-                            const rank = index + 1;
-                            const suffix = ["st", "nd", "rd"][((rank + 90) % 100 - 10) % 10 - 1] || "th";
-                            setTeamStanding(`${rank}${suffix}`);
-                        }
+                        if (index !== -1) setTeamStanding(ordinal(index + 1));
                     } catch (err) {
                         console.warn('Could not calculate team standing:', err.message);
                     }
