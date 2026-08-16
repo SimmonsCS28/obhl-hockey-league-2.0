@@ -54,6 +54,20 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/announcements", "/api/v1/announcements/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/rules").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/chicken-licks/standings").permitAll()
+                        // The tournament microsite is public, so all tournament reads are open.
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/tournaments", "/api/v1/tournaments/**").permitAll()
+                        // Tournament writes are ADMIN-only, and must be stated HERE rather than with
+                        // @PreAuthorize on a controller: /tournaments is served by a catch-all proxy
+                        // (TournamentProxyController) with no per-endpoint method to annotate, and
+                        // league-service has no spring-security of its own. Without these four lines
+                        // the rule below would let ANY logged-in user reconfigure a tournament.
+                        // Both patterns: create is POST to the bare /tournaments path, and relying on
+                        // "/**" to also match a path with no trailing segment is not worth the doubt
+                        // when getting it wrong silently downgrades create to any-logged-in-user.
+                        .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/v1/tournaments", "/api/v1/tournaments/**").hasRole("ADMIN")
+                        .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/v1/tournaments/**").hasRole("ADMIN")
+                        .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/v1/tournaments/**").hasRole("ADMIN")
+                        .requestMatchers(org.springframework.http.HttpMethod.DELETE, "/api/v1/tournaments/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 // Distinguish authentication from authorization failures so the client can react
                 // correctly. A missing/expired/invalid token fails the .authenticated() check at

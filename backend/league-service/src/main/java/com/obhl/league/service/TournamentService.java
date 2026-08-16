@@ -1,0 +1,280 @@
+package com.obhl.league.service;
+
+import java.text.Normalizer;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.obhl.league.dto.TournamentDto;
+import com.obhl.league.model.Season;
+import com.obhl.league.model.Tournament;
+import com.obhl.league.repository.SeasonRepository;
+import com.obhl.league.repository.TournamentRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class TournamentService {
+
+    private final TournamentRepository tournamentRepository;
+    private final SeasonRepository seasonRepository;
+
+    @Transactional(readOnly = true)
+    public List<TournamentDto.Response> getAll(boolean publishedOnly) {
+        List<Tournament> tournaments = publishedOnly
+                ? tournamentRepository.findByIsPublishedTrueOrderByYearDesc()
+                : tournamentRepository.findAllByOrderByYearDesc();
+
+        return tournaments.stream().map(this::toResponse).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<TournamentDto.Response> getBySlug(String slug) {
+        return tournamentRepository.findBySlug(slug).map(this::toResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<TournamentDto.Response> getById(Long id) {
+        return tournamentRepository.findById(id).map(this::toResponse);
+    }
+
+    /**
+     * Creates the tournament and the season that backs it, together.
+     *
+     * <p>Deliberately one call rather than "create a season, then create a tournament pointing at
+     * it". Two calls leave two ways to get it wrong: a tournament season created through the normal
+     * season endpoint would default to type=LEAGUE and could be marked active, and a half-finished
+     * sequence leaves an orphan season sitting in the admin's season list. Doing both in one
+     * transaction means a tournament season only ever exists as part of a tournament.
+     */
+    @Transactional
+    public TournamentDto.Response create(TournamentDto.Create dto) {
+        String slug = (dto.getSlug() != null && !dto.getSlug().isBlank())
+                ? slugify(dto.getSlug())
+                : slugify(dto.getName() + "-" + dto.getYear());
+
+        if (tournamentRepository.existsBySlug(slug)) {
+            throw new IllegalArgumentException(
+                    "A tournament with the URL '" + slug + "' already exists. Choose a different name or slug.");
+        }
+
+        // seasons.name is globally unique, so a collision here is a real conflict (most likely the
+        // same tournament being created twice) rather than something to silently work around.
+        String seasonName = dto.getName() + " " + dto.getYear();
+        if (seasonRepository.findByName(seasonName).isPresent()) {
+            throw new IllegalArgumentException(
+                    "A season named '" + seasonName + "' already exists.");
+        }
+
+        Season season = new Season();
+        season.setName(seasonName);
+        season.setStartDate(dto.getStartDate());
+        season.setEndDate(dto.getEndDate());
+        season.setType(Season.TYPE_TOURNAMENT);
+        season.setStatus("upcoming");
+        // Never active. The database enforces this too (chk_tournament_never_active); the
+        // tournament's own lifecycle lives on tournaments.status.
+        season.setIsActive(false);
+        season = seasonRepository.save(season);
+
+        Tournament t = new Tournament();
+        t.setSeasonId(season.getId());
+        t.setSlug(slug);
+        t.setName(dto.getName());
+        t.setYear(dto.getYear());
+        t.setTagline(dto.getTagline());
+        t.setStartDate(dto.getStartDate());
+        t.setEndDate(dto.getEndDate());
+
+        applyIfPresent(dto.getGroupStage(), t::setGroupStage);
+        applyIfPresent(dto.getPoolCount(), t::setPoolCount);
+        applyIfPresent(dto.getAdvancePerPool(), t::setAdvancePerPool);
+        applyIfPresent(dto.getChampionshipStage(), t::setChampionshipStage);
+        applyIfPresent(dto.getPlacementGame(), t::setPlacementGame);
+        applyIfPresent(dto.getConsolationStage(), t::setConsolationStage);
+        applyIfPresent(dto.getConsolationTeamCount(), t::setConsolationTeamCount);
+        applyIfPresent(dto.getTeamCount(), t::setTeamCount);
+        applyIfPresent(dto.getVenue(), t::setVenue);
+        applyIfPresent(dto.getEntryFeeCents(), t::setEntryFeeCents);
+        applyIfPresent(dto.getEntryDeadline(), t::setEntryDeadline);
+        applyIfPresent(dto.getDraftDate(), t::setDraftDate);
+        applyIfPresent(dto.getPeriodCount(), t::setPeriodCount);
+        applyIfPresent(dto.getPeriodMinutes(), t::setPeriodMinutes);
+
+        validateStageConfig(t);
+
+        Tournament saved = tournamentRepository.save(t);
+        log.info("Created tournament '{}' (slug={}) backed by season {}", saved.getName(), slug, season.getId());
+        return toResponse(saved);
+    }
+
+    @Transactional
+    public TournamentDto.Response update(Long id, TournamentDto.Update dto) {
+        Tournament t = tournamentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tournament not found"));
+
+        applyIfPresent(dto.getName(), t::setName);
+        applyIfPresent(dto.getTagline(), t::setTagline);
+        applyIfPresent(dto.getGroupStage(), t::setGroupStage);
+        applyIfPresent(dto.getPoolCount(), t::setPoolCount);
+        applyIfPresent(dto.getAdvancePerPool(), t::setAdvancePerPool);
+        applyIfPresent(dto.getChampionshipStage(), t::setChampionshipStage);
+        applyIfPresent(dto.getPlacementGame(), t::setPlacementGame);
+        applyIfPresent(dto.getConsolationStage(), t::setConsolationStage);
+        applyIfPresent(dto.getConsolationTeamCount(), t::setConsolationTeamCount);
+        applyIfPresent(dto.getTeamCount(), t::setTeamCount);
+        applyIfPresent(dto.getStartDate(), t::setStartDate);
+        applyIfPresent(dto.getEndDate(), t::setEndDate);
+        applyIfPresent(dto.getVenue(), t::setVenue);
+        applyIfPresent(dto.getEntryFeeCents(), t::setEntryFeeCents);
+        applyIfPresent(dto.getEntryDeadline(), t::setEntryDeadline);
+        applyIfPresent(dto.getDraftDate(), t::setDraftDate);
+        applyIfPresent(dto.getPeriodCount(), t::setPeriodCount);
+        applyIfPresent(dto.getPeriodMinutes(), t::setPeriodMinutes);
+        applyIfPresent(dto.getStatus(), t::setStatus);
+        applyIfPresent(dto.getIsPublished(), t::setIsPublished);
+        applyIfPresent(dto.getChampionTeamId(), t::setChampionTeamId);
+        applyIfPresent(dto.getCrestImageUrl(), t::setCrestImageUrl);
+        applyIfPresent(dto.getTrophyImageUrl(), t::setTrophyImageUrl);
+
+        validateStageConfig(t);
+
+        // Keep the backing season's dates in step, so staffing and schedule screens that read the
+        // season rather than the tournament show the right weekend.
+        if (dto.getStartDate() != null || dto.getEndDate() != null) {
+            seasonRepository.findById(t.getSeasonId()).ifPresent(season -> {
+                if (dto.getStartDate() != null) season.setStartDate(dto.getStartDate());
+                if (dto.getEndDate() != null) season.setEndDate(dto.getEndDate());
+                seasonRepository.save(season);
+            });
+        }
+
+        return toResponse(tournamentRepository.save(t));
+    }
+
+    /**
+     * Deletes the tournament and, with it, the backing season -- which cascades to the season's
+     * teams, players and games. Guarded to setup/draft so a tournament that has already been played
+     * cannot be erased by a stray click.
+     */
+    @Transactional
+    public void delete(Long id) {
+        Tournament t = tournamentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Tournament not found"));
+
+        if (!Tournament.STATUS_SETUP.equals(t.getStatus()) && !Tournament.STATUS_DRAFT.equals(t.getStatus())) {
+            throw new IllegalStateException(
+                    "Only a tournament still in setup or draft can be deleted. This one is '" + t.getStatus()
+                    + "' -- archive it instead.");
+        }
+
+        Long seasonId = t.getSeasonId();
+        tournamentRepository.delete(t);
+        seasonRepository.deleteById(seasonId);
+        log.info("Deleted tournament {} and its backing season {}", id, seasonId);
+    }
+
+    /**
+     * Cross-field rules the database CHECKs cannot express on their own, reported as readable
+     * messages rather than constraint violations.
+     */
+    private void validateStageConfig(Tournament t) {
+        if (Tournament.GROUP_DIVISIONS.equals(t.getGroupStage())) {
+            if (t.getPoolCount() == null || t.getPoolCount() < 2) {
+                throw new IllegalArgumentException("Divisions format needs a pool count of at least 2.");
+            }
+            if (t.getTeamCount() != null && t.getPoolCount() > t.getTeamCount()) {
+                throw new IllegalArgumentException(
+                        "Cannot split " + t.getTeamCount() + " teams into " + t.getPoolCount() + " divisions.");
+            }
+        }
+
+        // A placement game is one game between the two semifinal losers, so it presupposes
+        // semifinals -- i.e. a bracket of at least four.
+        if (Boolean.TRUE.equals(t.getPlacementGame())
+                && !Tournament.CHAMPIONSHIP_SINGLE_ELIM.equals(t.getChampionshipStage())) {
+            throw new IllegalArgumentException(
+                    "A placement game needs a single-elimination bracket to take its semifinal losers from.");
+        }
+
+        if (!Tournament.CONSOLATION_NONE.equals(t.getConsolationStage())
+                && (t.getConsolationTeamCount() == null || t.getConsolationTeamCount() < 2)) {
+            throw new IllegalArgumentException("Consolation play needs at least 2 teams.");
+        }
+
+        // With no group stage and no bracket there is nothing to generate.
+        if (Tournament.GROUP_NONE.equals(t.getGroupStage())
+                && Tournament.CHAMPIONSHIP_NONE.equals(t.getChampionshipStage())) {
+            throw new IllegalArgumentException(
+                    "A tournament needs at least a group stage or a championship bracket.");
+        }
+    }
+
+    private <T> void applyIfPresent(T value, java.util.function.Consumer<T> setter) {
+        if (value != null) {
+            setter.accept(value);
+        }
+    }
+
+    /** "The Conley Classic-2026" -> "the-conley-classic-2026". */
+    private String slugify(String input) {
+        String normalized = Normalizer.normalize(input, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .toLowerCase(Locale.ROOT)
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("(^-|-$)", "");
+
+        if (normalized.isBlank()) {
+            throw new IllegalArgumentException("Could not build a URL from '" + input + "'.");
+        }
+        return normalized.length() > 80 ? normalized.substring(0, 80) : normalized;
+    }
+
+    private TournamentDto.Response toResponse(Tournament t) {
+        TournamentDto.Response dto = new TournamentDto.Response();
+        dto.setId(t.getId());
+        dto.setSeasonId(t.getSeasonId());
+        dto.setSlug(t.getSlug());
+        dto.setName(t.getName());
+        dto.setYear(t.getYear());
+        dto.setTagline(t.getTagline());
+
+        dto.setGroupStage(t.getGroupStage());
+        dto.setPoolCount(t.getPoolCount());
+        dto.setAdvancePerPool(t.getAdvancePerPool());
+        dto.setChampionshipStage(t.getChampionshipStage());
+        dto.setPlacementGame(t.getPlacementGame());
+        dto.setConsolationStage(t.getConsolationStage());
+        dto.setConsolationTeamCount(t.getConsolationTeamCount());
+        dto.setDisplayFormat(t.getDisplayFormat());
+
+        dto.setTeamCount(t.getTeamCount());
+        dto.setStartDate(t.getStartDate());
+        dto.setEndDate(t.getEndDate());
+        dto.setVenue(t.getVenue());
+        dto.setEntryFeeCents(t.getEntryFeeCents());
+        dto.setEntryDeadline(t.getEntryDeadline());
+        dto.setDraftDate(t.getDraftDate());
+
+        dto.setPeriodCount(t.getPeriodCount());
+        dto.setPeriodMinutes(t.getPeriodMinutes());
+        dto.setScoringProfile(t.getScoringProfile());
+
+        dto.setStatus(t.getStatus());
+        dto.setIsPublished(t.getIsPublished());
+        dto.setChampionTeamId(t.getChampionTeamId());
+        dto.setCrestImageUrl(t.getCrestImageUrl());
+        dto.setTrophyImageUrl(t.getTrophyImageUrl());
+
+        dto.setCreatedAt(t.getCreatedAt());
+        dto.setUpdatedAt(t.getUpdatedAt());
+        return dto;
+    }
+}
