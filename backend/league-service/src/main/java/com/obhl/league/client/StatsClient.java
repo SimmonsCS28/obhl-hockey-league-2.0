@@ -45,9 +45,13 @@ public interface StatsClient {
         @DeleteMapping("/api/v1/players/{id}")
         void deletePlayer(@PathVariable("id") Long id);
 
-        /** seasonId is required -- without it this deactivates players across every season. */
+        /**
+         * seasonIds is the positive list of seasons to sweep. Pass league season ids only --
+         * without it this would deactivate tournament players too, since they never appear in a
+         * league registration list.
+         */
         @PutMapping("/api/v1/players/deactivate-unregistered")
         void deactivateUnregisteredPlayers(
-                        @RequestParam("seasonId") Long seasonId,
+                        @RequestParam("seasonIds") List<Long> seasonIds,
                         @RequestBody List<String> registeredEmails);
 }

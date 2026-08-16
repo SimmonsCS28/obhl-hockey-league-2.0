@@ -107,10 +107,10 @@ public class DraftService {
 
             // Mark all OTHER LEAGUE seasons as completed and inactive.
             //
-            // Scoped to league seasons deliberately: this used to be findAll(), which meant
-            // finalizing a league draft also marked every tournament season 'completed' and
-            // inactive, silently retiring a tournament that had nothing to do with this draft.
-            // A tournament's lifecycle belongs to tournaments.status, not to the league draft.
+            // Retiring the other seasons is intended -- finalizing a draft makes the drafted season
+            // the one active season. The type filter only narrows WHICH seasons that applies to:
+            // this was findAll(), so it also marked tournament seasons completed, and a tournament's
+            // lifecycle belongs to tournaments.status, not to whenever the league happens to draft.
             List<Season> existingSeasons = seasonRepository.findByType(Season.TYPE_LEAGUE);
             for (Season existingSeason : existingSeasons) {
                 if (!existingSeason.getId().equals(season.getId())) {
@@ -249,7 +249,15 @@ public class DraftService {
                     }
                 }
             }
-            statsClient.deactivateUnregisteredPlayers(season.getId(), registeredEmails);
+            // Sweep every LEAGUE season, so the only players left active anywhere are the ones just
+            // drafted -- that cross-season cleanup is the point of this call. Tournament seasons are
+            // excluded because their players never appear in a league registration list and would
+            // otherwise all be deactivated.
+            List<Long> leagueSeasonIds = seasonRepository.findByType(Season.TYPE_LEAGUE)
+                    .stream()
+                    .map(Season::getId)
+                    .collect(java.util.stream.Collectors.toList());
+            statsClient.deactivateUnregisteredPlayers(leagueSeasonIds, registeredEmails);
 
             // 8. Mark draft as completed
             draft.setStatus("complete");

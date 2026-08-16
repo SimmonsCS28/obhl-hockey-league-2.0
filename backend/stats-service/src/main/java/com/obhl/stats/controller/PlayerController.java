@@ -131,19 +131,27 @@ public class PlayerController {
     }
 
     /**
-     * Deactivates players in one season who are not in that season's registration list.
+     * Deactivates players across the given seasons who are not in the current registration list.
      *
-     * <p>{@code seasonId} is required, and deliberately so. This previously walked
-     * findByIsActiveTrue() across EVERY season, so finalizing one season's draft deactivated every
-     * active player in every other season -- including players belonging to a tournament, who by
-     * definition never appear in a league registration list. Players are one row per person per
-     * season, so "unregistered" is only meaningful within a single season.
+     * <p>The cross-season sweep is intended: after a league draft, the only players showing as
+     * active anywhere should be the ones just drafted, so stale rows from previous seasons stop
+     * appearing in pickers and rosters.
+     *
+     * <p>{@code seasonIds} is required and is a positive list -- the seasons to sweep, not the ones
+     * to skip. It exists so the sweep cannot reach tournament players, who never appear in a league
+     * registration list and would be deactivated wholesale by an unbounded
+     * findByIsActiveTrue(). Caller passes the league season ids; an empty or missing list
+     * deactivates nobody rather than everybody, so a bad call fails closed.
      */
     @PutMapping("/deactivate-unregistered")
     public ResponseEntity<Void> deactivateUnregisteredPlayers(
-            @RequestParam Long seasonId,
+            @RequestParam List<Long> seasonIds,
             @RequestBody List<String> registeredEmails) {
-        List<Player> activePlayers = playerRepository.findBySeasonIdAndIsActiveTrue(seasonId);
+        if (seasonIds == null || seasonIds.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        List<Player> activePlayers = playerRepository.findBySeasonIdInAndIsActiveTrue(seasonIds);
         int deactivatedCount = 0;
         for (Player p : activePlayers) {
             if (p.getEmail() != null && !registeredEmails.contains(p.getEmail())) {
@@ -152,8 +160,8 @@ public class PlayerController {
                 deactivatedCount++;
             }
         }
-        System.out.println("Deactivated " + deactivatedCount + " player records in season " + seasonId
-                + " not in current registration.");
+        System.out.println("Deactivated " + deactivatedCount + " player records across seasons "
+                + seasonIds + " not in current registration.");
         return ResponseEntity.ok().build();
     }
 
