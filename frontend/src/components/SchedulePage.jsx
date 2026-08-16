@@ -32,6 +32,22 @@ const earliestUpcomingWeek = (gamesList) => {
 const computeCurrentWeek = (gamesList) =>
     earliestUpcomingWeek(gamesList.filter(g => g.gameType !== 'PLAYOFF'));
 
+// Once the last regular-season game day has passed, the playoffs are what
+// people come to the Schedule for — open on that tab instead of on a finished
+// regular season. `every` on an empty list also covers a playoff-only season.
+const playoffsAreCurrent = (gamesList) => {
+    if (!gamesList.some(g => g.gameType === 'PLAYOFF')) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return gamesList
+        .filter(g => g.gameType !== 'PLAYOFF' && g.gameDate)
+        .every(g => {
+            const d = parseGameDate(g.gameDate);
+            d.setHours(0, 0, 0, 0);
+            return d < today;
+        });
+};
+
 const SchedulePage = () => {
     const navigate = useNavigate();
     const [seasons, setSeasons] = useState([]);
@@ -83,6 +99,7 @@ const SchedulePage = () => {
             const response = await axios.get(`/games-api/games?seasonId=${seasonId}`);
             setGames(response.data);
             setSelectedWeek(String(computeCurrentWeek(response.data) ?? 'all'));
+            setActiveTab(playoffsAreCurrent(response.data) ? 'playoffs' : 'regular');
         } catch (error) {
             console.error('Failed to load games:', error);
         } finally {

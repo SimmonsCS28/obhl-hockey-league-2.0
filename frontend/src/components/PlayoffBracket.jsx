@@ -1,4 +1,17 @@
+import { Link } from 'react-router-dom';
 import './PlayoffBracket.css';
+
+const gameHref = (game) => {
+    if (game.status === 'completed') return `/game/${game.id}/recap`;
+    if (game.status === 'in_progress') return `/game/${game.id}/live`;
+    return `/game/${game.id}/preview`;
+};
+
+const gameCta = (game) => {
+    if (game.status === 'completed') return 'Recap';
+    if (game.status === 'in_progress') return 'Watch';
+    return 'Preview';
+};
 
 const PlayoffBracket = ({ games, teams }) => {
     const getTeam = (teamId) => {
@@ -79,8 +92,19 @@ const PlayoffBracket = ({ games, teams }) => {
         const roundLabel = game.playoffRound === 'QUARTERFINAL' ? 'QF' :
             game.playoffRound === 'SEMIFINAL' ? 'SF' : '🏆';
 
-        return (
-            <div key={game.id} className={`bracket-matchup ${isFinal ? 'bracket-final' : ''} ${isCompleted ? 'bracket-completed' : ''}`}>
+        // A matchup still waiting on a winner from the previous round has no
+        // rosters or officials to show, so it stays inert until both slots fill.
+        const isClickable = !homeTbd && !awayTbd;
+
+        const className = [
+            'bracket-matchup',
+            isFinal ? 'bracket-final' : '',
+            isCompleted ? 'bracket-completed' : '',
+            isClickable ? 'bracket-matchup-link' : '',
+        ].filter(Boolean).join(' ');
+
+        const body = (
+            <>
                 <div className="bracket-matchup-header">
                     <span className="bracket-round-label">{roundLabel} #{game.bracketPosition}</span>
                     {gameDate && (
@@ -93,6 +117,9 @@ const PlayoffBracket = ({ games, teams }) => {
                     )}
                     {isCompleted && (
                         <span className="bracket-final-badge">Final</span>
+                    )}
+                    {isClickable && (
+                        <span className="bracket-cta">{gameCta(game)} ›</span>
                     )}
                 </div>
 
@@ -111,7 +138,22 @@ const PlayoffBracket = ({ games, teams }) => {
                         awayTbd
                     )}
                 </div>
-            </div>
+            </>
+        );
+
+        if (!isClickable) {
+            return <div key={game.id} className={className}>{body}</div>;
+        }
+
+        return (
+            <Link
+                key={game.id}
+                to={gameHref(game)}
+                className={className}
+                aria-label={`${gameCta(game)}: ${getTeam(game.homeTeamId)?.name} vs ${getTeam(game.awayTeamId)?.name}`}
+            >
+                {body}
+            </Link>
         );
     };
 

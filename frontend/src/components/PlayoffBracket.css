@@ -121,11 +121,25 @@
     position: relative;
 }
 
-.bracket-matchup:hover {
+/* Clickable matchups link to the game's preview/recap; TBD ones stay inert. */
+a.bracket-matchup-link {
+    display: block;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+}
+
+.bracket-matchup-link:hover,
+.bracket-matchup-link:focus-visible {
     border-color: rgba(212, 160, 23, 0.4);
     background: rgba(255, 255, 255, 0.07);
     transform: translateY(-1px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.bracket-matchup-link:focus-visible {
+    outline: 2px solid #f8d76a;
+    outline-offset: 2px;
 }
 
 .bracket-matchup.bracket-completed {
@@ -188,6 +202,21 @@
     border-radius: 6px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+}
+
+.bracket-cta {
+    font-size: 0.6rem;
+    font-weight: 700;
+    color: rgba(248, 215, 106, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+    transition: color 0.2s ease;
+}
+
+.bracket-matchup-link:hover .bracket-cta,
+.bracket-matchup-link:focus-visible .bracket-cta {
+    color: #f8d76a;
 }
 
 /* Teams */
