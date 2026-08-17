@@ -1,24 +1,60 @@
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTournament } from './useTournament';
-import { useTournamentGames } from './tournamentData';
+import { STAGE_LABEL, teamMap, useTournamentGames, useTournamentStandings, useTournamentTeams } from './tournamentData';
 import { describeBreakdown, summarizeFormat } from '../admin/tournament/tournamentFormat';
+import BracketTree from './BracketTree';
 import './TournamentPages.css';
 
-/**
- * The bracket.
- *
- * Bracket rendering itself lands with the schedule generator — until games exist there is no tree to
- * draw. What this page does today is the part that is correct regardless: explain the format that
- * will be run, because between entries opening and the schedule being generated that is genuinely
- * all there is to say, and "no bracket yet" is a state this page will keep having every single year.
- */
+/** Order rounds first-to-final. FINAL last, then by how many games each round has. */
+const ROUND_RANK = { ROUND_OF_32: 0, ROUND_OF_16: 1, QUARTERFINAL: 2, SEMIFINAL: 3, FINAL: 4 };
+const ROUND_LABEL = {
+    ROUND_OF_32: 'Round of 32',
+    ROUND_OF_16: 'Round of 16',
+    QUARTERFINAL: 'Quarterfinals',
+    SEMIFINAL: 'Semifinals',
+    FINAL: 'Final',
+};
+
 function TournamentBracket() {
     const { tournament, seasonId, base } = useTournament();
     const { games, loading } = useTournamentGames(seasonId);
+    const { teams } = useTournamentTeams(seasonId);
+    const { standings } = useTournamentStandings(seasonId);
 
+    const byId = teamMap(teams);
     const summary = summarizeFormat(tournament);
-    const bracketGames = games.filter(g =>
-        ['BRACKET', 'PLACEMENT', 'CONSOLATION'].includes(g.tournamentStage));
+
+    const bracketGames = games.filter(g => g.tournamentStage === 'BRACKET');
+    const extraGames = games.filter(g => ['PLACEMENT', 'CONSOLATION'].includes(g.tournamentStage));
+    const hasGroupStage = tournament.groupStage !== 'NONE';
+
+    const rounds = useMemo(() => {
+        const byRound = new Map();
+        for (const g of bracketGames) {
+            const r = g.playoffRound || 'FINAL';
+            if (!byRound.has(r)) byRound.set(r, []);
+            byRound.get(r).push(g);
+        }
+        return [...byRound.entries()]
+            .sort((a, b) => (ROUND_RANK[a[0]] ?? 9) - (ROUND_RANK[b[0]] ?? 9))
+            .map(([round, list]) => ({
+                round,
+                label: ROUND_LABEL[round] || round,
+                games: list.sort((a, b) => (a.bracketPosition ?? 0) - (b.bracketPosition ?? 0)),
+            }));
+    }, [bracketGames]);
+
+    // Standings grouped by division, so a two-division tournament shows two tables side by side.
+    const divisions = useMemo(() => {
+        const map = new Map();
+        for (const s of standings) {
+            const pool = byId[s.teamId]?.pool || '';
+            if (!map.has(pool)) map.set(pool, []);
+            map.get(pool).push(s);
+        }
+        return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+    }, [standings, byId]);
 
     const eyebrow = tournament.championshipStage === 'NONE'
         ? `${tournament.teamCount} Teams · Round Robin`
@@ -45,60 +81,150 @@ function TournamentBracket() {
             <div className="tcc-container tcc-section">
                 {loading && <div className="tcc-empty">Loading…</div>}
 
-                {!loading && bracketGames.length === 0 && (
-                    <div className="tcc-preview">
-                        <div className="tcc-empty-title">The bracket isn&rsquo;t drawn yet</div>
-                        <p className="tcc-preview-lead">
-                            It gets generated once entries close and the field is drafted. Here&rsquo;s the
-                            shape this year&rsquo;s Classic will take.
-                        </p>
-
-                        <div className="tcc-preview-total">
-                            <span className="tcc-preview-num">{summary.totalGames}</span>
-                            <span className="tcc-preview-unit">games</span>
-                        </div>
-                        <div className="tcc-preview-break">{describeBreakdown(summary)}</div>
-
-                        <dl className="tcc-preview-facts">
-                            <Fact label="Teams" value={tournament.teamCount} />
-                            {summary.pools.length > 1 && (
-                                <Fact label="Divisions" value={summary.pools.join(' / ')} />
-                            )}
-                            {summary.qualifiers > 0 && (
-                                <Fact label="Reach the bracket" value={summary.qualifiers} />
-                            )}
-                            <Fact
-                                label="Games per team"
-                                value={summary.minGamesPerTeam === summary.maxGamesPerTeam
-                                    ? summary.minGamesPerTeam
-                                    : `${summary.minGamesPerTeam}–${summary.maxGamesPerTeam}`}
-                            />
-                            <Fact label="Game length" value={`${tournament.periodCount} × ${tournament.periodMinutes} min`} />
-                        </dl>
-
-                        <Link to={`${base}/teams`} className="tcc-btn tcc-btn-ghost tcc-preview-cta">
-                            See the field
-                        </Link>
-                    </div>
+                {/* Nothing generated yet — the state this page is in for most of every year. */}
+                {!loading && bracketGames.length === 0 && extraGames.length === 0 && (
+                    <FormatPreview tournament={tournament} summary={summary} base={base} />
                 )}
 
-                {!loading && bracketGames.length > 0 && (
-                    <div className="tcc-empty">
-                        <div className="tcc-empty-title">Bracket coming online</div>
-                        {bracketGames.length} bracket game{bracketGames.length === 1 ? '' : 's'} scheduled.
-                        The full bracket view arrives with the schedule generator.
-                    </div>
+                {!loading && hasGroupStage && divisions.length > 0 && (
+                    <section className="tcc-standings-wrap">
+                        <h2 className="tcc-sechead-title tcc-standings-title">
+                            {divisions.length > 1 ? 'Division Standings' : 'Standings'}
+                        </h2>
+                        <div className="tcc-standings-grid">
+                            {divisions.map(([pool, rows]) => (
+                                <StandingsTable
+                                    key={pool || 'all'}
+                                    label={pool ? `Division ${pool}` : 'Standings'}
+                                    rows={rows}
+                                    byId={byId}
+                                    base={base}
+                                    advance={tournament.advancePerPool ?? 0}
+                                />
+                            ))}
+                        </div>
+                        <p className="tcc-standings-note">
+                            Points come only from division games: 3 for a win, 1 each for a tie, plus a
+                            point for each period won and each period without a penalty.
+                            {tournament.championshipStage !== 'NONE' && ` Top ${tournament.advancePerPool} from each division advance.`}
+                        </p>
+                    </section>
+                )}
+
+                {!loading && rounds.length > 0 && (
+                    <section className="tcc-bracket-section">
+                        <h2 className="tcc-sechead-title tcc-standings-title">Championship</h2>
+                        <BracketTree rounds={rounds} teamsById={byId} base={base} />
+                    </section>
+                )}
+
+                {!loading && extraGames.length > 0 && (
+                    <section className="tcc-extra">
+                        <h2 className="tcc-sechead-title tcc-standings-title">Also on day two</h2>
+                        <div className="tcc-extra-list">
+                            {extraGames.map(g => (
+                                <div key={g.id} className="tcc-extra-row">
+                                    <span className="tcc-extra-stage">{STAGE_LABEL[g.tournamentStage]}</span>
+                                    <span className="tcc-extra-teams">
+                                        {byId[g.homeTeamId]?.name || 'TBD'}
+                                        <span className="tcc-extra-vs">
+                                            {g.status === 'completed' ? `${g.homeScore}–${g.awayScore}` : 'vs'}
+                                        </span>
+                                        {byId[g.awayTeamId]?.name || 'TBD'}
+                                    </span>
+                                    <span className="tcc-extra-meta">
+                                        {g.gameDate
+                                            ? new Date(g.gameDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+                                            : 'TBD'}
+                                        {g.rink ? ` · ${g.rink}` : ''}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                        <p className="tcc-standings-note">
+                            The placement game is contested by the two semifinal losers. Consolation games
+                            give every team that misses the bracket one more game.
+                        </p>
+                    </section>
                 )}
             </div>
         </>
     );
 }
 
-function Fact({ label, value }) {
+function StandingsTable({ label, rows, byId, base, advance }) {
     return (
         <div>
-            <dt>{label}</dt>
-            <dd>{value}</dd>
+            <div className="tcc-standings-label">{label}</div>
+            <div className="tcc-table">
+                <div className="tcc-thead tcc-standings-row">
+                    <span>#</span><span>Team</span><span>GP</span><span>W</span><span>L</span><span>T</span><span>Pts</span>
+                </div>
+                {rows.map((s, i) => {
+                    const team = byId[s.teamId];
+                    return (
+                        <div
+                            key={s.teamId}
+                            className={`tcc-trow tcc-standings-row ${i < advance ? 'is-advancing' : ''}`}
+                        >
+                            <span className="tcc-standings-rank">{i + 1}</span>
+                            <span className="tcc-standings-team">
+                                <span className="tcc-dot is-sm" style={{ background: team?.teamColor || '#888' }} />
+                                {team ? (
+                                    <Link to={`${base}/teams/${team.id}`}>{team.name}</Link>
+                                ) : `Team ${s.teamId}`}
+                                {s.coinFlipApplied && (
+                                    <span className="tcc-coinflip" title="Tied on every tiebreaker — a coin flip decides">
+                                        coin flip
+                                    </span>
+                                )}
+                            </span>
+                            <span>{s.gamesPlayed}</span>
+                            <span>{s.wins}</span>
+                            <span>{s.losses}</span>
+                            <span>{s.ties}</span>
+                            <span className="tcc-standings-pts">{s.points}</span>
+                        </div>
+                    );
+                })}
+                {rows.length === 0 && <div className="tcc-empty">No games played yet.</div>}
+            </div>
+        </div>
+    );
+}
+
+function FormatPreview({ tournament, summary, base }) {
+    return (
+        <div className="tcc-preview">
+            <div className="tcc-empty-title">The bracket isn&rsquo;t drawn yet</div>
+            <p className="tcc-preview-lead">
+                It gets generated once entries close and the field is drafted. Here&rsquo;s the shape
+                this year&rsquo;s Classic will take.
+            </p>
+
+            <div className="tcc-preview-total">
+                <span className="tcc-preview-num">{summary.totalGames}</span>
+                <span className="tcc-preview-unit">games</span>
+            </div>
+            <div className="tcc-preview-break">{describeBreakdown(summary)}</div>
+
+            <dl className="tcc-preview-facts">
+                <div><dt>Teams</dt><dd>{tournament.teamCount}</dd></div>
+                {summary.pools.length > 1 && (
+                    <div><dt>Divisions</dt><dd>{summary.pools.join(' / ')}</dd></div>
+                )}
+                {summary.qualifiers > 0 && (
+                    <div><dt>Reach the bracket</dt><dd>{summary.qualifiers}</dd></div>
+                )}
+                <div><dt>Games per team</dt><dd>
+                    {summary.minGamesPerTeam === summary.maxGamesPerTeam
+                        ? summary.minGamesPerTeam
+                        : `${summary.minGamesPerTeam}–${summary.maxGamesPerTeam}`}
+                </dd></div>
+                <div><dt>Game length</dt><dd>{tournament.periodCount} × {tournament.periodMinutes} min</dd></div>
+            </dl>
+
+            <Link to={`${base}/teams`} className="tcc-btn tcc-btn-ghost tcc-preview-cta">See the field</Link>
         </div>
     );
 }

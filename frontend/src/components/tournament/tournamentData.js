@@ -72,6 +72,21 @@ export function useTournamentGames(seasonId) {
     return { games, loading, error };
 }
 
+/**
+ * Standings, computed server-side from completed group-stage games.
+ *
+ * Deliberately not derived from teams.points — those columns are league-shaped and are never
+ * written for tournament games.
+ */
+export function useTournamentStandings(seasonId) {
+    const { data, loading, error } = useResource(
+        () => (seasonId ? request(`/games/tournament-standings?seasonId=${seasonId}`) : Promise.resolve([])),
+        [seasonId],
+        []
+    );
+    return { standings: data, loading, error };
+}
+
 export function useTournamentRules(tournamentId) {
     const { data, loading, error } = useResource(
         () => (tournamentId ? request(`/tournaments/${tournamentId}/rules`) : Promise.resolve([])),

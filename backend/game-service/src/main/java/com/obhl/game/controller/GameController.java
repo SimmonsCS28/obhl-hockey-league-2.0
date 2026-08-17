@@ -36,6 +36,7 @@ public class GameController {
     private final com.obhl.game.service.CsvParserService csvParserService;
     private final com.obhl.game.service.ScheduleGeneratorService scheduleGeneratorService;
     private final com.obhl.game.service.schedule.TournamentScheduleService tournamentScheduleService;
+    private final com.obhl.game.service.scoring.TournamentStandingsService tournamentStandingsService;
 
     @GetMapping
     public ResponseEntity<List<GameDto.Response>> getGames(
@@ -105,6 +106,17 @@ public class GameController {
     }
 
     // Schedule Management Endpoints
+    /**
+     * Tournament standings, computed on read from completed group-stage games.
+     *
+     * <p>Never read from the denormalised standings columns on the team row — those are
+     * league-shaped and are deliberately not written for tournament games.
+     */
+    @GetMapping("/tournament-standings")
+    public ResponseEntity<?> tournamentStandings(@RequestParam Long seasonId) {
+        return ResponseEntity.ok(tournamentStandingsService.getStandings(seasonId));
+    }
+
     /**
      * Builds a tournament's fixture list without saving it.
      *

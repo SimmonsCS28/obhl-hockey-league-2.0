@@ -770,3 +770,260 @@
     .tcc-archive-row { flex-wrap: wrap; gap: 12px; }
     .tcc-archive-meta { text-align: left; }
 }
+
+/* ===================================================== Standings */
+
+.tcc-standings-wrap { margin-bottom: 48px; }
+
+.tcc-standings-title { margin-bottom: 14px; }
+
+.tcc-standings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+.tcc-standings-label {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--tcc-blue);
+    margin-bottom: 8px;
+}
+
+.tcc-standings-row {
+    display: grid;
+    grid-template-columns: 34px 1fr 34px 30px 30px 30px 44px;
+    align-items: center;
+    gap: 6px;
+    padding: 11px 16px;
+    font-family: var(--tcc-body);
+    font-size: 13.5px;
+}
+
+.tcc-thead.tcc-standings-row { padding: 10px 16px; }
+
+/* Qualifying places are tinted so the cut line is visible without a separate marker. */
+.tcc-trow.tcc-standings-row.is-advancing { background: rgba(63, 167, 214, 0.06); }
+.tcc-trow.tcc-standings-row.is-advancing .tcc-standings-rank { color: var(--tcc-blue); }
+
+.tcc-standings-rank {
+    font-family: var(--tcc-display);
+    font-size: 15px;
+    text-align: center;
+    color: var(--tcc-muted);
+}
+
+.tcc-standings-team {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 15px;
+    text-transform: uppercase;
+    min-width: 0;
+}
+
+.tcc-standings-team a { color: var(--tcc-text); }
+.tcc-standings-team a:hover { color: #fff; text-decoration: underline; }
+
+.tcc-coinflip {
+    font-family: var(--tcc-body);
+    font-weight: 400;
+    font-size: 10.5px;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--tcc-gold);
+    border: 1px solid rgba(246, 169, 28, 0.4);
+    padding: 1px 5px;
+}
+
+.tcc-standings-pts {
+    font-family: var(--tcc-display);
+    font-size: 16px;
+    color: #fff;
+    text-align: right;
+}
+
+.tcc-standings-note {
+    font-family: var(--tcc-body);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--tcc-muted);
+    margin-top: 14px;
+    max-width: 70ch;
+}
+
+/* ===================================================== Bracket tree */
+
+.tcc-bracket-section { margin-bottom: 48px; }
+
+/*
+ * Horizontal scroll is the handoff's accepted answer for narrow screens; snap points make it
+ * navigable rather than a drag.
+ */
+.tcc-bracket-scroll {
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    padding-bottom: 10px;
+}
+
+.tcc-bracket-rounds,
+.tcc-bracket {
+    display: grid;
+    min-width: min-content;
+}
+
+.tcc-bracket-rounds {
+    grid-template-columns: inherit;
+    margin-bottom: 10px;
+}
+
+.tcc-bracket-roundlabel {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--tcc-muted);
+    width: 266px;
+    scroll-snap-align: start;
+}
+
+.tcc-bracket-cell {
+    display: flex;
+    align-items: center;
+    position: relative;
+    scroll-snap-align: start;
+}
+
+.tcc-match {
+    width: 220px;
+    background: var(--tcc-card);
+    border: 1px solid rgba(140, 180, 205, 0.22);
+    clip-path: var(--tcc-clip-10);
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tcc-match.is-final {
+    border: 1.5px solid rgba(63, 167, 214, 0.55);
+    background: var(--tcc-card-hi);
+}
+
+.tcc-match-side {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.tcc-match-side.is-lost .tcc-match-name,
+.tcc-match-side.is-lost .tcc-match-score { color: var(--tcc-dim); }
+.tcc-match-side.is-lost .tcc-dot { opacity: 0.5; }
+.tcc-match-side.is-tbd .tcc-match-name { color: var(--tcc-dim); }
+
+.tcc-match-name {
+    flex: 1;
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 14.5px;
+    text-transform: uppercase;
+    color: var(--tcc-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+a.tcc-match-name:hover { color: #fff; text-decoration: underline; }
+
+.tcc-match-score {
+    font-family: var(--tcc-display);
+    font-size: 17px;
+    color: #fff;
+}
+
+.tcc-match-meta {
+    font-family: var(--tcc-body);
+    font-size: 11px;
+    color: var(--tcc-muted-2);
+    border-top: 1px solid rgba(140, 180, 205, 0.12);
+    padding-top: 3px;
+}
+
+/*
+ * Connectors: a bracket on the spacer column, drawn from the card's vertical centre out to the
+ * midpoint between this game and its sibling. Pure CSS, so it tracks the cards at any size.
+ */
+.tcc-bracket-link {
+    position: absolute;
+    left: 220px;
+    width: 46px;
+    border-right: 2px solid rgba(63, 167, 214, 0.5);
+    border-top: 2px solid rgba(63, 167, 214, 0.5);
+    pointer-events: none;
+}
+
+.tcc-bracket-link.is-down {
+    top: 50%;
+    bottom: -25%;
+    border-bottom: 2px solid rgba(63, 167, 214, 0.5);
+    border-top: none;
+}
+
+.tcc-bracket-link.is-up {
+    top: -25%;
+    bottom: 50%;
+}
+
+/* ===================================================== Placement / consolation */
+
+.tcc-extra-list { display: flex; flex-direction: column; gap: 8px; }
+
+.tcc-extra-row {
+    display: grid;
+    grid-template-columns: 120px 1fr 150px;
+    gap: 14px;
+    align-items: center;
+    background: #0e1319;
+    border: 1px solid rgba(140, 180, 205, 0.14);
+    border-left: 3px solid var(--tcc-gold);
+    padding: 13px 18px;
+}
+
+.tcc-extra-stage {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--tcc-gold);
+}
+
+.tcc-extra-teams {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 15px;
+    text-transform: uppercase;
+}
+
+.tcc-extra-vs { color: var(--tcc-blue); font-size: 13px; }
+
+.tcc-extra-meta {
+    font-family: var(--tcc-body);
+    font-size: 12.5px;
+    color: var(--tcc-muted);
+    text-align: right;
+}
+
+@media (max-width: 700px) {
+    .tcc-extra-row { grid-template-columns: 1fr; gap: 6px; }
+    .tcc-extra-meta { text-align: left; }
+}
