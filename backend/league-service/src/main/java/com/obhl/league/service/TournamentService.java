@@ -12,8 +12,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.obhl.league.dto.TournamentDto;
 import com.obhl.league.model.Season;
 import com.obhl.league.model.Tournament;
+import com.obhl.league.model.TournamentRulesSection;
 import com.obhl.league.repository.SeasonRepository;
 import com.obhl.league.repository.TournamentRepository;
+import com.obhl.league.repository.TournamentRulesSectionRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,7 @@ public class TournamentService {
 
     private final TournamentRepository tournamentRepository;
     private final SeasonRepository seasonRepository;
+    private final TournamentRulesSectionRepository rulesRepository;
 
     @Transactional(readOnly = true)
     public List<TournamentDto.Response> getAll(boolean publishedOnly) {
@@ -179,6 +182,52 @@ public class TournamentService {
         tournamentRepository.delete(t);
         seasonRepository.deleteById(seasonId);
         log.info("Deleted tournament {} and its backing season {}", id, seasonId);
+    }
+
+    /**
+     * Accepts a numeric id or a slug. The microsite knows a tournament by its slug (it is in the
+     * URL) while the admin knows it by id; supporting both saves the caller a lookup round trip.
+     */
+    @Transactional(readOnly = true)
+    public Optional<Long> resolveId(String idOrSlug) {
+        if (idOrSlug == null || idOrSlug.isBlank()) return Optional.empty();
+        if (idOrSlug.chars().allMatch(Character::isDigit)) {
+            Long id = Long.valueOf(idOrSlug);
+            return tournamentRepository.existsById(id) ? Optional.of(id) : Optional.empty();
+        }
+        return tournamentRepository.findBySlug(idOrSlug).map(Tournament::getId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<TournamentRulesSection> getRules(Long tournamentId) {
+        return rulesRepository.findByTournamentIdOrderBySortOrderAsc(tournamentId);
+    }
+
+    /**
+     * Replaces a tournament's rules wholesale.
+     *
+     * <p>Delete-then-insert rather than diffing: the editor hands back an ordered list, sections get
+     * reordered and retitled freely, and matching them up by id would be more code for no benefit at
+     * this size. Transactional, so a failure leaves the previous rules in place.
+     */
+    @Transactional
+    public List<TournamentRulesSection> replaceRules(Long tournamentId, List<TournamentRulesSection> sections) {
+        if (!tournamentRepository.existsById(tournamentId)) {
+            throw new RuntimeException("Tournament not found");
+        }
+
+        rulesRepository.deleteByTournamentId(tournamentId);
+
+        int order = 0;
+        for (TournamentRulesSection s : sections) {
+            s.setId(null);
+            s.setTournamentId(tournamentId);
+            s.setSortOrder(order++);
+            if (s.getContent() == null) s.setContent("");
+            rulesRepository.save(s);
+        }
+
+        return getRules(tournamentId);
     }
 
     /**

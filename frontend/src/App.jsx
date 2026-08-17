@@ -6,6 +6,15 @@ import GMLayout from './components/GMLayout';
 import LiveScoreEntry from './components/LiveScoreEntry';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicLayout from './components/PublicLayout';
+import TournamentLayout from './components/tournament/TournamentLayout';
+import TournamentHome from './components/tournament/TournamentHome';
+import TournamentTeams from './components/tournament/TournamentTeams';
+import TournamentTeamRoster from './components/tournament/TournamentTeamRoster';
+import TournamentPlayers from './components/tournament/TournamentPlayers';
+import TournamentSchedule from './components/tournament/TournamentSchedule';
+import TournamentBracket from './components/tournament/TournamentBracket';
+import TournamentRules from './components/tournament/TournamentRules';
+import TournamentArchive from './components/tournament/TournamentArchive';
 import ScheduleManager from './components/ScheduleManager';
 import SchedulePage from './components/SchedulePage';
 import TeamDetails from './components/TeamDetails';
@@ -234,6 +243,33 @@ const router = createBrowserRouter([
   {
     path: "/change-password",
     element: <ChangePassword />
+  },
+
+  // The Conley Classic microsite.
+  //
+  // A SIBLING of the "/" PublicLayout route, not a child: the tournament has entirely its own
+  // chrome, nav and identity, and exactly one outbound link back to the league site. Auth is
+  // shared, which is deliberate and is not a tie between tournament and season teams.
+  //
+  // Team pages are /teams/:teamId, not the design prototype's ?team={name} — team names are not
+  // unique across years and are user-editable.
+  //
+  // No nginx change is needed for these paths: the frontend container already serves the SPA for
+  // any unmatched path via try_files.
+  {
+    path: "/tournaments",
+    element: <TournamentLayout />,
+    children: [
+      { index: true, element: <TournamentHome /> },
+      { path: "archive", element: <TournamentArchive /> },
+      { path: ":slug", element: <TournamentHome /> },
+      { path: ":slug/bracket", element: <TournamentBracket /> },
+      { path: ":slug/schedule", element: <TournamentSchedule /> },
+      { path: ":slug/teams", element: <TournamentTeams /> },
+      { path: ":slug/teams/:teamId", element: <TournamentTeamRoster /> },
+      { path: ":slug/players", element: <TournamentPlayers /> },
+      { path: ":slug/rules", element: <TournamentRules /> },
+    ]
   }
 ]);
 

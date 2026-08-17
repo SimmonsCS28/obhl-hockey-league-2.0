@@ -10,12 +10,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.obhl.league.dto.TournamentDto;
+import com.obhl.league.model.TournamentRulesSection;
 import com.obhl.league.service.TournamentService;
 
 import jakarta.validation.Valid;
@@ -75,6 +77,31 @@ public class TournamentController {
             return ResponseEntity.ok(tournamentService.update(id, dto));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        } catch (RuntimeException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * A tournament's rules sections, in display order. Public — the Rules page is public.
+     *
+     * <p>Accepts either the numeric id or the slug so the microsite can ask for rules using the
+     * same identifier it already has in the URL, without a second round trip to resolve the id.
+     */
+    @GetMapping("/{idOrSlug}/rules")
+    public ResponseEntity<List<TournamentRulesSection>> getRules(@PathVariable String idOrSlug) {
+        return tournamentService.resolveId(idOrSlug)
+                .map(id -> ResponseEntity.ok(tournamentService.getRules(id)))
+                .orElseGet(() -> ResponseEntity.ok(List.of()));
+    }
+
+    /** Replaces the whole section list in one call — the editor saves the list, not each row. */
+    @PutMapping("/{id}/rules")
+    public ResponseEntity<?> replaceRules(
+            @PathVariable Long id,
+            @RequestBody List<TournamentRulesSection> sections) {
+        try {
+            return ResponseEntity.ok(tournamentService.replaceRules(id, sections));
         } catch (RuntimeException e) {
             return ResponseEntity.notFound().build();
         }

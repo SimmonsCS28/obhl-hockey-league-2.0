@@ -1,0 +1,382 @@
+/* Conley Classic home page. Tokens from tournament-theme.css. */
+
+/* --- hero --- */
+
+.tcc-hero {
+    position: relative;
+    overflow: hidden;
+    background: var(--tcc-bg);
+    border-bottom: 3px solid var(--tcc-blue);
+}
+
+.tcc-hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgba(140, 180, 205, 0.28) 1px, transparent 1px);
+    background-size: 26px 26px;
+    opacity: 0.5;
+}
+
+.tcc-hero-glow {
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    width: 900px;
+    height: 900px;
+    max-width: 150vw;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(63, 167, 214, 0.16), rgba(5, 7, 10, 0) 62%);
+    pointer-events: none;
+}
+
+.tcc-hero-ring {
+    position: absolute;
+    left: 50%;
+    top: 46%;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.tcc-hero-ring-1 {
+    width: 520px;
+    height: 520px;
+    margin: -260px 0 0 -260px;
+    border: 1px solid rgba(63, 167, 214, 0.28);
+    animation: tcc-spin 60s linear infinite;
+}
+
+.tcc-hero-ring-2 {
+    width: 640px;
+    height: 640px;
+    margin: -320px 0 0 -320px;
+    border: 1px dashed rgba(63, 167, 214, 0.16);
+    animation: tcc-spin 90s linear infinite reverse;
+}
+
+@keyframes tcc-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.tcc-hero-inner {
+    position: relative;
+    max-width: var(--tcc-max);
+    margin: 0 auto;
+    padding: 88px var(--tcc-pad) 76px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.tcc-hero-crest {
+    width: 168px;
+    max-width: 40%;
+    filter: drop-shadow(0 20px 34px rgba(0, 0, 0, 0.55));
+    margin-bottom: 22px;
+}
+
+.tcc-hero-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--tcc-gold);
+    border: 1px solid rgba(246, 169, 28, 0.4);
+    background: rgba(246, 169, 28, 0.08);
+    padding: 7px 15px;
+    margin-bottom: 18px;
+}
+
+.tcc-hero-pill-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--tcc-gold);
+    animation: tcc-pulse 2s ease-in-out infinite;
+}
+
+@keyframes tcc-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+.tcc-hero-title {
+    font-family: var(--tcc-display);
+    font-weight: 400;
+    font-size: clamp(52px, 9vw, 120px);
+    line-height: 0.92;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #fff;
+    text-shadow: 0 6px 30px rgba(0, 0, 0, 0.6);
+}
+
+.tcc-hero-tagline {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: clamp(18px, 2.4vw, 26px);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--tcc-blue);
+    margin-top: 12px;
+}
+
+.tcc-hero-body {
+    font-family: var(--tcc-body);
+    font-weight: 500;
+    font-size: 17px;
+    color: var(--tcc-text-3);
+    max-width: 520px;
+    line-height: 1.55;
+    margin-top: 20px;
+}
+
+.tcc-hero-cta {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 32px;
+}
+
+.tcc-hero-btn {
+    font-size: 17px;
+    letter-spacing: 1.5px;
+    padding: 15px 32px;
+    clip-path: var(--tcc-clip-10);
+}
+
+.tcc-hero-btn:hover { transform: translateY(-2px); }
+
+/* --- stat strip --- */
+
+.tcc-stats { background: var(--tcc-raised); }
+
+.tcc-stats-grid {
+    max-width: var(--tcc-max);
+    margin: 0 auto;
+    padding: 44px var(--tcc-pad);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.tcc-stat {
+    background: var(--tcc-card);
+    border: 1px solid rgba(63, 167, 214, 0.2);
+    clip-path: var(--tcc-clip-12);
+    padding: 22px 20px;
+}
+
+/* Clamped deliberately: some values are words, not numbers, and a fixed size clips them. */
+.tcc-stat-value {
+    font-family: var(--tcc-display);
+    font-weight: 400;
+    font-size: clamp(20px, 2.4vw, 30px);
+    line-height: 1.15;
+    color: var(--tcc-blue);
+}
+
+.tcc-stat-label {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: #fff;
+    margin-top: 4px;
+}
+
+.tcc-stat-sub {
+    font-family: var(--tcc-body);
+    font-size: 13px;
+    color: var(--tcc-muted);
+    margin-top: 3px;
+}
+
+/* --- key dates --- */
+
+.tcc-keydates {
+    background: var(--tcc-bg);
+    padding: 68px 0 72px;
+}
+
+.tcc-keydates-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 26px;
+}
+
+.tcc-keydate {
+    background: #0e1319;
+    border-top: 3px solid var(--tcc-blue);
+    padding: 22px 20px 20px;
+}
+
+.tcc-keydate-date {
+    font-family: var(--tcc-display);
+    font-size: 24px;
+    color: var(--tcc-blue);
+    text-transform: uppercase;
+}
+
+.tcc-keydate-title {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #fff;
+    margin-top: 6px;
+}
+
+.tcc-keydate-body {
+    font-family: var(--tcc-body);
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--tcc-muted);
+    margin-top: 6px;
+}
+
+/* --- the field --- */
+
+.tcc-field {
+    background: var(--tcc-raised);
+    border-top: 1px solid rgba(63, 167, 214, 0.14);
+    padding: 68px 0 72px;
+}
+
+.tcc-field-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+    margin-bottom: 26px;
+}
+
+.tcc-field-more {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--tcc-text-3);
+    border-bottom: 2px solid var(--tcc-blue);
+    padding-bottom: 2px;
+}
+
+.tcc-field-more:hover { color: #fff; }
+
+.tcc-field-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+.tcc-chip {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 18px;
+    background: var(--tcc-card);
+    border: 1px solid var(--tcc-border);
+    clip-path: var(--tcc-clip-10);
+    transition: border-color 0.15s;
+}
+
+.tcc-chip:hover { border-color: rgba(63, 167, 214, 0.5); }
+
+.tcc-chip-seed {
+    font-family: var(--tcc-display);
+    font-size: 20px;
+    color: var(--tcc-blue);
+    min-width: 26px;
+}
+
+.tcc-chip-name {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #fff;
+}
+
+/* --- chocolate milk --- */
+
+.tcc-milk {
+    background: var(--tcc-bg);
+    border-top: 1px solid rgba(63, 167, 214, 0.14);
+    padding: 68px 0 80px;
+}
+
+.tcc-milk-grid {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 48px;
+    align-items: center;
+}
+
+.tcc-milk-body {
+    font-family: var(--tcc-body);
+    font-size: 15.5px;
+    line-height: 1.65;
+    color: var(--tcc-text-3);
+    margin-top: 16px;
+    max-width: 620px;
+}
+
+.tcc-milk-figure { text-align: center; }
+
+.tcc-milk-img,
+.tcc-milk-placeholder {
+    width: 220px;
+    height: 220px;
+    border: 1.5px solid rgba(246, 169, 28, 0.4);
+    border-radius: 16px;
+    object-fit: cover;
+}
+
+.tcc-milk-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 72px;
+    background: rgba(246, 169, 28, 0.05);
+}
+
+.tcc-milk-caption {
+    font-family: var(--tcc-ui);
+    font-weight: 600;
+    font-size: 12.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--tcc-muted-2);
+    margin-top: 12px;
+}
+
+/* --- responsive --- */
+
+@media (max-width: 1120px) {
+    .tcc-keydates-grid { grid-template-columns: repeat(2, 1fr); }
+    .tcc-field-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 900px) {
+    .tcc-stats-grid { grid-template-columns: repeat(2, 1fr); }
+    /* The handoff did not handle this; a 220px image beside text does not fit a phone. */
+    .tcc-milk-grid { grid-template-columns: 1fr; gap: 32px; }
+    .tcc-milk-figure { justify-self: start; }
+}
+
+@media (max-width: 560px) {
+    .tcc-keydates-grid { grid-template-columns: 1fr; }
+    .tcc-hero-inner { padding: 60px var(--tcc-pad) 56px; }
+}

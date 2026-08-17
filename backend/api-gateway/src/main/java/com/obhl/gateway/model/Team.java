@@ -75,6 +75,26 @@ public class Team {
     @Column(name = "goals_against", nullable = false)
     private Integer goalsAgainst = 0;
 
+    // --- Tournament fields (migration 049). Null for league teams. ---
+    // The standings columns above are league-shaped and are NOT written for tournament games;
+    // tournament standings are computed on read by TournamentStandingsService. Tournament UI must
+    // never read points/wins/losses off this row.
+
+    /** Bracket seed, derived from group standings when group play closes. */
+    @Column(name = "seed")
+    private Integer seed;
+
+    /** The tournament GM/captain as a players row. Distinct from gmId, which is a user account. */
+    @Column(name = "captain_player_id")
+    private Long captainPlayerId;
+
+    /** Division label ('A', 'B', ...) when the tournament runs divisions. */
+    @Column(name = "pool", length = 10)
+    private String pool;
+
+    @Column(name = "eliminated", nullable = false)
+    private Boolean eliminated = false;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
