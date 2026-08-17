@@ -33,6 +33,7 @@ const NAV = [
     // page's assigned/unassigned filter.
     { group: 'Conley Classic' },
     { id: 'tournament', label: 'Tournament Setup' },
+    { id: 'tournament-draft', label: 'Tournament Draft' },
 ];
 
 function AdminLayout({ children, activeTab }) {
@@ -62,6 +63,7 @@ function AdminLayout({ children, activeTab }) {
         : activeItem?.id === 'gamemgmt' ? 'Box-score editor for completed games'
         : activeItem?.id === 'assignments' ? 'Assign goalies, referees and scorekeepers'
         : activeItem?.id === 'tournament' ? 'Configure the annual tournament'
+        : activeItem?.id === 'tournament-draft' ? 'Build the Classic rosters'
         : 'OBHL administration';
 
     const initials = (() => {

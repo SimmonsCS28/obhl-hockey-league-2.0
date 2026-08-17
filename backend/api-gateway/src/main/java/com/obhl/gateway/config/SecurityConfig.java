@@ -54,7 +54,12 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/announcements", "/api/v1/announcements/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/rules").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/chicken-licks/standings").permitAll()
-                        // The tournament microsite is public, so all tournament reads are open.
+                        // The draft is ADMIN-only for EVERY verb including GET, and must be stated
+                        // BEFORE the public tournament GET below — matchers are evaluated in order,
+                        // so the permitAll would otherwise swallow it and publish the entrant list,
+                        // which carries names, emails and phone numbers.
+                        .requestMatchers("/api/v1/tournaments/*/draft", "/api/v1/tournaments/*/draft/**").hasRole("ADMIN")
+                        // The tournament microsite is public, so all other tournament reads are open.
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/tournaments", "/api/v1/tournaments/**").permitAll()
                         // Tournament writes are ADMIN-only, and must be stated HERE rather than with
                         // @PreAuthorize on a controller: /tournaments is served by a catch-all proxy

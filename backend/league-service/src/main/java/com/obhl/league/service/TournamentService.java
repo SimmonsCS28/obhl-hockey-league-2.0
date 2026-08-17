@@ -3,12 +3,15 @@ package com.obhl.league.service;
 import java.text.Normalizer;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.obhl.league.client.StatsClient;
+import com.obhl.league.client.TeamClient;
 import com.obhl.league.dto.TournamentDto;
 import com.obhl.league.model.Season;
 import com.obhl.league.model.Tournament;
@@ -28,6 +31,8 @@ public class TournamentService {
     private final TournamentRepository tournamentRepository;
     private final SeasonRepository seasonRepository;
     private final TournamentRulesSectionRepository rulesRepository;
+    private final TeamClient teamClient;
+    private final StatsClient statsClient;
 
     @Transactional(readOnly = true)
     public List<TournamentDto.Response> getAll(boolean publishedOnly) {
@@ -179,9 +184,40 @@ public class TournamentService {
         }
 
         Long seasonId = t.getSeasonId();
+
+        // Players and teams must be removed explicitly.
+        //
+        // Every other season-scoped table (games, player_stats, goalie_stats, leagues,
+        // season_goalies) has ON DELETE CASCADE on season_id, but `players` and `teams` have no
+        // foreign key to seasons at all -- their season_id was added later by Hibernate rather than
+        // by a migration. Deleting the season alone therefore leaves orphan rows pointing at a
+        // season that no longer exists, which then surface in any query that filters by team rather
+        // than by season. Verified 2026-08-17 by deleting a test tournament and finding 5 players
+        // and 2 teams left behind.
+        //
+        // Doing it here rather than adding the missing FKs deliberately: adding them would change
+        // league behaviour too (deleting a league season would begin cascade-deleting its players),
+        // which is a bigger decision than this delete path. Tracked in
+        // docs/tournament/00-follow-ups.md.
+        try {
+            for (Map<String, Object> player : statsClient.getPlayersBySeason(seasonId)) {
+                statsClient.deletePlayer(((Number) player.get("id")).longValue());
+            }
+        } catch (Exception e) {
+            log.warn("Could not delete players for tournament season {}: {}", seasonId, e.getMessage());
+        }
+
+        try {
+            for (Map<String, Object> team : teamClient.getTeamsBySeasonId(seasonId)) {
+                teamClient.deleteTeam(((Number) team.get("id")).longValue());
+            }
+        } catch (Exception e) {
+            log.warn("Could not delete teams for tournament season {}: {}", seasonId, e.getMessage());
+        }
+
         tournamentRepository.delete(t);
         seasonRepository.deleteById(seasonId);
-        log.info("Deleted tournament {} and its backing season {}", id, seasonId);
+        log.info("Deleted tournament {}, its teams and players, and its backing season {}", id, seasonId);
     }
 
     /**

@@ -1,0 +1,440 @@
+/*
+ * Tournament draft board — admin shell styling (obi- tokens), prefix obi-tdraft-.
+ *
+ * Buttons re-declare height / border-radius / white-space / justify-content because
+ * DraftDashboard.css carries an unscoped `button { ... }` rule with border-radius !important that
+ * is bundled globally. See docs/tournament/00-follow-ups.md.
+ */
+
+.obi-tdraft { font-family: var(--obi-font-body); color: var(--obi-text); }
+
+.obi-tdraft-msg { color: var(--obi-text-muted); padding: 32px 4px; }
+
+/* --- bar --- */
+
+.obi-tdraft-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.obi-tdraft-spacer { flex: 1 1 auto; }
+
+.obi-tdraft-tabs { display: flex; gap: 6px; }
+
+.obi-tdraft-tab {
+    height: auto !important;
+    border-radius: 20px !important;
+    white-space: nowrap;
+    padding: 7px 15px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--obi-text-secondary);
+    background: rgba(157, 185, 205, 0.08);
+    border: 1px solid var(--obi-card-border);
+    cursor: pointer;
+}
+
+.obi-tdraft-tab.is-active {
+    color: #0b0c0f;
+    background: var(--obi-accent);
+    border-color: var(--obi-accent);
+}
+
+.obi-tdraft-committed {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-success);
+    border: 1px solid var(--obi-success);
+    border-radius: 4px;
+    padding: 4px 10px;
+}
+
+.obi-tdraft-notice { font-size: 13px; color: var(--obi-success); }
+
+.obi-tdraft-error {
+    background: rgba(224, 138, 138, 0.12);
+    border: 1px solid rgba(224, 138, 138, 0.4);
+    color: var(--obi-error);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13.5px;
+    margin-bottom: 10px;
+}
+
+.obi-tdraft-warn {
+    background: rgba(232, 194, 106, 0.1);
+    border-left: 3px solid var(--obi-warning);
+    color: var(--obi-warning);
+    padding: 9px 12px;
+    font-size: 13px;
+    line-height: 1.45;
+    margin-bottom: 8px;
+    border-radius: 0 6px 6px 0;
+}
+
+/* --- actions --- */
+
+.obi-tdraft-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+
+.obi-tdraft-btn {
+    height: auto !important;
+    border-radius: var(--obi-radius-btn) !important;
+    white-space: normal;
+    justify-content: center;
+    align-items: center;
+    display: inline-flex;
+    padding: 9px 16px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    line-height: 1.2;
+    cursor: pointer;
+    color: var(--obi-text);
+    background: rgba(157, 185, 205, 0.08);
+    border: 1px solid var(--obi-card-border);
+}
+
+.obi-tdraft-btn:hover:not(:disabled) { border-color: var(--obi-accent); }
+.obi-tdraft-btn.is-primary { color: #0b0c0f; background: var(--obi-accent); border-color: var(--obi-accent); }
+.obi-tdraft-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.obi-tdraft-progress { font-size: 13px; color: var(--obi-text-muted); }
+
+/* --- layout --- */
+
+.obi-tdraft-grid {
+    display: grid;
+    grid-template-columns: 330px 1fr;
+    gap: 16px;
+    align-items: start;
+}
+
+@media (max-width: 1000px) {
+    .obi-tdraft-grid { grid-template-columns: 1fr; }
+}
+
+/* --- pool --- */
+
+.obi-tdraft-pool {
+    background: var(--obi-bg-card);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 12px;
+    padding: 14px;
+    position: sticky;
+    top: 12px;
+}
+
+.obi-tdraft-pool-head { display: flex; flex-direction: column; gap: 9px; margin-bottom: 10px; }
+
+.obi-tdraft-search {
+    width: 100%;
+    background: var(--obi-bg-elevated);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 8px;
+    color: var(--obi-text);
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    padding: 9px 11px;
+    box-sizing: border-box;
+}
+
+.obi-tdraft-search:focus { outline: none; border-color: var(--obi-accent); }
+
+.obi-tdraft-pool-filters { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+
+.obi-tdraft-chip {
+    height: auto !important;
+    border-radius: 14px !important;
+    white-space: nowrap;
+    padding: 4px 11px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--obi-text-secondary);
+    background: rgba(157, 185, 205, 0.08);
+    border: 1px solid var(--obi-card-border);
+    cursor: pointer;
+}
+
+.obi-tdraft-chip.is-active { color: #0b0c0f; background: var(--obi-accent); border-color: var(--obi-accent); }
+
+.obi-tdraft-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    color: var(--obi-text-muted);
+    cursor: pointer;
+}
+
+.obi-tdraft-pool-count { font-size: 12px; color: var(--obi-text-muted); }
+
+.obi-tdraft-pool-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 62vh;
+    overflow-y: auto;
+}
+
+.obi-tdraft-entrant {
+    height: auto !important;
+    border-radius: 8px !important;
+    white-space: normal;
+    justify-content: space-between;
+    align-items: center;
+    display: flex;
+    width: 100%;
+    text-align: left;
+    gap: 8px;
+    padding: 9px 11px;
+    background: var(--obi-bg-elevated);
+    border: 1px solid transparent;
+    cursor: pointer;
+    color: var(--obi-text);
+}
+
+.obi-tdraft-entrant:hover { border-color: var(--obi-card-border); }
+
+.obi-tdraft-entrant.is-selected {
+    border-color: var(--obi-accent);
+    background: var(--obi-accent-soft);
+}
+
+.obi-tdraft-entrant.is-assigned { opacity: 0.55; }
+
+.obi-tdraft-entrant-main { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+
+.obi-tdraft-entrant-name {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.obi-tdraft-entrant-sub { font-size: 11.5px; color: var(--obi-text-muted); }
+
+.obi-tdraft-gm {
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    color: #0b0c0f;
+    background: var(--obi-accent);
+    border-radius: 3px;
+    padding: 1px 4px;
+}
+
+.obi-tdraft-noemail { color: var(--obi-warning); font-size: 13px; flex: none; }
+
+/* --- teams --- */
+
+.obi-tdraft-teams {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+    gap: 12px;
+}
+
+.obi-tdraft-team {
+    background: var(--obi-bg-card);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.obi-tdraft-team-head { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+
+.obi-tdraft-team-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex: none;
+    box-shadow: var(--obi-ring-light);
+}
+
+.obi-tdraft-team-name {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 15px;
+    text-transform: uppercase;
+    flex: 1;
+}
+
+/* The balance read-out: with no pick order, this is what keeps teams even. */
+.obi-tdraft-team-meta { font-size: 11.5px; color: var(--obi-text-muted); }
+
+.obi-tdraft-drop {
+    height: auto !important;
+    border-radius: 8px !important;
+    white-space: normal;
+    justify-content: center;
+    display: flex;
+    width: 100%;
+    padding: 7px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11.5px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    background: transparent;
+    border: 1px dashed var(--obi-card-border);
+    cursor: pointer;
+    margin-bottom: 9px;
+}
+
+.obi-tdraft-drop:not(:disabled) {
+    color: var(--obi-accent);
+    border-color: var(--obi-accent);
+    border-style: solid;
+}
+
+.obi-tdraft-drop:disabled { cursor: default; }
+
+.obi-tdraft-roster { display: flex; flex-direction: column; gap: 2px; }
+
+.obi-tdraft-rosterrow {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12.5px;
+    padding: 4px 2px;
+    border-bottom: 1px solid var(--obi-divider);
+}
+
+.obi-tdraft-rosterrow:last-child { border-bottom: none; }
+
+.obi-tdraft-rostername {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.obi-tdraft-rostermeta { color: var(--obi-text-muted); font-size: 11px; }
+
+.obi-tdraft-remove {
+    height: auto !important;
+    border-radius: 4px !important;
+    padding: 0 5px;
+    font-size: 14px;
+    line-height: 1;
+    color: var(--obi-text-muted);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.obi-tdraft-remove:hover:not(:disabled) { color: var(--obi-error); }
+
+/* --- panels / tables --- */
+
+.obi-tdraft-panel {
+    background: var(--obi-bg-card);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 12px;
+    padding: 20px 22px;
+}
+
+.obi-tdraft-panel-title {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: #fff;
+    margin: 0 0 6px;
+}
+
+.obi-tdraft-hint {
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--obi-text-muted);
+    margin: 0 0 14px;
+    max-width: 70ch;
+}
+
+.obi-tdraft-import { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+
+.obi-tdraft-preview {
+    background: var(--obi-bg-elevated);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 8px;
+    padding: 14px;
+    margin-top: 10px;
+}
+
+.obi-tdraft-preview-head { font-size: 13.5px; margin-bottom: 10px; }
+
+.obi-tdraft-preview-rows { display: flex; flex-direction: column; gap: 2px; margin-bottom: 12px; }
+
+.obi-tdraft-preview-row,
+.obi-tdraft-trow {
+    display: grid;
+    grid-template-columns: 1.4fr 1.8fr 0.6fr 0.6fr;
+    gap: 10px;
+    font-size: 12.5px;
+    padding: 6px 2px;
+    border-bottom: 1px solid var(--obi-divider);
+}
+
+.obi-tdraft-trow { grid-template-columns: 1.4fr 1.8fr 0.6fr 0.5fr 0.5fr; }
+.obi-tdraft-trow.is-accounts { grid-template-columns: 1.3fr 1.7fr 0.9fr 0.7fr 1fr; }
+
+.obi-tdraft-preview-more { font-size: 12px; color: var(--obi-text-muted); padding-top: 6px; }
+
+.obi-tdraft-table { display: flex; flex-direction: column; max-height: 55vh; overflow-y: auto; }
+
+.obi-tdraft-dim { color: var(--obi-text-muted); }
+
+.obi-tdraft-link { font-weight: 600; }
+.obi-tdraft-link.is-confirmed { color: var(--obi-success); }
+.obi-tdraft-link.is-ambiguous { color: var(--obi-warning); }
+.obi-tdraft-link.is-none { color: var(--obi-text-muted); }
+.obi-tdraft-link.is-matched { color: var(--obi-icy); }
+
+.obi-tdraft-mini {
+    height: auto !important;
+    border-radius: 4px !important;
+    white-space: nowrap;
+    padding: 3px 8px;
+    margin-right: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--obi-text-secondary);
+    background: rgba(157, 185, 205, 0.1);
+    border: 1px solid var(--obi-card-border);
+    cursor: pointer;
+}
+
+.obi-tdraft-mini:hover:not(:disabled) { color: #fff; border-color: var(--obi-accent); }
+
+.obi-tdraft-empty {
+    color: var(--obi-text-muted);
+    font-size: 13px;
+    padding: 20px 8px;
+    text-align: center;
+}
+
+.obi-tdraft-empty.is-sm { padding: 8px; font-size: 11.5px; }

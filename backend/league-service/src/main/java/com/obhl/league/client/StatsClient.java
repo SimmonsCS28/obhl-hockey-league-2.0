@@ -20,6 +20,9 @@ public interface StatsClient {
         @GetMapping("/api/v1/players")
         List<Map<String, Object>> getAllPlayers();
 
+        @GetMapping("/api/v1/players")
+        List<Map<String, Object>> getPlayersBySeason(@RequestParam("seasonId") Long seasonId);
+
         @GetMapping("/api/v1/players/{id}")
         Map<String, Object> getPlayerById(@PathVariable("id") Long id);
 

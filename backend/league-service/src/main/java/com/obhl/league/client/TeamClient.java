@@ -31,4 +31,15 @@ public interface TeamClient {
 
     @DeleteMapping("/api/v1/teams/{id}")
     void deleteTeam(@PathVariable("id") Long id);
+
+    /**
+     * All user accounts, for matching tournament entrants against them.
+     *
+     * <p>Users live in the gateway, not here, and there is no by-email lookup exposed. Fetching the
+     * list and matching in memory avoids adding a gateway endpoint for a screen that runs once a
+     * year against a few hundred rows. FeignConfig forwards the caller's JWT, and this endpoint
+     * requires a privileged role — which the draft operator has.
+     */
+    @GetMapping("/api/v1/users")
+    List<Map<String, Object>> getUsers();
 }

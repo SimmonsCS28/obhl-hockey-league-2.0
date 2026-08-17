@@ -87,14 +87,33 @@ only, no data corruption, hence deferred.
 migration-046 work. Needs a season-type join in the gateway's `TeamService` and stats'
 `PlayerService`.
 
-## 🟡 5. Duplicate key `getMyAssignments` in `api.js`
+## 🟡 5. `players.season_id` and `teams.season_id` have no foreign key
+
+Every other season-scoped table cascades on season delete — `games`, `player_stats`, `goalie_stats`,
+`leagues`, `season_goalies` and `tournaments` all carry
+`FOREIGN KEY (season_id) REFERENCES seasons(id) ON DELETE CASCADE`. **`players` and `teams` carry no
+season foreign key at all**, because their `season_id` was added later by Hibernate's `ddl-auto`
+rather than by a migration.
+
+So deleting any season silently orphans its players and teams — rows pointing at a season id that no
+longer exists, which then surface in any query filtering by team rather than by season.
+
+Found 2026-08-17 by deleting a test tournament and finding 5 players and 2 teams left behind.
+Worked around in `TournamentService.delete`, which now removes them explicitly and says why.
+
+**Not fixed properly here on purpose:** adding the FKs would also change league behaviour, since
+deleting a league season would begin cascade-deleting its players and teams where today it does not.
+That is a bigger decision than the tournament delete path. Any fix also has to clean up whatever
+orphans already exist on production first, or the constraint will not apply.
+
+## 🟡 6. Duplicate key `getMyAssignments` in `api.js`
 
 ESLint `no-dupe-keys` at `frontend/src/services/api.js:540`. The later definition silently wins, so
 the earlier one is dead code and editing it has no effect. A duplicate `getSeasons` with the same
 hazard was removed during Phase 0; this one was left because it is unrelated to seasons and
 deserves its own look at which of the two behaviours is wanted.
 
-## 🟡 6. Global unscoped `button {}` rule leaks into every component
+## 🟡 7. Global unscoped `button {}` rule leaks into every component
 
 `DraftDashboard.css` (~line 86) declares a bare `button { ... }` tag selector — including
 `border-radius: 4px !important`, `height: 36px`, `white-space: nowrap`, `justify-content: center`,
@@ -107,13 +126,13 @@ A fix exists on the **unmerged** branch `claude/sharp-ellis-1eeb87`, which scope
 forced into other stylesheets. Once that lands: drop the defensive block in `TournamentAdmin.css`,
 and do the owed `.gpb-btn !important` cleanup in `GoalieProposerBar.css`.
 
-## ⚪ 7. `fix_team_constraints.sql` in the repo root is now redundant
+## ⚪ 8. `fix_team_constraints.sql` in the repo root is now redundant
 
 Its contents were folded into `database/migrations/046_add_season_type.sql`, which applies them
 idempotently as part of the numbered sequence. The root-level copy is now a misleading duplicate
 that implies a manual step still exists. Safe to delete once 046 is on production.
 
-## ⚪ 8. `docker-compose-prod.yml` is invalid and `deploy.sh` is harmful
+## ⚪ 9. `docker-compose-prod.yml` is invalid and `deploy.sh` is harmful
 
 - `docker-compose-prod.yml` line 31 contains a literal escaped `\n` inside a `ports:` value plus a
   duplicate `ports:` key — it would fail to parse. Nothing references it; production uses the plain
@@ -122,7 +141,7 @@ that implies a manual step still exists. Safe to delete once 046 is on productio
   frontend sources to rewrite API base URLs, which would clobber the current
   `import.meta.env.VITE_API_URL` handling. Delete it or clearly mark it dead.
 
-## ⚪ 9. `TECHNICAL_DEBT.md` items 2 and 3 are stale, and `CLAUDE.md` repeats one
+## ⚪ 10. `TECHNICAL_DEBT.md` items 2 and 3 are stale, and `CLAUDE.md` repeats one
 
 - Item 2 says nginx cannot proxy the Spring services and that only static files are served. The live
   `oldbuzzardhockey.nginx` proxies all three (`/api/`, `/games-api/`, `/stats-api/`) using
@@ -131,7 +150,7 @@ that implies a manual step still exists. Safe to delete once 046 is on productio
 - Item 3 says hardcoded production IPs are scattered through the frontend. `frontend/src` is now
   clean of them; the real remaining issue is four different base-URL idioms.
 
-## ⚪ 10. Accepted losses from retiring the Scheduling pages
+## ⚪ 11. Accepted losses from retiring the Scheduling pages
 
 - **Assigned/unassigned filter.** The old Goalie Schedule page had a filter that
   `AdminAssignments.jsx` never gained. Deliberately accepted when the legacy pages were deleted. The
