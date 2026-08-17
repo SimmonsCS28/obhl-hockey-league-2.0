@@ -376,7 +376,8 @@ function WeekendPanel({ draft, set }) {
             </div>
             <div className="obi-tsetup-row">
                 <label className="obi-tsetup-field">
-                    <span>Entry fee ($ per team)</span>
+                    {/* Per person: entries are individual, and teams are drafted afterwards. */}
+                    <span>Entry fee ($ per person)</span>
                     <input type="number" min="0" step="1" value={dollars}
                         onChange={e => set({
                             entryFeeCents: e.target.value === '' ? null : Math.round(Number(e.target.value) * 100),

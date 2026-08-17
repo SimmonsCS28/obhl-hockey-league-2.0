@@ -31,6 +31,16 @@ function TournamentPlayers() {
             pos: p.position || '',
             teamId: p.teamId,
             team: byId[p.teamId]?.name || '—',
+            // Same two badges the league Players page carries.
+            //
+            // GM comes from the team's captainPlayerId, not gmId: gmId is the link to a user
+            // account, and a tournament GM may not have one at all.
+            //
+            // twoGoalLimit is derived server-side from skill rating and is public by design —
+            // the rating itself is staff-only, but the rule it triggers is something everyone at
+            // the rink needs to know.
+            isGm: byId[p.teamId]?.captainPlayerId === p.id,
+            twoGoalLimit: !!p.twoGoalLimit,
         }));
 
         if (q) out = out.filter(r => r.name.toLowerCase().includes(q));
@@ -116,7 +126,13 @@ function TournamentPlayers() {
                         {rows.map(r => (
                             <div key={r.id} className="tcc-trow tcc-players-row">
                                 <span className="tcc-roster-num">{r.num ?? '—'}</span>
-                                <span className="tcc-roster-player">{r.name}</span>
+                                <span className="tcc-roster-player">
+                                    {r.name}
+                                    {r.isGm && <span className="tcc-badge">GM</span>}
+                                    {r.twoGoalLimit && (
+                                        <span className="tcc-badge is-2gl" title="Two-goal limit applies">2GL</span>
+                                    )}
+                                </span>
                                 <span className="tcc-col-sm">
                                     {r.teamId ? (
                                         <Link to={`${base}/teams/${r.teamId}`} className="tcc-players-team">

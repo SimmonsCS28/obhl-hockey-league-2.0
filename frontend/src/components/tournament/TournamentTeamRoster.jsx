@@ -106,7 +106,14 @@ function TournamentTeamRoster() {
                             {roster.map(p => (
                                 <div key={p.id} className="tcc-trow tcc-roster-row">
                                     <span className="tcc-roster-num">{p.jerseyNumber ?? '—'}</span>
-                                    <span className="tcc-roster-player">{p.firstName} {p.lastName}</span>
+                                    <span className="tcc-roster-player">
+                                        {p.firstName} {p.lastName}
+                                        {/* Same badges as the Players page, so the two agree. */}
+                                        {team.captainPlayerId === p.id && <span className="tcc-badge">GM</span>}
+                                        {p.twoGoalLimit && (
+                                            <span className="tcc-badge is-2gl" title="Two-goal limit applies">2GL</span>
+                                        )}
+                                    </span>
                                     <span><span className="tcc-pos-pill">{p.position}</span></span>
                                 </div>
                             ))}

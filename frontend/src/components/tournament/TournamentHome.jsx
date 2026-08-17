@@ -32,8 +32,9 @@ function TournamentHome() {
 
     const summary = summarizeFormat(tournament);
     const dates = dateRange(tournament.startDate, tournament.endDate);
+    // Per person, not per team — players enter individually and are drafted onto teams afterwards.
     const fee = tournament.entryFeeCents != null
-        ? `$${(tournament.entryFeeCents / 100).toLocaleString()} per team`
+        ? `$${(tournament.entryFeeCents / 100).toLocaleString()} per player`
         : null;
 
     const keyDates = [

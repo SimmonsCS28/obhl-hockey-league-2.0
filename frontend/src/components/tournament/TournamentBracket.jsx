@@ -103,9 +103,21 @@ function TournamentBracket() {
                                 />
                             ))}
                         </div>
+                        {/*
+                          * The legend is the point of showing PW and PFP at all: without it a team
+                          * on 14 points from a 2-1 record looks like an arithmetic error.
+                          */}
+                        <dl className="tcc-legend">
+                            <div><dt>PW</dt><dd>Periods won — 1 point each, for scoring more goals than
+                                the opponent in a period. A tied period awards neither team.</dd></div>
+                            <div><dt>PFP</dt><dd>Penalty-free periods — 1 point each, for taking no
+                                penalties in a period. Both teams can earn this in the same period.</dd></div>
+                            <div><dt>PTS</dt><dd>3 for a win, 1 each for a tie, plus PW and PFP. Seven
+                                or more penalties in a game costs a point.</dd></div>
+                        </dl>
                         <p className="tcc-standings-note">
-                            Points come only from division games: 3 for a win, 1 each for a tie, plus a
-                            point for each period won and each period without a penalty.
+                            Only division games award points — bracket, placement and consolation games
+                            decide placing, not standings.
                             {tournament.championshipStage !== 'NONE' && ` Top ${tournament.advancePerPool} from each division advance.`}
                         </p>
                     </section>
@@ -158,7 +170,10 @@ function StandingsTable({ label, rows, byId, base, advance }) {
             <div className="tcc-standings-label">{label}</div>
             <div className="tcc-table">
                 <div className="tcc-thead tcc-standings-row">
-                    <span>#</span><span>Team</span><span>GP</span><span>W</span><span>L</span><span>T</span><span>Pts</span>
+                    <span>#</span><span>Team</span><span>GP</span><span>W</span><span>L</span><span>T</span>
+                    <span title="Periods won">PW</span>
+                    <span title="Penalty-free periods">PFP</span>
+                    <span>Pts</span>
                 </div>
                 {rows.map((s, i) => {
                     const team = byId[s.teamId];
@@ -183,6 +198,8 @@ function StandingsTable({ label, rows, byId, base, advance }) {
                             <span>{s.wins}</span>
                             <span>{s.losses}</span>
                             <span>{s.ties}</span>
+                            <span className="tcc-standings-bonus">{s.periodsWon}</span>
+                            <span className="tcc-standings-bonus">{s.penaltyFreePeriods}</span>
                             <span className="tcc-standings-pts">{s.points}</span>
                         </div>
                     );
