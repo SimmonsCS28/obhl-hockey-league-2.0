@@ -14,6 +14,7 @@ import AnnouncementsManagement from './admin/AnnouncementsManagement';
 import LeagueRulesAdmin from './LeagueRulesAdmin';
 import TournamentAdmin from './admin/tournament/TournamentAdmin';
 import TournamentDraft from './admin/tournament/TournamentDraft';
+import TournamentScheduleAdmin from './admin/tournament/TournamentScheduleAdmin';
 
 function AdminDashboard() {
     const [searchParams] = useSearchParams();
@@ -37,6 +38,7 @@ function AdminDashboard() {
             {activeTab === 'rules' && <LeagueRulesAdmin />}
             {activeTab === 'tournament' && <TournamentAdmin />}
             {activeTab === 'tournament-draft' && <TournamentDraft />}
+            {activeTab === 'tournament-schedule' && <TournamentScheduleAdmin />}
         </AdminLayout>
     );
 }
