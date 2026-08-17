@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import * as api from '../../services/api';
 import { resolveTeamColor, textOn } from '../../constants/teamColors';
+import { tournamentBackTarget, tournamentGameLabel } from '../../utils/tournamentGame';
 import heroBg from '../../assets/images/buzzard-full.jpg';
 import './GamePreview.css';
 import './GameRecap.css';
@@ -12,6 +13,7 @@ function GameRecap() {
     const location = useLocation();
 
     const [game, setGame] = useState(null);
+    const [tournament, setTournament] = useState(null);
     const [events, setEvents] = useState([]);
     const [staffNames, setStaffNames] = useState(null);
     const [seasonGames, setSeasonGames] = useState([]);
@@ -26,6 +28,14 @@ function GameRecap() {
         try {
             setLoading(true);
             const [gameData, teamsData] = await Promise.all([api.getGame(gameId), api.getTeams()]);
+
+            // Resolve the tournament so "back" returns to the Classic rather than the league
+            // schedule. Matched on seasonId, the one-to-one link between the two.
+            if (gameData?.gameType === 'TOURNAMENT') {
+                api.request('/tournaments')
+                    .then(list => setTournament((list || []).find(t => t.seasonId === gameData.seasonId) || null))
+                    .catch(() => setTournament(null));
+            }
             if (!gameData) throw new Error('Game not found');
 
             api.getGames(gameData.seasonId).then(setSeasonGames).catch(() => setSeasonGames([]));
@@ -144,7 +154,12 @@ function GameRecap() {
     const penalties = events.filter(e => e.type === 'penalty');
     const homeWin = game.homeScore > game.awayScore;
     const awayWin = game.awayScore > game.homeScore;
-    const metaChips = [formatDate(game.gameDate), game.rink ? `${game.rink} Rink` : null, `Week ${game.week} · Final${game.endedInOT ? ' (OT)' : ''}`].filter(Boolean);
+    // "Week 3" means nothing at a two-day tournament; show the stage or round instead.
+    const tournamentBack = tournamentBackTarget(game, tournament?.slug);
+    const stageLabel = tournamentGameLabel(game) || `Week ${game.week}`;
+
+    const metaChips = [formatDate(game.gameDate), game.rink ? `${game.rink} Rink` : null,
+        `${stageLabel} · Final${game.endedInOT ? ' (OT)' : ''}`].filter(Boolean);
 
     const officials = [
         { label: 'Referee 1', value: staffNames?.referee1 },
@@ -179,9 +194,14 @@ function GameRecap() {
                 <div className="obi-page-hero-inner">
                     <button
                         className="obi-gd-back"
-                        onClick={() => navigate(location.state?.from || (location.state?.fromDashboard ? '/dashboard' : '/schedule'))}
+                        onClick={() => navigate(
+                            location.state?.from
+                            || tournamentBack?.to
+                            || (location.state?.fromDashboard ? '/dashboard' : '/schedule'))}
                     >
-                        ← Back to {location.state?.backLabel || (location.state?.fromDashboard ? 'My Dashboard' : 'Schedule')}
+                        ← Back to {location.state?.backLabel
+                            || tournamentBack?.label
+                            || (location.state?.fromDashboard ? 'My Dashboard' : 'Schedule')}
                     </button>
                     <div className="obi-eyebrow">Game Recap</div>
                     <h1 className="obi-gd-title">

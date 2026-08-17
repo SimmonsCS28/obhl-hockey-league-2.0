@@ -1099,3 +1099,21 @@ a.tcc-match-name:hover { color: #fff; text-decoration: underline; }
 }
 
 .tcc-badge.is-2gl { background: var(--tcc-text-3); }
+
+/*
+ * Per-row link to the league's game preview/recap. Deliberately its own element rather than
+ * wrapping the whole row: the team names are already links, and an anchor inside an anchor is
+ * invalid markup that would also swallow their clicks.
+ */
+.tcc-srow-link {
+    display: inline-block;
+    margin-top: 4px;
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 11.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--tcc-blue);
+}
+
+.tcc-srow-link:hover { color: #fff; text-decoration: underline; }

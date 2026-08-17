@@ -75,6 +75,13 @@ function TournamentSchedule() {
                             // gold marks the one that decides the Classic.
                             const isFinal = g.playoffRound === 'FINAL';
 
+                            // Reuse the league's game pages — a tournament game is an ordinary
+                            // games row, so they already show the right thing once the
+                            // league-specific framing is handled.
+                            const href = done ? `/game/${g.id}/recap`
+                                : g.status === 'in_progress' ? `/game/${g.id}/live`
+                                : `/game/${g.id}/preview`;
+
                             return (
                                 <div
                                     key={g.id}
@@ -100,6 +107,9 @@ function TournamentSchedule() {
                                         {g.tournamentStage && (
                                             <span className="tcc-srow-stage">{STAGE_LABEL[g.tournamentStage]}</span>
                                         )}
+                                        <Link to={href} className="tcc-srow-link">
+                                            {done ? 'Recap' : g.status === 'in_progress' ? 'Live' : 'Preview'} →
+                                        </Link>
                                     </div>
                                 </div>
                             );

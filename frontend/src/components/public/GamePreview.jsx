@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import * as api from '../../services/api';
 import { resolveTeamColor, textOn } from '../../constants/teamColors';
 import { ordinal, sortByStandings } from '../../utils/standings';
+import { tournamentBackTarget, tournamentGameLabel } from '../../utils/tournamentGame';
 import heroBg from '../../assets/images/buzzard-full.jpg';
 import './GamePreview.css';
 
@@ -20,6 +21,9 @@ function GamePreview() {
     const [awayRoster, setAwayRoster] = useState([]);
     const [staffNames, setStaffNames] = useState(null);
     const [seasonGames, setSeasonGames] = useState([]);
+    /** Computed standings, for tournament games only — see the record/rank note in the loader. */
+    const [tournamentStandings, setTournamentStandings] = useState([]);
+    const [tournament, setTournament] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -41,16 +45,44 @@ function GamePreview() {
                 api.getTeam(gameData.awayTeamId),
             ]);
 
-            const allTeamsResponse = await fetch(`/api/v1/teams?seasonId=${gameData.seasonId}`);
             let homeRankStr = '';
             let awayRankStr = '';
-            if (allTeamsResponse.ok) {
-                const allTeams = sortByStandings(await allTeamsResponse.json());
-                const hIndex = allTeams.findIndex(t => t.id === gameData.homeTeamId);
-                const aIndex = allTeams.findIndex(t => t.id === gameData.awayTeamId);
-                if (hIndex !== -1) homeRankStr = ordinal(hIndex + 1);
-                if (aIndex !== -1) awayRankStr = ordinal(aIndex + 1);
+
+            if (gameData.gameType === 'TOURNAMENT') {
+                // Tournament standings are computed on read. The denormalised wins/losses/points on
+                // the team row are league-shaped and are deliberately never written for tournament
+                // games, so ranking by them would put every team on 0-0-0 and order them arbitrarily.
+                const standings = await api.request(`/games/tournament-standings?seasonId=${gameData.seasonId}`)
+                    .catch(() => []);
+                setTournamentStandings(standings || []);
+
+                // Resolve the slug so "back" returns to the Classic rather than the league
+                // schedule. Matched on seasonId, which is the one-to-one link between them.
+                api.request('/tournaments')
+                    .then(list => setTournament((list || []).find(t => t.seasonId === gameData.seasonId) || null))
+                    .catch(() => setTournament(null));
+
+                // Rank within the team's own division, which is what the bracket actually seeds from.
+                const rankIn = (teamId) => {
+                    const row = (standings || []).find(s => s.teamId === teamId);
+                    if (!row) return '';
+                    const division = (standings || []).filter(s => (s.pool || '') === (row.pool || ''));
+                    const idx = division.findIndex(s => s.teamId === teamId);
+                    return idx === -1 ? '' : ordinal(idx + 1);
+                };
+                homeRankStr = rankIn(gameData.homeTeamId);
+                awayRankStr = rankIn(gameData.awayTeamId);
+            } else {
+                const allTeamsResponse = await fetch(`/api/v1/teams?seasonId=${gameData.seasonId}`);
+                if (allTeamsResponse.ok) {
+                    const allTeams = sortByStandings(await allTeamsResponse.json());
+                    const hIndex = allTeams.findIndex(t => t.id === gameData.homeTeamId);
+                    const aIndex = allTeams.findIndex(t => t.id === gameData.awayTeamId);
+                    if (hIndex !== -1) homeRankStr = ordinal(hIndex + 1);
+                    if (aIndex !== -1) awayRankStr = ordinal(aIndex + 1);
+                }
             }
+
             setHomeRank(homeRankStr);
             setAwayRank(awayRankStr);
             setHomeTeam(homeTeamData);
@@ -98,9 +130,20 @@ function GamePreview() {
         return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' });
     };
 
-    const record = (t) => t
-        ? `${(t.wins || 0) + (t.overtimeWins || 0)}-${t.losses || 0}-${t.overtimeLosses || 0}`
-        : '—';
+    const record = (t) => {
+        if (!t) return '—';
+        // Tournament records come from the computed standings, never from the team row: those
+        // columns are league-shaped and are never written for tournament games, so reading them
+        // would show every Classic team as 0-0-0.
+        if (game?.gameType === 'TOURNAMENT') {
+            const row = tournamentStandings.find(s => s.teamId === t.id);
+            if (!row) return '0-0';
+            return row.ties > 0
+                ? `${row.wins}-${row.losses}-${row.ties}`
+                : `${row.wins}-${row.losses}`;
+        }
+        return `${(t.wins || 0) + (t.overtimeWins || 0)}-${t.losses || 0}-${t.overtimeLosses || 0}`;
+    };
 
     const parseDate = (s) => new Date(s.endsWith('Z') ? s : s + 'Z');
     // Scope prev/next to the entry point: a team's own dashboard/schedule view
@@ -131,7 +174,12 @@ function GamePreview() {
     );
     if (!game || !homeTeam || !awayTeam) return <div className="obi-page obi-gd"><div className="obi-gd-msg">Game details could not be found.</div></div>;
 
-    const metaChips = [formatDate(game.gameDate), formatTime(game.gameDate), game.rink ? `${game.rink} Rink` : null, `Week ${game.week}`].filter(Boolean);
+    // "Week 3" means nothing at a two-day tournament; show the stage or round instead.
+    const tournamentBack = tournamentBackTarget(game, tournament?.slug);
+    const periodLabel = tournamentGameLabel(game) || (game.week ? `Week ${game.week}` : null);
+
+    const metaChips = [formatDate(game.gameDate), formatTime(game.gameDate),
+        game.rink ? `${game.rink} Rink` : null, periodLabel].filter(Boolean);
 
     const officials = [
         { label: 'Referee 1', value: staffNames?.referee1 },
@@ -193,9 +241,14 @@ function GamePreview() {
                 <div className="obi-page-hero-inner">
                     <button
                         className="obi-gd-back"
-                        onClick={() => navigate(location.state?.from || (location.state?.fromDashboard ? '/dashboard' : '/schedule'))}
+                        onClick={() => navigate(
+                            location.state?.from
+                            || tournamentBack?.to
+                            || (location.state?.fromDashboard ? '/dashboard' : '/schedule'))}
                     >
-                        ← Back to {location.state?.backLabel || (location.state?.fromDashboard ? 'My Dashboard' : 'Schedule')}
+                        ← Back to {location.state?.backLabel
+                            || tournamentBack?.label
+                            || (location.state?.fromDashboard ? 'My Dashboard' : 'Schedule')}
                     </button>
                     <div className="obi-eyebrow">Matchup Preview</div>
                     <h1 className="obi-gd-title">
