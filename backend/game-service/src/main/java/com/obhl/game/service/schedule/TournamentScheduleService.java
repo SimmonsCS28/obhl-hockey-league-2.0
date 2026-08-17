@@ -1,6 +1,8 @@
 package com.obhl.game.service.schedule;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -32,6 +34,9 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class TournamentScheduleService {
+
+    /** The rink's wall-clock zone; slot sheets are written in it. */
+    private static final ZoneId ARENA_ZONE = ZoneId.of("America/Chicago");
 
     private final GameRepository gameRepository;
     private final TeamClient teamClient;
@@ -145,7 +150,14 @@ public class TournamentScheduleService {
 
             if (slotIndex < slots.size()) {
                 GameSlot slot = slots.get(slotIndex++);
-                g.setGameDate(LocalDateTime.of(slot.getDate(), slot.getTime()));
+                // games.game_date is stored in UTC (hibernate.jdbc.time_zone=UTC, and every reader
+                // parses it as UTC). The organiser types rink-local times, so convert exactly as
+                // ScheduleGeneratorService does -- storing the wall-clock time directly puts every
+                // game five hours out, which only shows up on the pages that read it correctly.
+                g.setGameDate(LocalDateTime.of(slot.getDate(), slot.getTime())
+                        .atZone(ARENA_ZONE)
+                        .withZoneSameInstant(ZoneOffset.UTC)
+                        .toLocalDateTime());
                 g.setRink(slot.getRink());
             }
 

@@ -129,15 +129,52 @@ export function tournamentRecord(teamId, games) {
 
 export const POSITION_LABEL = { F: 'Forward', D: 'Defense', G: 'Goalie' };
 
+/**
+ * games.game_date is stored and served in UTC without a timezone marker, so it has to be told it is
+ * UTC before being shown in rink time. Parsing it bare makes the browser read it as local, which
+ * happens to look right on a machine in Central time and is silently wrong everywhere else — and
+ * disagrees with GamePreview/GameRecap, which do this correctly.
+ */
+export const ARENA_TZ = 'America/Chicago';
+
+const parseUtc = (iso) => new Date(iso.endsWith('Z') ? iso : `${iso}Z`);
+
 export function formatGameDate(iso, opts = {}) {
     if (!iso) return 'TBD';
-    const d = new Date(iso);
-    return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', ...opts });
+    return parseUtc(iso).toLocaleDateString('en-US',
+        { weekday: 'short', month: 'short', day: 'numeric', timeZone: ARENA_TZ, ...opts });
 }
 
 export function formatGameTime(iso) {
     if (!iso) return 'TBD';
-    return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    return parseUtc(iso).toLocaleTimeString('en-US',
+        { hour: 'numeric', minute: '2-digit', timeZone: ARENA_TZ });
+}
+
+/** Day grouping key in rink time — a late game must not slide into the next day. */
+export function arenaDayKey(iso) {
+    if (!iso) return 'tbd';
+    return parseUtc(iso).toLocaleDateString('en-CA', { timeZone: ARENA_TZ }); // YYYY-MM-DD
+}
+
+/**
+ * Formats a key from {@link arenaDayKey}.
+ *
+ * Separate from formatGameDate because that one converts UTC into rink time, and a day key has
+ * already been converted. Running it through twice reads midnight local as midnight UTC and lands
+ * on the previous evening — which showed up as Saturday's games headed "Friday".
+ */
+export function formatArenaDay(dayKey, opts = {}) {
+    if (!dayKey || dayKey === 'tbd') return 'Date TBD';
+    const [y, m, d] = dayKey.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString('en-US',
+        { weekday: 'long', month: 'short', day: 'numeric', ...opts });
+}
+
+export function formatGameDateTime(iso) {
+    if (!iso) return 'TBD';
+    return parseUtc(iso).toLocaleString('en-US',
+        { weekday: 'short', hour: 'numeric', minute: '2-digit', timeZone: ARENA_TZ });
 }
 
 export const STAGE_LABEL = {

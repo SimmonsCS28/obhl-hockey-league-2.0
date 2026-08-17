@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom';
 import { useTournament } from './useTournament';
 import {
     STAGE_LABEL,
-    formatGameDate,
+    arenaDayKey,
+    formatArenaDay,
     formatGameTime,
     teamMap,
     useTournamentGames,
@@ -14,7 +15,9 @@ import './TournamentPages.css';
 function byDay(games) {
     const days = new Map();
     for (const g of games) {
-        const key = g.gameDate ? g.gameDate.slice(0, 10) : 'tbd';
+        // Group by the rink's calendar day: a late game is still that evening, not the next
+        // day in UTC.
+        const key = arenaDayKey(g.gameDate);
         if (!days.has(key)) days.set(key, []);
         days.get(key).push(g);
     }
@@ -56,7 +59,7 @@ function TournamentSchedule() {
                     <div key={day} className="tcc-day">
                         <div className="tcc-day-head">
                             <div className="tcc-day-label">
-                                {day === 'tbd' ? 'Date TBD' : formatGameDate(`${day}T00:00:00`, { weekday: 'long' })}
+                                {formatArenaDay(day)}
                             </div>
                             <div className="tcc-day-meta">
                                 {dayGames.length} game{dayGames.length === 1 ? '' : 's'}

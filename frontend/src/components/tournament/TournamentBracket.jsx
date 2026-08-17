@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTournament } from './useTournament';
-import { STAGE_LABEL, teamMap, useTournamentGames, useTournamentStandings, useTournamentTeams } from './tournamentData';
+import { STAGE_LABEL, formatGameTime, teamMap, useTournamentGames, useTournamentStandings, useTournamentTeams } from './tournamentData';
 import { describeBreakdown, summarizeFormat } from '../admin/tournament/tournamentFormat';
 import BracketTree from './BracketTree';
 import './TournamentPages.css';
@@ -145,9 +145,7 @@ function TournamentBracket() {
                                         {byId[g.awayTeamId]?.name || 'TBD'}
                                     </span>
                                     <span className="tcc-extra-meta">
-                                        {g.gameDate
-                                            ? new Date(g.gameDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-                                            : 'TBD'}
+                                        {formatGameTime(g.gameDate)}
                                         {g.rink ? ` · ${g.rink}` : ''}
                                     </span>
                                 </div>

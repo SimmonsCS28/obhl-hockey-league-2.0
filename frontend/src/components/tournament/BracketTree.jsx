@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { formatGameDateTime } from './tournamentData';
 
 /**
  * Renders a single-elimination bracket with CSS Grid.
@@ -74,10 +75,7 @@ function MatchCard({ game, teamsById, base, isFinal }) {
             <Side team={away} score={game.awayScore} won={awayWon} done={done} base={base} />
             {!done && (
                 <div className="tcc-match-meta">
-                    {game.gameDate
-                        ? new Date(game.gameDate).toLocaleString('en-US',
-                            { weekday: 'short', hour: 'numeric', minute: '2-digit' })
-                        : 'TBD'}
+                    {formatGameDateTime(game.gameDate)}
                     {game.rink ? ` · ${game.rink}` : ''}
                 </div>
             )}
