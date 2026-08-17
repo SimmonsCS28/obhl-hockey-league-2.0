@@ -35,6 +35,7 @@ public class GameController {
     private final PenaltyValidator penaltyValidator;
     private final com.obhl.game.service.CsvParserService csvParserService;
     private final com.obhl.game.service.ScheduleGeneratorService scheduleGeneratorService;
+    private final com.obhl.game.service.schedule.TournamentScheduleService tournamentScheduleService;
 
     @GetMapping
     public ResponseEntity<List<GameDto.Response>> getGames(
@@ -104,6 +105,37 @@ public class GameController {
     }
 
     // Schedule Management Endpoints
+    /**
+     * Builds a tournament's fixture list without saving it.
+     *
+     * <p>Preview and save are separate on purpose — the organiser reads 18 rows before a weekend's
+     * ice is committed to them. Slot count is validated here rather than partway through, so a
+     * format that does not fit the available ice fails before anything is written.
+     */
+    @PostMapping("/tournament-schedule/preview")
+    public ResponseEntity<?> previewTournamentSchedule(
+            @RequestBody com.obhl.game.service.schedule.TournamentScheduleService.GenerateRequest request) {
+        try {
+            return ResponseEntity.ok(tournamentScheduleService.preview(request));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", String.valueOf(e.getMessage())));
+        }
+    }
+
+    /** Persists a previewed schedule, replacing any previously generated (unplayed) tournament games. */
+    @PostMapping("/tournament-schedule")
+    public ResponseEntity<?> saveTournamentSchedule(
+            @RequestBody com.obhl.game.service.schedule.TournamentScheduleService.GenerateRequest request) {
+        try {
+            var result = tournamentScheduleService.save(request);
+            return result.ok()
+                    ? ResponseEntity.ok(result)
+                    : ResponseEntity.badRequest().body(result);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", String.valueOf(e.getMessage())));
+        }
+    }
+
     @PostMapping("/upload-slots")
     public ResponseEntity<?> uploadGameSlots(
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {
