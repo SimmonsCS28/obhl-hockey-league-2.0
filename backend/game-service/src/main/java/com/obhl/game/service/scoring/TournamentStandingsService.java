@@ -37,6 +37,7 @@ public class TournamentStandingsService {
 
     private final GameRepository gameRepository;
     private final GameEventRepository gameEventRepository;
+    private final com.obhl.game.client.TeamClient teamClient;
 
     @Data
     public static class TeamStanding {
@@ -93,6 +94,17 @@ public class TournamentStandingsService {
                     .merge(g.getHomeTeamId(), ap, Integer::sum);
 
             applyEventDerivedTallies(g, home, away);
+        }
+
+        // Division label, so callers can group the table and so bracket seeding can interleave
+        // divisions. Best-effort: standings still rank correctly if teams cannot be reached.
+        try {
+            for (var team : teamClient.getTeams(seasonId)) {
+                TeamStanding s = table.get(team.getId());
+                if (s != null) s.setPool(team.getPool());
+            }
+        } catch (Exception e) {
+            // Leaves pool null, which groups everything into one table rather than failing.
         }
 
         List<TeamStanding> standings = new ArrayList<>(table.values());
