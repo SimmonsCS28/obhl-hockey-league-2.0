@@ -3,6 +3,7 @@ import { Link, useBlocker, useLocation, useNavigate, useParams } from 'react-rou
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
 import { leagueRules, rulesForGame } from './livescore/gameRules';
+import ChocolateMilkPicker from './livescore/ChocolateMilkPicker';
 import './LiveScoreEntry.css';
 
 const PENALTY_TYPES = [
@@ -326,10 +327,17 @@ function LiveScoreEntry(props) {
 
     const loadPlayers = async () => {
         try {
-            // Fetch players for both teams in the game
+            // A tournament bracket game exists before its teams are known — homeTeamId and
+            // awayTeamId stay null until the group stage seeds it. Asking stats-service for
+            // teamId=null is a 400, so skip the side that has no team yet rather than firing a
+            // request that cannot succeed. League games always have both.
+            const rosterFor = (teamId) => (teamId
+                ? api.getPlayers({ teamId, seasonId: game.seasonId })
+                : Promise.resolve([]));
+
             const [homePlayers, awayPlayers] = await Promise.all([
-                api.getPlayers({ teamId: game.homeTeamId, seasonId: game.seasonId }),
-                api.getPlayers({ teamId: game.awayTeamId, seasonId: game.seasonId })
+                rosterFor(game.homeTeamId),
+                rosterFor(game.awayTeamId),
             ]);
 
             const mappedHome = homePlayers.map(p => ({ ...p, teamId: game.homeTeamId }));
@@ -1179,6 +1187,19 @@ function LiveScoreEntry(props) {
                         <Link to={navHref(nextGame)} state={location.state} className="obi-gd-navlink obi-gd-navlink--next">Next Game ›</Link>
                     ) : <span className="obi-gd-navlink-spacer" />}
                 </div>
+            )}
+
+            {/* Chocolate Milk Player of the Game. Renders itself away for league games, and only
+                once the result is in — the captains pick after the handshake, not before. */}
+            {gameFinalized && (
+                <ChocolateMilkPicker
+                    game={game}
+                    homeTeam={{ id: game?.homeTeamId, name: game?.homeTeamName, teamColor: game?.homeTeamColor }}
+                    awayTeam={{ id: game?.awayTeamId, name: game?.awayTeamName, teamColor: game?.awayTeamColor }}
+                    homeRoster={players.filter(p => p.teamId === game?.homeTeamId)}
+                    awayRoster={players.filter(p => p.teamId === game?.awayTeamId)}
+                    readOnly={readOnly}
+                />
             )}
 
             {/* Start Game banner — shown until the scorekeeper explicitly starts the

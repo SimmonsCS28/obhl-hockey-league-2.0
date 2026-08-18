@@ -66,6 +66,79 @@ public class TournamentBracketService {
         }
     }
 
+    // ------------------------------------------------------------ champion
+
+    /**
+     * Who has won, if anyone has yet.
+     *
+     * <p>Computed on read rather than written to tournaments.champion_team_id, for the same reason
+     * standings are: there is nothing to keep in sync and an unfinalized game simply changes the
+     * answer. It also avoids a cross-service write that would need ADMIN — the person finalizing
+     * the final is a scorekeeper, and giving that path admin rights to satisfy a display field
+     * would be the wrong trade.
+     *
+     * <p>Two ways a champion is decided: a bracket resolves its final, or a round-robin-only
+     * tournament runs out of group games and the table decides it. The second is why this cannot
+     * simply watch the final — a format with championshipStage NONE has no final to watch.
+     */
+    @Transactional(readOnly = true)
+    public Long resolveChampion(Long seasonId) {
+        List<Game> all = gameRepository.findBySeasonId(seasonId).stream()
+                .filter(g -> TYPE.equals(g.getGameType()))
+                .toList();
+        if (all.isEmpty()) return null;
+
+        List<Game> bracket = all.stream()
+                .filter(g -> "BRACKET".equals(g.getTournamentStage()))
+                .toList();
+
+        Long champion = null;
+
+        if (!bracket.isEmpty()) {
+            List<String> order = roundOrder(bracket);
+            String lastRound = order.get(order.size() - 1);
+            Game finalGame = bracket.stream()
+                    .filter(g -> lastRound.equals(g.getPlayoffRound()))
+                    .findFirst().orElse(null);
+
+            if (finalGame == null || !"completed".equals(finalGame.getStatus())) return null;
+            champion = winnerOf(finalGame);
+        } else {
+            // No bracket: the group table decides it, but only once every group game is played.
+            List<Game> groupGames = all.stream()
+                    .filter(g -> GROUP_STAGES.contains(g.getTournamentStage()))
+                    .toList();
+            if (groupGames.isEmpty()
+                    || groupGames.stream().anyMatch(g -> !"completed".equals(g.getStatus()))) {
+                return null;
+            }
+            List<TeamStanding> standings = standingsService.getStandings(seasonId);
+            if (standings.isEmpty()) return null;
+            champion = standings.get(0).getTeamId();
+        }
+
+        return champion;
+    }
+
+    /**
+     * Teams knocked out, derived from results.
+     *
+     * <p>Only bracket games eliminate: losing a consolation or placement game decides where a team
+     * finishes, not whether it is still alive, and those teams were already out of the bracket.
+     * Computed rather than stored for the same reason as the champion.
+     */
+    @Transactional(readOnly = true)
+    public List<Long> eliminatedTeams(Long seasonId) {
+        return gameRepository.findBySeasonId(seasonId).stream()
+                .filter(g -> TYPE.equals(g.getGameType())
+                        && "BRACKET".equals(g.getTournamentStage())
+                        && "completed".equals(g.getStatus()))
+                .map(this::loserOf)
+                .filter(java.util.Objects::nonNull)
+                .distinct()
+                .toList();
+    }
+
     // ------------------------------------------------------------ group stage → bracket
 
     /**

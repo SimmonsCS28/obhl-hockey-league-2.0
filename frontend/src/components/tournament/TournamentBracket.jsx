@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useTournament } from './useTournament';
-import { STAGE_LABEL, formatGameTime, teamMap, useTournamentGames, useTournamentStandings, useTournamentTeams } from './tournamentData';
+import { STAGE_LABEL, formatGameTime, teamMap, useTournamentGames, useTournamentResult, useTournamentStandings, useTournamentTeams } from './tournamentData';
 import { describeBreakdown, summarizeFormat } from '../admin/tournament/tournamentFormat';
 import BracketTree from './BracketTree';
 import './TournamentPages.css';
@@ -21,6 +21,7 @@ function TournamentBracket() {
     const { games, loading } = useTournamentGames(seasonId);
     const { teams } = useTournamentTeams(seasonId);
     const { standings } = useTournamentStandings(seasonId);
+    const { championTeamId } = useTournamentResult(seasonId);
 
     const byId = teamMap(teams);
     const summary = summarizeFormat(tournament);
@@ -120,6 +121,19 @@ function TournamentBracket() {
                             decide placing, not standings.
                             {tournament.championshipStage !== 'NONE' && ` Top ${tournament.advancePerPool} from each division advance.`}
                         </p>
+                    </section>
+                )}
+
+                {/* The whole weekend decides this one thing, so it leads rather than hides in the tree. */}
+                {!loading && championTeamId && byId[championTeamId] && (
+                    <section className="tcc-champion">
+                        <div className="tcc-champion-eyebrow">Classic Champion</div>
+                        <div className="tcc-champion-row">
+                            <span className="tcc-dot is-lg" style={{ background: byId[championTeamId].teamColor || '#888' }} />
+                            <Link to={`${base}/teams/${championTeamId}`} className="tcc-champion-name">
+                                {byId[championTeamId].name}
+                            </Link>
+                        </div>
                     </section>
                 )}
 

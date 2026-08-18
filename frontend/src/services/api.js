@@ -389,8 +389,12 @@ const api = {
     // ============================================
     // SEASON CRUD OPERATIONS
     // ============================================
-    async getSeasons() {
-        return request('/seasons');
+    /**
+     * @param type LEAGUE (server default), TOURNAMENT, or ALL. Omit it for league seasons —
+     *   tournament seasons are hidden by default so they cannot retarget the league site.
+     */
+    async getSeasons(type) {
+        return request(type ? `/seasons?type=${encodeURIComponent(type)}` : '/seasons');
     },
 
     async createSeason(data) {

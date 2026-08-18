@@ -37,6 +37,8 @@ public class GameController {
     private final com.obhl.game.service.ScheduleGeneratorService scheduleGeneratorService;
     private final com.obhl.game.service.schedule.TournamentScheduleService tournamentScheduleService;
     private final com.obhl.game.service.scoring.TournamentStandingsService tournamentStandingsService;
+    private final com.obhl.game.service.scoring.TournamentAwardService tournamentAwardService;
+    private final com.obhl.game.service.schedule.TournamentBracketService tournamentBracketService;
 
     @GetMapping
     public ResponseEntity<List<GameDto.Response>> getGames(
@@ -106,6 +108,49 @@ public class GameController {
     }
 
     // Schedule Management Endpoints
+    /** Chocolate Milk awards for one game — one per bench. */
+    @GetMapping("/{gameId}/awards")
+    public ResponseEntity<?> gameAwards(@PathVariable Long gameId) {
+        return ResponseEntity.ok(tournamentAwardService.forGame(gameId));
+    }
+
+    /** Every award of a tournament, for the public pages. */
+    @GetMapping("/tournament-awards")
+    public ResponseEntity<?> seasonAwards(@RequestParam Long seasonId) {
+        return ResponseEntity.ok(tournamentAwardService.forSeason(seasonId));
+    }
+
+    /**
+     * Records one bench's Chocolate Milk pick. Upserts, so a captain changing their mind replaces
+     * their pick rather than creating a second winner.
+     */
+    @PostMapping("/{gameId}/awards")
+    public ResponseEntity<?> awardChocolateMilk(
+            @PathVariable Long gameId,
+            @RequestBody java.util.Map<String, Object> body) {
+        try {
+            java.util.function.Function<String, Long> num = k -> body.get(k) == null
+                    ? null : ((Number) body.get(k)).longValue();
+            return ResponseEntity.ok(tournamentAwardService.award(
+                    gameId, num.apply("awardedByTeamId"), num.apply("playerId"),
+                    num.apply("playerTeamId"), (String) body.get("note")));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Who has won and who is out — both computed from results rather than stored, like standings.
+     * Returns nulls/empties until the tournament has actually decided.
+     */
+    @GetMapping("/tournament-result")
+    public ResponseEntity<?> tournamentResult(@RequestParam Long seasonId) {
+        java.util.Map<String, Object> out = new java.util.HashMap<>();
+        out.put("championTeamId", tournamentBracketService.resolveChampion(seasonId));
+        out.put("eliminatedTeamIds", tournamentBracketService.eliminatedTeams(seasonId));
+        return ResponseEntity.ok(out);
+    }
+
     /**
      * Tournament standings, computed on read from completed group-stage games.
      *

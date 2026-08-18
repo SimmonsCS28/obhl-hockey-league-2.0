@@ -87,6 +87,38 @@ export function useTournamentStandings(seasonId) {
     return { standings: data, loading, error };
 }
 
+/** Chocolate Milk awards across the whole tournament. */
+export function useTournamentAwards(seasonId) {
+    const { data, loading, error } = useResource(
+        () => (seasonId ? request(`/games/tournament-awards?seasonId=${seasonId}`) : Promise.resolve([])),
+        [seasonId],
+        []
+    );
+    return { awards: data, loading, error };
+}
+
+/**
+ * Champion and eliminated teams, computed server-side from results.
+ *
+ * Not read from tournaments.champion_team_id or teams.eliminated: deriving them means an
+ * unfinalized game simply changes the answer, with nothing to keep in sync.
+ */
+export function useTournamentResult(seasonId) {
+    const { data, loading, error } = useResource(
+        () => (seasonId
+            ? request(`/games/tournament-result?seasonId=${seasonId}`)
+            : Promise.resolve({ championTeamId: null, eliminatedTeamIds: [] })),
+        [seasonId],
+        { championTeamId: null, eliminatedTeamIds: [] }
+    );
+    return {
+        championTeamId: data?.championTeamId ?? null,
+        eliminatedTeamIds: data?.eliminatedTeamIds ?? [],
+        loading,
+        error,
+    };
+}
+
 export function useTournamentRules(tournamentId) {
     const { data, loading, error } = useResource(
         () => (tournamentId ? request(`/tournaments/${tournamentId}/rules`) : Promise.resolve([])),

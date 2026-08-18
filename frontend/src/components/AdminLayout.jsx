@@ -40,7 +40,10 @@ const NAV = [
 function AdminLayout({ children, activeTab }) {
     const [mobileOpen, setMobileOpen] = useState(false);
     const { user } = useAuth();
-    const { seasons, selectedSeasonId, setSelectedSeasonId, isHistoricalView } = useSeason();
+    // allSeasons, not seasons: the admin legitimately needs the tournament season to reach
+    // Live Score Entry, Assignments and the Coordinator Console for tournament games. The public
+    // site keeps the league-only list, which is where the leakage actually matters.
+    const { allSeasons, selectedSeasonId, setSelectedSeasonId, isHistoricalView } = useSeason();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -75,7 +78,7 @@ function AdminLayout({ children, activeTab }) {
         return (user?.username || 'AD').slice(0, 2).toUpperCase();
     })();
 
-    const activeSeasonName = seasons?.find(s => s.id === selectedSeasonId)?.name || 'No season';
+    const activeSeasonName = allSeasons?.find(s => s.id === selectedSeasonId)?.name || 'No season';
 
     return (
         <div className="obi-admin-shell">
@@ -129,9 +132,9 @@ function AdminLayout({ children, activeTab }) {
                         <div className="obi-admin-sub">{pageSub}</div>
                     </div>
                     <div className="obi-admin-topbar-right">
-                        {seasons?.length > 0 ? (
+                        {allSeasons?.length > 0 ? (
                             <SeasonSelector
-                                seasons={seasons}
+                                seasons={allSeasons}
                                 selectedSeasonId={selectedSeasonId}
                                 onChange={setSelectedSeasonId}
                                 size="sm"

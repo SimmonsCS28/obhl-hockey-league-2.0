@@ -1,0 +1,121 @@
+/* Chocolate Milk picker. Admin-shell tokens: it appears inside the scorekeeper surface. */
+
+.cmp {
+    background: var(--obi-bg-card);
+    border: 1px solid var(--obi-card-border);
+    border-left: 3px solid var(--obi-accent);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-top: 18px;
+    font-family: var(--obi-font-body);
+    color: var(--obi-text);
+}
+
+.cmp-head { display: flex; gap: 14px; align-items: flex-start; margin-bottom: 14px; }
+.cmp-icon { font-size: 26px; line-height: 1; }
+
+.cmp-title {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    margin: 0 0 4px;
+    color: #fff;
+}
+
+.cmp-sub {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--obi-text-muted);
+    max-width: 62ch;
+}
+
+.cmp-benches { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+@media (max-width: 700px) {
+    .cmp-benches { grid-template-columns: 1fr; }
+}
+
+.cmp-bench {
+    background: var(--obi-bg-elevated);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 8px;
+    padding: 12px 14px;
+}
+
+.cmp-bench-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 9px;
+    flex-wrap: wrap;
+}
+
+.cmp-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    flex: none;
+    box-shadow: var(--obi-ring-light);
+}
+
+.cmp-bench-name {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    text-transform: uppercase;
+}
+
+.cmp-bench-sub { font-size: 11.5px; color: var(--obi-text-muted); }
+
+.cmp-select {
+    width: 100%;
+    background: var(--obi-bg);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 6px;
+    color: var(--obi-text);
+    font-family: var(--obi-font-body);
+    font-size: 13.5px;
+    padding: 8px 10px;
+    box-sizing: border-box;
+}
+
+.cmp-select:focus { outline: none; border-color: var(--obi-accent); }
+
+.cmp-chosen { display: flex; align-items: center; gap: 10px; }
+
+.cmp-chosen-name {
+    flex: 1;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14.5px;
+    color: var(--obi-accent);
+}
+
+/* Defensive against the global unscoped button rule in DraftDashboard.css. */
+.cmp-change {
+    height: auto !important;
+    border-radius: 4px !important;
+    white-space: nowrap;
+    padding: 3px 9px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--obi-text-secondary);
+    background: rgba(157, 185, 205, 0.1);
+    border: 1px solid var(--obi-card-border);
+    cursor: pointer;
+}
+
+.cmp-empty { font-size: 13px; color: var(--obi-text-muted); }
+
+.cmp-error {
+    background: rgba(224, 138, 138, 0.12);
+    border: 1px solid rgba(224, 138, 138, 0.4);
+    color: var(--obi-error);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 13px;
+    margin-bottom: 12px;
+}
