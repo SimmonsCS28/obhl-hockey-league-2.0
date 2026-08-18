@@ -91,3 +91,37 @@ unchanged, and they do not need reverting. Restore the dump only if data is actu
 Seasons default to `type='LEAGUE'`, no tournament exists on first deploy, so every tournament
 surface renders its empty state. The only visible league change is the three retired Scheduling
 pages.
+
+---
+
+## Deployment record — 2026-08-18
+
+Executed in the order above. Prod HEAD `6afc686` → `c43038d`.
+
+| Step | Result |
+|---|---|
+| Pre-flight | 6 containers healthy. One untracked drift file (`frontend/src/components/api.js`) left in place. Swap 2.0Gi present, postgres `unless-stopped`. |
+| Disk | 76% used with 4.4G free — below comfort for four image builds. Pruned 6.099GB of build cache → 47%. Ended at 60% / 7.5G free after the rebuilds. |
+| Backup | `/home/ubuntu/backup-pre-tournament-2026-08-18-1857.sql`, 548K, 25 tables, completion marker confirmed. |
+| Migrations 046–053 | All 8 applied, each reported ok. Re-run safe (idempotent). |
+| Schema check | `seasons.type`, `games.tournament_stage`, `games.period_count`, `teams.seed`, `players.user_id`, `tournaments`, 3 draft tables, `chk_tournament_never_active` — all present. |
+| Data check | 2 seasons, both `LEAGUE`. 165 games (150 REGULAR_SEASON, 15 PLAYOFF). Unchanged. |
+| league-service | Healthy, started in 17.7s — `ddl-auto=validate` accepted the new schema, which is the real proof the migrations match the entities. |
+| stats-service | Healthy, 14.2s. |
+| game-service | Healthy, 14.4s. |
+| api-gateway | Healthy, 21.9s. |
+| frontend | Up. Build stamp `2026-08-18T19:09:59Z`. Rebuilding it restarted api-gateway as a dependency; it came back healthy. |
+
+Post-deploy verification:
+
+- `/`, `/api/v1/seasons`, `/api/v1/tournaments`, `/tournaments` → all 200.
+- `GET /api/v1/seasons` returns only the two `LEAGUE` seasons — the default-deny `?type=LEAGUE` filter holds.
+- `GET /api/v1/tournaments` → `[]`. Correct: none created yet.
+- 20 teams, 165 games — league data untouched.
+- `PUT /stats-api/players/deactivate-unregistered` without `seasonIds` → **400**, confirming the
+  positive-list guard is live and a malformed call now deactivates nobody instead of everybody.
+- Log scan across all four services: no real errors. The only hits were the 400 above (deliberate)
+  and two gateway DEBUG startup lines matching on class names.
+
+**Nothing tournament-facing is visible to members yet** — the first tournament has to be created in
+Admin → Conley Classic → Tournament Setup, and stays unpublished until the publish toggle is set.
