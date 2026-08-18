@@ -150,6 +150,8 @@ public class GameDto {
         private String tournamentStage;
         /** Regulation periods this game was played under; null for league games. */
         private Short periodCount;
+        /** Length of a regulation period in minutes; null for league games. */
+        private Short periodMinutes;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
         private Long goalie1Id;

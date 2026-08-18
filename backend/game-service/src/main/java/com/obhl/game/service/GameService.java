@@ -320,6 +320,7 @@ public class GameService {
         dto.setPlayoffRound(game.getPlayoffRound());
         dto.setTournamentStage(game.getTournamentStage());
         dto.setPeriodCount(game.getPeriodCount());
+        dto.setPeriodMinutes(game.getPeriodMinutes());
         dto.setBracketPosition(game.getBracketPosition());
         dto.setGoalie1Id(game.getGoalie1Id());
         dto.setGoalie2Id(game.getGoalie2Id());

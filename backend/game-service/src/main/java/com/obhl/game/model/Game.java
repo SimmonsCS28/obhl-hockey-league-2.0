@@ -86,6 +86,14 @@ public class Game {
     @Column(name = "period_count")
     private Short periodCount;
 
+    /**
+     * Length of a regulation period in minutes. Null for league games (20). Read by the scorekeeper
+     * clock in preference to the tournament config, for the same reason as periodCount: a game keeps
+     * the rules it was played under.
+     */
+    @Column(name = "period_minutes")
+    private Short periodMinutes;
+
     @Column(name = "rink", length = 20)
     private String rink;
 

@@ -66,11 +66,13 @@ export const leagueRules = makeRules({
  * Elimination games (bracket, placement, consolation) go to sudden death, because somebody has to
  * advance or be placed.
  *
- * @param game the game row; reads tournamentStage and periodCount
- * @param tournament optional, for periodMinutes. The fallback is 20: the Classic plays 2 x 20,
- *   confirmed against previous years' schedules. It matters because no caller currently passes
- *   the tournament, so this fallback is what the scorekeeper's clock is actually capped at --
- *   at 15 an event could not be entered after 15:00 of a period that runs to 20.
+ * @param game the game row; reads tournamentStage, periodCount and periodMinutes. The game is the
+ *   preferred source for both period fields: they are stamped onto it when the schedule is
+ *   generated, so a game keeps the rules it was played under and the scorekeeper needs nothing but
+ *   the game itself. That matters here because no caller passes the tournament -- LiveScoreEntry
+ *   resolves its own rules from the game it loaded.
+ * @param tournament optional fallback for games predating those columns. The final fallback of 20
+ *   is the Classic's own format, confirmed against previous years' schedules.
  */
 export function tournamentRules(game, tournament) {
     const groupStages = ['POOL', 'ROUND_ROBIN'];
@@ -78,8 +80,8 @@ export function tournamentRules(game, tournament) {
 
     return makeRules({
         regulationPeriods: game?.periodCount ?? tournament?.periodCount ?? 2,
-        regulationMinutes: tournament?.periodMinutes ?? 20,
-        otMinutes: tournament?.periodMinutes ?? 20,
+        regulationMinutes: game?.periodMinutes ?? tournament?.periodMinutes ?? 20,
+        otMinutes: game?.periodMinutes ?? tournament?.periodMinutes ?? 20,
         allowsOT: !isGroupGame,
         suddenDeath: !isGroupGame,
     });

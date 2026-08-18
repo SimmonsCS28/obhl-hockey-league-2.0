@@ -59,6 +59,7 @@ function TournamentScheduleAdmin() {
         consolationStage: tournament.consolationStage,
         consolationTeamCount: tournament.consolationTeamCount,
         periodCount: tournament.periodCount,
+        periodMinutes: tournament.periodMinutes,
         venue: tournament.venue,
         slots,
     });

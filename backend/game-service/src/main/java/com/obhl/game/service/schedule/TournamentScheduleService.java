@@ -53,6 +53,7 @@ public class TournamentScheduleService {
         private String consolationStage;
         private Integer consolationTeamCount;
         private Short periodCount;
+        private Short periodMinutes;
         private String venue;
         /** Ice slots, in the order games should fill them. */
         private List<GameSlot> slots;
@@ -140,6 +141,7 @@ public class TournamentScheduleService {
             g.setPlayoffRound(pg.round());
             g.setBracketPosition(pg.bracketPosition());
             g.setPeriodCount(req.getPeriodCount() == null ? (short) 2 : req.getPeriodCount());
+            g.setPeriodMinutes(req.getPeriodMinutes() == null ? (short) 20 : req.getPeriodMinutes());
             g.setStatus("scheduled");
             g.setVenue(req.getVenue());
             // week doubles as the day index for a weekend event; every downstream filter groups by it.
