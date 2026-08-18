@@ -51,16 +51,23 @@ const nextPowerOfTwo = (n) => {
  *   warnings: string[]
  * }}
  */
-export function summarizeFormat({
-    teamCount = 0,
-    groupStage = GROUP_ROUND_ROBIN,
-    poolCount = 2,
-    advancePerPool = 2,
-    championshipStage = CHAMPIONSHIP_SINGLE_ELIM,
-    placementGame = false,
-    consolationStage = CONSOLATION_NONE,
-    consolationTeamCount = 0,
-} = {}) {
+export function summarizeFormat(config = {}) {
+    // Read every field with `??` rather than destructuring defaults. Those only fire on `undefined`,
+    // and the API hands back `null` for any unset column -- `pool_count` has no database default at
+    // all (048_create_tournaments.sql). A null poolCount reaching the arithmetic below took the
+    // `poolCount < 1` branch in poolSizes and produced "zero divisions": no group games, no
+    // qualifiers, no bracket, and a preview confidently reporting that an eight-team tournament was
+    // two consolation games. The form already displays these fields as `draft.poolCount ?? 2`, so
+    // coalescing here is what makes the preview agree with what the admin is actually looking at.
+    const teamCount = config.teamCount ?? 0;
+    const groupStage = config.groupStage ?? GROUP_ROUND_ROBIN;
+    const poolCount = config.poolCount ?? 2;
+    const advancePerPool = config.advancePerPool ?? 2;
+    const championshipStage = config.championshipStage ?? CHAMPIONSHIP_SINGLE_ELIM;
+    const placementGame = config.placementGame ?? false;
+    const consolationStage = config.consolationStage ?? CONSOLATION_NONE;
+    const consolationTeamCount = config.consolationTeamCount ?? 0;
+
     const warnings = [];
 
     // --- Group stage ---

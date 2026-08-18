@@ -230,6 +230,22 @@ function Radio({ value, current, onChange, label, desc }) {
 }
 
 function FormatPanel({ draft, set }) {
+    /*
+     * Seed the stage's own fields when that stage is chosen.
+     *
+     * The Divisions inputs only render once Divisions is selected, and they display
+     * `draft.poolCount ?? 2` -- so before this, picking Divisions showed "2 divisions" while the
+     * state still held the null the API returned (pool_count has no database default). The preview
+     * read that null and reported no group stage at all, and saving would have been rejected by the
+     * server's "Divisions needs at least 2 pools" check. Writing the value the field claims to have
+     * keeps the form, the preview and the server looking at the same configuration.
+     */
+    const setGroupStage = (v) => set(d => ({
+        groupStage: v,
+        ...(v === GROUP_DIVISIONS && d.poolCount == null ? { poolCount: 2 } : {}),
+        ...(v !== GROUP_NONE && d.advancePerPool == null ? { advancePerPool: 2 } : {}),
+    }));
+
     return (
         <Panel
             title="Format"
@@ -237,11 +253,11 @@ function FormatPanel({ draft, set }) {
         >
             <div className="obi-tsetup-stage">
                 <div className="obi-tsetup-stage-name">Group stage</div>
-                <Radio value={GROUP_ROUND_ROBIN} current={draft.groupStage} onChange={v => set({ groupStage: v })}
+                <Radio value={GROUP_ROUND_ROBIN} current={draft.groupStage} onChange={setGroupStage}
                     label="Round robin" desc="One group; everyone plays everyone once." />
-                <Radio value={GROUP_DIVISIONS} current={draft.groupStage} onChange={v => set({ groupStage: v })}
+                <Radio value={GROUP_DIVISIONS} current={draft.groupStage} onChange={setGroupStage}
                     label="Divisions" desc="Split into pools, round robin within each." />
-                <Radio value={GROUP_NONE} current={draft.groupStage} onChange={v => set({ groupStage: v })}
+                <Radio value={GROUP_NONE} current={draft.groupStage} onChange={setGroupStage}
                     label="None" desc="Straight to the bracket." />
 
                 {draft.groupStage === GROUP_DIVISIONS && (
