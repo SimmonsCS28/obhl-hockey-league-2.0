@@ -111,7 +111,7 @@ public class Tournament {
     private Short periodCount = 2;
 
     @Column(name = "period_minutes", nullable = false)
-    private Short periodMinutes = 15;
+    private Short periodMinutes = 20;
 
     /** Names a scoring profile in code rather than storing the rules as columns. */
     @Column(name = "scoring_profile", nullable = false, length = 40)

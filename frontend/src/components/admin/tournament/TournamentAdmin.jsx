@@ -413,7 +413,7 @@ function WeekendPanel({ draft, set }) {
                 </label>
                 <label className="obi-tsetup-field">
                     <span>Minutes per period</span>
-                    <input type="number" min="1" max="60" value={draft.periodMinutes ?? 15}
+                    <input type="number" min="1" max="60" value={draft.periodMinutes ?? 20}
                         onChange={e => set({ periodMinutes: Number(e.target.value) })} />
                 </label>
             </div>

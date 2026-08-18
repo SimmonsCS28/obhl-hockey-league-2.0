@@ -67,7 +67,10 @@ export const leagueRules = makeRules({
  * advance or be placed.
  *
  * @param game the game row; reads tournamentStage and periodCount
- * @param tournament optional, for periodMinutes; falls back to the league-ish 15 the Classic uses
+ * @param tournament optional, for periodMinutes. The fallback is 20: the Classic plays 2 x 20,
+ *   confirmed against previous years' schedules. It matters because no caller currently passes
+ *   the tournament, so this fallback is what the scorekeeper's clock is actually capped at --
+ *   at 15 an event could not be entered after 15:00 of a period that runs to 20.
  */
 export function tournamentRules(game, tournament) {
     const groupStages = ['POOL', 'ROUND_ROBIN'];
@@ -75,8 +78,8 @@ export function tournamentRules(game, tournament) {
 
     return makeRules({
         regulationPeriods: game?.periodCount ?? tournament?.periodCount ?? 2,
-        regulationMinutes: tournament?.periodMinutes ?? 15,
-        otMinutes: tournament?.periodMinutes ?? 15,
+        regulationMinutes: tournament?.periodMinutes ?? 20,
+        otMinutes: tournament?.periodMinutes ?? 20,
         allowsOT: !isGroupGame,
         suddenDeath: !isGroupGame,
     });
