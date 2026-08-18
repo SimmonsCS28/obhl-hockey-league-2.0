@@ -16,6 +16,9 @@ const NAV_LINKS = [
     { to: '/standings', label: 'Standings' },
     { to: '/schedule', label: 'Schedule' },
     { to: '/rules', label: 'Rules' },
+    // The Conley Classic microsite. Its own chrome and identity live behind this link; the
+    // tournament site carries exactly one link back here.
+    { to: '/tournaments', label: 'Conley Classic' },
 ];
 
 function PublicLayout() {

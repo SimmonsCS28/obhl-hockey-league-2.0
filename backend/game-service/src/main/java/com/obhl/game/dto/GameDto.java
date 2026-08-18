@@ -146,6 +146,10 @@ public class GameDto {
         private String gameType;
         private String playoffRound;
         private Integer bracketPosition;
+        /** POOL | ROUND_ROBIN | BRACKET | PLACEMENT | CONSOLATION; null for league games. */
+        private String tournamentStage;
+        /** Regulation periods this game was played under; null for league games. */
+        private Short periodCount;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
         private Long goalie1Id;

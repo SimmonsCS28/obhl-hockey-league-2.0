@@ -20,6 +20,9 @@ public interface StatsClient {
         @GetMapping("/api/v1/players")
         List<Map<String, Object>> getAllPlayers();
 
+        @GetMapping("/api/v1/players")
+        List<Map<String, Object>> getPlayersBySeason(@RequestParam("seasonId") Long seasonId);
+
         @GetMapping("/api/v1/players/{id}")
         Map<String, Object> getPlayerById(@PathVariable("id") Long id);
 
@@ -45,6 +48,13 @@ public interface StatsClient {
         @DeleteMapping("/api/v1/players/{id}")
         void deletePlayer(@PathVariable("id") Long id);
 
+        /**
+         * seasonIds is the positive list of seasons to sweep. Pass league season ids only --
+         * without it this would deactivate tournament players too, since they never appear in a
+         * league registration list.
+         */
         @PutMapping("/api/v1/players/deactivate-unregistered")
-        void deactivateUnregisteredPlayers(@RequestBody List<String> registeredEmails);
+        void deactivateUnregisteredPlayers(
+                        @RequestParam("seasonIds") List<Long> seasonIds,
+                        @RequestBody List<String> registeredEmails);
 }

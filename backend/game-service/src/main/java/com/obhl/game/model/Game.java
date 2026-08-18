@@ -74,6 +74,18 @@ public class Game {
     @Column(name = "bracket_position")
     private Integer bracketPosition; // 1-indexed position within the playoff round
 
+    /** POOL | ROUND_ROBIN | BRACKET | PLACEMENT | CONSOLATION — null for league games. */
+    @Column(name = "tournament_stage", length = 20)
+    private String tournamentStage;
+
+    /**
+     * Regulation periods this game was played under. Null for league games (3 + OT). Read by
+     * tournament scoring rather than the tournament config, so reconfiguring a tournament cannot
+     * rescore games already played.
+     */
+    @Column(name = "period_count")
+    private Short periodCount;
+
     @Column(name = "rink", length = 20)
     private String rink;
 

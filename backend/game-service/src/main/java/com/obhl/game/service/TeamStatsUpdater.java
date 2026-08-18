@@ -19,15 +19,28 @@ public class TeamStatsUpdater {
     private final TeamClient teamClient;
 
     /**
+     * Only regular-season games move the denormalised standings columns on the team row.
+     *
+     * <p>Written as an allow-list rather than "not PLAYOFF" deliberately. The columns it feeds
+     * (points/wins/losses/ties/goals_for/...) are league-shaped: two points a win, one an OT loss.
+     * Tournament games use a different formula entirely and their standings are computed on read,
+     * so letting a TOURNAMENT game through here would write meaningless numbers onto tournament team
+     * rows -- and because unfinalizeGame reverts them symmetrically, the damage would look
+     * reversible while being silently wrong. Any future game type is excluded until it opts in.
+     */
+    private boolean affectsLeagueStandings(Game game) {
+        return "REGULAR_SEASON".equals(game.getGameType());
+    }
+
+    /**
      * Update team standings after a game is finalized
      * This increments the team stats based on the game outcome
      */
     public void updateTeamStats(Game game) {
         log.info("Updating team stats for game {}", game.getId());
 
-        // Playoff games do NOT affect regular season standings
-        if ("PLAYOFF".equals(game.getGameType())) {
-            log.info("Skipping standings update for playoff game {}", game.getId());
+        if (!affectsLeagueStandings(game)) {
+            log.info("Skipping standings update for {} game {}", game.getGameType(), game.getId());
             return;
         }
 
@@ -97,9 +110,10 @@ public class TeamStatsUpdater {
     public void revertTeamStats(Game game) {
         log.info("Reverting team stats for game {}", game.getId());
 
-        // Playoff games were never applied to standings, so nothing to revert
-        if ("PLAYOFF".equals(game.getGameType())) {
-            log.info("Skipping standings revert for playoff game {}", game.getId());
+        // Must mirror updateTeamStats exactly: anything never applied has nothing to revert, and a
+        // mismatch between the two guards would corrupt standings in one direction only.
+        if (!affectsLeagueStandings(game)) {
+            log.info("Skipping standings revert for {} game {}", game.getGameType(), game.getId());
             return;
         }
 

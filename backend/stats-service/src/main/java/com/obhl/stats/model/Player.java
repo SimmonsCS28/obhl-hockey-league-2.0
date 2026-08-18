@@ -85,6 +85,24 @@ public class Player {
     @JsonView(Views.Privileged.class)
     private Integer skillRating = 5;
 
+    /**
+     * Optional link to a user account (migration 049).
+     *
+     * <p>Players have historically been matched to accounts by comparing email strings, which is
+     * fragile enough that season_goalies exists partly to work around it. Nullable because "no
+     * account" is a normal, permanent state for a tournament entrant — plenty sign up on paper.
+     */
+    @Column(name = "user_id")
+    private Long userId;
+
+    /**
+     * Position in the tournament draft sequence. Audit only: the tournament draft is
+     * operator-directed with no pick order, so this records when someone was assigned, not whose
+     * turn it was. Null for league players.
+     */
+    @Column(name = "draft_pick")
+    private Integer draftPick;
+
     public static final int TWO_GOAL_LIMIT_THRESHOLD = 9;
 
     /**

@@ -27,16 +27,23 @@ const NAV = [
     { id: 'rules', label: 'Rules Editor' },
     // Launcher — opens the role-scoped Coordinator Console (external to the admin shell), per v4 §2c
     { route: '/coordinator', label: 'Coordinator Console' },
-    { group: 'Scheduling' },
-    { id: 'goalies', label: 'Goalie Schedule' },
-    { id: 'referees', label: 'Referee Schedule' },
-    { id: 'scorekeepers', label: 'Scorekeeper Schedule' },
+    // The old "Scheduling" group (Goalie/Referee/Scorekeeper Schedule) was removed here: staffing
+    // now lives in Operations → Assignments for direct overrides, and in the Coordinator Console for
+    // the sign-up → confirm → publish workflow. The one thing not carried over is the old goalie
+    // page's assigned/unassigned filter.
+    { group: 'Conley Classic' },
+    { id: 'tournament', label: 'Tournament Setup' },
+    { id: 'tournament-draft', label: 'Tournament Draft' },
+    { id: 'tournament-schedule', label: 'Tournament Schedule' },
 ];
 
 function AdminLayout({ children, activeTab }) {
     const [mobileOpen, setMobileOpen] = useState(false);
     const { user } = useAuth();
-    const { seasons, selectedSeasonId, setSelectedSeasonId, isHistoricalView } = useSeason();
+    // allSeasons, not seasons: the admin legitimately needs the tournament season to reach
+    // Live Score Entry, Assignments and the Coordinator Console for tournament games. The public
+    // site keeps the league-only list, which is where the leakage actually matters.
+    const { allSeasons, selectedSeasonId, setSelectedSeasonId, isHistoricalView } = useSeason();
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -59,6 +66,9 @@ function AdminLayout({ children, activeTab }) {
         : activeItem?.id === 'livescore' ? 'Live game scoring'
         : activeItem?.id === 'gamemgmt' ? 'Box-score editor for completed games'
         : activeItem?.id === 'assignments' ? 'Assign goalies, referees and scorekeepers'
+        : activeItem?.id === 'tournament' ? 'Configure the annual tournament'
+        : activeItem?.id === 'tournament-draft' ? 'Build the Classic rosters'
+        : activeItem?.id === 'tournament-schedule' ? 'Generate the weekend fixture list'
         : 'OBHL administration';
 
     const initials = (() => {
@@ -68,7 +78,7 @@ function AdminLayout({ children, activeTab }) {
         return (user?.username || 'AD').slice(0, 2).toUpperCase();
     })();
 
-    const activeSeasonName = seasons?.find(s => s.id === selectedSeasonId)?.name || 'No season';
+    const activeSeasonName = allSeasons?.find(s => s.id === selectedSeasonId)?.name || 'No season';
 
     return (
         <div className="obi-admin-shell">
@@ -122,9 +132,9 @@ function AdminLayout({ children, activeTab }) {
                         <div className="obi-admin-sub">{pageSub}</div>
                     </div>
                     <div className="obi-admin-topbar-right">
-                        {seasons?.length > 0 ? (
+                        {allSeasons?.length > 0 ? (
                             <SeasonSelector
-                                seasons={seasons}
+                                seasons={allSeasons}
                                 selectedSeasonId={selectedSeasonId}
                                 onChange={setSelectedSeasonId}
                                 size="sm"

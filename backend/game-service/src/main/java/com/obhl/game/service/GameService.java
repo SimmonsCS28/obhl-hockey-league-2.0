@@ -22,7 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 public class GameService {
 
     private final GameRepository gameRepository;
-    private final PointsCalculator pointsCalculator;
+    private final com.obhl.game.service.scoring.GamePointsPolicyResolver pointsPolicyResolver;
+    private final com.obhl.game.service.schedule.TournamentBracketService tournamentBracketService;
     private final TeamStatsUpdater teamStatsUpdater;
     private final PlayerStatsAggregator playerStatsAggregator;
 
@@ -221,8 +222,9 @@ public class GameService {
         game.setForfeitTeamId(forfeitTeamId);
         game.setStatus("completed");
 
-        // Calculate points using PointsCalculator
-        pointsCalculator.calculateAndSetPoints(game);
+        // League and tournament games score differently; the resolver picks. For league games this
+        // still lands in PointsCalculator, unchanged.
+        pointsPolicyResolver.forGame(game).apply(game);
 
         // Save game first
         Game savedGame = gameRepository.save(game);
@@ -238,6 +240,13 @@ public class GameService {
         // Auto-advance the playoff bracket if this was a playoff game
         if ("PLAYOFF".equals(savedGame.getGameType())) {
             advancePlayoffBracket(savedGame);
+        }
+
+        // Tournaments have their own advancement: arbitrary round names, a placement game fed by
+        // the semifinal LOSERS, and a bracket that is seeded from group standings rather than
+        // known up front. Kept separate so the league playoff path above is untouched.
+        if ("TOURNAMENT".equals(savedGame.getGameType())) {
+            tournamentBracketService.onGameFinalized(savedGame);
         }
 
         return toResponse(savedGame);
@@ -309,6 +318,8 @@ public class GameService {
         dto.setGameNotes(game.getGameNotes());
         dto.setGameType(game.getGameType());
         dto.setPlayoffRound(game.getPlayoffRound());
+        dto.setTournamentStage(game.getTournamentStage());
+        dto.setPeriodCount(game.getPeriodCount());
         dto.setBracketPosition(game.getBracketPosition());
         dto.setGoalie1Id(game.getGoalie1Id());
         dto.setGoalie2Id(game.getGoalie2Id());

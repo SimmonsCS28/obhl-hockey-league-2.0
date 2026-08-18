@@ -1,0 +1,289 @@
+/*
+ * The Conley Classic — microsite theme.
+ *
+ * SCOPING: every token here is defined on `.tcc-root`, never on `:root`. The league site's --obi-*
+ * tokens live on :root and must stay untouched; the tournament has its own identity (blue/gold on
+ * near-black, Anton/Rajdhani display faces) and it applies only inside the microsite.
+ *
+ * NAMING: every class is prefixed `tcc-` (The Conley Classic). This codebase has no CSS scoping —
+ * 80 global stylesheets, no modules — so names silently collide across unrelated components.
+ *
+ * NOT `cc-`: that prefix is the Coordinator Console's, and Coordinator.css already defines
+ * .cc-header, .cc-footer, .cc-nav-link, .cc-empty and .cc-team-name among ~200 others. This file
+ * was originally written with `cc-` and the collision showed up as nav links silently rendering in
+ * Saira Condensed instead of Rajdhani — the two .cc-nav-link rules had equal specificity, so source
+ * order decided it. Verified `tcc-` unused across the tree before adopting it.
+ *
+ * DEFENSIVE RESETS: two global rules leak in and have to be neutralised at the container:
+ *   1. src/index.css is still the stock Vite starter sheet and loads LAST (main.jsx), setting
+ *      a #242424 background, #646cff link colours and its own button styling.
+ *   2. DraftDashboard.css declares a bare `button { ... }` TAG selector — including
+ *      `border-radius: 4px !important`, `height: 36px`, `white-space: nowrap` — and is bundled
+ *      globally, so it hits every button in the app.
+ * Both are tracked in docs/tournament/00-follow-ups.md. When the button rule is scoped (the fix
+ * exists on branch claude/sharp-ellis-1eeb87), the button reset below can go.
+ */
+
+.tcc-root {
+    /* Surfaces */
+    --tcc-bg: #05070a;
+    --tcc-raised: #0b0f14;
+    --tcc-surface: #0e1319;
+    --tcc-card: linear-gradient(160deg, #121a22, #0b1116);
+    --tcc-card-hi: linear-gradient(160deg, #151d26, #0d1319);
+    --tcc-footer: #030405;
+
+    /* Brand */
+    --tcc-blue: #3FA7D6;
+    --tcc-gold: #F6A91C;
+
+    /* Text */
+    --tcc-text: #EAF3FA;
+    --tcc-text-2: #B9CBD6;
+    --tcc-text-3: #9DB9CD;
+    --tcc-text-4: #8CA3B3;
+    --tcc-muted: #7E93A3;
+    --tcc-muted-2: #6E828F;
+    --tcc-dim: #5E6872;
+
+    /* Lines */
+    --tcc-border: rgba(140, 180, 205, 0.18);
+    --tcc-border-soft: rgba(140, 180, 205, 0.1);
+    --tcc-border-blue: rgba(63, 167, 214, 0.28);
+
+    /* Result colours */
+    --tcc-win: #7FB59A;
+    --tcc-loss: #E08A8A;
+    --tcc-out: #8A5A5A;
+
+    /* Type */
+    --tcc-display: 'Anton', 'Saira Condensed', system-ui, sans-serif;
+    --tcc-ui: 'Rajdhani', 'Saira Condensed', system-ui, sans-serif;
+    --tcc-body: 'Saira', system-ui, sans-serif;
+
+    /* Layout */
+    --tcc-max: 1240px;
+    --tcc-pad: 28px;
+
+    /* The signature shape is a clipped corner, not a border radius. */
+    --tcc-clip-8: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+    --tcc-clip-10: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+    --tcc-clip-12: polygon(12px 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%, 0 12px);
+
+    /* All team dots carry this ring so Black and Blue stay visible on the dark background. */
+    --tcc-dot-ring: inset 0 0 0 1.5px rgba(255, 255, 255, 0.4);
+
+    background: var(--tcc-bg);
+    color: var(--tcc-text);
+    font-family: var(--tcc-body);
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* --- defensive resets (see file header) --- */
+
+.tcc-root a {
+    color: inherit;
+    font-weight: inherit;
+    text-decoration: none;
+}
+
+.tcc-root button {
+    height: auto !important;
+    border-radius: 0 !important;
+    white-space: normal;
+    justify-content: inherit;
+    align-items: inherit;
+    color: inherit;
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    line-height: inherit;
+    cursor: pointer;
+}
+
+.tcc-root h1, .tcc-root h2, .tcc-root h3, .tcc-root p, .tcc-root dl, .tcc-root dd {
+    margin: 0;
+}
+
+.tcc-root *, .tcc-root *::before, .tcc-root *::after {
+    box-sizing: border-box;
+}
+
+/* --- shared primitives --- */
+
+.tcc-container {
+    max-width: var(--tcc-max);
+    margin: 0 auto;
+    padding-left: var(--tcc-pad);
+    padding-right: var(--tcc-pad);
+}
+
+.tcc-eyebrow {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--tcc-blue);
+    margin-bottom: 8px;
+}
+
+.tcc-eyebrow.is-gold { color: var(--tcc-gold); }
+
+/* Page head — every page except Home */
+.tcc-head {
+    background: var(--tcc-raised);
+    border-bottom: 1px solid rgba(63, 167, 214, 0.14);
+}
+
+.tcc-head-inner {
+    max-width: var(--tcc-max);
+    margin: 0 auto;
+    padding: 52px var(--tcc-pad) 40px;
+}
+
+.tcc-h1 {
+    font-family: var(--tcc-display);
+    font-size: clamp(34px, 5vw, 58px);
+    line-height: 1;
+    color: #fff;
+    text-transform: uppercase;
+    font-weight: 400;
+}
+
+.tcc-h2 {
+    font-family: var(--tcc-display);
+    font-size: clamp(30px, 4vw, 46px);
+    line-height: 1.05;
+    color: #fff;
+    text-transform: uppercase;
+    font-weight: 400;
+}
+
+.tcc-sub {
+    font-family: var(--tcc-body);
+    font-size: 15px;
+    color: var(--tcc-text-4);
+    max-width: 640px;
+    line-height: 1.5;
+    margin-top: 14px;
+}
+
+.tcc-section { padding: 56px var(--tcc-pad) 80px; }
+
+/* Buttons */
+.tcc-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    font-size: 15px;
+    padding: 11px 22px;
+    clip-path: var(--tcc-clip-8);
+    transition: background 0.15s, color 0.15s, transform 0.12s;
+}
+
+.tcc-btn:hover { transform: translateY(-1px); }
+
+.tcc-btn-solid {
+    color: #05070a;
+    background: var(--tcc-blue);
+    box-shadow: 0 4px 14px rgba(63, 167, 214, 0.32);
+}
+
+.tcc-btn-ghost {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1.5px solid rgba(140, 180, 205, 0.4);
+}
+
+.tcc-btn-gold {
+    color: var(--tcc-gold);
+    background: rgba(246, 169, 28, 0.08);
+    border: 1.5px solid rgba(246, 169, 28, 0.5);
+}
+
+.tcc-btn-gold:hover { background: rgba(246, 169, 28, 0.16); }
+
+/* Team colour dot */
+.tcc-dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    flex: none;
+    box-shadow: var(--tcc-dot-ring);
+    display: inline-block;
+}
+
+.tcc-dot.is-lg { width: 16px; height: 16px; }
+.tcc-dot.is-sm { width: 9px; height: 9px; }
+
+/* Cards */
+.tcc-card {
+    background: var(--tcc-card);
+    border: 1px solid var(--tcc-border);
+    clip-path: var(--tcc-clip-12);
+    padding: 22px 20px;
+    transition: border-color 0.15s;
+}
+
+a.tcc-card:hover, .tcc-card.is-link:hover { border-color: rgba(63, 167, 214, 0.5); }
+
+/* Tables */
+.tcc-table {
+    background: linear-gradient(180deg, #121a22, #0b1116);
+    border: 1px solid rgba(140, 180, 205, 0.16);
+    width: 100%;
+}
+
+.tcc-thead {
+    background: rgba(0, 0, 0, 0.25);
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 11.5px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--tcc-muted);
+}
+
+.tcc-trow { border-bottom: 1px solid rgba(140, 180, 205, 0.07); }
+.tcc-trow:last-child { border-bottom: none; }
+
+/* Empty / loading states */
+.tcc-empty {
+    text-align: center;
+    padding: 56px 20px;
+    color: var(--tcc-muted);
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.tcc-empty-title {
+    font-family: var(--tcc-display);
+    font-size: 24px;
+    color: var(--tcc-text-2);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+
+/* Decorative motion is opt-out for anyone who asks for less of it. */
+@media (prefers-reduced-motion: reduce) {
+    .tcc-root *,
+    .tcc-root *::before,
+    .tcc-root *::after {
+        animation-duration: 0.001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.001ms !important;
+    }
+}
+
+@media (max-width: 620px) {
+    .tcc-root { --tcc-pad: 18px; }
+}

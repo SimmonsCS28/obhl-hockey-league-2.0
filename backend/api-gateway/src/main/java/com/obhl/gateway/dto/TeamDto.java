@@ -377,6 +377,13 @@ public class TeamDto {
         private Integer overtimeLosses;
         private Integer goalsFor;
         private Integer goalsAgainst;
+
+        // Tournament fields; null for league teams.
+        private Integer seed;
+        private Long captainPlayerId;
+        private String pool;
+        private Boolean eliminated;
+
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
 

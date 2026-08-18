@@ -172,6 +172,11 @@ public class TeamService {
             }
         }
 
+        dto.setSeed(team.getSeed());
+        dto.setCaptainPlayerId(team.getCaptainPlayerId());
+        dto.setPool(team.getPool());
+        dto.setEliminated(team.getEliminated());
+
         dto.setActive(team.getActive());
         dto.setPoints(team.getPoints());
         dto.setWins(team.getWins());

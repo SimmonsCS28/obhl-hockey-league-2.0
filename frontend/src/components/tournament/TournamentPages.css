@@ -1,0 +1,1194 @@
+/* Shared styles for the Conley Classic inner pages. Tokens from tournament-theme.css. */
+
+.tcc-back {
+    display: inline-block;
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--tcc-text-3);
+    margin-bottom: 22px;
+}
+
+.tcc-back:hover { color: #fff; }
+
+.tcc-pos-pill {
+    display: inline-block;
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--tcc-text-3);
+    background: rgba(140, 180, 205, 0.1);
+    border: 1px solid rgba(140, 180, 205, 0.22);
+    padding: 4px 11px;
+}
+
+/* ===================================================== Teams grid */
+
+.tcc-team-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.tcc-team-card {
+    display: block;
+    background: var(--tcc-card);
+    border: 1px solid var(--tcc-border);
+    clip-path: var(--tcc-clip-12);
+    padding: 22px 20px;
+    transition: border-color 0.15s;
+}
+
+.tcc-team-card:hover { border-color: rgba(63, 167, 214, 0.5); }
+
+.tcc-team-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.tcc-team-seed {
+    font-family: var(--tcc-display);
+    font-size: 15px;
+    letter-spacing: 1px;
+    color: var(--tcc-blue);
+}
+
+.tcc-team-name {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 23px;
+    text-transform: uppercase;
+    color: #fff;
+    margin-top: 10px;
+}
+
+.tcc-team-captain {
+    font-family: var(--tcc-body);
+    font-size: 13.5px;
+    color: var(--tcc-muted);
+    margin-top: 2px;
+}
+
+.tcc-team-divider {
+    height: 1px;
+    background: rgba(140, 180, 205, 0.14);
+    margin: 16px 0 14px;
+}
+
+.tcc-team-stats {
+    display: flex;
+    gap: 16px;
+}
+
+.tcc-team-stat-value {
+    font-family: var(--tcc-display);
+    font-size: 19px;
+    color: var(--tcc-text);
+}
+
+.tcc-team-stat-label {
+    font-family: var(--tcc-ui);
+    font-weight: 600;
+    font-size: 10.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--tcc-muted-2);
+    margin-top: 2px;
+}
+
+/* ===================================================== Team roster */
+
+.tcc-roster-hero {
+    border-bottom: 3px solid var(--tcc-blue);
+    padding: 38px 0 40px;
+}
+
+.tcc-roster-hero-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 28px;
+    flex-wrap: wrap;
+}
+
+.tcc-roster-identity { display: flex; align-items: center; gap: 20px; }
+
+.tcc-roster-block {
+    width: 84px;
+    height: 84px;
+    flex: none;
+    clip-path: var(--tcc-clip-12);
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.4), 0 8px 26px rgba(0, 0, 0, 0.5);
+}
+
+.tcc-roster-name {
+    font-family: var(--tcc-display);
+    font-weight: 400;
+    font-size: clamp(38px, 7vw, 76px);
+    line-height: 0.9;
+    text-transform: uppercase;
+    color: #fff;
+}
+
+.tcc-roster-captain {
+    font-family: var(--tcc-body);
+    font-size: 14px;
+    color: #D6DCE2;
+    margin-top: 8px;
+}
+
+.tcc-roster-captain span {
+    font-family: var(--tcc-ui);
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #7E8A94;
+    margin-right: 6px;
+}
+
+.tcc-roster-stats { display: flex; gap: 12px; }
+
+.tcc-roster-stat {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(140, 180, 205, 0.16);
+    padding: 13px 20px;
+    text-align: center;
+}
+
+.tcc-roster-stat.is-status {
+    background: rgba(63, 167, 214, 0.1);
+    border-color: rgba(63, 167, 214, 0.3);
+}
+
+.tcc-roster-stat-value {
+    font-family: var(--tcc-display);
+    font-size: 22px;
+    color: #fff;
+}
+
+.tcc-roster-stat-label {
+    font-family: var(--tcc-ui);
+    font-weight: 600;
+    font-size: 10.5px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--tcc-muted-2);
+    margin-top: 3px;
+}
+
+.tcc-roster-body {
+    background: var(--tcc-raised);
+    padding: 44px 0 74px;
+}
+
+.tcc-roster-grid {
+    display: grid;
+    grid-template-columns: 1.2fr 1fr;
+    gap: 40px;
+    align-items: start;
+}
+
+.tcc-sechead {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.tcc-sechead-title {
+    font-family: var(--tcc-display);
+    font-weight: 400;
+    font-size: 22px;
+    text-transform: uppercase;
+    color: #fff;
+}
+
+.tcc-sechead-meta {
+    font-family: var(--tcc-body);
+    font-size: 14px;
+    color: #7E8A94;
+}
+
+.tcc-sechead-rule {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(63, 167, 214, 0.25), transparent);
+}
+
+.tcc-roster-row {
+    display: grid;
+    grid-template-columns: 50px 1fr 110px;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 22px;
+}
+
+.tcc-thead.tcc-roster-row { padding: 14px 22px; }
+
+.tcc-roster-num {
+    font-family: var(--tcc-display);
+    font-size: 17px;
+    color: var(--tcc-blue);
+    text-align: center;
+}
+
+/*
+ * Flex rather than plain text so a long name ellipsizes and the badges stay visible — with
+ * text-overflow on the whole cell the badge is what gets cut, which is the wrong thing to lose.
+ */
+.tcc-roster-player {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 16.5px;
+    text-transform: uppercase;
+    color: var(--tcc-text);
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    white-space: nowrap;
+}
+
+/* The name itself is the only part allowed to shrink. */
+.tcc-roster-player { overflow: hidden; }
+.tcc-roster-player > .tcc-badge { flex: none; }
+
+/* --- game cards --- */
+
+.tcc-gamelist { display: flex; flex-direction: column; gap: 11px; }
+
+.tcc-gamecard {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: #0e1319;
+    border: 1px solid rgba(140, 180, 205, 0.14);
+    padding: 14px 18px;
+}
+
+.tcc-gamecard.is-upcoming {
+    background: var(--tcc-card-hi);
+    border-color: rgba(63, 167, 214, 0.3);
+}
+
+.tcc-gamecard-rail {
+    width: 66px;
+    flex: none;
+    border-right: 1px solid rgba(140, 180, 205, 0.14);
+    padding-right: 12px;
+}
+
+.tcc-gamecard-round {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 12.5px;
+    text-transform: uppercase;
+    color: var(--tcc-blue);
+}
+
+.tcc-gamecard-date {
+    font-family: var(--tcc-body);
+    font-size: 12px;
+    color: var(--tcc-text-3);
+}
+
+.tcc-gamecard-main { flex: 1; min-width: 0; }
+
+.tcc-gamecard-teams {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.tcc-gamecard-self {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 15px;
+    text-transform: uppercase;
+    color: #fff;
+}
+
+.tcc-gamecard-opp {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 15px;
+    text-transform: uppercase;
+    color: var(--tcc-text-2);
+}
+
+.tcc-gamecard-opp:hover { color: #fff; text-decoration: underline; }
+.tcc-gamecard-opp.is-tbd { color: var(--tcc-dim); }
+
+.tcc-gamecard-vs {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--tcc-blue);
+}
+
+.tcc-gamecard-score {
+    font-family: var(--tcc-display);
+    font-size: 19px;
+    color: #fff;
+    display: inline-flex;
+    gap: 4px;
+}
+
+.tcc-gamecard-score .is-dim { color: var(--tcc-dim); }
+.tcc-gamecard-dash { color: var(--tcc-dim); }
+
+.tcc-gamecard-meta {
+    font-family: var(--tcc-body);
+    font-size: 12px;
+    color: #7E8A94;
+    margin-top: 4px;
+}
+
+.tcc-tag {
+    min-width: 64px;
+    text-align: center;
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 11.5px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 5px 9px;
+    flex: none;
+}
+
+.tcc-tag.is-win { color: var(--tcc-win); background: rgba(127, 181, 154, 0.14); }
+.tcc-tag.is-loss { color: var(--tcc-loss); background: rgba(224, 138, 138, 0.14); }
+.tcc-tag.is-tie { color: var(--tcc-text-3); background: rgba(140, 180, 205, 0.12); }
+.tcc-tag.is-upcoming { color: #05070a; background: var(--tcc-blue); }
+
+/* ===================================================== Players */
+
+.tcc-players-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 18px;
+}
+
+.tcc-search { position: relative; flex: 1 1 230px; max-width: 360px; }
+
+.tcc-search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--tcc-dim);
+    font-size: 15px;
+}
+
+.tcc-search-input {
+    width: 100%;
+    background: #0e1319;
+    border: 1px solid rgba(140, 180, 205, 0.2);
+    color: var(--tcc-text);
+    font-family: var(--tcc-body);
+    font-size: 15px;
+    padding: 11px 14px 11px 36px;
+}
+
+.tcc-search-input:focus { outline: none; border-color: rgba(63, 167, 214, 0.5); }
+.tcc-search-input::placeholder { color: var(--tcc-dim); }
+
+.tcc-players-count {
+    font-family: var(--tcc-body);
+    font-size: 14px;
+    color: var(--tcc-muted);
+}
+
+.tcc-filters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.tcc-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 13px;
+    text-transform: uppercase;
+    color: #C8D0D8;
+    background: rgba(140, 180, 205, 0.08);
+    border: 1px solid rgba(140, 180, 205, 0.2);
+    padding: 7px 13px;
+    transition: transform 0.1s, background 0.15s, color 0.15s;
+}
+
+.tcc-filter:hover { transform: translateY(-1px); }
+
+.tcc-filter.is-active {
+    color: #05070a;
+    background: var(--tcc-blue);
+    border-color: var(--tcc-blue);
+}
+
+.tcc-players-row {
+    display: grid;
+    grid-template-columns: 54px 1fr 200px 104px;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 22px;
+}
+
+.tcc-thead.tcc-players-row { padding: 0; }
+
+.tcc-sortbtn {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 11.5px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--tcc-muted);
+    padding: 14px 0;
+    text-align: left;
+}
+
+.tcc-sortbtn:first-child { text-align: center; padding-left: 22px; }
+.tcc-sortbtn:hover { color: #fff; }
+
+.tcc-players-team {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--tcc-body);
+    font-size: 14.5px;
+    color: var(--tcc-text-2);
+}
+
+.tcc-players-team:hover { color: #fff; }
+
+/* ===================================================== Schedule */
+
+.tcc-schedule {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 56px var(--tcc-pad) 80px;
+}
+
+.tcc-day + .tcc-day { margin-top: 48px; }
+
+.tcc-day-head { margin-bottom: 18px; }
+
+.tcc-day-label {
+    font-family: var(--tcc-display);
+    font-size: 26px;
+    text-transform: uppercase;
+    color: #fff;
+}
+
+.tcc-day-meta {
+    font-family: var(--tcc-body);
+    font-size: 14px;
+    color: var(--tcc-muted);
+}
+
+.tcc-srow {
+    display: grid;
+    grid-template-columns: 92px 1fr 120px;
+    gap: 16px;
+    align-items: center;
+    background: #0e1319;
+    border: 1px solid rgba(140, 180, 205, 0.14);
+    border-left: 3px solid var(--tcc-blue);
+    padding: 16px 20px;
+    margin-bottom: 10px;
+}
+
+.tcc-srow-time {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--tcc-text-3);
+}
+
+.tcc-srow-teams {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+}
+
+.tcc-srow-side { flex: 1; display: flex; }
+.tcc-srow-side.is-home { justify-content: flex-end; }
+
+.tcc-srow-team {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 17px;
+    text-transform: uppercase;
+    color: var(--tcc-text);
+}
+
+.tcc-srow-team:hover { text-decoration: underline; color: #fff; }
+.tcc-srow-team.is-tbd { color: var(--tcc-dim); }
+
+.tcc-srow-mid {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 1.5px;
+    color: var(--tcc-blue);
+    flex: none;
+}
+
+.tcc-srow-rink {
+    font-family: var(--tcc-body);
+    font-size: 12.5px;
+    color: var(--tcc-muted);
+    text-align: right;
+}
+
+.tcc-srow-stage { display: block; color: var(--tcc-dim); font-size: 11.5px; }
+
+/* ===================================================== Bracket preview */
+
+.tcc-preview {
+    max-width: 560px;
+    margin: 0 auto;
+    text-align: center;
+    background: var(--tcc-card);
+    border: 1px solid var(--tcc-border);
+    clip-path: var(--tcc-clip-12);
+    padding: 44px 32px 40px;
+}
+
+.tcc-preview-lead {
+    font-family: var(--tcc-body);
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--tcc-muted);
+    margin-top: 8px;
+}
+
+.tcc-preview-total {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 26px;
+}
+
+.tcc-preview-num {
+    font-family: var(--tcc-display);
+    font-size: 58px;
+    line-height: 1;
+    color: var(--tcc-blue);
+}
+
+.tcc-preview-unit {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--tcc-text-3);
+}
+
+.tcc-preview-break {
+    font-family: var(--tcc-body);
+    font-size: 14px;
+    color: var(--tcc-text-2);
+    margin-top: 6px;
+}
+
+.tcc-preview-facts {
+    margin-top: 24px;
+    text-align: left;
+}
+
+.tcc-preview-facts > div {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--tcc-border-soft);
+}
+
+.tcc-preview-facts > div:last-child { border-bottom: none; }
+
+.tcc-preview-facts dt {
+    font-family: var(--tcc-body);
+    font-size: 13px;
+    color: var(--tcc-muted);
+}
+
+.tcc-preview-facts dd {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 14.5px;
+    color: var(--tcc-text);
+}
+
+.tcc-preview-cta { margin-top: 26px; }
+
+/* ===================================================== Rules */
+
+.tcc-rules {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 56px var(--tcc-pad) 80px;
+}
+
+.tcc-rules-note {
+    background: rgba(63, 167, 214, 0.08);
+    border-left: 3px solid var(--tcc-blue);
+    color: var(--tcc-text-3);
+    font-family: var(--tcc-body);
+    font-size: 14px;
+    line-height: 1.55;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+}
+
+.tcc-rulecard {
+    background: #0e1319;
+    border: 1px solid rgba(140, 180, 205, 0.16);
+    border-left: 3px solid var(--tcc-blue);
+    padding: 24px 26px;
+    margin-bottom: 14px;
+}
+
+.tcc-rulecard-title {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 19px;
+    text-transform: uppercase;
+    color: #fff;
+    margin-bottom: 10px;
+}
+
+.tcc-rulecard-list,
+.tcc-rulecard-body {
+    font-family: var(--tcc-body);
+    font-size: 14.5px;
+    line-height: 1.7;
+    color: #B6C0C9;
+    padding-left: 18px;
+    margin: 0;
+}
+
+.tcc-rulecard-body { padding-left: 0; }
+.tcc-rulecard-body ul { padding-left: 18px; }
+
+.tcc-rules-out {
+    display: block;
+    text-align: center;
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--tcc-text-3);
+    border: 1px solid rgba(140, 180, 205, 0.35);
+    padding: 14px;
+    margin-top: 20px;
+}
+
+.tcc-rules-out:hover { color: #fff; border-color: rgba(140, 180, 205, 0.6); }
+
+/* ===================================================== Archive */
+
+.tcc-archive-list { display: flex; flex-direction: column; gap: 10px; }
+
+.tcc-archive-row {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    background: #0e1319;
+    border: 1px solid rgba(140, 180, 205, 0.14);
+    border-left: 3px solid var(--tcc-gold);
+    padding: 18px 22px;
+    transition: border-color 0.15s;
+}
+
+.tcc-archive-row:hover { border-color: rgba(63, 167, 214, 0.5); border-left-color: var(--tcc-gold); }
+
+.tcc-archive-year {
+    font-family: var(--tcc-display);
+    font-size: 30px;
+    color: var(--tcc-gold);
+    min-width: 76px;
+}
+
+.tcc-archive-main { flex: 1; display: flex; flex-direction: column; }
+
+.tcc-archive-name {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 18px;
+    text-transform: uppercase;
+    color: #fff;
+}
+
+.tcc-archive-tag {
+    font-family: var(--tcc-body);
+    font-size: 13px;
+    color: var(--tcc-muted);
+}
+
+.tcc-archive-meta {
+    font-family: var(--tcc-body);
+    font-size: 13px;
+    color: var(--tcc-muted);
+    text-align: right;
+}
+
+/* ===================================================== responsive */
+
+@media (max-width: 1120px) {
+    .tcc-team-grid { grid-template-columns: repeat(2, 1fr); }
+    .tcc-srow { grid-template-columns: 1fr; gap: 8px; }
+    .tcc-srow-teams { justify-content: flex-start; }
+    .tcc-srow-side { flex: none; }
+    .tcc-srow-side.is-home { justify-content: flex-start; }
+    .tcc-srow-rink { text-align: left; }
+}
+
+@media (max-width: 800px) {
+    .tcc-roster-grid { grid-template-columns: 1fr; gap: 32px; }
+}
+
+@media (max-width: 760px) {
+    .tcc-team-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 620px) {
+    /* Team is recoverable from the filter chips; the column is the first to go. */
+    .tcc-players-row { grid-template-columns: 44px 1fr 84px; }
+    .tcc-col-sm { display: none; }
+    .tcc-archive-row { flex-wrap: wrap; gap: 12px; }
+    .tcc-archive-meta { text-align: left; }
+}
+
+/* ===================================================== Standings */
+
+.tcc-standings-wrap { margin-bottom: 48px; }
+
+.tcc-standings-title { margin-bottom: 14px; }
+
+.tcc-standings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+.tcc-standings-label {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--tcc-blue);
+    margin-bottom: 8px;
+}
+
+.tcc-standings-row {
+    display: grid;
+    grid-template-columns: 30px 1fr 30px 26px 26px 26px 34px 38px 40px;
+    align-items: center;
+    gap: 6px;
+    padding: 11px 16px;
+    font-family: var(--tcc-body);
+    font-size: 13.5px;
+}
+
+.tcc-thead.tcc-standings-row { padding: 10px 16px; }
+
+/* Qualifying places are tinted so the cut line is visible without a separate marker. */
+.tcc-trow.tcc-standings-row.is-advancing { background: rgba(63, 167, 214, 0.06); }
+.tcc-trow.tcc-standings-row.is-advancing .tcc-standings-rank { color: var(--tcc-blue); }
+
+.tcc-standings-rank {
+    font-family: var(--tcc-display);
+    font-size: 15px;
+    text-align: center;
+    color: var(--tcc-muted);
+}
+
+.tcc-standings-team {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 15px;
+    text-transform: uppercase;
+    min-width: 0;
+}
+
+.tcc-standings-team a { color: var(--tcc-text); }
+.tcc-standings-team a:hover { color: #fff; text-decoration: underline; }
+
+.tcc-coinflip {
+    font-family: var(--tcc-body);
+    font-weight: 400;
+    font-size: 10.5px;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--tcc-gold);
+    border: 1px solid rgba(246, 169, 28, 0.4);
+    padding: 1px 5px;
+}
+
+.tcc-standings-pts {
+    font-family: var(--tcc-display);
+    font-size: 16px;
+    color: #fff;
+    text-align: right;
+}
+
+.tcc-standings-note {
+    font-family: var(--tcc-body);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--tcc-muted);
+    margin-top: 14px;
+    max-width: 70ch;
+}
+
+/* ===================================================== Bracket tree */
+
+.tcc-bracket-section { margin-bottom: 48px; }
+
+/*
+ * Horizontal scroll is the handoff's accepted answer for narrow screens; snap points make it
+ * navigable rather than a drag.
+ */
+.tcc-bracket-scroll {
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    padding-bottom: 10px;
+}
+
+.tcc-bracket-rounds,
+.tcc-bracket {
+    display: grid;
+    min-width: min-content;
+}
+
+.tcc-bracket-rounds {
+    grid-template-columns: inherit;
+    margin-bottom: 10px;
+}
+
+.tcc-bracket-roundlabel {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--tcc-muted);
+    width: 266px;
+    scroll-snap-align: start;
+}
+
+.tcc-bracket-cell {
+    display: flex;
+    align-items: center;
+    position: relative;
+    scroll-snap-align: start;
+}
+
+.tcc-match {
+    width: 220px;
+    background: var(--tcc-card);
+    border: 1px solid rgba(140, 180, 205, 0.22);
+    clip-path: var(--tcc-clip-10);
+    padding: 8px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tcc-match.is-final {
+    border: 1.5px solid rgba(63, 167, 214, 0.55);
+    background: var(--tcc-card-hi);
+}
+
+.tcc-match-side {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.tcc-match-side.is-lost .tcc-match-name,
+.tcc-match-side.is-lost .tcc-match-score { color: var(--tcc-dim); }
+.tcc-match-side.is-lost .tcc-dot { opacity: 0.5; }
+.tcc-match-side.is-tbd .tcc-match-name { color: var(--tcc-dim); }
+
+.tcc-match-name {
+    flex: 1;
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 14.5px;
+    text-transform: uppercase;
+    color: var(--tcc-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+a.tcc-match-name:hover { color: #fff; text-decoration: underline; }
+
+.tcc-match-score {
+    font-family: var(--tcc-display);
+    font-size: 17px;
+    color: #fff;
+}
+
+.tcc-match-meta {
+    font-family: var(--tcc-body);
+    font-size: 11px;
+    color: var(--tcc-muted-2);
+    border-top: 1px solid rgba(140, 180, 205, 0.12);
+    padding-top: 3px;
+}
+
+/*
+ * Connectors: a bracket on the spacer column, drawn from the card's vertical centre out to the
+ * midpoint between this game and its sibling. Pure CSS, so it tracks the cards at any size.
+ */
+.tcc-bracket-link {
+    position: absolute;
+    left: 220px;
+    width: 46px;
+    border-right: 2px solid rgba(63, 167, 214, 0.5);
+    border-top: 2px solid rgba(63, 167, 214, 0.5);
+    pointer-events: none;
+}
+
+.tcc-bracket-link.is-down {
+    top: 50%;
+    bottom: -25%;
+    border-bottom: 2px solid rgba(63, 167, 214, 0.5);
+    border-top: none;
+}
+
+.tcc-bracket-link.is-up {
+    top: -25%;
+    bottom: 50%;
+}
+
+/* ===================================================== Placement / consolation */
+
+.tcc-extra-list { display: flex; flex-direction: column; gap: 8px; }
+
+.tcc-extra-row {
+    display: grid;
+    grid-template-columns: 120px 1fr 150px;
+    gap: 14px;
+    align-items: center;
+    background: #0e1319;
+    border: 1px solid rgba(140, 180, 205, 0.14);
+    border-left: 3px solid var(--tcc-gold);
+    padding: 13px 18px;
+}
+
+.tcc-extra-stage {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    color: var(--tcc-gold);
+}
+
+.tcc-extra-teams {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 15px;
+    text-transform: uppercase;
+}
+
+.tcc-extra-vs { color: var(--tcc-blue); font-size: 13px; }
+
+.tcc-extra-meta {
+    font-family: var(--tcc-body);
+    font-size: 12.5px;
+    color: var(--tcc-muted);
+    text-align: right;
+}
+
+@media (max-width: 700px) {
+    .tcc-extra-row { grid-template-columns: 1fr; gap: 6px; }
+    .tcc-extra-meta { text-align: left; }
+}
+
+/* Bonus columns are the explanation for the points total, so they read as secondary to it. */
+.tcc-standings-bonus { color: var(--tcc-blue); }
+
+.tcc-legend {
+    margin: 14px 0 0;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.tcc-legend > div {
+    display: grid;
+    grid-template-columns: 46px 1fr;
+    gap: 10px;
+    align-items: baseline;
+}
+
+.tcc-legend dt {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 1px;
+    color: var(--tcc-blue);
+}
+
+.tcc-legend dd {
+    margin: 0;
+    font-family: var(--tcc-body);
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--tcc-muted);
+}
+
+@media (max-width: 520px) {
+    /*
+     * Drop the ties column: it is rare, recoverable from the record, and the bonus columns are the
+     * reason anyone is reading this table. The track list has to shrink with it — hiding a grid
+     * child without removing its track shifts everything after it into the wrong column.
+     */
+    .tcc-standings-row { grid-template-columns: 26px 1fr 26px 24px 24px 32px 34px 36px; }
+    .tcc-standings-row > :nth-child(6) { display: none; }
+}
+
+/*
+ * Player badges, mirroring the league's obi-mini-badge / obi-mini-2gl so the same information
+ * reads the same way on both sites. Gold for GM, icy blue for the two-goal limit.
+ */
+.tcc-badge {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 9.5px;
+    letter-spacing: 0.5px;
+    color: #05070a;
+    background: var(--tcc-gold);
+    padding: 2px 5px;
+    border-radius: 3px;
+    margin-left: 7px;
+    flex: none;
+    vertical-align: middle;
+}
+
+.tcc-badge.is-2gl { background: var(--tcc-text-3); }
+
+/*
+ * Per-row link to the league's game preview/recap. Deliberately its own element rather than
+ * wrapping the whole row: the team names are already links, and an anchor inside an anchor is
+ * invalid markup that would also swallow their clicks.
+ */
+.tcc-srow-link {
+    display: inline-block;
+    margin-top: 4px;
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 11.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--tcc-blue);
+}
+
+.tcc-srow-link:hover { color: #fff; text-decoration: underline; }
+
+/* ===================================================== Champion */
+
+.tcc-champion {
+    background: linear-gradient(160deg, rgba(246, 169, 28, 0.14), rgba(246, 169, 28, 0.04));
+    border: 1.5px solid rgba(246, 169, 28, 0.55);
+    clip-path: var(--tcc-clip-12);
+    padding: 26px 28px;
+    margin-bottom: 34px;
+    text-align: center;
+}
+
+.tcc-champion-eyebrow {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--tcc-gold);
+    margin-bottom: 10px;
+}
+
+.tcc-champion-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+}
+
+.tcc-champion-name {
+    font-family: var(--tcc-display);
+    font-size: clamp(30px, 5vw, 46px);
+    line-height: 1;
+    text-transform: uppercase;
+    color: #fff;
+}
+
+.tcc-champion-name:hover { color: var(--tcc-gold); }
+
+/* ===================================================== Chocolate Milk */
+
+.tcc-milk-list { display: flex; flex-direction: column; gap: 8px; }
+
+.tcc-milk-row {
+    display: grid;
+    grid-template-columns: 30px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    background: #0e1319;
+    border: 1px solid rgba(140, 180, 205, 0.14);
+    border-left: 3px solid var(--tcc-gold);
+    padding: 11px 16px;
+}
+
+.tcc-milk-icon { font-size: 17px; }
+
+.tcc-milk-player {
+    font-family: var(--tcc-ui);
+    font-weight: 700;
+    font-size: 15px;
+    text-transform: uppercase;
+    color: var(--tcc-text);
+}
+
+.tcc-milk-from {
+    font-family: var(--tcc-body);
+    font-size: 12.5px;
+    color: var(--tcc-muted);
+    text-align: right;
+}
+
+@media (max-width: 620px) {
+    .tcc-milk-row { grid-template-columns: 24px 1fr; }
+    .tcc-milk-from { grid-column: 2; text-align: left; }
+}

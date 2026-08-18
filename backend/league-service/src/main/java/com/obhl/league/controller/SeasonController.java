@@ -27,13 +27,26 @@ public class SeasonController {
 
     private final SeasonService seasonService;
 
+    /**
+     * Season list, filtered to league seasons by default.
+     *
+     * <p>The {@code type} default of LEAGUE is a deliberate default-deny: tournament seasons exist
+     * so tournament teams/players/games can be ordinary season-scoped rows, but if one reaches a
+     * league season list the whole site can retarget to it (SeasonContext picks the current season
+     * off that list). Filtering here rather than in the frontend is what makes it reliable -- two
+     * callers (public/Home.jsx and SchedulePage.jsx) bypass both SeasonContext and services/api.js
+     * with a raw fetch, so no client-side fix can reach them.
+     *
+     * @param type LEAGUE (default), TOURNAMENT, or ALL. Unrecognised values fail closed to LEAGUE.
+     */
     @GetMapping
     public ResponseEntity<List<SeasonDto.Response>> getAllSeasons(
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false, defaultValue = "LEAGUE") String type) {
         if (status != null) {
-            return ResponseEntity.ok(seasonService.getSeasonsByStatus(status));
+            return ResponseEntity.ok(seasonService.getSeasonsByStatus(status, type));
         }
-        return ResponseEntity.ok(seasonService.getAllSeasons());
+        return ResponseEntity.ok(seasonService.getAllSeasons(type));
     }
 
     @GetMapping("/active")

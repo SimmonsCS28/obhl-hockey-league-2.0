@@ -35,6 +35,10 @@ public class GameController {
     private final PenaltyValidator penaltyValidator;
     private final com.obhl.game.service.CsvParserService csvParserService;
     private final com.obhl.game.service.ScheduleGeneratorService scheduleGeneratorService;
+    private final com.obhl.game.service.schedule.TournamentScheduleService tournamentScheduleService;
+    private final com.obhl.game.service.scoring.TournamentStandingsService tournamentStandingsService;
+    private final com.obhl.game.service.scoring.TournamentAwardService tournamentAwardService;
+    private final com.obhl.game.service.schedule.TournamentBracketService tournamentBracketService;
 
     @GetMapping
     public ResponseEntity<List<GameDto.Response>> getGames(
@@ -104,6 +108,91 @@ public class GameController {
     }
 
     // Schedule Management Endpoints
+    /** Chocolate Milk awards for one game — one per bench. */
+    @GetMapping("/{gameId}/awards")
+    public ResponseEntity<?> gameAwards(@PathVariable Long gameId) {
+        return ResponseEntity.ok(tournamentAwardService.forGame(gameId));
+    }
+
+    /** Every award of a tournament, for the public pages. */
+    @GetMapping("/tournament-awards")
+    public ResponseEntity<?> seasonAwards(@RequestParam Long seasonId) {
+        return ResponseEntity.ok(tournamentAwardService.forSeason(seasonId));
+    }
+
+    /**
+     * Records one bench's Chocolate Milk pick. Upserts, so a captain changing their mind replaces
+     * their pick rather than creating a second winner.
+     */
+    @PostMapping("/{gameId}/awards")
+    public ResponseEntity<?> awardChocolateMilk(
+            @PathVariable Long gameId,
+            @RequestBody java.util.Map<String, Object> body) {
+        try {
+            java.util.function.Function<String, Long> num = k -> body.get(k) == null
+                    ? null : ((Number) body.get(k)).longValue();
+            return ResponseEntity.ok(tournamentAwardService.award(
+                    gameId, num.apply("awardedByTeamId"), num.apply("playerId"),
+                    num.apply("playerTeamId"), (String) body.get("note")));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Who has won and who is out — both computed from results rather than stored, like standings.
+     * Returns nulls/empties until the tournament has actually decided.
+     */
+    @GetMapping("/tournament-result")
+    public ResponseEntity<?> tournamentResult(@RequestParam Long seasonId) {
+        java.util.Map<String, Object> out = new java.util.HashMap<>();
+        out.put("championTeamId", tournamentBracketService.resolveChampion(seasonId));
+        out.put("eliminatedTeamIds", tournamentBracketService.eliminatedTeams(seasonId));
+        return ResponseEntity.ok(out);
+    }
+
+    /**
+     * Tournament standings, computed on read from completed group-stage games.
+     *
+     * <p>Never read from the denormalised standings columns on the team row — those are
+     * league-shaped and are deliberately not written for tournament games.
+     */
+    @GetMapping("/tournament-standings")
+    public ResponseEntity<?> tournamentStandings(@RequestParam Long seasonId) {
+        return ResponseEntity.ok(tournamentStandingsService.getStandings(seasonId));
+    }
+
+    /**
+     * Builds a tournament's fixture list without saving it.
+     *
+     * <p>Preview and save are separate on purpose — the organiser reads 18 rows before a weekend's
+     * ice is committed to them. Slot count is validated here rather than partway through, so a
+     * format that does not fit the available ice fails before anything is written.
+     */
+    @PostMapping("/tournament-schedule/preview")
+    public ResponseEntity<?> previewTournamentSchedule(
+            @RequestBody com.obhl.game.service.schedule.TournamentScheduleService.GenerateRequest request) {
+        try {
+            return ResponseEntity.ok(tournamentScheduleService.preview(request));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", String.valueOf(e.getMessage())));
+        }
+    }
+
+    /** Persists a previewed schedule, replacing any previously generated (unplayed) tournament games. */
+    @PostMapping("/tournament-schedule")
+    public ResponseEntity<?> saveTournamentSchedule(
+            @RequestBody com.obhl.game.service.schedule.TournamentScheduleService.GenerateRequest request) {
+        try {
+            var result = tournamentScheduleService.save(request);
+            return result.ok()
+                    ? ResponseEntity.ok(result)
+                    : ResponseEntity.badRequest().body(result);
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", String.valueOf(e.getMessage())));
+        }
+    }
+
     @PostMapping("/upload-slots")
     public ResponseEntity<?> uploadGameSlots(
             @RequestParam("file") org.springframework.web.multipart.MultipartFile file) {

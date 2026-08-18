@@ -6,13 +6,32 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.obhl.game.model.Game;
 import com.obhl.game.repository.PenaltyTrackingRepository;
+import com.obhl.game.service.scoring.GamePointsPolicy;
 
+/**
+ * League scoring: 2 for a win, 1 for a tie or an OT loss, 0 otherwise.
+ *
+ * <p>Implements {@link GamePointsPolicy} so the finalize path can pick between this and the
+ * tournament rules without branching. The behaviour is unchanged -- {@code apply} simply delegates
+ * to the existing {@code calculateAndSetPoints}, and {@code supports} states what this class was
+ * always implicitly for.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class PointsCalculator {
+public class PointsCalculator implements GamePointsPolicy {
 
     private final PenaltyTrackingRepository penaltyTrackingRepository;
+
+    @Override
+    public boolean supports(Game game) {
+        return !"TOURNAMENT".equals(game.getGameType());
+    }
+
+    @Override
+    public void apply(Game game) {
+        calculateAndSetPoints(game);
+    }
 
     /**
      * Calculate points for both teams based on game outcome

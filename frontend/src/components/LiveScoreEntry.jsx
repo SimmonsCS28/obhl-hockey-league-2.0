@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useBlocker, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
+import { leagueRules, rulesForGame } from './livescore/gameRules';
+import ChocolateMilkPicker from './livescore/ChocolateMilkPicker';
 import './LiveScoreEntry.css';
 
 const PENALTY_TYPES = [
@@ -26,7 +28,10 @@ function LiveScoreEntry(props) {
         onNavigate,
         onNavigateCancel,
         embedded = false,
-        readOnly = false
+        readOnly = false,
+        // Defaults to the league's three-by-twenty model, so all four existing call sites behave
+        // exactly as before. Tournament callers pass rulesForGame(game, tournament).
+        rules: rulesProp = null
     } = props;
     const { gameId } = useParams();
     const navigate = useNavigate();
@@ -40,6 +45,13 @@ function LiveScoreEntry(props) {
 
     // State for game data (loaded from prop or route param)
     const [game, setGame] = useState(propGame || null);
+
+    // Derived from the loaded game so a tournament game gets its own period model even when the
+    // caller did not pass one — the scorekeeper opens these by URL, not only from a tournament page.
+    // Memoised so helpers built from it are stable and effects do not re-run every render.
+    const rules = useMemo(
+        () => rulesProp || rulesForGame(game) || leagueRules,
+        [rulesProp, game]);
     const [loading, setLoading] = useState(!propGame);
     // Prev/next-game schedule nav (read-only public view only — see effect below)
     const [seasonGames, setSeasonGames] = useState([]);
@@ -58,7 +70,7 @@ function LiveScoreEntry(props) {
     const [isStarting, setIsStarting] = useState(false);
 
     // Maps the backend's integer period to the stepper's string labels.
-    const periodIntToLabel = (p) => ({ 1: '1', 2: '2', 3: '3', 4: 'OT' }[p] || '1');
+    const periodIntToLabel = (p) => rules.intToLabel(p);
 
     // Global period stepper — 1 / 2 / 3 / OT — sets the period for new goals & penalties.
     const [currentPeriod, setCurrentPeriod] = useState(() => periodIntToLabel(game?.period));
@@ -180,7 +192,7 @@ function LiveScoreEntry(props) {
                     setAwayScore(enrichedGame.awayScore || 0);
                     setGameFinalized(enrichedGame.status === 'completed');
                     setGameStarted(enrichedGame.status && enrichedGame.status !== 'scheduled');
-                    setCurrentPeriod(periodIntToLabel(enrichedGame.period));
+                    setCurrentPeriod(rulesForGame(enrichedGame).intToLabel(enrichedGame.period));
                     setForfeitTeamId(enrichedGame.forfeitTeamId || null);
                 } catch (error) {
                     console.error('Error loading game:', error);
@@ -315,10 +327,17 @@ function LiveScoreEntry(props) {
 
     const loadPlayers = async () => {
         try {
-            // Fetch players for both teams in the game
+            // A tournament bracket game exists before its teams are known — homeTeamId and
+            // awayTeamId stay null until the group stage seeds it. Asking stats-service for
+            // teamId=null is a 400, so skip the side that has no team yet rather than firing a
+            // request that cannot succeed. League games always have both.
+            const rosterFor = (teamId) => (teamId
+                ? api.getPlayers({ teamId, seasonId: game.seasonId })
+                : Promise.resolve([]));
+
             const [homePlayers, awayPlayers] = await Promise.all([
-                api.getPlayers({ teamId: game.homeTeamId, seasonId: game.seasonId }),
-                api.getPlayers({ teamId: game.awayTeamId, seasonId: game.seasonId })
+                rosterFor(game.homeTeamId),
+                rosterFor(game.awayTeamId),
             ]);
 
             const mappedHome = homePlayers.map(p => ({ ...p, teamId: game.homeTeamId }));
@@ -347,14 +366,14 @@ function LiveScoreEntry(props) {
                     const isHome = Number(be.teamId) === Number(game.homeTeamId);
                     const teamSide = isHome ? 'home' : 'away';
 
-                    const periodMap = { 1: '1', 2: '2', 3: '3', 4: 'OT', 5: 'SO' };
+                    
                     const timeStr = `${String(be.timeMinutes || 0).padStart(2, '0')}:${String(be.timeSeconds || 0).padStart(2, '0')}`;
 
                     return {
                         id: be.id,
                         backendId: be.id,
                         type: be.eventType,
-                        period: periodMap[be.period] || String(be.period),
+                        period: rules.intToLabel(be.period),
                         time: timeStr,
                         team: teamSide,
                         teamName: isHome ? game.homeTeamName : game.awayTeamName,
@@ -442,7 +461,7 @@ function LiveScoreEntry(props) {
     };
 
     // Clock time is a countdown (MM:SS) capped per period: 20:00 in regulation, 5:00 in OT.
-    const periodMaxMin = (period) => (period === 'OT' || period === 4 ? 5 : 20);
+    const periodMaxMin = (period) => rules.maxMinutes(period);
 
     // Auto-insert the colon as digits are typed: "123" -> "1:23", "1234" -> "12:34".
     const fmtClock = (str) => {
@@ -617,12 +636,11 @@ function LiveScoreEntry(props) {
     // Shared DTO shape for both creating and updating a backend game event
     const buildEventDto = (event) => {
         const [minutes, seconds] = event.time.split(':').map(Number);
-        const periodMap = { '1': 1, '2': 2, '3': 3, 'OT': 4 };
 
         return {
             teamId: event.team === 'home' ? game.homeTeamId : game.awayTeamId,
             eventType: event.type,
-            period: periodMap[event.period] || 3, // Default to 3 if unknown, or handle error
+            period: rules.labelToInt(event.period),
             timeMinutes: minutes,
             timeSeconds: seconds,
             description: event.description || null,
@@ -946,7 +964,7 @@ function LiveScoreEntry(props) {
     // Auto-saves to the backend immediately — the period stepper isn't gated behind
     // the manual Save Changes button like a raw score edit is.
     const stepPeriod = async (dir) => {
-        const order = ['1', '2', '3', 'OT'];
+        const order = rules.periods;
         const i = order.indexOf(String(currentPeriod));
         const ni = Math.max(0, Math.min(order.length - 1, (i < 0 ? 0 : i) + dir));
         const nextPeriod = order[ni];
@@ -954,9 +972,8 @@ function LiveScoreEntry(props) {
 
         setCurrentPeriod(nextPeriod);
 
-        const periodMap = { '1': 1, '2': 2, '3': 3, 'OT': 4 };
         try {
-            await api.updateGameScore(game.id, homeScore, awayScore, periodMap[nextPeriod] || 1);
+            await api.updateGameScore(game.id, homeScore, awayScore, rules.labelToInt(nextPeriod));
             markGameStarted();
             flashAutoSaved();
         } catch (error) {
@@ -1170,6 +1187,19 @@ function LiveScoreEntry(props) {
                         <Link to={navHref(nextGame)} state={location.state} className="obi-gd-navlink obi-gd-navlink--next">Next Game ›</Link>
                     ) : <span className="obi-gd-navlink-spacer" />}
                 </div>
+            )}
+
+            {/* Chocolate Milk Player of the Game. Renders itself away for league games, and only
+                once the result is in — the captains pick after the handshake, not before. */}
+            {gameFinalized && (
+                <ChocolateMilkPicker
+                    game={game}
+                    homeTeam={{ id: game?.homeTeamId, name: game?.homeTeamName, teamColor: game?.homeTeamColor }}
+                    awayTeam={{ id: game?.awayTeamId, name: game?.awayTeamName, teamColor: game?.awayTeamColor }}
+                    homeRoster={players.filter(p => p.teamId === game?.homeTeamId)}
+                    awayRoster={players.filter(p => p.teamId === game?.awayTeamId)}
+                    readOnly={readOnly}
+                />
             )}
 
             {/* Start Game banner — shown until the scorekeeper explicitly starts the
@@ -1401,7 +1431,7 @@ function LiveScoreEntry(props) {
                 const teamColor = editEvent.team === 'home' ? game.homeTeamColor : game.awayTeamColor;
                 const roster = getTeamPlayers(editEvent.team);
                 const isGoal = editEvent.type === 'goal';
-                const periodOptions = ['1', '2', '3', 'OT'];
+                const periodOptions = rules.periods;
                 return (
                     <div className="sk-modal-overlay" onClick={closeEditEventModal}>
                         <div className="sk-modal" onClick={(e) => e.stopPropagation()}>
@@ -1545,9 +1575,8 @@ function LiveScoreEntry(props) {
                 ) : (
                     <div className="sk-feed-list">
                         {events.slice().sort((a, b) => {
-                            const periodOrder = { '1': 1, '2': 2, '3': 3, 'OT': 4 };
-                            const pa = periodOrder[a.period] || 999;
-                            const pb = periodOrder[b.period] || 999;
+                            const pa = rules.order(a.period);
+                            const pb = rules.order(b.period);
                             if (pa !== pb) return pb - pa;
                             const [minA, secA] = a.time.split(':').map(Number);
                             const [minB, secB] = b.time.split(':').map(Number);

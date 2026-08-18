@@ -80,6 +80,18 @@ public class DraftService {
                         ". The season may have been deleted. Please re-open the draft and select a valid season.");
                 }
                 season = seasonOpt.get();
+
+                // The league draft must never target a tournament season. Its teams and players
+                // would land inside the tournament, and activating it below would violate
+                // chk_tournament_never_active and fail as an opaque 500. Fail here with a message
+                // that says what actually went wrong. Tournament rosters are built by the separate
+                // tournament draft, not this one.
+                if (Season.TYPE_TOURNAMENT.equals(season.getType())) {
+                    throw new IllegalArgumentException(
+                        "'" + season.getName() + "' is a tournament season and cannot be used for " +
+                        "the league draft. Select a league season, or build this roster from the " +
+                        "tournament draft instead.");
+                }
             } else {
                 // Fallback: create a new season from the name (legacy behaviour)
                 Season newSeason = new Season();
@@ -93,8 +105,13 @@ public class DraftService {
                 System.out.println("Created new season (legacy fallback) with ID: " + createdSeasonId);
             }
 
-            // Mark all OTHER seasons as completed and inactive
-            List<Season> existingSeasons = seasonRepository.findAll();
+            // Mark all OTHER LEAGUE seasons as completed and inactive.
+            //
+            // Retiring the other seasons is intended -- finalizing a draft makes the drafted season
+            // the one active season. The type filter only narrows WHICH seasons that applies to:
+            // this was findAll(), so it also marked tournament seasons completed, and a tournament's
+            // lifecycle belongs to tournaments.status, not to whenever the league happens to draft.
+            List<Season> existingSeasons = seasonRepository.findByType(Season.TYPE_LEAGUE);
             for (Season existingSeason : existingSeasons) {
                 if (!existingSeason.getId().equals(season.getId())) {
                     existingSeason.setIsActive(false);
@@ -232,7 +249,15 @@ public class DraftService {
                     }
                 }
             }
-            statsClient.deactivateUnregisteredPlayers(registeredEmails);
+            // Sweep every LEAGUE season, so the only players left active anywhere are the ones just
+            // drafted -- that cross-season cleanup is the point of this call. Tournament seasons are
+            // excluded because their players never appear in a league registration list and would
+            // otherwise all be deactivated.
+            List<Long> leagueSeasonIds = seasonRepository.findByType(Season.TYPE_LEAGUE)
+                    .stream()
+                    .map(Season::getId)
+                    .collect(java.util.stream.Collectors.toList());
+            statsClient.deactivateUnregisteredPlayers(leagueSeasonIds, registeredEmails);
 
             // 8. Mark draft as completed
             draft.setStatus("complete");

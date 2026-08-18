@@ -34,8 +34,21 @@ public class Season {
     @Column(nullable = false, length = 20)
     private String status = "upcoming";
 
+    /**
+     * LEAGUE or TOURNAMENT. A tournament (The Conley Classic) is backed by its own season row so its
+     * teams, players and games can be ordinary season-scoped rows, but it must stay out of league
+     * season lists -- see TYPE_LEAGUE / TYPE_TOURNAMENT and the default-deny filter on
+     * GET /seasons. A tournament season is never is_active; the database enforces that with
+     * chk_tournament_never_active (migration 046).
+     */
+    @Column(nullable = false, length = 20)
+    private String type = TYPE_LEAGUE;
+
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = false;
+
+    public static final String TYPE_LEAGUE = "LEAGUE";
+    public static final String TYPE_TOURNAMENT = "TOURNAMENT";
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
