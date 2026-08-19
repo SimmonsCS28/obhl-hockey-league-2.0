@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSeason } from '../../contexts/SeasonContext';
+import { arenaDayKey, formatArenaDay, useCurrentTournament } from '../tournament/tournamentData';
 import api from '../../services/api';
 import './OpenSlots.css';
 
@@ -111,12 +112,53 @@ function groupByMonth(weekGroups) {
     return order.map(name => ({ name, weeks: byMonth[name] }));
 }
 
+/**
+ * Tournament equivalent of buildWeekGroups: one group per day of the event.
+ *
+ * A tournament cannot be grouped by week. `week` doubles as the day index on tournament games, so
+ * the league grouping would produce a "Week 1" and a "Week 2" whose Monday-to-Sunday bounds are the
+ * same calendar week -- two headers reading "This Week · Sep 21 - 27" over different days. Grouping
+ * by the day the games are actually played is both correct and what an official reads off a
+ * weekend schedule.
+ *
+ * Returns the same shape buildWeekGroups does, including `month`, so groupByMonth and the whole
+ * render path work on either without knowing which they were given.
+ */
+function buildDayGroups(slots) {
+    const byDay = {};
+    slots.forEach(s => {
+        const key = arenaDayKey(s.gameDate);
+        if (!byDay[key]) byDay[key] = [];
+        byDay[key].push(s);
+    });
+
+    // Keys are YYYY-MM-DD in rink time, so a plain string sort is chronological.
+    return Object.keys(byDay).sort().map(key => {
+        const [y, m] = key.split('-').map(Number);
+        return {
+            week: key,
+            label: formatArenaDay(key, { month: undefined, day: undefined }),  // "Saturday"
+            range: formatArenaDay(key, { weekday: undefined }),                // "Sep 26"
+            month: new Date(y, m - 1, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+            slots: byDay[key],
+        };
+    });
+}
+
 const ROLE_DISPLAY = { REF: 'Referee', SCOREKEEPER: 'Scorekeeper' };
 
-const OpenSlots = () => {
+const OpenSlots = ({ mode = 'league' }) => {
     const { user } = useAuth();
     const { selectedSeasonId } = useSeason();
-    const seasonId = selectedSeasonId ?? SEASON_FALLBACK;
+    const { tournament, loading: loadingTournament } = useCurrentTournament();
+    const isTournament = mode === 'tournament';
+
+    // One page, two events. Tournament games are ordinary season-scoped rows and the open-slots
+    // endpoint only ever filtered by season, so nothing about the data layer changes -- only which
+    // season is asked for. The league's comes from context; the tournament's has to come from the
+    // tournament itself, because a tournament season can never be the active one (the database
+    // forbids it) and so can never be what the season context selected.
+    const seasonId = isTournament ? tournament?.seasonId : (selectedSeasonId ?? SEASON_FALLBACK);
 
     const isRef = !!(user?.roles?.includes('REF') || user?.role === 'REF');
     const isScorekeeper = !!(user?.roles?.includes('SCOREKEEPER') || user?.role === 'SCOREKEEPER');
@@ -126,10 +168,17 @@ const OpenSlots = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [roleFilter, setRoleFilter] = useState('ALL');
-    const [weekFilter, setWeekFilter] = useState('all');
+    const [groupFilter, setGroupFilter] = useState('all');
     const [actionPending, setActionPending] = useState(new Set());
 
     const fetchSlots = useCallback(async () => {
+        // In tournament mode the season is not known until the tournament resolves. Hold the
+        // loading state rather than flashing "no open slots" for a frame.
+        if (!seasonId) {
+            setSlots([]);
+            setLoading(loadingTournament);
+            return;
+        }
         setLoading(true);
         setError(null);
         try {
@@ -145,7 +194,7 @@ const OpenSlots = () => {
         } finally {
             setLoading(false);
         }
-    }, [seasonId, isRef, isScorekeeper]);
+    }, [seasonId, isRef, isScorekeeper, loadingTournament]);
 
     useEffect(() => { fetchSlots(); }, [fetchSlots]);
 
@@ -181,23 +230,28 @@ const OpenSlots = () => {
         }
     };
 
+    // Weeks for the league, days for the tournament -- see buildDayGroups.
+    const buildGroups = isTournament ? buildDayGroups : buildWeekGroups;
+    const groupKeyOf = isTournament ? (s) => arenaDayKey(s.gameDate) : (s) => s.week;
+    const groupNoun = isTournament ? 'day' : 'week';
+
     // Apply filters
     const filteredSlots = slots.filter(s => {
         const roleOk = roleFilter === 'ALL' || s.role === roleFilter;
-        const weekOk = weekFilter === 'all' || s.week === weekFilter;
-        return roleOk && weekOk;
+        const groupOk = groupFilter === 'all' || groupKeyOf(s) === groupFilter;
+        return roleOk && groupOk;
     });
 
-    const allWeekGroups = buildWeekGroups(filteredSlots);
-    const monthGroups = groupByMonth(allWeekGroups);
+    const allGroups = buildGroups(filteredSlots);
+    const monthGroups = groupByMonth(allGroups);
 
-    // All weeks (unfiltered by week, only by role) for chip counts
-    const allWeeksForChips = buildWeekGroups(
+    // Unfiltered by group, only by role, so the chip counts do not change as you filter
+    const allGroupsForChips = buildGroups(
         slots.filter(s => roleFilter === 'ALL' || s.role === roleFilter)
     );
 
     const openCount = filteredSlots.filter(s => s.state === 'OPEN').length;
-    const visibleWeekCount = allWeekGroups.length;
+    const visibleWeekCount = allGroups.length;
 
     const roleChips = [
         hasBoth && { key: 'ALL', label: 'All Roles', count: slots.filter(s => s.state === 'OPEN').length },
@@ -205,9 +259,13 @@ const OpenSlots = () => {
         isScorekeeper && { key: 'SCOREKEEPER', label: 'Scorekeeper', count: slots.filter(s => s.role === 'SCOREKEEPER' && s.state === 'OPEN').length },
     ].filter(Boolean);
 
-    const weekChips = [
-        { key: 'all', label: 'All Weeks', range: 'Full season' },
-        ...allWeeksForChips.map(wg => ({ key: wg.week, label: wg.label, range: wg.range })),
+    const groupChips = [
+        {
+            key: 'all',
+            label: isTournament ? 'All Days' : 'All Weeks',
+            range: isTournament ? 'Whole event' : 'Full season',
+        },
+        ...allGroupsForChips.map(g => ({ key: g.week, label: g.label, range: g.range })),
     ];
 
     return (
@@ -217,11 +275,43 @@ const OpenSlots = () => {
                 <div className="os-banner-overlay" />
                 <div className="obi-container os-banner-inner">
                     <Link to="/user" className="os-back-link">← Back to Dashboard</Link>
-                    <h1 className="obi-page-title">Open Slots</h1>
+                    <h1 className="obi-page-title">{isTournament ? tournament?.name ?? 'Tournament' : 'Open Slots'}</h1>
                     <p className="os-banner-sub">
-                        Every unfilled referee and scorekeeper slot this season. Sign up and the coordinator confirms you.{' '}
-                        Goalies — <Link to="/user/goalie-availability" className="os-banner-link">mark your availability</Link> instead.
+                        {isTournament ? (
+                            <>
+                                Every unfilled referee and scorekeeper slot for the tournament. Sign up and the
+                                coordinator confirms you. Goalies are assigned rather than claimed.
+                            </>
+                        ) : (
+                            <>
+                                Every unfilled referee and scorekeeper slot this season. Sign up and the coordinator confirms you.{' '}
+                                Goalies — <Link to="/user/goalie-availability" className="os-banner-link">mark your availability</Link> instead.
+                            </>
+                        )}
                     </p>
+
+                    {/* Only rendered while a tournament is published, so the page is unchanged the
+                        rest of the year rather than carrying a dead tab. */}
+                    {tournament && (
+                        <div className="os-event-switch" role="tablist" aria-label="Which event">
+                            <Link
+                                to="/user/open-slots"
+                                role="tab"
+                                aria-selected={!isTournament}
+                                className={`os-event-tab${!isTournament ? ' os-event-tab--active' : ''}`}
+                            >
+                                Regular Season
+                            </Link>
+                            <Link
+                                to="/user/open-slots/tournament"
+                                role="tab"
+                                aria-selected={isTournament}
+                                className={`os-event-tab${isTournament ? ' os-event-tab--active' : ''}`}
+                            >
+                                {tournament.name}
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </section>
 
@@ -247,26 +337,26 @@ const OpenSlots = () => {
                                 ))}
                             </div>
                             <span className="os-filter-summary">
-                                {openCount} open · {visibleWeekCount} week{visibleWeekCount !== 1 ? 's' : ''}
+                                {openCount} open · {visibleWeekCount} {groupNoun}{visibleWeekCount !== 1 ? 's' : ''}
                             </span>
                         </div>
                     )}
                     <div className="os-filter-row">
                         {!hasBoth && (
                             <span className="os-filter-summary os-filter-summary--solo">
-                                {openCount} open · {visibleWeekCount} week{visibleWeekCount !== 1 ? 's' : ''}
+                                {openCount} open · {visibleWeekCount} {groupNoun}{visibleWeekCount !== 1 ? 's' : ''}
                             </span>
                         )}
-                        <span className="os-filter-label">Week</span>
+                        <span className="os-filter-label">{isTournament ? 'Day' : 'Week'}</span>
                         <div className="os-chips os-chips--weeks">
-                            {weekChips.map(chip => (
+                            {groupChips.map(chip => (
                                 <div
                                     key={chip.key}
                                     role="button"
                                     tabIndex={0}
-                                    className={`os-chip os-chip--week${weekFilter === chip.key ? ' os-chip--active' : ''}`}
-                                    onClick={() => setWeekFilter(chip.key)}
-                                    onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && setWeekFilter(chip.key)}
+                                    className={`os-chip os-chip--week${groupFilter === chip.key ? ' os-chip--active' : ''}`}
+                                    onClick={() => setGroupFilter(chip.key)}
+                                    onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && setGroupFilter(chip.key)}
                                 >
                                     {chip.label}
                                     <span className="os-chip-range">{chip.range}</span>
@@ -303,7 +393,11 @@ const OpenSlots = () => {
 
                 {!loading && !error && monthGroups.length === 0 && (
                     <div className="os-state">
-                        <p className="os-state-text">No open slots match your current filter.</p>
+                        <p className="os-state-text">
+                            {isTournament && slots.length === 0
+                                ? 'The tournament schedule has not been posted yet. Check back once games are announced.'
+                                : 'No open slots match your current filter.'}
+                        </p>
                     </div>
                 )}
 

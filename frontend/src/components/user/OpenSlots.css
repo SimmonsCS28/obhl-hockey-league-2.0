@@ -62,6 +62,56 @@
 
 .os-banner-link:hover { text-decoration: underline; }
 
+/*
+ * Event switcher — Regular Season / the tournament.
+ *
+ * Only rendered while a tournament is published, so it costs the page nothing the rest of the year.
+ * Styled as tabs rather than chips so it does not read as another filter: it changes which event
+ * you are looking at, not which subset of one.
+ *
+ * border-radius and height are stated explicitly because a bare `button {}` rule in
+ * DraftDashboard.css is bundled globally; these are anchors, so it does not bite here, but the
+ * neighbouring controls are defensive for the same reason and consistency is cheaper than a
+ * surprise later.
+ */
+.os-event-switch {
+    display: flex;
+    gap: 8px;
+    margin-top: 18px;
+    flex-wrap: wrap;
+}
+
+.os-event-tab {
+    display: inline-flex;
+    align-items: center;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 13.5px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--obi-icy);
+    background: rgba(157, 185, 205, 0.08);
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    border-radius: 999px;
+    padding: 7px 16px;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.os-event-tab:hover {
+    color: #fff;
+    border-color: rgba(157, 185, 205, 0.45);
+}
+
+.os-event-tab--active {
+    color: var(--obi-bg);
+    background: var(--obi-accent);
+    border-color: var(--obi-accent);
+}
+
+.os-event-tab--active:hover { color: var(--obi-bg); }
+
+
 /* ---- Sticky filter bar ---- */
 .os-filter-bar {
     position: sticky;

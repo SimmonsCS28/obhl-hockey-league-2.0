@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { request } from '../../services/api';
+import tournamentApi from '../../services/tournamentApi';
 
 /**
  * Data hooks for the microsite.
@@ -30,6 +31,22 @@ function useResource(fetcher, deps, fallback) {
     }, deps);
 
     return { data, loading, error };
+}
+
+/**
+ * The tournament currently on, if there is one.
+ *
+ * `GET /tournaments` returns published tournaments most recent first, so the head of the list is
+ * this year's -- the same resolution TournamentLayout uses for an unslugged /tournaments visit. One
+ * runs per year, so there is nothing to pick between.
+ *
+ * Publishing is what turns the tournament on for everyone, officials included: an unpublished
+ * tournament is invisible here, so shift sign-up appears at the same moment the public microsite
+ * does. Returns null the rest of the year, which is what callers gate their tournament UI on.
+ */
+export function useCurrentTournament() {
+    const { data, loading, error } = useResource(() => tournamentApi.list(), [], []);
+    return { tournament: data.length ? data[0] : null, loading, error };
 }
 
 /** Teams in the tournament, ordered by seed (unseeded last, then by name). */

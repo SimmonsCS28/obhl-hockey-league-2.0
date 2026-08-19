@@ -177,6 +177,17 @@ const router = createBrowserRouter([
       </ProtectedRoute>
     )
   },
+  // Same page, pointed at the tournament's season. A separate route rather than a query param so
+  // it can be linked to directly and so the two boards keep independent filter state. The page
+  // resolves the current tournament itself -- one runs per year, so there is nothing to pick.
+  {
+    path: "/user/open-slots/tournament",
+    element: (
+      <ProtectedRoute requiredRoles={['REF', 'SCOREKEEPER']}>
+        <OpenSlots mode="tournament" />
+      </ProtectedRoute>
+    )
+  },
   {
     // Retired: refs now self-sign-up via Open Slots (v3). Redirect any old links/bookmarks.
     path: "/user/ref-availability",

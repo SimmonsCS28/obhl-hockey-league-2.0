@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSeason } from '../../contexts/SeasonContext';
+import { useCurrentTournament } from '../tournament/tournamentData';
 import { resolveTeamColor, textOn } from '../../constants/teamColors';
 import api from '../../services/api';
 import GMTeam from '../gm/GMTeam';
@@ -30,6 +31,8 @@ function Dashboard() {
     const navigate = useNavigate();
     const { user } = useAuth();
     const { selectedSeasonId } = useSeason();
+    // Null outside tournament season, which is what the Classic link below is gated on.
+    const { tournament } = useCurrentTournament();
 
     const roles = useMemo(() => user?.roles || (user?.role ? [user.role] : []), [user]);
     const officialRoles = useMemo(() => roles.filter(r => OFFICIAL_ROLES.includes(r)), [roles]);
@@ -518,6 +521,15 @@ function Dashboard() {
                                             <span>View all open slots</span>
                                             <span className="dash-deeplink-more">Open →</span>
                                         </Link>
+                                        {/* The slots above are this season's. Tournament games sit in
+                                            their own season, so they need their own board -- shown only
+                                            while a tournament is published. */}
+                                        {tournament && (
+                                            <Link to="/user/open-slots/tournament" className="dash-deeplink">
+                                                <span>{tournament.name} shifts</span>
+                                                <span className="dash-deeplink-more">Open →</span>
+                                            </Link>
+                                        )}
                                     </>
                                 )}
                             </div>
