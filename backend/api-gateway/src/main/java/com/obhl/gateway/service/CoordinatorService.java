@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,8 +21,12 @@ import com.obhl.gateway.dto.CoordinatorDto;
 import com.obhl.gateway.dto.GameResponseDTO;
 import com.obhl.gateway.dto.PlayerDto;
 import com.obhl.gateway.dto.TeamDto;
+import com.obhl.gateway.model.GoalieAvailability;
+import com.obhl.gateway.model.SeasonGoalie;
 import com.obhl.gateway.model.ShiftAssignment;
 import com.obhl.gateway.model.User;
+import com.obhl.gateway.repository.GoalieAvailabilityRepository;
+import com.obhl.gateway.repository.SeasonGoalieRepository;
 import com.obhl.gateway.repository.ShiftAssignmentRepository;
 import com.obhl.gateway.repository.UserRepository;
 
@@ -57,6 +62,12 @@ public class CoordinatorService {
 
     @Autowired
     private CoordinatorNotifyService coordinatorNotifyService;
+
+    @Autowired
+    private SeasonGoalieRepository seasonGoalieRepository;
+
+    @Autowired
+    private GoalieAvailabilityRepository goalieAvailabilityRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -483,7 +494,8 @@ public class CoordinatorService {
             if (userOpt.isPresent() && userOpt.get().getEmail() != null) {
                 User u = userOpt.get();
                 String name = (u.getFirstName() != null && !u.getFirstName().isBlank()) ? u.getFirstName() : u.getUsername();
-                emailService.sendShiftConfirmedEmail(u.getEmail(), name, roleLabel(a.getRole()), describeGame(game));
+                emailService.sendShiftConfirmedEmail(u.getEmail(), name, roleLabel(a.getRole()), describeGame(game),
+                        replyToFor(coordinatorUserId));
             }
         } catch (RuntimeException e) {
             // Courtesy email is best-effort; confirmation already persisted.
@@ -654,7 +666,22 @@ public class CoordinatorService {
         String weekSchedule = weekScheduleBlockHtml(a.getRole(), game.getSeasonId(), game.getWeek(),
                 game.getId(), a.getSlot());
         emailService.sendShiftProposalEmail(user.getEmail(), name, roleLabel, describeGame(game), link,
-                gamePreviewLink, weekSchedule);
+                gamePreviewLink, weekSchedule, replyToFor(a.getAssignedBy()));
+    }
+
+    /**
+     * The address a recipient's reply should reach — normally the coordinator who acted on the shift.
+     * From is always the league's unmonitored noreply@, so without a Reply-To a reply is silently
+     * lost, which has already happened to goalies answering their assignment emails.
+     */
+    private String replyToFor(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+        return userRepository.findById(userId)
+                .map(User::getEmail)
+                .filter(e -> e != null && !e.isBlank())
+                .orElse(null);
     }
 
     /** Public game-preview page URL for a game (no auth required). */
@@ -678,10 +705,91 @@ public class CoordinatorService {
             String weekSchedule = weekScheduleBlockHtml("GOALIE", game.getSeasonId(), game.getWeek(),
                     game.getId(), a.getSlot());
             emailService.sendGoalieFinalAssignmentEmail(user.getEmail(), name, describeGame(game), teamName(teamId),
-                    gamePreviewLink(game), weekSchedule);
+                    gamePreviewLink(game), weekSchedule, replyToFor(a.getAssignedBy()));
         } catch (RuntimeException e) {
             // Final-assignment email is best-effort; publish already persisted.
         }
+    }
+
+    /**
+     * Tell every full-time goalie who drew no slot this week that they're not playing, and show them
+     * the week so they can see who is. Sent alongside the week's confirmation requests, so the whole
+     * roster hears the same thing at the same time instead of the bench inferring it from silence.
+     *
+     * <p>Scope is deliberately the full-time roster only. Substitutes are never auto-assigned, so
+     * "you have no game this week" is not news to them — it's their normal state, and mailing it
+     * weekly would train them to ignore the address these emails come from.
+     *
+     * <p>A goalie holds a slot if they have any assignment row for the week that isn't DECLINED.
+     * Someone who declined genuinely has no game, so they hear that, with the schedule attached.
+     *
+     * <p>Best-effort per recipient: one bad address must not cost the rest of the bench their email,
+     * and none of it may roll back the confirmations that have already gone out.
+     *
+     * <p>{@code coordinatorUserId} is whoever pressed Send. They become the message's Reply-To, so a
+     * goalie answering "actually I'm free, put me in" reaches a person — From is always the league's
+     * unmonitored noreply@, which on its own would make "reply to this email" false.
+     *
+     * @return how many goalies were emailed
+     */
+    public int notifyUnassignedGoalies(Long seasonId, Integer week, Long coordinatorUserId) {
+        if (week == null) {
+            return 0;
+        }
+        List<GameResponseDTO> all = gameProxyService.getGamesBySeason(seasonId);
+        List<Long> weekGameIds = (all == null ? List.<GameResponseDTO>of() : all).stream()
+                .filter(g -> week.equals(g.getWeek()))
+                .map(GameResponseDTO::getId)
+                .collect(Collectors.toList());
+        if (weekGameIds.isEmpty()) {
+            return 0;
+        }
+
+        Set<Long> assigned = assignmentRepository.findByGameIdInAndRole(weekGameIds, "GOALIE").stream()
+                .filter(a -> a.getUserId() != null)
+                .filter(a -> !ShiftAssignment.STATUS_DECLINED.equals(a.getStatus()))
+                .map(ShiftAssignment::getUserId)
+                .collect(Collectors.toSet());
+
+        Set<Long> unavailable = goalieAvailabilityRepository.findBySeasonIdAndWeek(seasonId, week).stream()
+                .filter(av -> GoalieAvailability.STATUS_UNAVAILABLE.equals(av.getStatus()))
+                .map(GoalieAvailability::getUserId)
+                .collect(Collectors.toSet());
+
+        // Rendered once: it is the same week for every recipient, and nobody is highlighted in it.
+        String weekSchedule = weekScheduleBlockHtml("GOALIE", seasonId, week, null, null);
+
+        User coordinator = coordinatorUserId == null ? null
+                : userRepository.findById(coordinatorUserId).orElse(null);
+        String coordinatorName = coordinator == null ? null
+                : ((coordinator.getFirstName() != null && !coordinator.getFirstName().isBlank())
+                        ? coordinator.getFirstName() : coordinator.getUsername());
+        String coordinatorEmail = coordinator == null ? null : coordinator.getEmail();
+
+        int notified = 0;
+        for (SeasonGoalie sg : seasonGoalieRepository.findBySeasonIdAndIsFulltimeTrue(seasonId)) {
+            if (sg.getUserId() == null || assigned.contains(sg.getUserId())) {
+                continue;
+            }
+            try {
+                Optional<User> userOpt = userRepository.findById(sg.getUserId());
+                if (userOpt.isEmpty() || userOpt.get().getEmail() == null
+                        || userOpt.get().getEmail().isBlank()) {
+                    continue;
+                }
+                User user = userOpt.get();
+                String name = (user.getFirstName() != null && !user.getFirstName().isBlank())
+                        ? user.getFirstName()
+                        : user.getUsername();
+                emailService.sendGoalieNoAssignmentEmail(user.getEmail(), name, week,
+                        unavailable.contains(sg.getUserId()), weekSchedule,
+                        coordinatorName, coordinatorEmail);
+                notified++;
+            } catch (RuntimeException e) {
+                // Skip this goalie; the rest of the bench still gets told.
+            }
+        }
+        return notified;
     }
 
     /**

@@ -450,8 +450,18 @@ public class GoalieProposerService {
             throw new RuntimeException("No games scheduled for week " + week);
         }
 
+        List<ShiftAssignment> weekRows = assignmentRepository.findByGameIdInAndRole(gameIds, "GOALIE");
+
+        // Whether this is the week's first send has to be read BEFORE propose() moves rows out of
+        // AUTO_PROPOSED. Anything already PROPOSED or CONFIRMED means confirmations went out for
+        // this week once already, and the bench was told then — a top-up send (after a decline, say)
+        // must not mail them "you have no game" a second time.
+        boolean firstSendForWeek = weekRows.stream().noneMatch(a ->
+                ShiftAssignment.STATUS_PROPOSED.equals(a.getStatus())
+                        || ShiftAssignment.STATUS_CONFIRMED.equals(a.getStatus()));
+
         int sent = 0;
-        for (ShiftAssignment a : assignmentRepository.findByGameIdInAndRole(gameIds, "GOALIE")) {
+        for (ShiftAssignment a : weekRows) {
             if (ShiftAssignment.STATUS_AUTO_PROPOSED.equals(a.getStatus()) && a.getUserId() != null) {
                 CoordinatorDto.ProposeRequest req = new CoordinatorDto.ProposeRequest(
                         a.getGameId(), seasonId, "GOALIE", a.getSlot(), a.getUserId());
@@ -460,8 +470,14 @@ public class GoalieProposerService {
             }
         }
 
+        // Only once the week has actually gone out to somebody: a click that sends no confirmations
+        // has announced nothing, so there is nothing for the bench to be told about yet.
+        int notifiedUnassigned = (sent > 0 && firstSendForWeek)
+                ? coordinatorService.notifyUnassignedGoalies(seasonId, week, coordinatorUserId)
+                : 0;
+
         List<CoordinatorDto.AssignmentView> views = coordinatorService.getAssignments(seasonId, "GOALIE", week);
-        return new CoordinatorDto.SendConfirmationsResult(sent, views);
+        return new CoordinatorDto.SendConfirmationsResult(sent, notifiedUnassigned, views);
     }
 
     /**

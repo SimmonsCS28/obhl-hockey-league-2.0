@@ -249,7 +249,10 @@ function AdminAssignments() {
         try {
             const result = await api.sendGoalieConfirmations(selectedSeasonId, week);
             await reloadGoalieAssignments();
-            setBanner(`Sent ${result.sentCount} confirmation email(s) for Week ${week}.`);
+            setBanner(`Sent ${result.sentCount} confirmation email(s) for Week ${week}.`
+                + (result.notifiedUnassignedCount
+                    ? ` ${result.notifiedUnassignedCount} unassigned goalie(s) told they're not playing this week.`
+                    : ''));
         } catch (err) {
             setBanner(err.message || 'Failed to send confirmation emails');
         } finally {

@@ -250,6 +250,9 @@ public class CoordinatorDto {
     @AllArgsConstructor
     public static class SendConfirmationsResult {
         private int sentCount;
+        // Full-time goalies told they drew no slot this week. Surfaced so the coordinator can see
+        // the bench was covered, and see it as 0 on a top-up send that deliberately skipped them.
+        private int notifiedUnassignedCount;
         private List<AssignmentView> assignments;
     }
 

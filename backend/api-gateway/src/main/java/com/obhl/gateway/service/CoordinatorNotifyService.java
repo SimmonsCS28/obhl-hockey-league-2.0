@@ -60,7 +60,8 @@ public class CoordinatorNotifyService {
                 continue;
             }
             emailService.sendDeclineNoticeEmail(addressFor(c, p), firstName(c), whoDeclined,
-                    roleLabel(a.getRole()), gameDescription, a.getDeclineReason(), consoleLink());
+                    roleLabel(a.getRole()), gameDescription, a.getDeclineReason(), consoleLink(),
+                    replyToFor(a));
         }
     }
 
@@ -72,7 +73,7 @@ public class CoordinatorNotifyService {
                 continue;
             }
             emailService.sendShiftAcceptedNoticeEmail(addressFor(c, p), firstName(c), whoConfirmed,
-                    roleLabel(a.getRole()), gameDescription, consoleLink());
+                    roleLabel(a.getRole()), gameDescription, consoleLink(), replyToFor(a));
         }
     }
 
@@ -86,8 +87,24 @@ public class CoordinatorNotifyService {
             // No preference check: this one cannot be switched off, so there is no column for it.
             // A silent drop means somebody does not turn up to a game that may already be public.
             emailService.sendShiftDroppedEmail(addressFor(c, prefFor(c.getId(), a.getRole())), firstName(c),
-                    whoDropped, roleLabel(a.getRole()), gameDescription, wasPublished, consoleLink());
+                    whoDropped, roleLabel(a.getRole()), gameDescription, wasPublished, consoleLink(),
+                    replyToFor(a));
         }
+    }
+
+    /**
+     * These notices go to a coordinator <em>about</em> an official, so the reply they want to send is
+     * to that official — "can you still make it?", "who can cover?". From is the league's unmonitored
+     * noreply@, so without this their reply goes nowhere.
+     */
+    private String replyToFor(ShiftAssignment a) {
+        if (a.getUserId() == null) {
+            return null;
+        }
+        return userRepository.findById(a.getUserId())
+                .map(User::getEmail)
+                .filter(e -> e != null && !e.isBlank())
+                .orElse(null);
     }
 
     /**
