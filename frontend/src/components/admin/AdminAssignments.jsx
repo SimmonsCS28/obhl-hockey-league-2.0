@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom';
 import { useSeason } from '../../contexts/SeasonContext';
 import { resolveTeamColor } from '../../constants/teamColors';
 import GoalieProposerBar from '../coordinator/GoalieProposerBar';
+import PublishPreview from '../coordinator/PublishPreview';
 import {
     GOALIE_SELECT_STYLE,
     goalieCounts,
-    isGoalieWeekPublished,
+    publishTally,
 } from '../coordinator/goalieProposerStatus';
 import api from '../../services/api';
 import { rankTeams, goaliePickTeamId } from '../../utils/goaliePick';
@@ -85,9 +86,13 @@ function AdminAssignments() {
     const [errors, setErrors] = useState({});
     // Coordinator goalie assignments drive the status-colored goalie selects + proposer bar.
     const [goalieAssignments, setGoalieAssignments] = useState([]);
-    const [proposerBusy, setProposerBusy] = useState(null); // 'generate' | 'send' | 'publish' | null
+    const [proposerBusy, setProposerBusy] = useState(null); // 'generate' | 'send' | null
     const [banner, setBanner] = useState(null);
     const [proposerRun, setProposerRun] = useState(null);   // last auto-propose result ("why" data)
+    const [publishing, setPublishing] = useState(false);
+    const [publishScope, setPublishScope] = useState(null); // null = panel closed
+    const [publishPlan, setPublishPlan] = useState(null);   // dry-run result backing the panel
+    const [publishError, setPublishError] = useState('');
 
     useEffect(() => {
         if (!selectedSeasonId) return;
@@ -252,18 +257,57 @@ function AdminAssignments() {
         }
     }, [selectedSeasonId, reloadGoalieAssignments]);
 
-    const handleProposerPublish = useCallback(async (week) => {
-        setProposerBusy('publish');
+    // ---- Publish (same endpoint, same preview, as the Coordinator Console) ----
+
+    /**
+     * Never publish straight from a click here. This used to call publishShiftWeek with no dry run,
+     * so an identical-looking button sent real email immediately on one page and asked first on the
+     * other. The dry run and the real send walk the same server-side rows, so the named list in the
+     * panel is exactly what goes out.
+     */
+    const openWeekPublish = useCallback(async (week) => {
+        setPublishScope({
+            kind: 'week',
+            week,
+            title: `Week ${week}`,
+            sub: `Goalie assignments · ${filteredGames.length} game${filteredGames.length === 1 ? '' : 's'}`,
+        });
+        setPublishPlan(null);
+        setPublishError('');
+        setPublishing(true);
         try {
-            const result = await api.publishShiftWeek(selectedSeasonId, 'GOALIE', week);
-            await reloadGoalieAssignments();
-            setBanner(`Published ${result.publishedCount} final assignment(s) for Week ${week}. Assignment emails sent.`);
+            setPublishPlan(await api.publishShiftWeek(selectedSeasonId, 'GOALIE', week, null, true));
         } catch (err) {
-            setBanner(err.message || 'Failed to publish');
+            setPublishError(err.message || 'Could not work out what would be sent.');
         } finally {
-            setProposerBusy(null);
+            setPublishing(false);
         }
-    }, [selectedSeasonId, reloadGoalieAssignments]);
+    }, [selectedSeasonId, filteredGames.length]);
+
+    const confirmPublish = useCallback(async () => {
+        setPublishing(true);
+        setPublishError('');
+        try {
+            const result = await api.publishShiftWeek(
+                selectedSeasonId, 'GOALIE', publishScope.week, null, false);
+            await reloadGoalieAssignments();
+            setPublishScope(null);
+            setPublishPlan(null);
+            setBanner(`Published ${result.publishedCount} final assignment(s) for ${publishScope.title}.`
+                + (result.publishedCount ? ' Assignment emails sent.' : ''));
+        } catch (err) {
+            // The panel stays open — closing it would leave the admin guessing who got mail.
+            setPublishError(err.message || 'Publish failed. Nothing was sent.');
+        } finally {
+            setPublishing(false);
+        }
+    }, [selectedSeasonId, publishScope, reloadGoalieAssignments]);
+
+    const closePublish = useCallback(() => {
+        setPublishScope(null);
+        setPublishPlan(null);
+        setPublishError('');
+    }, []);
 
     const formatGameDate = (dateString) => {
         if (!dateString) return '—';
@@ -279,10 +323,16 @@ function AdminAssignments() {
     const weekGoalieAssignments = goalieAssignments.filter(a => weekGameIds.has(a.gameId));
     // Playoff weeks are supported too — the backend switches to best-available-goalie mode.
     const isPlayoffWeek = weekIsPlayoff(filteredGames);
-    const showProposer = selectedWeek !== 'all' && filteredGames.length > 0 && !weekIsPast(filteredGames);
     const proposerCounts = goalieCounts(weekGoalieAssignments, filteredGames.length * 2);
-    const proposerPublished = isGoalieWeekPublished(weekGoalieAssignments);
     const anyFilled = weekGoalieAssignments.some(a => a.status !== 'DECLINED');
+    // Staging only — hidden once there is nothing left to fill or chase. Publishing is the week
+    // button below, which is the single control on both this page and the Coordinator Console.
+    const proposerHasWork = proposerCounts.open > 0 || proposerCounts.proposed > 0;
+    const showProposer = selectedWeek !== 'all' && filteredGames.length > 0
+        && !weekIsPast(filteredGames) && proposerHasWork;
+    // Only unpublished confirmed rows will send, so that is the only number the button may show.
+    const weekTally = publishTally(weekGoalieAssignments);
+    const showWeekPublish = selectedWeek !== 'all' && filteredGames.length > 0;
 
     if (loading) {
         return <div className="obi-asgn-loading">Loading assignments…</div>;
@@ -304,6 +354,25 @@ function AdminAssignments() {
                         onClick={() => setSelectedWeek(w)}
                     >{w}</button>
                 ))}
+                {showWeekPublish && (
+                    <button
+                        type="button"
+                        className="obi-asgn-publish-btn"
+                        onClick={() => openWeekPublish(Number(selectedWeek))}
+                        disabled={publishing || weekTally.toNotify === 0}
+                        title={weekTally.toNotify === 0
+                            ? (weekTally.live > 0
+                                ? 'Nothing new to publish — every confirmed goalie this week is already live.'
+                                : 'Nothing is confirmed yet. Confirmed slots are the only ones that publish.')
+                            : undefined}
+                    >
+                        {weekTally.toNotify > 0
+                            ? `Publish Week ${selectedWeek} · ${weekTally.toNotify} to notify`
+                            : weekTally.live > 0
+                                ? `✓ Week ${selectedWeek} published`
+                                : `Publish Week ${selectedWeek}`}
+                    </button>
+                )}
             </div>
 
             {/* This grid is the admin direct-assign override; the sign-up → confirm → publish
@@ -313,6 +382,17 @@ function AdminAssignments() {
                 confirm → publish workflow, use the <Link to="/coordinator">Coordinator Console</Link>.
             </div>
 
+            {/* The proposer bar renders its own banner, so this covers the weeks where the bar is
+                hidden — including right after a publish, which is exactly when the result matters. */}
+            {banner && !showProposer && (
+                <div className="obi-asgn-banner">
+                    <strong>{banner}</strong>
+                    <button type="button" className="obi-asgn-banner-x" onClick={() => setBanner(null)}>
+                        Dismiss
+                    </button>
+                </div>
+            )}
+
             {/* Goalie auto-proposer bar (single non-past week) */}
             {showProposer && (
                 <GoalieProposerBar
@@ -320,15 +400,12 @@ function AdminAssignments() {
                     variant="admin"
                     playoff={isPlayoffWeek}
                     counts={proposerCounts}
-                    published={proposerPublished}
-                    publishedSummary={`Final game & team assignment emails sent to ${proposerCounts.confirmed} goalie(s) for Week ${selectedWeek}.`}
                     busy={proposerBusy}
                     anyFilled={anyFilled}
                     banner={banner}
                     onDismissBanner={() => setBanner(null)}
                     onGenerate={() => handleGenerate(Number(selectedWeek))}
                     onSend={() => handleSend(Number(selectedWeek))}
-                    onPublish={() => handleProposerPublish(Number(selectedWeek))}
                     reasoning={proposerRun?.week === Number(selectedWeek) ? proposerRun.reasoning : null}
                     sitting={proposerRun?.week === Number(selectedWeek) ? proposerRun.sitting : null}
                 />
@@ -498,6 +575,17 @@ function AdminAssignments() {
                         </div>
                     ))}
                 </div>
+            )}
+
+            {publishScope && (
+                <PublishPreview
+                    scope={publishScope}
+                    plan={publishPlan}
+                    busy={publishing}
+                    error={publishError}
+                    onConfirm={confirmPublish}
+                    onCancel={closePublish}
+                />
             )}
         </div>
     );

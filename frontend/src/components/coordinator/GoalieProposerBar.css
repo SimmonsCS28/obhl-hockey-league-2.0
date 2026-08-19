@@ -72,28 +72,9 @@
 
 .gpb-btn--generate { background: var(--obi-accent); color: #0b0c0f; }
 .gpb-btn--send { background: #2C8C94; color: #fff; }
-.gpb-btn--publish { background: #7FB59A; color: #0b0c0f; }
 
-/* Published (collapsed) state */
-.gpb-published {
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-    flex-wrap: wrap;
-}
-.gpb-published-tag {
-    font-family: var(--obi-font-display);
-    font-weight: 800;
-    font-size: 13px;
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
-    color: #7FB59A;
-}
-.gpb-published-summary {
-    font-family: var(--obi-font-body);
-    font-size: 13px;
-    color: #C8D0D8;
-}
+/* .gpb-btn--publish and the .gpb-published* collapsed state are gone with the bar's publish
+   button — publishing is the week header's job, and this bar now only stages assignments. */
 
 /* Transient confirmation banner */
 .gpb-banner {

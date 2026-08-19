@@ -594,6 +594,11 @@
     color: var(--obi-accent);
 }
 
+/* Fully published week: amber means "needs you", so a finished week drops to the success green. */
+.cc-week-scope-note.is-live {
+    color: var(--obi-success);
+}
+
 .cc-publish-btn {
     cursor: pointer;
     font-family: var(--obi-font-display);

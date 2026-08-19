@@ -28,6 +28,63 @@
     margin-right: 2px;
 }
 
+/* Week publish — the single publish control on this page. Mirrors .cc-publish-btn in the
+   Coordinator Console so the same action looks the same in both places. */
+.obi-asgn-publish-btn {
+    margin-left: auto;
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: #0b0c0f;
+    background: var(--obi-success);
+    border: 1px solid var(--obi-success);
+    padding: 7px 14px;
+    border-radius: 8px;
+    transition: opacity 0.15s, transform 0.1s;
+}
+
+.obi-asgn-publish-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    opacity: 0.9;
+}
+
+.obi-asgn-publish-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Publish / proposer result, for weeks where the proposer bar (which carries its own) is hidden */
+.obi-asgn-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    color: var(--obi-text);
+    background: rgba(127, 181, 154, 0.12);
+    border: 1px solid rgba(127, 181, 154, 0.32);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+}
+
+.obi-asgn-banner-x {
+    flex-shrink: 0;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+}
+
 /* Coordinator placeholder note */
 .obi-asgn-placeholder-note {
     font-family: var(--obi-font-body);

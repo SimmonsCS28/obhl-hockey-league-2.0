@@ -3,7 +3,8 @@ import api from '../../services/api';
 import { useSeason } from '../../contexts/SeasonContext';
 import { resolveTeamColor } from '../../constants/teamColors';
 import GoalieProposerBar from './GoalieProposerBar';
-import { GOALIE_STATUS_STYLE, goalieCounts, isGoalieWeekPublished } from './goalieProposerStatus';
+import PublishPreview from './PublishPreview';
+import { GOALIE_STATUS_STYLE, goalieCounts, publishTally } from './goalieProposerStatus';
 import { rankTeams, goaliePickTeamId } from '../../utils/goaliePick';
 import './Coordinator.css';
 
@@ -115,16 +116,20 @@ function groupByRink(games) {
     return groups;
 }
 
-/** How many slots a card would email, how many are already live, and how many are still waiting. */
+/**
+ * How many slots a card or week would email, how many are already live, and how many are still
+ * waiting. A DECLINED row holds no slot — the same rule goalieCounts uses — so a decline reads as
+ * an open slot to refill rather than quietly vanishing from the count.
+ */
 function publishCounts(assignments, slotTotal) {
-    const confirmed = assignments.filter(a => a.status === 'CONFIRMED');
-    const liveCount = confirmed.filter(a => a.published === true).length;
+    const { live: liveCount, toNotify } = publishTally(assignments);
+    const held = assignments.filter(a => a.status !== 'DECLINED').length;
     return {
-        toNotify: confirmed.length - liveCount,
+        toNotify,
         liveCount,
         waitingCount: assignments.filter(a =>
             a.status === 'PROPOSED' || a.status === 'AUTO_PROPOSED' || a.status === 'SIGNED_UP').length,
-        openSlots: Math.max(0, slotTotal - assignments.length),
+        openSlots: Math.max(0, slotTotal - held),
         slotTotal,
     };
 }
@@ -159,6 +164,22 @@ function publishNote({ toNotify, liveCount, waitingCount, openSlots, slotTotal }
         return `Nobody has confirmed yet — ${waitingCount} awaiting a reply`;
     }
     return 'Nothing assigned yet';
+}
+
+/**
+ * Week-header status, every role. "What's left to do" and "what's already gone out" are different
+ * questions and both belong here — a fully published week previously announced itself only by
+ * greying out its own button, which reads identically to a week where nobody has confirmed.
+ */
+function weekNote({ openSlots, waitingCount, liveCount, toNotify, slotTotal }) {
+    const parts = [];
+    if (openSlots > 0) parts.push(`${openSlots} open`);
+    if (waitingCount > 0) parts.push(`${waitingCount} awaiting reply`);
+    if (liveCount > 0) {
+        parts.push(liveCount === slotTotal ? '✓ all published' : `✓ ${liveCount} published`);
+    }
+    if (toNotify > 0) parts.push(`${toNotify} ready to publish`);
+    return parts.length ? parts.join(' · ') : 'Nothing assigned yet';
 }
 
 /**
@@ -564,15 +585,15 @@ function CoordinatorBoard({ role }) {
             const wNum = parseInt(week);
             const wAssign = assignments.filter(a => wGames.some(g => g.id === a.gameId));
             const wSlots = wGames.length * slotsPerGame;
-            const wOpen = Math.max(0, wSlots - wAssign.length);
-            const wConfirmed = wAssign.filter(a => a.status === 'CONFIRMED');
+            // Same shape the game cards use, so a week and its matchups can never disagree.
+            const counts = publishCounts(wAssign, wSlots);
             const entry = {
                 week: wNum,
                 label: `Week ${wNum}`,
                 range: formatWeekRange(weekDates[wNum] || []),
                 games: wGames,
-                openCount: wOpen,
-                toNotify: wConfirmed.filter(a => a.published !== true).length,
+                counts,
+                toNotify: counts.toNotify,
             };
             if (!byMonth[month]) { byMonth[month] = []; monthOrder.push(month); }
             byMonth[month].push(entry);
@@ -617,10 +638,14 @@ function CoordinatorBoard({ role }) {
     // Goalie auto-proposer: only for a single, non-past week.
     // Playoff weeks are supported too — the backend switches to best-available-goalie mode.
     const isPlayoffWeek = weekIsPlayoff(filteredGames);
-    const showProposer = role === 'GOALIE' && weekFilter !== 'all' && !weekIsPast(filteredGames);
     const proposerCounts = goalieCounts(filteredAssignments, totalSlots);
-    const proposerPublished = isGoalieWeekPublished(filteredAssignments);
     const anyFilled = filteredAssignments.some(a => a.status !== 'DECLINED');
+    // The bar exists to fill open slots and chase confirmations. With neither left to do it has
+    // nothing to offer, so it goes away rather than lingering as a second publish control — and it
+    // comes back on its own if a decline reopens a slot.
+    const proposerHasWork = proposerCounts.open > 0 || proposerCounts.proposed > 0;
+    const showProposer = role === 'GOALIE' && weekFilter !== 'all'
+        && !weekIsPast(filteredGames) && proposerHasWork;
 
     if (loading) return <div className="cc-loading">Loading…</div>;
 
@@ -716,15 +741,12 @@ function CoordinatorBoard({ role }) {
                     variant="console"
                     playoff={isPlayoffWeek}
                     counts={proposerCounts}
-                    published={proposerPublished}
-                    publishedSummary={`Final game & team assignment emails sent to ${proposerCounts.confirmed} goalie(s) for Week ${weekFilter}.`}
                     busy={proposerBusy}
                     anyFilled={anyFilled}
                     banner={banner}
                     onDismissBanner={() => setBanner(null)}
                     onGenerate={() => handleGenerate(parseInt(weekFilter))}
                     onSend={() => handleSendConfirmations(parseInt(weekFilter))}
-                    onPublish={() => openWeekPublish(parseInt(weekFilter), filteredGames.length)}
                     reasoning={proposerRun?.week === parseInt(weekFilter) ? proposerRun.reasoning : null}
                     sitting={proposerRun?.week === parseInt(weekFilter) ? proposerRun.sitting : null}
                 />
@@ -754,8 +776,9 @@ function CoordinatorBoard({ role }) {
                                             <span className="cc-week-hd-label">{wg.label}</span>
                                             <span className="cc-week-hd-range">{wg.range}</span>
                                             <div className="cc-week-hd-actions">
-                                                <span className="cc-week-scope-note">
-                                                    {wg.openCount > 0 ? `${wg.openCount} open` : 'All assigned'}
+                                                <span className={`cc-week-scope-note${
+                                                    wg.counts.toNotify === 0 && wg.counts.liveCount > 0 ? ' is-live' : ''}`}>
+                                                    {weekNote(wg.counts)}
                                                 </span>
                                                 {/* Ordering only means something within one week, so in
                                                     All Weeks the control is absent rather than disabled. */}
@@ -862,119 +885,6 @@ function CoordinatorBoard({ role }) {
                 Confirmed assignments appear on the public schedule, live score entry, and game management pages.
             </p>
         </>
-    );
-}
-
-/**
- * Shown before every publish, week or matchup. Answers the one question that made the week-wide
- * button feel unsafe — "who exactly gets an email" — by naming them, and says plainly who will NOT
- * be re-emailed. The plan comes from a server dry run, so it can't drift from what actually sends.
- */
-function PublishPreview({ scope, plan, busy, error, onConfirm, onCancel }) {
-    const willEmail = plan?.willEmail || [];
-    const alreadyLive = plan?.alreadyLive || [];
-    const blocked = plan?.blocked || [];
-    const n = willEmail.length;
-
-    const headline = n === 0 ? 'Nobody gets an email'
-        : n === 1 ? '1 person will be emailed'
-            : `${n} people will be emailed`;
-
-    return (
-        <div className="cc-publish-preview" role="dialog" aria-modal="true" onClick={onCancel}>
-            <div className={`cc-pp-panel${error ? ' has-error' : ''}`} onClick={e => e.stopPropagation()}>
-                <div className="cc-pp-hd">
-                    <div className="cc-pp-kicker">
-                        {scope.kind === 'matchup' ? 'Publish one matchup' : 'Publish week'}
-                    </div>
-                    <div className="cc-pp-title">{scope.title}</div>
-                    <div className="cc-pp-sub">{scope.sub}</div>
-                </div>
-
-                {error && <div className="cc-pp-alert">{error}</div>}
-
-                {!plan && !error ? (
-                    <div className="cc-pp-body"><div className="cc-pp-loading">Working out what would be sent…</div></div>
-                ) : (
-                    <div className="cc-pp-body">
-                        <div className="cc-pp-headline">{headline}</div>
-                        {n > 0 && (
-                            <div className="cc-pp-headline-sub">
-                                Final assignment email — their shift is locked in, no action needed.
-                            </div>
-                        )}
-
-                        {n === 0 ? (
-                            <div className="cc-pp-empty">
-                                {alreadyLive.length > 0
-                                    ? 'Every confirmed assignment in this scope is already published. '
-                                      + 'Publishing again would send nothing — you can safely close this.'
-                                    : 'Nothing is confirmed here yet. Confirmed slots are the only ones that publish.'}
-                            </div>
-                        ) : (
-                            <div className="cc-pp-people">
-                                {willEmail.map(p => (
-                                    <div key={p.assignmentId} className="cc-pp-person">
-                                        <span className="cc-pp-avatar">{initials(p.userName)}</span>
-                                        <span>
-                                            <span className="cc-pp-name">{p.userName}</span>
-                                            <span className="cc-pp-detail">
-                                                {[p.slotLabel, p.matchup, p.dayDate, p.time].filter(Boolean).join(' · ')}
-                                            </span>
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        {alreadyLive.length > 0 && (
-                            <div className="cc-pp-note is-ok">
-                                <span className="cc-pp-note-mark">&#10003;</span>
-                                <span>
-                                    <span className="cc-pp-note-line">
-                                        {plural(alreadyLive.length, 'assignment')}
-                                        {alreadyLive.length === 1 ? ' is' : ' are'} already published and will not be re-sent.
-                                    </span>
-                                    <span className="cc-pp-note-names">
-                                        {alreadyLive.map(p => `${p.userName} (${p.slotLabel})`).join(', ')}
-                                    </span>
-                                </span>
-                            </div>
-                        )}
-
-                        {blocked.length > 0 && (
-                            <div className="cc-pp-note">
-                                <span className="cc-pp-note-mark">&#8213;</span>
-                                <span>
-                                    <span className="cc-pp-note-line">
-                                        {plural(blocked.length, 'slot')} won&apos;t publish yet:
-                                    </span>
-                                    {blocked.map(p => (
-                                        <span key={p.assignmentId} className="cc-pp-note-names">
-                                            {p.userName} · {p.slotLabel}, {p.matchup} · {p.reason}
-                                        </span>
-                                    ))}
-                                </span>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                <div className="cc-pp-ft">
-                    <button type="button" className="cc-pp-cancel" disabled={busy} onClick={onCancel}>
-                        {n === 0 && plan ? 'Close' : 'Cancel'}
-                    </button>
-                    <button
-                        type="button"
-                        className="cc-pp-go"
-                        disabled={busy || !plan || n === 0}
-                        onClick={onConfirm}
-                    >
-                        {busy ? 'Sending…' : n === 0 ? 'Nothing to send' : `Send ${plural(n, 'Email')}`}
-                    </button>
-                </div>
-            </div>
-        </div>
     );
 }
 

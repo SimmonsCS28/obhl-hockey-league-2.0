@@ -52,13 +52,15 @@ export function goalieCounts(assignments, totalSlots) {
 }
 
 /**
- * A week is "published" once at least one goalie slot is confirmed AND every held slot is a
- * published confirmed row — i.e. nothing is still awaiting proposal, email, or confirmation.
+ * Confirmed slots split by whether they are already live. `toNotify` is the only number a publish
+ * control may show: it is exactly the set the server will write and email, because
+ * CoordinatorService.publish skips any row already flagged published. Counting plain `confirmed`
+ * instead is what made the proposer bar advertise nine sends when three were pending.
+ *
+ * Role-agnostic — the week header uses it for refs and scorekeepers too.
  */
-export function isGoalieWeekPublished(assignments) {
+export function publishTally(assignments) {
     const confirmed = assignments.filter(a => a.status === 'CONFIRMED');
-    if (confirmed.length === 0) return false;
-    const anyPending = assignments.some(
-        a => a.status === 'AUTO_PROPOSED' || a.status === 'PROPOSED' || a.status === 'SIGNED_UP');
-    return !anyPending && confirmed.every(a => a.published === true);
+    const live = confirmed.filter(a => a.published === true).length;
+    return { confirmed: confirmed.length, live, toNotify: confirmed.length - live };
 }

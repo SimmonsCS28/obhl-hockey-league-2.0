@@ -91,21 +91,26 @@ function WhyPanel({ reasoning, sitting, week }) {
 /**
  * Weekly goalie auto-proposer bar, shared by the Coordinator Console (variant="console")
  * and Admin → Assignments (variant="admin"). Presentational only — the parent owns state
- * and passes counts + handlers. Shown only for a single, non-past week (parent decides).
+ * and passes counts + handlers.
+ *
+ * Staging only: it fills open slots and asks goalies to confirm. Publishing is deliberately NOT
+ * here — it used to be, counting every confirmed slot rather than the unpublished ones, so it
+ * promised sends that the server would skip while the week header's button next to it correctly
+ * said there was nothing new. One publish control, in the week header, is the whole point.
+ *
+ * The parent hides this once `open` and `proposed` both hit zero — there is nothing left to stage —
+ * and shows it again if a decline reopens a slot.
  */
 function GoalieProposerBar({
     week,
     variant = 'console',
     counts,
-    published = false,
-    publishedSummary,
-    busy = null,          // 'generate' | 'send' | 'publish' | null
+    busy = null,          // 'generate' | 'send' | null
     anyFilled = false,    // any slot already filled → "Fill Remaining Open Slots"
     banner = null,
     onDismissBanner,
     onGenerate,
     onSend,
-    onPublish,
     reasoning = null,     // last auto-propose run's "why" data
     sitting = null,
     playoff = false,      // playoff week: best-available-goalie mode, no slot rotation
@@ -133,65 +138,44 @@ function GoalieProposerBar({
             )}
 
             <div className={`gpb-wrap gpb-wrap--${variant}`}>
-            <div className={`gpb gpb--${variant}${(!published && reasoning) ? ' has-why' : ''}`}>
-                {published ? (
-                    <div className="gpb-published">
-                        <span className="gpb-published-tag">✓ Published</span>
-                        <span className="gpb-published-summary">{publishedSummary}</span>
+            <div className={`gpb gpb--${variant}${reasoning ? ' has-why' : ''}`}>
+                <div className="gpb-lead">
+                    <div className="gpb-title">
+                        Auto-Propose Goalies · Week {week}
+                        {playoff && <span className="gpb-playoff-tag">Playoffs</span>}
                     </div>
-                ) : (
-                    <>
-                        <div className="gpb-lead">
-                            <div className="gpb-title">
-                                Auto-Propose Goalies · Week {week}
-                                {playoff && <span className="gpb-playoff-tag">Playoffs</span>}
-                            </div>
-                            <div className="gpb-status">
-                                {playoff && <span className="gpb-mode-note">Best available goalies to bracket games · </span>}
-                                {statusParts.join(' · ')}
-                            </div>
-                        </div>
-                        <div className="gpb-actions">
-                            {open > 0 && (
-                                <button
-                                    type="button"
-                                    className="gpb-btn gpb-btn--generate"
-                                    onClick={onGenerate}
-                                    disabled={!!busy}
-                                >
-                                    {busy === 'generate'
-                                        ? 'Working…'
-                                        : anyFilled ? 'Fill Remaining Open Slots' : 'Generate Proposed Assignments'}
-                                </button>
-                            )}
-                            {proposed > 0 && (
-                                <button
-                                    type="button"
-                                    className="gpb-btn gpb-btn--send"
-                                    onClick={onSend}
-                                    disabled={!!busy}
-                                >
-                                    {busy === 'send' ? 'Sending…' : `Send Confirmation Emails (${proposed})`}
-                                </button>
-                            )}
-                            {confirmed > 0 && (
-                                <button
-                                    type="button"
-                                    className="gpb-btn gpb-btn--publish"
-                                    onClick={onPublish}
-                                    disabled={!!busy}
-                                >
-                                    {busy === 'publish' ? 'Publishing…' : `Publish Final Assignments (${confirmed})`}
-                                </button>
-                            )}
-                        </div>
-                    </>
-                )}
+                    <div className="gpb-status">
+                        {playoff && <span className="gpb-mode-note">Best available goalies to bracket games · </span>}
+                        {statusParts.join(' · ')}
+                    </div>
+                </div>
+                <div className="gpb-actions">
+                    {open > 0 && (
+                        <button
+                            type="button"
+                            className="gpb-btn gpb-btn--generate"
+                            onClick={onGenerate}
+                            disabled={!!busy}
+                        >
+                            {busy === 'generate'
+                                ? 'Working…'
+                                : anyFilled ? 'Fill Remaining Open Slots' : 'Generate Proposed Assignments'}
+                        </button>
+                    )}
+                    {proposed > 0 && (
+                        <button
+                            type="button"
+                            className="gpb-btn gpb-btn--send"
+                            onClick={onSend}
+                            disabled={!!busy}
+                        >
+                            {busy === 'send' ? 'Sending…' : `Send Confirmation Emails (${proposed})`}
+                        </button>
+                    )}
+                </div>
             </div>
 
-            {!published && (
-                <WhyPanel reasoning={reasoning} sitting={sitting} week={week} />
-            )}
+            <WhyPanel reasoning={reasoning} sitting={sitting} week={week} />
             </div>
         </>
     );
