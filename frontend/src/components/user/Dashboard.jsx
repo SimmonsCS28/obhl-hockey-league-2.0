@@ -25,6 +25,9 @@ const fmtDay = (s) => { const d = toDate(s); return d ? d.toLocaleDateString('en
 const fmtDate = (s) => { const d = toDate(s); return d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: TZ }) : ''; };
 const fmtWhen = (s) => { const d = toDate(s); return d ? d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: TZ }) + ' · ' + fmtTime(s) : 'TBD'; };
 
+// A game stays on your list while you could still be scoring it, not just until face-off.
+const STILL_SCOREABLE_MS = 4 * 60 * 60 * 1000;
+
 const initialsOf = (name) => (name || '').split(/\s+/).filter(Boolean).map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'OB';
 
 function Dashboard() {
@@ -138,7 +141,14 @@ function Dashboard() {
     const activeSlots = openSlotsByRole[activeRole] || [];
     // One source for every role. Previously goalies got pending proposals only and everyone else got
     // pending plus their open-slot rows, so a confirmed goalie shift appeared nowhere at all.
-    const myCommitments = myShifts.filter(s => s.role === activeRole);
+    // Commitments come back in database scan order, which carries no date at all — a shift from
+    // February can land between two from August, and publishing one moves it. Order by puck drop
+    // and drop anything long finished, but keep a game listed while it's being played: the
+    // scorekeeper reaches Live Score Entry from this card.
+    const myCommitments = myShifts
+        .filter(s => s.role === activeRole)
+        .filter(s => { const d = toDate(s.gameDate); return !d || d.getTime() >= now.getTime() - STILL_SCOREABLE_MS; })
+        .sort((a, b) => (toDate(a.gameDate)?.getTime() ?? Infinity) - (toDate(b.gameDate)?.getTime() ?? Infinity));
     const availableOpen = activeSlots.filter(s => s.state === 'OPEN' && isUpcoming(s)).slice(0, 3);
     const openCount = (r) => (openSlotsByRole[r] || []).filter(s => s.state === 'OPEN' && isUpcoming(s)).length;
     // A goalie week is still relevant until its last game has passed.
