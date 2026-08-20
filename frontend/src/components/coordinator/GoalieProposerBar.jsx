@@ -168,6 +168,9 @@ function GoalieProposerBar({
                             className="gpb-btn gpb-btn--send"
                             onClick={onSend}
                             disabled={!!busy}
+                            title={`Emails ${proposed} proposed goalie(s) to confirm. Full-time goalies with no `
+                                + `game this week are also told they're not playing, and shown the week's `
+                                + `schedule — only on the first send for the week.`}
                         >
                             {busy === 'send' ? 'Sending…' : `Send Confirmation Emails (${proposed})`}
                         </button>

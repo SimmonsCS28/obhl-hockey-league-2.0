@@ -29,6 +29,14 @@ public class EmailService {
     @Value("${resend.from.email:OBHL <onboarding@resend.dev>}")
     private String fromEmail;
 
+    /**
+     * Catch-all Reply-To for messages with no specific person behind them (a password reset has no
+     * coordinator). Unset by default, which preserves today's behaviour exactly; set
+     * RESEND_REPLY_EMAIL to give those messages a monitored address instead of noreply@.
+     */
+    @Value("${resend.reply.email:}")
+    private String defaultReplyTo;
+
     public EmailService(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
@@ -43,7 +51,7 @@ public class EmailService {
     }
 
     public void sendShiftProposalEmail(String toEmail, String name, String roleLabel, String gameDescription,
-            String confirmLink, String gamePreviewLink, String weekScheduleHtml) {
+            String confirmLink, String gamePreviewLink, String weekScheduleHtml, String replyTo) {
         String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";
         String subject = "OBHL " + roleLabel + " shift — please confirm";
         String previewBlock = (gamePreviewLink != null && !gamePreviewLink.isBlank())
@@ -60,7 +68,7 @@ public class EmailService {
                 + confirmLink + "</p>"
                 + scheduleBlock;
 
-        send(toEmail, subject, html);
+        send(toEmail, subject, html, replyTo);
     }
 
     /**
@@ -68,7 +76,7 @@ public class EmailService {
      * locked, unlike the earlier confirm-your-time email which only pinned the time slot.
      */
     public void sendGoalieFinalAssignmentEmail(String toEmail, String name, String gameDescription, String teamName,
-            String gamePreviewLink, String weekScheduleHtml) {
+            String gamePreviewLink, String weekScheduleHtml, String replyTo) {
         String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";
         String subject = "OBHL goalie assignment — you're set for " + (teamName != null ? teamName : "your game");
         String team = (teamName != null && !teamName.isBlank())
@@ -86,7 +94,54 @@ public class EmailService {
                 + "<p>Thanks for playing — see you at the rink. No further action is needed.</p>"
                 + scheduleBlock;
 
-        send(toEmail, subject, html);
+        send(toEmail, subject, html, replyTo);
+    }
+
+    /**
+     * Sent to a full-time goalie who drew no slot in a week, at the moment that week's confirmation
+     * requests go out. Goalies were previously left to read silence as the answer, which is
+     * indistinguishable from an email that never arrived — so the week now tells everyone on the
+     * roster where they stand, not just the ones who are playing.
+     *
+     * <p>Leads with "nothing to do" because that is the whole message; the week schedule sits below
+     * as context so they can see who did draw the slots. A goalie who marked themselves unavailable
+     * gets that reflected back instead of a line implying they were passed over.
+     */
+    public void sendGoalieNoAssignmentEmail(String toEmail, String name, Integer week,
+            boolean markedUnavailable, String weekScheduleHtml,
+            String coordinatorName, String coordinatorEmail) {
+        String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";
+        String weekLabel = week == null ? "this week" : ("Week " + week);
+        // "in Week 12" vs "this week" — the label alone reads as a dangling noun mid-sentence.
+        String weekPhrase = week == null ? "this week" : ("in Week " + week);
+        String subject = "OBHL goalies — you're not scheduled for " + weekLabel;
+        String reason = markedUnavailable
+                ? "<p>You marked yourself unavailable for " + weekLabel + ", so you haven't been given a game. "
+                        + "Nothing to do.</p>"
+                : "<p>You don't have a game " + weekPhrase + " — nothing to do, and nothing has gone missing. "
+                        + "You're still in the rotation for the weeks ahead.</p>";
+        String scheduleBlock = (weekScheduleHtml != null && !weekScheduleHtml.isBlank()) ? weekScheduleHtml : "";
+
+        // Only invite a reply when one will actually reach someone. From is always noreply@, so with
+        // no coordinator address the honest instruction is to go find them, not to hit reply.
+        boolean canReply = coordinatorEmail != null && !coordinatorEmail.isBlank();
+        String who = (coordinatorName != null && !coordinatorName.isBlank())
+                ? coordinatorName
+                : "the goalie coordinator";
+        String closing = canReply
+                ? "<p>If this looks wrong, or something opens up and you want it, just reply to this email — "
+                        + "it goes straight to " + who + " (<a href=\"mailto:" + coordinatorEmail + "\">"
+                        + coordinatorEmail + "</a>).</p>"
+                : "<p>If this looks wrong, or something opens up and you want it, let the goalie coordinator "
+                        + "know — this address isn't monitored.</p>";
+
+        String html = "<p>" + greeting + "</p>"
+                + reason
+                + "<p>Here's the full " + weekLabel + " schedule so you can see who's in net:</p>"
+                + scheduleBlock
+                + closing;
+
+        send(toEmail, subject, html, canReply ? coordinatorEmail : null);
     }
 
     /**
@@ -159,7 +214,8 @@ public class EmailService {
                 + "Thanks,<br>Old Buzzard Hockey League</p>"
                 + "</div>";
 
-        send(toEmail, subject, html);
+        // The body already names this coordinator; Reply-To makes hitting reply reach them.
+        send(toEmail, subject, html, coordinatorEmail);
     }
 
     /**
@@ -215,7 +271,7 @@ public class EmailService {
                 + "Thanks,<br>Old Buzzard Hockey League</p>"
                 + "</div>";
 
-        return send(toEmail, subject, html);
+        return send(toEmail, subject, html, coordinatorEmail);
     }
 
     /**
@@ -227,7 +283,7 @@ public class EmailService {
      * person to find out what happened, which is the situation this replaces.
      */
     public void sendDeclineNoticeEmail(String toEmail, String coordinatorName, String whoDeclined,
-            String roleLabel, String gameDescription, String reason, String consoleLink) {
+            String roleLabel, String gameDescription, String reason, String consoleLink, String replyTo) {
         String greeting = (coordinatorName != null && !coordinatorName.isBlank())
                 ? ("Hi " + coordinatorName + ",") : "Hi,";
         String subject = whoDeclined + " declined a " + roleLabel + " shift — " + gameDescription;
@@ -260,7 +316,7 @@ public class EmailService {
                 + "Thanks,<br>Old Buzzard Hockey League</p>"
                 + "</div>";
 
-        send(toEmail, subject, html);
+        send(toEmail, subject, html, replyTo);
     }
 
     /**
@@ -273,7 +329,8 @@ public class EmailService {
      * reason: the two need to be tellable apart in an inbox.
      */
     public void sendShiftDroppedEmail(String toEmail, String coordinatorName, String whoDropped,
-            String roleLabel, String gameDescription, boolean wasPublished, String consoleLink) {
+            String roleLabel, String gameDescription, boolean wasPublished, String consoleLink,
+            String replyTo) {
         String greeting = (coordinatorName != null && !coordinatorName.isBlank())
                 ? ("Hi " + coordinatorName + ",") : "Hi,";
         String subject = whoDropped + " dropped a confirmed " + roleLabel + " shift — " + gameDescription;
@@ -307,7 +364,7 @@ public class EmailService {
                 + "Thanks,<br>Old Buzzard Hockey League</p>"
                 + "</div>";
 
-        send(toEmail, subject, html);
+        send(toEmail, subject, html, replyTo);
     }
 
     /**
@@ -319,7 +376,7 @@ public class EmailService {
      * because nothing needs doing.
      */
     public void sendShiftAcceptedNoticeEmail(String toEmail, String coordinatorName, String whoConfirmed,
-            String roleLabel, String gameDescription, String consoleLink) {
+            String roleLabel, String gameDescription, String consoleLink, String replyTo) {
         String greeting = (coordinatorName != null && !coordinatorName.isBlank())
                 ? ("Hi " + coordinatorName + ",") : "Hi,";
         String subject = whoConfirmed + " confirmed a " + roleLabel + " shift — " + gameDescription;
@@ -346,11 +403,12 @@ public class EmailService {
                 + "Thanks,<br>Old Buzzard Hockey League</p>"
                 + "</div>";
 
-        send(toEmail, subject, html);
+        send(toEmail, subject, html, replyTo);
     }
 
     /** Courtesy confirmation when a coordinator confirms a shift the official signed up for (no action needed). */
-    public void sendShiftConfirmedEmail(String toEmail, String name, String roleLabel, String gameDescription) {
+    public void sendShiftConfirmedEmail(String toEmail, String name, String roleLabel, String gameDescription,
+            String replyTo) {
         String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";
         String subject = "OBHL " + roleLabel + " shift — confirmed";
         String html = "<p>" + greeting + "</p>"
@@ -358,15 +416,24 @@ public class EmailService {
                 + "<p><strong>" + gameDescription + "</strong></p>"
                 + "<p>Thanks for signing up — no further action is needed.</p>";
 
-        send(toEmail, subject, html);
+        send(toEmail, subject, html, replyTo);
+    }
+
+    private boolean send(String toEmail, String subject, String html) {
+        return send(toEmail, subject, html, null);
     }
 
     /**
+     * The From address is always the league's own {@code noreply@}, which is what keeps the domain's
+     * sending reputation intact. {@code replyTo} is therefore the only way a recipient can answer a
+     * message and reach a person — without it, "reply to this email" is a lie, because the reply
+     * lands on an unmonitored mailbox.
+     *
      * @return true only if the message was handed to Resend successfully. Most callers ignore this —
      *         their email is best-effort — but the cancellation flow needs it, because "removed from
      *         the game but never told" is a state the coordinator has to chase down by phone.
      */
-    private boolean send(String toEmail, String subject, String html) {
+    private boolean send(String toEmail, String subject, String html, String replyTo) {
         if (resendApiKey == null || resendApiKey.isBlank()) {
             logger.warn("RESEND_API_KEY is not configured; skipping email send to {}", toEmail);
             return false;
@@ -376,11 +443,16 @@ public class EmailService {
         headers.setContentType(MediaType.APPLICATION_JSON);
         headers.setBearerAuth(resendApiKey);
 
-        Map<String, Object> body = Map.of(
-                "from", fromEmail,
-                "to", toEmail,
-                "subject", subject,
-                "html", html);
+        String reply = (replyTo != null && !replyTo.isBlank()) ? replyTo : defaultReplyTo;
+
+        Map<String, Object> body = new java.util.HashMap<>();
+        body.put("from", fromEmail);
+        body.put("to", toEmail);
+        body.put("subject", subject);
+        body.put("html", html);
+        if (reply != null && !reply.isBlank()) {
+            body.put("reply_to", reply);
+        }
 
         try {
             restTemplate.postForEntity(RESEND_API_URL, new HttpEntity<>(body, headers), String.class);

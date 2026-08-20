@@ -491,7 +491,10 @@ function CoordinatorBoard({ role }) {
         try {
             const result = await api.sendGoalieConfirmations(seasonId, week);
             await reloadAssignments();
-            setBanner(`Sent ${result.sentCount} confirmation email(s) for Week ${week}.`);
+            setBanner(`Sent ${result.sentCount} confirmation email(s) for Week ${week}.`
+                + (result.notifiedUnassignedCount
+                    ? ` ${result.notifiedUnassignedCount} unassigned goalie(s) told they're not playing this week.`
+                    : ''));
         } catch (e) {
             setError(e.message || 'Failed to send confirmation emails');
         } finally {
