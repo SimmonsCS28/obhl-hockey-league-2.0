@@ -1,0 +1,131 @@
+/* Weekly video highlight — home page section between League News and Season at a Glance.
+   Classnames use the obi-hl- prefix: this codebase has no CSS scoping, so every new
+   component needs its own namespace to avoid colliding with global rules. */
+
+.obi-hl {
+    background: linear-gradient(180deg, #0b0c0f, #101318);
+    border-bottom: 1px solid rgba(246, 169, 28, 0.18);
+}
+
+.obi-hl .obi-container {
+    padding-top: 40px;
+    padding-bottom: 44px;
+}
+
+.obi-hl-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 22px;
+}
+
+.obi-hl-pill {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 13px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: #0b0c0f;
+    background: var(--obi-accent);
+    padding: 5px 12px;
+    border-radius: 5px;
+}
+
+.obi-hl-rule {
+    height: 1px;
+    flex: 1;
+    background: linear-gradient(90deg, rgba(246, 169, 28, 0.4), transparent);
+}
+
+.obi-hl-card {
+    max-width: 880px;
+    margin: 0 auto;
+    background: rgba(246, 169, 28, 0.06);
+    border: 1px solid rgba(246, 169, 28, 0.22);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* Reserve the 16:9 box before metadata loads so the page doesn't jump. */
+/* aspect-ratio is set inline from the clip's real dimensions once metadata loads;
+   this 16/9 is only the pre-load default that stops the page jumping. */
+.obi-hl-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #000;
+}
+
+.obi-hl-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    /* contain, not cover: a Live Barn clip is a wide rink shot and cropping it
+       cuts off exactly the corners where the play tends to be. */
+    object-fit: contain;
+    display: block;
+}
+
+.obi-hl-body {
+    padding: 18px 22px 20px;
+}
+
+.obi-hl-title {
+    margin: 0;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 20px;
+    letter-spacing: 0.3px;
+    color: #fff;
+}
+
+.obi-hl-meta {
+    margin-top: 5px;
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+}
+
+.obi-hl-desc {
+    margin: 12px 0 0;
+    font-family: var(--obi-font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--obi-text-secondary);
+    /* Admin-authored text: never let a long unbroken string widen the page. */
+    overflow-wrap: anywhere;
+}
+
+.obi-hl-yt {
+    display: inline-block;
+    margin-top: 14px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    color: var(--obi-accent);
+    text-decoration: none;
+}
+
+.obi-hl-yt:hover {
+    text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+    .obi-hl .obi-container {
+        padding-top: 30px;
+        padding-bottom: 32px;
+    }
+
+    .obi-hl-body {
+        padding: 15px 16px 18px;
+    }
+
+    .obi-hl-title {
+        font-size: 18px;
+    }
+}

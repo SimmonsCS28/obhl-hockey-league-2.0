@@ -53,6 +53,11 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/users/*/name").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/announcements", "/api/v1/announcements/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/rules").permitAll()
+                        // Highlights are public to read — this covers both the JSON endpoints
+                        // and /highlights/media/** (the video and poster files themselves,
+                        // served by MediaResourceConfig's resource handler). Writes stay
+                        // ADMIN-only via @PreAuthorize on HighlightController.
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/highlights", "/api/v1/highlights/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/chicken-licks/standings").permitAll()
                         // The draft is ADMIN-only for EVERY verb including GET, and must be stated
                         // BEFORE the public tournament GET below — matchers are evaluated in order,

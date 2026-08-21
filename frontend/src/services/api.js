@@ -791,6 +791,81 @@ const api = {
     },
 
     // ============================================
+    // HIGHLIGHTS API (weekly video highlight)
+    // ============================================
+    // Returns null when nothing is posted — the endpoint answers 204, which the
+    // shared request() helper turns into {}.
+    async getCurrentHighlight() {
+        const data = await request('/highlights/current');
+        return data && data.id ? data : null;
+    },
+
+    async getHighlights(activeOnly = false) {
+        return request(`/highlights?activeOnly=${activeOnly}`);
+    },
+
+    // Multipart, so this deliberately bypasses request(): that helper forces
+    // Content-Type: application/json, and for FormData the header must be left
+    // unset so the browser can add the multipart boundary. Uses XHR rather than
+    // fetch() because a 25MB upload needs a progress bar to not look hung.
+    uploadHighlight(formData, onProgress) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `${API_BASE_URL}/highlights`);
+            const token = getAuthToken();
+            if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+
+            xhr.upload.onprogress = (e) => {
+                if (onProgress && e.lengthComputable) {
+                    onProgress(Math.round((e.loaded / e.total) * 100));
+                }
+            };
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try {
+                        resolve(xhr.responseText ? JSON.parse(xhr.responseText) : {});
+                    } catch {
+                        resolve({});
+                    }
+                    return;
+                }
+                // Mirror request()'s 401 handling so an expired session behaves the
+                // same here as everywhere else in the app.
+                if (xhr.status === 401) {
+                    window.dispatchEvent(new Event('auth-error'));
+                    reject(new Error('Your session has expired. Please log in again.'));
+                    return;
+                }
+                let message = xhr.responseText;
+                try {
+                    const parsed = JSON.parse(xhr.responseText);
+                    message = parsed.error || parsed.message || message;
+                } catch { /* not JSON — use raw text */ }
+                reject(new Error(message || `Upload failed with status ${xhr.status}`));
+            };
+            xhr.onerror = () => reject(new Error('Upload failed — check your connection and try again.'));
+            xhr.send(formData);
+        });
+    },
+
+    async updateHighlight(id, data) {
+        return request(`/highlights/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    },
+
+    async toggleHighlightActive(id, active) {
+        return request(`/highlights/${id}/toggle?active=${active}`, {
+            method: 'PATCH'
+        });
+    },
+
+    async deleteHighlight(id) {
+        return request(`/highlights/${id}`, { method: 'DELETE' });
+    },
+
+    // ============================================
     // LEAGUE RULES API
     // ============================================
     // Public: { sections:[{id,group,title,content,order}], publishedAt, publishedBy }
@@ -965,6 +1040,12 @@ export const {
     updateAnnouncement,
     toggleAnnouncementActive,
     deleteAnnouncement,
+    getCurrentHighlight,
+    getHighlights,
+    uploadHighlight,
+    updateHighlight,
+    toggleHighlightActive,
+    deleteHighlight,
     getRules,
     getAdminRules,
     saveRules,

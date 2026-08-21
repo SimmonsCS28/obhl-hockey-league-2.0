@@ -28,6 +28,12 @@ RUN apk add --no-cache curl
 # Copy the built JAR from build stage
 COPY --from=build /app/build/libs/*.jar app.jar
 
+# Media upload target for highlight videos/posters. It must exist in the IMAGE, not
+# just as a mount point: a fresh named volume inherits the ownership of the image
+# directory it covers. Without this the volume is created root-owned and appuser
+# cannot write to it.
+RUN mkdir -p /app/media
+
 # Create non-root user
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 RUN chown -R appuser:appgroup /app

@@ -82,3 +82,6 @@ generate_*.py
 
 # Design handoff / reference material (not app code)
 Website theme integration/
+
+# Uploaded highlight media (local dev; prod uses the highlight_media docker volume)
+backend/api-gateway/media/

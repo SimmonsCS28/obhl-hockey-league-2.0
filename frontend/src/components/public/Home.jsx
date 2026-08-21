@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { resolveTeamColor } from '../../constants/teamColors';
 import SeasonOverviewCards from '../common/SeasonOverviewCards';
+import WeeklyHighlight from './WeeklyHighlight';
 import bannerImg from '../../assets/images/buzzard-banner.png';
 import './Home.css';
 
@@ -137,6 +138,9 @@ function Home() {
                     </div>
                 </section>
             )}
+
+            {/* WEEKLY VIDEO HIGHLIGHT — self-hiding when nothing is posted */}
+            <WeeklyHighlight />
 
             {/* SEASON AT A GLANCE */}
             {activeSeason && (
