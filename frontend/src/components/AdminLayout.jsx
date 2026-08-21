@@ -24,6 +24,7 @@ const NAV = [
     { group: 'People' },
     { id: 'users', label: 'Users & Roles' },
     { id: 'announcements', label: 'Announcements' },
+    { id: 'highlights', label: 'Highlights' },
     { id: 'rules', label: 'Rules Editor' },
     // Launcher — opens the role-scoped Coordinator Console (external to the admin shell), per v4 §2c
     { route: '/coordinator', label: 'Coordinator Console' },

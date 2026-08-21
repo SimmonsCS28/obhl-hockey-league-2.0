@@ -41,6 +41,10 @@ server {
     }
 
     location /api/ {
+        # Highlight video uploads run through here. nginx defaults to a 1MB body
+        # limit, which 413s a 25MB clip long before Spring ever sees it. Keep this
+        # at or above spring.servlet.multipart.max-request-size in the gateway.
+        client_max_body_size 110M;
         # Use simple HTTP/1.0 connection
         proxy_pass http://127.0.0.1:8000/api/;
         proxy_http_version 1.0;

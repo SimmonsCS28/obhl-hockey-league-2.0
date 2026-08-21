@@ -1,0 +1,548 @@
+/* HighlightsManagement — OBHL dark theme.
+   Everything is scoped under .highlights-management on purpose. This codebase has no
+   CSS scoping, and the shared admin classnames (.btn-save, .status-toggle, .field-hint,
+   .actions-cell …) are declared unscoped over in AnnouncementsManagement.css. Redeclaring
+   them globally here would fight that file; scoping them means this module both stands on
+   its own and never changes how another admin tab looks. */
+
+@keyframes hl-fade {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.highlights-management {
+    animation: hl-fade 0.25s ease;
+    color: var(--obi-text);
+}
+
+/* ── Module header ── */
+.highlights-management .management-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--obi-divider);
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.highlights-management .management-header h2 {
+    margin: 0;
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 26px;
+    color: #fff;
+}
+
+.highlights-management .header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.highlights-management .btn-add-highlight {
+    background: var(--obi-accent);
+    color: #0b0c0f;
+    padding: 10px 18px;
+    border: none;
+    border-radius: var(--obi-radius-btn);
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.12s;
+}
+
+.highlights-management .btn-add-highlight:hover { opacity: 0.88; transform: translateY(-1px); }
+
+.highlights-management .error-message {
+    background: rgba(224, 138, 138, 0.1);
+    border: 1px solid rgba(224, 138, 138, 0.3);
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 18px;
+    color: var(--obi-error);
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+}
+
+/* ── Form ── */
+.highlights-management .highlight-form-card {
+    background: linear-gradient(180deg, #13171d, #10141a);
+    border: 1px solid var(--obi-card-border);
+    border-radius: var(--obi-radius-card);
+    padding: 22px 24px 24px;
+    margin-bottom: 24px;
+}
+
+.highlights-management .highlight-form-card h3 {
+    margin: 0 0 18px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-style: italic;
+    font-size: 19px;
+    color: #fff;
+}
+
+.highlights-management .form-group {
+    margin-bottom: 16px;
+}
+
+.highlights-management .form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
+}
+
+.highlights-management .form-group input[type="text"],
+.highlights-management .form-group input[type="url"],
+.highlights-management .form-group input[type="number"],
+.highlights-management .form-group select,
+.highlights-management .form-group textarea {
+    width: 100%;
+    padding: 10px 13px;
+    background: #0e1116;
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    border-radius: 8px;
+    color: var(--obi-text);
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.highlights-management .form-group textarea {
+    resize: vertical;
+    line-height: 1.5;
+}
+
+.highlights-management .form-group input:focus,
+.highlights-management .form-group select:focus,
+.highlights-management .form-group textarea:focus {
+    outline: none;
+    border-color: var(--obi-accent);
+}
+
+.highlights-management .form-group input[type="file"] {
+    width: 100%;
+    padding: 10px 13px;
+    background: #0e1116;
+    border: 1px dashed rgba(157, 185, 205, 0.3);
+    border-radius: 8px;
+    color: var(--obi-text-secondary);
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.highlights-management .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.highlights-management .field-hint {
+    display: block;
+    margin-top: 5px;
+    font-family: var(--obi-font-body);
+    font-size: 12px;
+    color: var(--obi-text-dim);
+    font-style: italic;
+}
+
+.highlights-management .checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    letter-spacing: 0;
+    text-transform: none;
+    font-weight: 400;
+    color: var(--obi-text-secondary);
+    cursor: pointer;
+}
+
+.highlights-management .checkbox-group input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--obi-accent);
+    cursor: pointer;
+}
+
+/* ── Thumbnail picker ── */
+.highlights-management .hl-poster-picker {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 20px;
+    align-items: start;
+    padding: 16px;
+    margin-bottom: 18px;
+    background: rgba(246, 169, 28, 0.05);
+    border: 1px solid rgba(246, 169, 28, 0.2);
+    border-radius: 10px;
+}
+
+.highlights-management .hl-poster-img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    background: #000;
+    border: 1px solid var(--obi-card-border);
+    border-radius: 8px;
+}
+
+.highlights-management .hl-poster-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    font-style: italic;
+    color: var(--obi-text-muted);
+}
+
+/* The scrub source. Shown rather than display:none — a hidden video still decodes,
+   but keeping it visible makes it obvious which frame is about to be captured. */
+.highlights-management .hl-scrub-video {
+    display: block;
+    width: 100%;
+    max-height: 200px;
+    background: #000;
+    border: 1px solid var(--obi-card-border);
+    border-radius: 8px;
+    object-fit: contain;
+}
+
+.highlights-management .hl-scrub-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 10px;
+}
+
+.highlights-management .hl-scrub-row input[type="range"] {
+    flex: 1;
+    accent-color: var(--obi-accent);
+    cursor: pointer;
+}
+
+.highlights-management .hl-scrub-time {
+    font-family: var(--obi-font-body);
+    font-size: 12px;
+    color: var(--obi-text-muted);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.highlights-management .hl-poster-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.highlights-management .btn-secondary-small {
+    display: inline-block;
+    background: rgba(157, 185, 205, 0.08);
+    color: var(--obi-icy);
+    border: 1px solid rgba(157, 185, 205, 0.2);
+    padding: 7px 13px;
+    border-radius: 6px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.highlights-management .btn-secondary-small:hover {
+    background: rgba(157, 185, 205, 0.16);
+    color: #fff;
+}
+
+/* The custom-image control is a <label> wrapping a hidden input, so it needs the
+   label reset that .form-group label would otherwise impose on it. */
+.highlights-management .hl-upload-label {
+    margin-bottom: 0;
+}
+
+/* ── Upload progress ── */
+.highlights-management .hl-progress {
+    position: relative;
+    height: 26px;
+    margin-top: 6px;
+    background: #0e1116;
+    border: 1px solid var(--obi-card-border);
+    border-radius: 13px;
+    overflow: hidden;
+}
+
+.highlights-management .hl-progress-bar {
+    height: 100%;
+    background: var(--obi-accent);
+    transition: width 0.2s ease;
+}
+
+.highlights-management .hl-progress-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #fff;
+    /* Readable over both the filled and unfilled halves of the bar. */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.75);
+}
+
+.highlights-management .form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--obi-divider);
+}
+
+.highlights-management .btn-save {
+    background: var(--obi-accent);
+    color: #0b0c0f;
+    padding: 10px 18px;
+    border: none;
+    border-radius: var(--obi-radius-btn);
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.highlights-management .btn-save:hover { opacity: 0.88; }
+
+.highlights-management .btn-save:disabled,
+.highlights-management .btn-cancel:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.highlights-management .btn-cancel {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--obi-text-secondary);
+    padding: 10px 18px;
+    border: 1px solid var(--obi-card-border);
+    border-radius: var(--obi-radius-btn);
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.highlights-management .btn-cancel:hover:not(:disabled) {
+    color: #fff;
+    border-color: var(--obi-accent);
+    background: var(--obi-accent-hover);
+}
+
+/* ── Table ── */
+.highlights-management .highlights-table-container {
+    background: linear-gradient(180deg, #13171d, #10141a);
+    border: 1px solid var(--obi-card-border);
+    border-radius: var(--obi-radius-card);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.highlights-management .highlights-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.highlights-management .highlights-table thead {
+    background: rgba(0, 0, 0, 0.25);
+    border-bottom: 1px solid rgba(157, 185, 205, 0.18);
+}
+
+.highlights-management .highlights-table th {
+    padding: 13px 18px;
+    text-align: left;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    white-space: nowrap;
+}
+
+.highlights-management .highlights-table tbody tr {
+    border-bottom: 1px solid rgba(157, 185, 205, 0.07);
+    transition: background 0.12s;
+}
+
+.highlights-management .highlights-table tbody tr:last-child { border-bottom: none; }
+
+.highlights-management .highlights-table tbody tr:hover { background: rgba(157, 185, 205, 0.03); }
+
+.highlights-management .highlights-table td {
+    padding: 12px 18px;
+    color: var(--obi-text-secondary);
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    vertical-align: middle;
+}
+
+.highlights-management .highlights-table td strong {
+    color: var(--obi-text);
+    font-weight: 600;
+}
+
+.highlights-management .inactive-row td {
+    opacity: 0.6;
+}
+
+.highlights-management .hl-row-thumb {
+    display: block;
+    width: 84px;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    background: #000;
+    border: 1px solid var(--obi-card-border);
+    border-radius: 5px;
+}
+
+.highlights-management .hl-row-thumb-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--obi-text-dim);
+    font-size: 13px;
+}
+
+.highlights-management .status-toggle {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    border: none;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    white-space: nowrap;
+}
+
+.highlights-management .status-toggle:hover { transform: scale(1.04); }
+
+.highlights-management .status-toggle.active {
+    background: rgba(127, 181, 154, 0.15);
+    color: var(--obi-success);
+    border: 1px solid rgba(127, 181, 154, 0.35);
+}
+
+.highlights-management .status-toggle.inactive {
+    background: rgba(157, 185, 205, 0.08);
+    color: var(--obi-text-muted);
+    border: 1px solid var(--obi-divider);
+}
+
+.highlights-management .actions-cell {
+    display: flex;
+    gap: 6px;
+    white-space: nowrap;
+    align-items: center;
+}
+
+.highlights-management .btn-view-small,
+.highlights-management .btn-edit-small {
+    background: rgba(157, 185, 205, 0.08);
+    color: var(--obi-icy);
+    border: 1px solid rgba(157, 185, 205, 0.2);
+    padding: 5px 11px;
+    border-radius: 6px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-decoration: none;
+    transition: all 0.15s;
+}
+
+.highlights-management .btn-view-small:hover,
+.highlights-management .btn-edit-small:hover {
+    background: rgba(157, 185, 205, 0.16);
+    color: #fff;
+}
+
+.highlights-management .btn-delete-small {
+    background: rgba(224, 138, 138, 0.08);
+    color: var(--obi-error);
+    border: 1px solid rgba(224, 138, 138, 0.25);
+    padding: 5px 11px;
+    border-radius: 6px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.highlights-management .btn-delete-small:hover {
+    background: rgba(224, 138, 138, 0.16);
+    color: #fff;
+}
+
+.highlights-management .empty-state {
+    padding: 48px;
+    text-align: center;
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    color: var(--obi-text-muted);
+    font-style: italic;
+}
+
+.highlights-management .loading {
+    padding: 48px;
+    text-align: center;
+    font-family: var(--obi-font-body);
+    font-size: 16px;
+    color: var(--obi-text-muted);
+}
+
+@media (max-width: 860px) {
+    .highlights-management .hl-poster-picker { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 600px) {
+    .highlights-management .form-row { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .highlights-management .highlights-table { min-width: 760px; }
+}

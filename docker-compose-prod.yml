@@ -28,7 +28,6 @@ services:
       context: ./backend/api-gateway
       dockerfile: Dockerfile
     container_name: obhl-api-gateway
-    ports:\n      - " 8000:8000
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/obhl_db
       SPRING_DATASOURCE_USERNAME: obhl_admin
@@ -37,9 +36,14 @@ services:
       GAME_SERVICE_URL: http://game-service:8002
       STATS_SERVICE_URL: http://stats-service:8003
       ENVIRONMENT: docker
+      MEDIA_ROOT: /app/media
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-OBHL <onboarding@resend.dev>}
       FRONTEND_URL: ${FRONTEND_URL:-https://oldbuzzardhockey.com}
+    volumes:
+      # Uploaded highlight videos + posters. A named volume so clips survive
+      # a container rebuild; NOT covered by the postgres backup.
+      - highlight_media:/app/media
     ports:
       - "8000:8000"
     depends_on:
@@ -133,3 +137,4 @@ networks:
 
 volumes:
   postgres_data:
+  highlight_media:
