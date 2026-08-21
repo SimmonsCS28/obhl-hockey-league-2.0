@@ -18,7 +18,7 @@ import io.jsonwebtoken.security.Keys;
 @Component
 public class JwtUtil {
 
-    @Value("${jwt.secret:obhl-secret-key-change-in-production-minimum-256-bits-required}")
+    @Value("${jwt.secret}")
     private String jwtSecret;
 
     private Key getSigningKey() {

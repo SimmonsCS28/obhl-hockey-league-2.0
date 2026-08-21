@@ -10,18 +10,16 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 public class GatewayApplication {
 
     public static void main(String[] args) {
-        // If run with --hash-password argument, generate BCrypt hash and exit
+        // Local admin utility: `--hash-password <plaintext>` prints a BCrypt hash and exits.
+        // The plaintext must be supplied — no baked-in default — and no username-specific SQL
+        // is printed, since this file lives in a public repo.
         if (args.length > 0 && "--hash-password".equals(args[0])) {
-            BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-            String password = args.length > 1 ? args[1] : "Inn3Rd@yRu$Ted";
-            String hash = encoder.encode(password);
-            System.out.println("\n=== BCrypt Password Hash ===");
-            System.out.println("Password: " + password);
-            System.out.println("Hash: " + hash);
-            System.out.println("\nSQL to update user:");
-            System.out.println(
-                    "UPDATE users SET password_hash = '" + hash + "' WHERE username = 'simmonscs28@gmail.com';");
-            System.out.println("============================\n");
+            if (args.length < 2 || args[1].isBlank()) {
+                System.err.println("Usage: --hash-password <plaintext-password>");
+                System.exit(1);
+            }
+            String hash = new BCryptPasswordEncoder().encode(args[1]);
+            System.out.println(hash);
             System.exit(0);
         }
 

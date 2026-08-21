@@ -38,6 +38,7 @@ services:
       STATS_SERVICE_URL: http://stats-service:8003
       ENVIRONMENT: docker
       MEDIA_ROOT: /app/media
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required - copy .env.example to .env and set it}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-OBHL <onboarding@resend.dev>}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
@@ -111,6 +112,7 @@ services:
       SPRING_DATASOURCE_PASSWORD: changeme
       ENVIRONMENT: docker
       SPRING_PROFILES_ACTIVE: docker
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required - copy .env.example to .env and set it}
     ports:
       - "8003:8003"
     depends_on:
