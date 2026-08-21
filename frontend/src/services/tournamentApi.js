@@ -1,7 +1,7 @@
 import { request } from './api';
 
 /**
- * Conley Classic API client.
+ * C League Classic API client.
  *
  * A separate module from api.js rather than another section of that 990-line object -- the
  * tournament is a self-contained surface and there is no reason for it to grow the file every

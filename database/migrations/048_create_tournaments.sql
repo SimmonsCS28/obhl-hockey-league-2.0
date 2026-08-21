@@ -1,4 +1,4 @@
--- The Conley Classic: one row per annual tournament.
+-- The C League Classic: one row per annual tournament.
 --
 -- Each tournament owns a seasons row (type='TOURNAMENT') so its teams, players and games are
 -- ordinary season-scoped rows. Everything here is the tournament-specific configuration that has
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS tournaments (
     -- already cascades to its teams and games) cannot leave an orphan tournament behind.
     season_id               BIGINT NOT NULL UNIQUE REFERENCES seasons(id) ON DELETE CASCADE,
 
-    -- URL identity: /tournaments/conley-classic-2026. Stable and human-readable, unlike an id, and
+    -- URL identity: /tournaments/c-league-classic-2026. Stable and human-readable, unlike an id, and
     -- unlike the team-name query params the design prototype used.
     slug                    VARCHAR(80) NOT NULL UNIQUE,
     name                    VARCHAR(150) NOT NULL,
@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS tournaments (
     -- Names a TournamentScoringProfile in code rather than storing the rules as columns. Changing
     -- the formula is then a new profile constant with a new name, which leaves already-played
     -- tournaments scoring the way they actually scored.
-    scoring_profile         VARCHAR(40) NOT NULL DEFAULT 'conley-v1',
+    scoring_profile         VARCHAR(40) NOT NULL DEFAULT 'classic-v1',
 
     -- setup -> draft -> scheduled -> in_progress -> completed -> archived.
     -- The tournament's lifecycle lives HERE, never on seasons.is_active: a tournament season is
@@ -123,5 +123,5 @@ CREATE INDEX IF NOT EXISTS idx_tournaments_year ON tournaments(year DESC);
 CREATE INDEX IF NOT EXISTS idx_tournaments_published ON tournaments(is_published) WHERE is_published = true;
 
 COMMENT ON TABLE tournaments IS
-    'One row per annual tournament (The Conley Classic). Owns a seasons row of type TOURNAMENT '
+    'One row per annual tournament (The C League Classic). Owns a seasons row of type TOURNAMENT '
     'whose teams/players/games hold the actual tournament data.';

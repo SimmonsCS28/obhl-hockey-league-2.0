@@ -1,6 +1,6 @@
 # Deferred follow-ups
 
-Things found while building the Conley Classic that are **out of scope for the tournament work** and
+Things found while building the C League Classic that are **out of scope for the tournament work** and
 were deliberately left alone. Recorded here so they are not lost, and so the decision to defer is
 visible rather than implied.
 

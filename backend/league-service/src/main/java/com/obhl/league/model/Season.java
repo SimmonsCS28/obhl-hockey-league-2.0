@@ -35,7 +35,7 @@ public class Season {
     private String status = "upcoming";
 
     /**
-     * LEAGUE or TOURNAMENT. A tournament (The Conley Classic) is backed by its own season row so its
+     * LEAGUE or TOURNAMENT. A tournament (The C League Classic) is backed by its own season row so its
      * teams, players and games can be ordinary season-scoped rows, but it must stay out of league
      * season lists -- see TYPE_LEAGUE / TYPE_TOURNAMENT and the default-deny filter on
      * GET /seasons. A tournament season is never is_active; the database enforces that with

@@ -70,7 +70,7 @@ function TournamentTeamRoster() {
                             />
                             <div>
                                 <div className="tcc-eyebrow">
-                                    {team.seed != null ? `Seed ${team.seed} · ` : ''}Conley Classic
+                                    {team.seed != null ? `Seed ${team.seed} · ` : ''}C League Classic
                                 </div>
                                 <h1 className="tcc-roster-name">{team.name}</h1>
                                 <div className="tcc-roster-captain">

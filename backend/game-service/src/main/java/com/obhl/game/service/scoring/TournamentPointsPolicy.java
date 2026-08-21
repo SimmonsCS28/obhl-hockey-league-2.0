@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Conley Classic scoring: 3/1/0, plus a point per period won and a point per penalty-free period.
+ * C League Classic scoring: 3/1/0, plus a point per period won and a point per penalty-free period.
  *
  * <p>Gathers per-period tallies from {@code game_events} and hands the arithmetic to
  * {@link TournamentPointsCalculator}.
@@ -51,7 +51,7 @@ public class TournamentPointsPolicy implements GamePointsPolicy {
             return;
         }
 
-        TournamentScoringProfile profile = TournamentScoringProfile.CONLEY_V1;
+        TournamentScoringProfile profile = TournamentScoringProfile.CLASSIC_V1;
         int periodCount = game.getPeriodCount() != null ? game.getPeriodCount() : DEFAULT_PERIOD_COUNT;
 
         List<GameEvent> events = gameEventRepository.findByGameId(game.getId());

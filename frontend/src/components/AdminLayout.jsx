@@ -32,7 +32,7 @@ const NAV = [
     // now lives in Operations → Assignments for direct overrides, and in the Coordinator Console for
     // the sign-up → confirm → publish workflow. The one thing not carried over is the old goalie
     // page's assigned/unassigned filter.
-    { group: 'Conley Classic' },
+    { group: 'C League Classic' },
     { id: 'tournament', label: 'Tournament Setup' },
     { id: 'tournament-draft', label: 'Tournament Draft' },
     { id: 'tournament-schedule', label: 'Tournament Schedule' },

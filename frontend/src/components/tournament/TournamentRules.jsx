@@ -119,7 +119,7 @@ function DerivedRules({ tournament }) {
                     <li>After every game, each team&rsquo;s captain names one player from the opposing
                         bench who showed the best sportsmanship.</li>
                     <li>A carton of chocolate milk is delivered to that player&rsquo;s locker room — the
-                        tradition started by Don Conley, the tournament&rsquo;s namesake.</li>
+                        tournament&rsquo;s signature award.</li>
                 </ul>
             </article>
         </>

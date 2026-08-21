@@ -256,7 +256,7 @@ const router = createBrowserRouter([
     element: <ChangePassword />
   },
 
-  // The Conley Classic microsite.
+  // The C League Classic microsite.
   //
   // A SIBLING of the "/" PublicLayout route, not a child: the tournament has entirely its own
   // chrome, nav and identity, and exactly one outbound link back to the league site. Auth is

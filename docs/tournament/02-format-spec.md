@@ -60,7 +60,7 @@ eliminates one team and all but one must be eliminated.
 | 6 teams, 2 divisions, top 2, no extras | **9** | 6 group + 3 bracket (2 semifinals + 1 final) |
 | **8 teams, 2 divisions, top 2, placement, consolation 4** | **18** | 12 group · 2 semifinal · 1 final · 1 placement · 2 consolation |
 
-The last row is the Conley Classic's intended shape: every team plays 3 division games plus exactly
+The last row is the C League Classic's intended shape: every team plays 3 division games plus exactly
 one game on day two, so nobody drives to the rink to watch.
 
 ## Stage rules

@@ -308,7 +308,7 @@ public class TournamentService {
         }
     }
 
-    /** "The Conley Classic-2026" -> "the-conley-classic-2026". */
+    /** "The C League Classic-2026" -> "the-c-league-classic-2026". */
     private String slugify(String input) {
         String normalized = Normalizer.normalize(input, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}", "")

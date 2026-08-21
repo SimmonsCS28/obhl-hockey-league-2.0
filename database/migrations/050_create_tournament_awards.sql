@@ -1,9 +1,8 @@
 -- Chocolate Milk Player of the Game.
 --
--- The tournament is named for Don Conley, who after every game walked into the opposing team's
--- locker room and handed a carton of chocolate milk to the player he thought showed the best
--- sportsmanship. After each game, each team's captain names one player from the OTHER bench, and a
--- carton is delivered to them. It is a first-class feature of the site, not a footnote.
+-- A long-standing tournament tradition: after every game, each team's captain names one player
+-- from the OTHER bench who showed the best sportsmanship, and a carton of chocolate milk is
+-- delivered to them. It is a first-class feature of the site, not a footnote.
 
 CREATE TABLE IF NOT EXISTS tournament_awards (
     id                  BIGSERIAL PRIMARY KEY,

@@ -8,7 +8,7 @@ import './ChocolateMilkPicker.css';
  * A separate component rather than more surface inside LiveScoreEntry, which is already 1,800 lines.
  * It appears once a tournament game is final, because that is when the captains actually decide.
  *
- * Each bench names one player from the OTHER bench -- the tradition Don Conley started, and the
+ * Each bench names one player from the OTHER bench -- the tournament's signature tradition, and the
  * reason this is two pickers rather than one. The rule is enforced server-side as well; here it is
  * expressed by simply never offering a captain their own roster.
  */
@@ -105,7 +105,7 @@ function ChocolateMilkPicker({ game, homeTeam, awayTeam, homeRoster, awayRoster,
                     <h3 className="cmp-title">Chocolate Milk Player of the Game</h3>
                     <p className="cmp-sub">
                         Each captain names one player from the other bench who showed the best
-                        sportsmanship &mdash; the tradition Don Conley started.
+                        sportsmanship.
                     </p>
                 </div>
             </div>

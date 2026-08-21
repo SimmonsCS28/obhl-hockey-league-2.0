@@ -13,10 +13,10 @@ import lombok.NoArgsConstructor;
 /**
  * Chocolate Milk Player of the Game.
  *
- * The tournament is named for Don Conley, who after every game walked into the opposing team's
- * locker room and handed a carton of chocolate milk to the player he thought showed the best
- * sportsmanship. Each captain names one player from the OTHER bench, which is why the unique key
- * is (game, type, awarding team) rather than just (game, type).
+ * A long-standing tournament tradition: after every game a carton of chocolate milk goes to the
+ * player on the opposing bench who showed the best sportsmanship. Each captain names one player
+ * from the OTHER bench, which is why the unique key is (game, type, awarding team) rather than
+ * just (game, type).
  */
 @Entity
 @Table(name = "tournament_awards")

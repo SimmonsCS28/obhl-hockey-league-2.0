@@ -1,4 +1,4 @@
--- The Conley Classic plays two 20-minute periods, not 15.
+-- The C League Classic plays two 20-minute periods, not 15.
 --
 -- 048 created period_minutes with DEFAULT 15, which was a guess. Checked against the schedules from
 -- previous years: 2 x 20 is correct. Existing rows are left alone -- the column is per-tournament

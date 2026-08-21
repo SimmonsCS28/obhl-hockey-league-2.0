@@ -17,7 +17,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * One annual tournament (The Conley Classic).
+ * One annual tournament (The C League Classic).
  *
  * <p>Owns a {@link Season} of type TOURNAMENT via {@code seasonId}; that season holds the actual
  * teams, players and games, so they reuse Live Score Entry, staffing, finalize and the stats
@@ -115,7 +115,7 @@ public class Tournament {
 
     /** Names a scoring profile in code rather than storing the rules as columns. */
     @Column(name = "scoring_profile", nullable = false, length = 40)
-    private String scoringProfile = "conley-v1";
+    private String scoringProfile = "classic-v1";
 
     /**
      * The tournament's lifecycle. Never mirrored onto {@code seasons.is_active} -- a tournament

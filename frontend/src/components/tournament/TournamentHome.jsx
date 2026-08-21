@@ -153,23 +153,22 @@ function TournamentHome() {
                         <div className="tcc-eyebrow is-gold">A Classic Tradition</div>
                         <h2 className="tcc-h2">The Chocolate Milk<br />Player of the Game</h2>
                         <p className="tcc-milk-body">
-                            The tournament is named for Don Conley, who after every game walked into the
-                            opposing team&rsquo;s locker room and handed a carton of chocolate milk to the
-                            player he thought showed the best sportsmanship.
+                            No award at the Classic means more than a carton of chocolate milk. It is
+                            the only one handed out by the other team.
                         </p>
                         <p className="tcc-milk-body">
-                            The tradition carries on every Classic weekend: after each game, each
-                            captain names one player from the other bench, and a carton finds its way to
-                            their locker room. A chocolate-milk-carton trophy is being made for it.
+                            After each game, each captain names one player from the opposing bench who
+                            showed the best sportsmanship, and a carton finds its way to their locker
+                            room. A chocolate-milk-carton trophy is being made for it.
                         </p>
                     </div>
                     <div className="tcc-milk-figure">
                         {tournament.trophyImageUrl ? (
-                            <img src={tournament.trophyImageUrl} alt="The Conley Carton trophy" className="tcc-milk-img" />
+                            <img src={tournament.trophyImageUrl} alt="The Chocolate Milk Carton trophy" className="tcc-milk-img" />
                         ) : (
                             <div className="tcc-milk-placeholder" aria-hidden="true">🥛</div>
                         )}
-                        <div className="tcc-milk-caption">The Conley Carton</div>
+                        <div className="tcc-milk-caption">The Chocolate Milk Carton</div>
                     </div>
                 </div>
             </section>

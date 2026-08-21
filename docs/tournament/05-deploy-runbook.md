@@ -1,4 +1,4 @@
-# Conley Classic deploy runbook
+# C League Classic deploy runbook
 
 Production is a single t3.medium running `docker compose` from a git checkout, with migrations
 applied by hand via psql. Nginx already serves `maintenance.html` on 502/503, so the frontend being
@@ -78,7 +78,7 @@ curl -s -o /dev/null -w '%{http_code}\n' https://oldbuzzardhockey.com/api/v1/sea
 curl -s https://oldbuzzardhockey.com/api/v1/tournaments        # expect []
 ```
 Then in a browser: the public site is unchanged, `/tournaments` shows "No Classic announced yet",
-and the admin console shows the Conley Classic group with the Scheduling group gone.
+and the admin console shows the C League Classic group with the Scheduling group gone.
 
 ## Rollback
 
@@ -124,4 +124,37 @@ Post-deploy verification:
   and two gateway DEBUG startup lines matching on class names.
 
 **Nothing tournament-facing is visible to members yet** — the first tournament has to be created in
-Admin → Conley Classic → Tournament Setup, and stays unpublished until the publish toggle is set.
+Admin → C League Classic → Tournament Setup, and stays unpublished until the publish toggle is set.
+
+---
+
+## Rename deploy — "The Conley Classic" → "The C League Classic"
+
+Don Conley asked for the tournament not to be named after him. The chocolate-milk Player of the
+Game award stays exactly as it is; only his name comes off.
+
+Migration `058_rename_tournament_to_c_league_classic.sql` does the data half: tournament name and
+slug, the backing season's name, the `scoring_profile` key and its column DEFAULT, and the
+`COMMENT ON TABLE` set by 048.
+
+```
+docker exec -i obhl-postgres psql -U obhl_admin -d obhl_db -v ON_ERROR_STOP=1 \
+  < database/migrations/058_rename_tournament_to_c_league_classic.sql
+```
+
+Then rebuild `league-service`, `game-service` and `frontend` as in step 5 above.
+
+**Order does not matter here.** The natural worry is that the migration writes `classic-v1` while
+old jars are still running and `TournamentScoringProfile.byKey` rejects the unknown key — but
+`byKey` has no production callers. `TournamentPointsPolicy` resolves the profile from the constant,
+not from the column, so the stored key is written and echoed in the DTO and never read back.
+`byKey` also still accepts `conley-v1` regardless, for a restored backup.
+
+**Expected prod impact is DEFAULT + COMMENT only.** As of the 2026-08-18 record above,
+`GET /api/v1/tournaments` returned `[]` — no tournament row had been created yet. All three UPDATEs
+are guarded (`WHERE ... ILIKE '%conley%'`) and will report `UPDATE 0` if that is still true. If a
+tournament *has* since been created, they rewrite it and the old
+`/tournaments/the-conley-classic-2026` URL stops resolving; the bare `/tournaments` entry point is
+unaffected, since it resolves by year and published flag rather than by slug.
+
+The `tcc-` CSS prefix is deliberately left alone — see the note at the top of `tournament-theme.css`.

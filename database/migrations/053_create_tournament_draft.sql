@@ -1,4 +1,4 @@
--- The Conley Classic draft.
+-- The C League Classic draft.
 --
 -- Operator-directed with NO pick order: one person runs the whole thing off one screen, so there is
 -- no snake, no rounds, no clock and no "can this team pick yet". That removes most of what a draft

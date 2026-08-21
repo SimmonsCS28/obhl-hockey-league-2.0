@@ -30,18 +30,25 @@ public record TournamentScoringProfile(
         int penaltyThresholdDeduction) {
 
     /**
-     * The Conley Classic, as confirmed by the league: 3 for a win, 1 each for a tie, 0 for a loss;
+     * The C League Classic, as confirmed by the league: 3 for a win, 1 each for a tie, 0 for a loss;
      * +1 for each period won outright; +1 for each period taken penalty-free. Over two periods the
      * ceiling is 7, which needs a win, both periods, and a clean sheet of penalties.
      *
      * <p>The league's 7-or-more-penalties deduction applies here too.
      */
-    public static final TournamentScoringProfile CONLEY_V1 =
-            new TournamentScoringProfile("conley-v1", 3, 1, 0, 1, 1, 7, 1);
+    public static final TournamentScoringProfile CLASSIC_V1 =
+            new TournamentScoringProfile("classic-v1", 3, 1, 0, 1, 1, 7, 1);
+
+    /**
+     * The key this profile was originally stored under. Migration 058 rewrites existing rows, but
+     * it is still accepted here so a row missed by the migration -- a restored backup, a database
+     * that skipped it -- resolves instead of throwing.
+     */
+    private static final String LEGACY_KEY = "conley-v1";
 
     public static TournamentScoringProfile byKey(String key) {
-        if (key == null || CONLEY_V1.key().equals(key)) {
-            return CONLEY_V1;
+        if (key == null || CLASSIC_V1.key().equals(key) || LEGACY_KEY.equals(key)) {
+            return CLASSIC_V1;
         }
         throw new IllegalArgumentException("Unknown tournament scoring profile: " + key);
     }

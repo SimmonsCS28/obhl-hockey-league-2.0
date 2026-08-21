@@ -27,7 +27,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * The Conley Classic draft.
+ * The C League Classic draft.
  *
  * <p>Operator-directed with no pick order: one person runs it from one screen, so there is no
  * snake, no rounds, no clock and no turn validation. What replaces the fairness that a pick order

@@ -99,8 +99,8 @@ class TournamentScheduleGeneratorTest {
         }
 
         @Test
-        @DisplayName("THE CONLEY CLASSIC: 8 teams, 2 divisions, top 2, placement, consolation 4 -> 18")
-        void conleyClassic() {
+        @DisplayName("THE C LEAGUE CLASSIC: 8 teams, 2 divisions, top 2, placement, consolation 4 -> 18")
+        void cLeagueClassic() {
             Plan p = TournamentScheduleGenerator.generate(
                     cfg(8, "DIVISIONS", 2, 2, "SINGLE_ELIM", true, "SINGLE_ROUND", 4));
 

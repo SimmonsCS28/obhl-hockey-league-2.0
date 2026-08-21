@@ -30,7 +30,7 @@ function TournamentArchive() {
                     <div className="tcc-eyebrow">Every Classic</div>
                     <h1 className="tcc-h1">Archive</h1>
                     <p className="tcc-sub">
-                        The Conley Classic runs once a year. Each one has its own field, its own bracket
+                        The C League Classic runs once a year. Each one has its own field, its own bracket
                         and its own champion.
                     </p>
                 </div>

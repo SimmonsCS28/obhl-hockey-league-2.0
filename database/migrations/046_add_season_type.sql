@@ -1,4 +1,4 @@
--- Distinguishes league seasons from tournament seasons (The Conley Classic).
+-- Distinguishes league seasons from tournament seasons (The C League Classic).
 --
 -- A tournament is backed by its own seasons row so that its teams, players, games and game_events
 -- can be ordinary rows scoped to a season_id. That reuses Live Score Entry, staffing, finalize and

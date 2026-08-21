@@ -20,7 +20,7 @@ import com.obhl.game.service.scoring.TournamentPointsCalculator.Result;
  */
 class TournamentPointsCalculatorTest {
 
-    private static final TournamentScoringProfile CONLEY = TournamentScoringProfile.CONLEY_V1;
+    private static final TournamentScoringProfile CLASSIC = TournamentScoringProfile.CLASSIC_V1;
 
     /**
      * @param p1 "homeGoals-awayGoals" in period 1
@@ -34,7 +34,7 @@ class TournamentPointsCalculatorTest {
                 homePen, awayPen);
 
         return TournamentPointsCalculator.calculate(
-                CONLEY, 2, homeScore, awayScore, tally,
+                CLASSIC, 2, homeScore, awayScore, tally,
                 homePen[0] + homePen[1], awayPen[0] + awayPen[1]);
     }
 
@@ -178,7 +178,7 @@ class TournamentPointsCalculatorTest {
                     new int[] { 0, 0 }, new int[] { 2, 2 });
 
             Result r = TournamentPointsCalculator.calculate(
-                    CONLEY, 2, 2, 0, tally, 0, 7);
+                    CLASSIC, 2, 2, 0, tally, 0, 7);
 
             assertEquals(7, r.homePoints());
             // Away: 0 loss + 0 periods + 0 clean (penalised in both regulation periods) - 1 = -1
@@ -192,7 +192,7 @@ class TournamentPointsCalculatorTest {
                     new int[] { 1, 1, 1 }, new int[] { 0, 0, 0 },
                     new int[] { 0, 0, 0 }, new int[] { 0, 0, 0 });
 
-            Result r = TournamentPointsCalculator.calculate(CONLEY, 3, 3, 0, tally, 0, 0);
+            Result r = TournamentPointsCalculator.calculate(CLASSIC, 3, 3, 0, tally, 0, 0);
             assertEquals(9, r.homePoints());   // 3 win + 3 periods + 3 clean
             assertEquals(3, r.awayPoints());   // 0 + 0 + 3 clean
         }
@@ -202,7 +202,7 @@ class TournamentPointsCalculatorTest {
         void rejectsShortTally() {
             PeriodTally tooShort = PeriodTally.ofSize(1);
             assertThrows(IllegalArgumentException.class,
-                    () -> TournamentPointsCalculator.calculate(CONLEY, 2, 1, 0, tooShort, 0, 0));
+                    () -> TournamentPointsCalculator.calculate(CLASSIC, 2, 1, 0, tooShort, 0, 0));
         }
 
         @Test
@@ -210,7 +210,7 @@ class TournamentPointsCalculatorTest {
         void rejectsZeroPeriods() {
             assertThrows(IllegalArgumentException.class,
                     () -> TournamentPointsCalculator.calculate(
-                            CONLEY, 0, 1, 0, PeriodTally.ofSize(1), 0, 0));
+                            CLASSIC, 0, 1, 0, PeriodTally.ofSize(1), 0, 0));
         }
     }
 
@@ -219,10 +219,11 @@ class TournamentPointsCalculatorTest {
     class Profiles {
 
         @Test
-        @DisplayName("conley-v1 is the default and resolves by key")
+        @DisplayName("classic-v1 is the default, and the legacy conley-v1 key still resolves")
         void resolvesByKey() {
-            assertEquals(CONLEY, TournamentScoringProfile.byKey("conley-v1"));
-            assertEquals(CONLEY, TournamentScoringProfile.byKey(null));
+            assertEquals(CLASSIC, TournamentScoringProfile.byKey("classic-v1"));
+            assertEquals(CLASSIC, TournamentScoringProfile.byKey("conley-v1"));
+            assertEquals(CLASSIC, TournamentScoringProfile.byKey(null));
         }
 
         @Test

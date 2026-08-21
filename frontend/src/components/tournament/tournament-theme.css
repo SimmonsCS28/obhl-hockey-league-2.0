@@ -1,11 +1,13 @@
 /*
- * The Conley Classic — microsite theme.
+ * The C League Classic — microsite theme.
  *
  * SCOPING: every token here is defined on `.tcc-root`, never on `:root`. The league site's --obi-*
  * tokens live on :root and must stay untouched; the tournament has its own identity (blue/gold on
  * near-black, Anton/Rajdhani display faces) and it applies only inside the microsite.
  *
- * NAMING: every class is prefixed `tcc-` (The Conley Classic). This codebase has no CSS scoping —
+ * NAMING: every class is prefixed `tcc-` (The C-league Classic). The prefix predates the rename off
+ * the founder's name and is kept as-is: it still reads correctly, and re-prefixing ~200 classes
+ * across seven stylesheets and a dozen components buys nothing. This codebase has no CSS scoping —
  * 80 global stylesheets, no modules — so names silently collide across unrelated components.
  *
  * NOT `cc-`: that prefix is the Coordinator Console's, and Coordinator.css already defines

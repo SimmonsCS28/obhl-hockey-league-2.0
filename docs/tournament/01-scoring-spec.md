@@ -1,4 +1,4 @@
-# Conley Classic scoring — `conley-v1`
+# C League Classic scoring — `classic-v1`
 
 The authoritative statement of the tournament points formula. The worked examples below are the
 spec: `TournamentPointsCalculatorTest` implements this table row for row, so a disagreement between
@@ -97,5 +97,5 @@ Note on row 9: home is penalised in P1 only, so it keeps P2's penalty-free point
 ## Changing the formula
 
 Add a new `TournamentScoringProfile` constant with a new key and point `tournaments.scoring_profile`
-at it. Do not edit `CONLEY_V1` in place — tournaments already played reference it, and standings are
+at it. Do not edit `CLASSIC_V1` in place — tournaments already played reference it, and standings are
 recomputed on every read, so editing it would retroactively rewrite history.

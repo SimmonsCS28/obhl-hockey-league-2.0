@@ -15,7 +15,7 @@ import {
 import './TournamentAdmin.css';
 
 /**
- * Tournament Setup — the organiser's configuration surface for the Conley Classic.
+ * Tournament Setup — the organiser's configuration surface for the C League Classic.
  *
  * Lives inside the admin shell and uses the admin's own obi- styling rather than the microsite's
  * crow theme: the design handoff drew this as a standalone page, but it belongs with the rest of
@@ -461,7 +461,7 @@ function PublishPanel({ draft, set }) {
 function CreateTournament({ onCreated, onCancel }) {
     const thisYear = new Date().getFullYear();
     const [form, setForm] = useState({
-        name: 'The Conley Classic',
+        name: 'The C League Classic',
         year: thisYear,
         startDate: '',
         endDate: '',

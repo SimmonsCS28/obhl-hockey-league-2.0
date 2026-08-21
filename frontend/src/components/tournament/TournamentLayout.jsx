@@ -19,7 +19,7 @@ const NAV = [
 ];
 
 /**
- * Chrome for the Conley Classic microsite.
+ * Chrome for the C League Classic microsite.
  *
  * A sibling of PublicLayout rather than a child: the tournament has its own identity, its own nav,
  * and exactly one outbound link back to the league site. Auth is shared with the league — that is
@@ -75,7 +75,7 @@ function TournamentLayout() {
                     <Link to={base} className="tcc-brand" onClick={() => setMenuOpen(false)}>
                         <img src={crest} alt="" className="tcc-brand-crest" />
                         <span className="tcc-brand-text">
-                            <span className="tcc-brand-name">The Conley Classic</span>
+                            <span className="tcc-brand-name">The C League Classic</span>
                             <span className="tcc-brand-sub">An OBHL Tournament</span>
                         </span>
                     </Link>

@@ -5,7 +5,7 @@ import { parseEntrantWorkbook } from './entrantParser';
 import './TournamentDraft.css';
 
 /**
- * The Conley Classic draft board.
+ * The C League Classic draft board.
  *
  * Operator-directed with no pick order: one person runs this from one screen on draft day. That
  * removes the snake, the rounds, the clock and the turn validation — and removes the mechanism that

@@ -3,7 +3,7 @@
  *
  * LiveScoreEntry had this hardcoded in about a dozen places — `{1:'1',2:'2',3:'3',4:'OT'}`, a
  * `periodMaxMin` returning 20 or 5, and `['1','2','3','OT']` option lists. That is fine while every
- * game is three twenty-minute periods, and wrong the moment the Conley Classic plays two fifteens.
+ * game is three twenty-minute periods, and wrong the moment the C League Classic plays two fifteens.
  *
  * Extracting it rather than forking the component is deliberate: LiveScoreEntry is 1,800 lines with
  * no tests and three separate rounds of bug-fix history behind it (FINALIZE_GAME_HANDBACK,
@@ -60,7 +60,7 @@ export const leagueRules = makeRules({
 });
 
 /**
- * Conley Classic rules for one game.
+ * C League Classic rules for one game.
  *
  * Group-stage games have no overtime and may end tied — that is what the points system is for.
  * Elimination games (bracket, placement, consolation) go to sudden death, because somebody has to
