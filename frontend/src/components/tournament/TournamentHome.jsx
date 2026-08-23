@@ -32,7 +32,7 @@ function TournamentHome() {
 
     const summary = summarizeFormat(tournament);
     const dates = dateRange(tournament.startDate, tournament.endDate);
-    // Per person, not per team — players enter individually and are drafted onto teams afterwards.
+    // Per person, not per team — players register individually and are drafted onto teams afterwards.
     const fee = tournament.entryFeeCents != null
         ? `$${(tournament.entryFeeCents / 100).toLocaleString()} per player`
         : null;
@@ -40,8 +40,8 @@ function TournamentHome() {
     const keyDates = [
         tournament.entryDeadline && {
             date: fmtDate(tournament.entryDeadline),
-            title: 'Entry Deadline',
-            body: fee ? `Entries close. ${fee}.` : 'Entries close.',
+            title: 'Registration Deadline',
+            body: fee ? `Registration closes. ${fee}.` : 'Registration closes.',
         },
         tournament.draftDate && {
             date: fmtDate(tournament.draftDate),

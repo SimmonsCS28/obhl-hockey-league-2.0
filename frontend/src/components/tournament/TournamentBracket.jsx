@@ -227,7 +227,7 @@ function FormatPreview({ tournament, summary, base }) {
         <div className="tcc-preview">
             <div className="tcc-empty-title">The bracket isn&rsquo;t drawn yet</div>
             <p className="tcc-preview-lead">
-                It gets generated once entries close and the field is drafted. Here&rsquo;s the shape
+                It gets generated once registration closes and the field is drafted. Here&rsquo;s the shape
                 this year&rsquo;s Classic will take.
             </p>
 
