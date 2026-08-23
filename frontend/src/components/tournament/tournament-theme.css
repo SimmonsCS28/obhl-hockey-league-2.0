@@ -90,7 +90,14 @@
     text-decoration: none;
 }
 
-.tcc-root button {
+/*
+ * EXCEPTION: `.obi-user-pill` is the shared logged-in pill, dropped into this header as-is from
+ * the league site. It arrives fully styled, and this reset would flatten it -- `.tcc-root button`
+ * (0,1,1) outranks `.obi-pill-link` (0,1,0), so `font: inherit` and `color: inherit` beat the
+ * pill's own 11px display face and muted colour, rendering it oversized and bright. Excluded
+ * rather than re-declared so the pill stays defined in one place.
+ */
+.tcc-root button:not(.obi-user-pill button) {
     height: auto !important;
     border-radius: 0 !important;
     white-space: normal;

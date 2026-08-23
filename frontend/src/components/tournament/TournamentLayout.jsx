@@ -95,6 +95,36 @@ function TournamentLayout() {
                         <Link to="/" className="tcc-nav-out" onClick={() => setMenuOpen(false)}>
                             OBHL Season Site ↗
                         </Link>
+
+                        {/*
+                          * Auth actions, mounted a SECOND time inside the collapsible nav.
+                          *
+                          * Below 1120px the burger appears and the bar has no room left: the user
+                          * pill alone is 312px, which pushed the header 359px past a 375px
+                          * viewport. The bar copy is hidden at that width and this one takes over,
+                          * so the account actions ride in the dropdown like the nav links do.
+                          *
+                          * Two mounts rather than one relocated node because CSS cannot move an
+                          * element between parents. UserPill is stateless -- both copies read the
+                          * same auth context -- and only ever one is displayed.
+                          */}
+                        <div className="tcc-nav-auth">
+                            {isAuthenticated ? (
+                                <UserPill />
+                            ) : (
+                                <>
+                                    <Link to="/signup" className="tcc-btn tcc-btn-ghost" onClick={() => setMenuOpen(false)}>
+                                        Create Account
+                                    </Link>
+                                    <button
+                                        className="tcc-btn tcc-btn-solid"
+                                        onClick={() => { setLoginOpen(true); setMenuOpen(false); }}
+                                    >
+                                        Log In
+                                    </button>
+                                </>
+                            )}
+                        </div>
                     </nav>
 
                     <div className="tcc-header-actions">
