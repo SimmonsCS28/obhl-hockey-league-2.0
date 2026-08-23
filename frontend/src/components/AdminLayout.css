@@ -378,4 +378,18 @@
 @media (max-width: 600px) {
     .obi-admin-content { padding: 18px 16px 48px; }
     .obi-admin-topbar { padding: 14px 16px; }
+
+    /*
+     * The season picker and user pill together are 319px against a ~343px budget, leaving the
+     * title nothing -- the row ran 32px past the viewport. Stack them: burger and title keep row
+     * one, the controls take row two.
+     *
+     * `flex: 1 1 auto` rather than `1 1 100%` on the titles, or they claim a whole row and shove
+     * the 40px burger onto one of its own. Sticky is dropped because the wrapped bar is ~190px --
+     * a quarter of a phone screen to hold permanently over an already dense console.
+     */
+    .obi-admin-topbar { flex-wrap: wrap; position: static; }
+    .obi-admin-titles { flex: 1 1 auto; min-width: 0; }
+    .obi-admin-topbar-right { width: 100%; justify-content: flex-start; }
+    .obi-admin-topbar-right .obi-user-pill { flex-wrap: wrap; row-gap: 6px; }
 }

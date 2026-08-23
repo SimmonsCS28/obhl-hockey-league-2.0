@@ -1809,6 +1809,42 @@
     }
 }
 
+/*
+ * Mobile header.
+ *
+ * The pill is 255px on its own (312 with an Admin link) and the brand is another 230, against a
+ * ~340px budget at 375px -- so this header cannot stay on one row without gutting either the
+ * branding or the coordinator/admin/log-out links. It wraps instead, and gives up `sticky` at the
+ * same time: a two-row sticky header would hold ~120px of an 812px phone screen permanently.
+ *
+ * Before this, nothing here was responsive at all -- the header ran 153px past the viewport and
+ * took the whole page into horizontal scroll with it.
+ */
+@media (max-width: 760px) {
+    .cc-header { position: static; }
+
+    .cc-header-inner {
+        height: auto;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding-top: 12px;
+        padding-bottom: 12px;
+    }
+
+    .cc-header-brand { min-width: 0; flex: 1 1 auto; }
+
+    /* Own row, full width. */
+    .cc-header-nav { width: 100%; }
+
+    /* Last-resort valve: below ~330px even a lone pill is too wide, so let its links wrap. */
+    .cc-header-nav .obi-user-pill { flex-wrap: wrap; row-gap: 6px; }
+
+    .cc-header-logo { height: 34px; }
+    .cc-header-wordmark { white-space: nowrap; }
+    .cc-wordmark-top { font-size: 16px; }
+    .cc-wordmark-sub { font-size: 9px; letter-spacing: 2.5px; }
+}
+
 @media (max-width: 540px) {
     .cc-header-inner,
     .cc-banner-inner,
