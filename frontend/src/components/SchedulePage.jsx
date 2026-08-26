@@ -3,31 +3,13 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import PlayoffBracket from './PlayoffBracket';
 import { resolveTeamColor } from '../constants/teamColors';
+import { earliestUpcomingWeek } from '../utils/currentWeek';
 import heroBg from '../assets/images/buzzard-full.jpg';
 import './SchedulePage.css';
 
 const parseGameDate = (s) => new Date(s.endsWith('Z') ? s : s + 'Z');
 
 const ROUND_LABELS = { QUARTERFINAL: 'Quarterfinal', SEMIFINAL: 'Semifinal', FINAL: 'Championship' };
-
-// Earliest week whose games haven't all already happened (by date, not by
-// whether someone's finalized the score), falling back to the last week once
-// every game date in the list is in the past.
-const earliestUpcomingWeek = (gamesList) => {
-    const weeks = [...new Set(gamesList.map(g => g.week).filter(w => w != null))].sort((a, b) => a - b);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    for (const w of weeks) {
-        const wkGames = gamesList.filter(g => g.week === w);
-        const lastGameDay = wkGames.reduce((max, g) => {
-            const d = parseGameDate(g.gameDate);
-            d.setHours(0, 0, 0, 0);
-            return d > max ? d : max;
-        }, new Date(0));
-        if (lastGameDay >= today) return w;
-    }
-    return weeks.length ? weeks[weeks.length - 1] : null;
-};
 
 const computeCurrentWeek = (gamesList) =>
     earliestUpcomingWeek(gamesList.filter(g => g.gameType !== 'PLAYOFF'));

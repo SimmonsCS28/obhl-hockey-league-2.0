@@ -6,6 +6,7 @@ import GoalieProposerBar from './GoalieProposerBar';
 import PublishPreview from './PublishPreview';
 import { GOALIE_STATUS_STYLE, goalieCounts, publishTally } from './goalieProposerStatus';
 import { rankTeams, goaliePickTeamId } from '../../utils/goaliePick';
+import { earliestUpcomingWeek } from '../../utils/currentWeek';
 import './Coordinator.css';
 
 const SLOTS_PER_ROLE = { GOALIE: 2, REF: 2, SCOREKEEPER: 1 };
@@ -283,6 +284,8 @@ function CoordinatorBoard({ role }) {
     const [assignments, setAssignments] = useState([]);
     const [goaliePool, setGoaliePool] = useState([]);
     const [seasonRoster, setSeasonRoster] = useState([]); // full-time vs substitute split
+    // Opens on the week she actually has to staff. 'all' is the fallback for a season with no
+    // games yet, and is set for real once the schedule loads (see load()).
     const [weekFilter, setWeekFilter] = useState('all');
     const [openPicker, setOpenPicker] = useState(null); // "gameId:slot"
     const [loading, setLoading] = useState(true);
@@ -313,6 +316,7 @@ function CoordinatorBoard({ role }) {
                 api.getStandings(seasonId).catch(() => null),
             ]);
             setGames(gamesData || []);
+            setWeekFilter(earliestUpcomingWeek(gamesData || []) ?? 'all');
             setTeams(teamsData || []);
             setStaff([...(staffData || [])].sort((a, b) => getName(a).localeCompare(getName(b))));
             setAssignments(assignData || []);
