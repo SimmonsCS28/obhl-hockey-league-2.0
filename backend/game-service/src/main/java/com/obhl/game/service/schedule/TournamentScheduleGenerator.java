@@ -254,8 +254,12 @@ public final class TournamentScheduleGenerator {
      * Standard bracket ordering: seedOrder(1) = [1], and seedOrder(2n) interleaves each s from
      * seedOrder(n) with 2n+1-s. Consecutive pairs are the first-round matchups, so
      * seedOrder(8) = [1,8,4,5,2,7,3,6] gives 1v8, 4v5, 2v7, 3v6.
+     *
+     * <p>The point of the interleave is that the two best seeds land in opposite halves and can
+     * only meet in the final. Public because the league bracket needs the same ordering — it used
+     * to lay its first round out as 1v8, 2v7, 3v6, 4v5, which put seeds 1 and 2 on the same side.
      */
-    static List<Integer> seedOrder(int size) {
+    public static List<Integer> seedOrder(int size) {
         List<Integer> order = new ArrayList<>(List.of(1));
         int n = 1;
         while (n < size) {

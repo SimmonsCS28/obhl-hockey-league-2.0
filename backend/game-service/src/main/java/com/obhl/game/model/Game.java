@@ -74,6 +74,20 @@ public class Game {
     @Column(name = "bracket_position")
     private Integer bracketPosition; // 1-indexed position within the playoff round
 
+    /**
+     * Playoff seeds of the two participants, 1 = best regular season record.
+     *
+     * <p>Frozen when the bracket is initialized and carried forward as each round is re-seeded, so
+     * a later round can pair survivors by seed without recomputing standings — and so re-finalizing
+     * a regular season game cannot renumber a bracket already under way. Null for anything that is
+     * not a league bracket game, and for brackets created before the column existed.
+     */
+    @Column(name = "home_seed")
+    private Integer homeSeed;
+
+    @Column(name = "away_seed")
+    private Integer awaySeed;
+
     /** POOL | ROUND_ROBIN | BRACKET | PLACEMENT | CONSOLATION — null for league games. */
     @Column(name = "tournament_stage", length = 20)
     private String tournamentStage;

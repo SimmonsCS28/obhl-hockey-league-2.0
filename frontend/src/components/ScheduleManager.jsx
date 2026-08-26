@@ -683,7 +683,7 @@ const ScheduleManager = () => {
         setConfirmModal({
             show: true,
             title: 'Initialize Playoff Bracket?',
-            message: 'This will seed the playoff bracket based on current regular season standings.\n\nSeed 1 (top of standings) will be matched against Seed 8, Seed 2 vs Seed 7, etc.\n\nAre you sure?',
+            message: 'This will seed the playoff bracket based on current regular season standings.\n\nQuarterfinals are 1v8, 4v5, 2v7 and 3v6, so the top two seeds can only meet in the final. The higher seed is always the home team.\n\nAfter each round finishes, the next one is re-seeded: the best surviving seed plays the worst.\n\nAre you sure?',
             confirmText: 'Initialize Bracket',
             isDestructive: false,
             onConfirm: async () => {
@@ -1039,6 +1039,8 @@ const ScheduleManager = () => {
                                 Amber = bracket game slot · grey &ldquo;Consolation&rdquo; is the normal case in later
                                 rounds. Reassigning a slot&apos;s role swaps it with whichever slot currently holds
                                 that role — the matchup stays tied to the bracket position, not the time.
+                                Later rounds stay TBD until the round before them is <em>completely</em> finished,
+                                then they are re-seeded: best surviving seed vs worst, higher seed at home.
                             </p>
                         )}
                         <div className="sched-weeks">

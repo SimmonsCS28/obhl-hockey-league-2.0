@@ -59,11 +59,11 @@ define the tournament tree:
 ```
 QF #1  (Seed 1 vs Seed 8) ─┐
                            ├─ SF #1 ─┐
-QF #2  (Seed 2 vs Seed 7) ─┘         │
+QF #2  (Seed 4 vs Seed 5) ─┘         │
                                      ├─ FINAL
-QF #3  (Seed 3 vs Seed 6) ─┐         │
+QF #3  (Seed 2 vs Seed 7) ─┐         │
                            ├─ SF #2 ─┘
-QF #4  (Seed 4 vs Seed 5) ─┘
+QF #4  (Seed 3 vs Seed 6) ─┘
 ```
 
 The slots are **times**. The coordinator's job is assigning fixtures → slots.
@@ -72,9 +72,19 @@ So the interaction is closer to "which of these 5 times does QF #2 get?" than to
 is this?" Either framing can work visually, but the fixture identity (`QF #2`, `SF #1`, `FINAL`)
 should read as a stable thing being placed, not a free-form label being typed.
 
-**Important:** re-designating a slot changes *when a fixture is played*. It does **not** rewire the
-bracket tree — QF #1's winner always advances to SF #1's home side regardless of what time QF #1 is
-played at. The design should not imply that moving a game changes who plays whom.
+**Important:** re-designating a slot changes *when a fixture is played*. It does **not** decide who
+plays whom. The design should not imply that moving a game changes the matchup.
+
+**The tree above only describes the first round.** Later rounds are **re-seeded**, not fed by fixed
+lines: once every quarterfinal is complete, the four survivors are re-ranked by their original seed
+and the best plays the worst, with the better seed at home. So SF #1 is "the top surviving seed's
+game", not "QF #1's winner vs QF #2's winner". Two consequences for the UI:
+
+- A later-round slot stays TBD until the round before it is **completely** finished — three of four
+  quarterfinals played shows nothing. That gap is worth designing for rather than leaving to look
+  like a bug.
+- Seeds are worth surfacing on the row (`homeSeed` / `awaySeed` come back on every bracket game), since
+  the matchup only makes sense once you can see them.
 
 ---
 
@@ -147,8 +157,8 @@ A swap is therefore two calls. Worth knowing for designing intermediate/optimist
 
 ## Out of scope
 
-- The bracket seeding logic and advancement (built and working — top 8 seeded 1v8/2v7/3v6/4v5,
-  winners advance automatically).
+- The bracket seeding and re-seeding logic (built and working — top 8 seeded 1v8/4v5/2v7/3v6, then
+  each round re-seeded best-vs-worst once the previous one completes).
 - The goalie auto-proposer (built; it consumes these designations).
 - The existing `PlayoffBracket.jsx` bracket display — it reads the same fields and will reflect
   these designations correctly without changes. **However**, if you see an opportunity to link the

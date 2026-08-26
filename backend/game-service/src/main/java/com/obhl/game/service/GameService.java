@@ -2,7 +2,10 @@ package com.obhl.game.service;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -12,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.obhl.game.dto.GameDto;
 import com.obhl.game.model.Game;
 import com.obhl.game.repository.GameRepository;
+import com.obhl.game.service.schedule.TournamentScheduleGenerator;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -237,9 +241,9 @@ public class GameService {
             playerStatsAggregator.aggregateAndUpdateStats(savedGame);
         }
 
-        // Auto-advance the playoff bracket if this was a playoff game
+        // Re-seed the next playoff round, once this game's round is finished
         if ("PLAYOFF".equals(savedGame.getGameType())) {
-            advancePlayoffBracket(savedGame);
+            reseedNextRound(savedGame);
         }
 
         // Tournaments have their own advancement: arbitrary round names, a placement game fed by
@@ -322,6 +326,8 @@ public class GameService {
         dto.setPeriodCount(game.getPeriodCount());
         dto.setPeriodMinutes(game.getPeriodMinutes());
         dto.setBracketPosition(game.getBracketPosition());
+        dto.setHomeSeed(game.getHomeSeed());
+        dto.setAwaySeed(game.getAwaySeed());
         dto.setGoalie1Id(game.getGoalie1Id());
         dto.setGoalie2Id(game.getGoalie2Id());
         dto.setReferee1Id(game.getReferee1Id());
@@ -350,8 +356,15 @@ public class GameService {
      * game if and only if {@code playoff_round} is set — consolation games have it cleared,
      * which is also what keeps them out of the bracket display and the goalie auto-proposer.
      *
-     * <p>Bracket matchups: seed1 vs seed8, seed2 vs seed7, seed3 vs seed6, seed4 vs seed5.
-     * Later rounds are pre-designated to the earliest slots as a sensible default so winners
+     * <p>First-round matchups follow standard bracket ordering — position 1 is 1v8, then 4v5, 2v7,
+     * 3v6 — so the two best seeds sit in opposite halves and can only meet in the final. Laying
+     * them out in plain seed order (1v8, 2v7, 3v6, 4v5) reads more naturally but is wrong: with
+     * position P feeding ceil(P/2), it puts seeds 1 and 2 in the same semifinal.
+     *
+     * <p>Each participant's seed is recorded on the game so later rounds can be re-seeded without
+     * recomputing standings. The better seed always takes the home slot.
+     *
+     * <p>Later rounds are pre-designated to the earliest slots as a sensible default so winners
      * have somewhere to advance to; the coordinator can move them with
      * {@link #designateBracketSlot}.
      */
@@ -384,19 +397,29 @@ public class GameService {
         List<Game> firstRoundSlots = gamesInWeek(allPlayoffGames, firstWeek);
         int roundGames = bracketTeams / 2;
 
+        List<Integer> bracketOrder = TournamentScheduleGenerator.seedOrder(bracketTeams);
+
         for (int i = 0; i < firstRoundSlots.size(); i++) {
             Game g = firstRoundSlots.get(i);
             if (i < roundGames) {
+                // Consecutive pairs of the standard ordering are the matchups; better seed at home.
+                int a = bracketOrder.get(i * 2);
+                int b = bracketOrder.get(i * 2 + 1);
+                int homeSeed = Math.min(a, b);
+                int awaySeed = Math.max(a, b);
+
                 g.setPlayoffRound(roundNameFor(playoffWeeks.size(), 0));
                 g.setBracketPosition(i + 1);
-                g.setHomeTeamId(seededTeamIds.get(i));                    // seeds 1..4
-                g.setAwayTeamId(seededTeamIds.get(bracketTeams - 1 - i)); // seeds 8..5
+                setParticipants(g, seededTeamIds.get(homeSeed - 1), homeSeed,
+                        seededTeamIds.get(awaySeed - 1), awaySeed);
             } else {
                 // Consolation: the teams that missed the cut, paired off in standings order.
                 int leftoverIdx = bracketTeams + (i - roundGames) * 2;
                 clearBracketRole(g);
                 g.setHomeTeamId(seededTeamIds.size() > leftoverIdx ? seededTeamIds.get(leftoverIdx) : null);
                 g.setAwayTeamId(seededTeamIds.size() > leftoverIdx + 1 ? seededTeamIds.get(leftoverIdx + 1) : null);
+                g.setHomeSeed(null);
+                g.setAwaySeed(null);
             }
             updated.add(gameRepository.save(g));
         }
@@ -416,8 +439,10 @@ public class GameService {
                 } else {
                     clearBracketRole(g);
                 }
-                g.setHomeTeamId(null);   // decided by advancement
+                g.setHomeTeamId(null);   // decided when the previous round is re-seeded
                 g.setAwayTeamId(null);
+                g.setHomeSeed(null);
+                g.setAwaySeed(null);
                 updated.add(gameRepository.save(g));
             }
         }
@@ -520,44 +545,157 @@ public class GameService {
         return p;
     }
 
-    /**
-     * After a playoff game is finalized, automatically place the winner
-     * into the correct slot of the next round.
-     *
-     * Bracket linkage (standard top-8):
-     *   QUARTERFINAL pos P → SEMIFINAL pos ceil(P/2)
-     *     odd P  → home slot,  even P → away slot
-     *   SEMIFINAL pos P   → FINAL pos 1
-     *     odd P  → home slot,  even P → away slot
-     */
-    private void advancePlayoffBracket(Game completedGame) {
-        if (completedGame.getBracketPosition() == null) return;
-
-        String currentRound = completedGame.getPlayoffRound();
-        String nextRound = switch (currentRound != null ? currentRound : "") {
+    private static String nextPlayoffRound(String round) {
+        return switch (round == null ? "" : round) {
             case "QUARTERFINAL" -> "SEMIFINAL";
             case "SEMIFINAL"    -> "FINAL";
-            default             -> null;
+            default             -> null;   // FINAL has nowhere to go
         };
-        if (nextRound == null) return; // FINAL has no next round
+    }
 
-        // Determine winner (only possible if both teams assigned)
-        if (completedGame.getHomeTeamId() == null || completedGame.getAwayTeamId() == null) return;
-        Long winnerId = completedGame.getHomeScore() >= completedGame.getAwayScore()
-                ? completedGame.getHomeTeamId()
-                : completedGame.getAwayTeamId();
+    private List<Game> bracketRound(List<Game> playoffGames, String round) {
+        return playoffGames.stream()
+                .filter(g -> round.equals(g.getPlayoffRound()) && g.getBracketPosition() != null)
+                .sorted(Comparator.comparingInt(Game::getBracketPosition))
+                .toList();
+    }
 
-        // Find the next round games for this season
+    /** Ties are not possible in an elimination game; if one is entered anyway, home advances. */
+    private Long bracketWinner(Game g) {
+        if (g.getHomeTeamId() == null || g.getAwayTeamId() == null) return null;
+        if (g.getHomeScore() == null || g.getAwayScore() == null) return null;
+        return g.getHomeScore() >= g.getAwayScore() ? g.getHomeTeamId() : g.getAwayTeamId();
+    }
+
+    private void setParticipants(Game g, Long homeTeamId, Integer homeSeed,
+                                 Long awayTeamId, Integer awaySeed) {
+        g.setHomeTeamId(homeTeamId);
+        g.setHomeSeed(homeSeed);
+        g.setAwayTeamId(awayTeamId);
+        g.setAwaySeed(awaySeed);
+    }
+
+    /**
+     * Seed of every team in this season's bracket, taken from the games they have already played.
+     *
+     * <p>Empty when the bracket predates the seed columns and migration 057's backfill did not
+     * reach it — {@link #reseedNextRound} treats that as a reason to fall back rather than guess.
+     */
+    private Map<Long, Integer> playoffSeeds(List<Game> playoffGames) {
+        Map<Long, Integer> seeds = new HashMap<>();
+        for (Game g : playoffGames) {
+            if (g.getPlayoffRound() == null) continue;   // consolation games carry no seed
+            if (g.getHomeTeamId() != null && g.getHomeSeed() != null) {
+                seeds.putIfAbsent(g.getHomeTeamId(), g.getHomeSeed());
+            }
+            if (g.getAwayTeamId() != null && g.getAwaySeed() != null) {
+                seeds.putIfAbsent(g.getAwayTeamId(), g.getAwaySeed());
+            }
+        }
+        return seeds;
+    }
+
+    /**
+     * Re-seed the next playoff round once the current one is complete.
+     *
+     * <p>Survivors are re-ranked by their original seed and paired best against worst — with four
+     * teams left, the top seed plays the lowest surviving seed rather than whoever happened to sit
+     * in the adjacent bracket position. The better seed always takes the home slot, in every round
+     * including the final.
+     *
+     * <p>Two things follow from re-seeding that the old positional advancement did not have to
+     * care about:
+     * <ul>
+     *   <li><b>It waits for the whole round.</b> A matchup cannot be known from one result — the
+     *       last quarterfinal decides who the top seed plays. Until the round is finished the next
+     *       round's slots stay TBD.</li>
+     *   <li><b>It will not move a matchup that has already started.</b> If a game in the next round
+     *       is under way or finished, the pairing stands; the alternative is silently reassigning a
+     *       game someone is in the middle of scoring.</li>
+     * </ul>
+     *
+     * <p>If seeds are missing the bracket cannot be re-seeded, and it falls back to the original
+     * fixed-tree advancement rather than inventing an order.
+     */
+    // Package-private so PlayoffReseedingTest can drive it without standing up finalizeGame's
+    // stats and scoring collaborators.
+    void reseedNextRound(Game completedGame) {
+        String currentRound = completedGame.getPlayoffRound();
+        String nextRound = nextPlayoffRound(currentRound);
+        if (nextRound == null || completedGame.getBracketPosition() == null) return;
+
+        List<Game> playoffGames = gameRepository.findBySeasonId(completedGame.getSeasonId()).stream()
+                .filter(g -> "PLAYOFF".equals(g.getGameType()))
+                .toList();
+
+        List<Game> current = bracketRound(playoffGames, currentRound);
+        List<Game> next = bracketRound(playoffGames, nextRound);
+        if (current.isEmpty() || next.isEmpty()) return;
+
+        if (current.stream().anyMatch(g -> !"completed".equals(g.getStatus()))) {
+            log.info("{} not complete yet; {} stays TBD", currentRound, nextRound);
+            return;
+        }
+
+        List<Game> started = next.stream()
+                .filter(g -> !"scheduled".equals(g.getStatus()))
+                .toList();
+        if (!started.isEmpty()) {
+            log.warn("Not re-seeding {} for season {}: {} game(s) already in progress or completed",
+                    nextRound, completedGame.getSeasonId(), started.size());
+            return;
+        }
+
+        Map<Long, Integer> seeds = playoffSeeds(playoffGames);
+
+        List<Long> survivors = current.stream()
+                .map(this::bracketWinner)
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted(Comparator.comparingInt(id -> seeds.getOrDefault(id, Integer.MAX_VALUE)))
+                .collect(Collectors.toList());
+
+        boolean seedsKnown = survivors.stream().allMatch(seeds::containsKey);
+        if (!seedsKnown || survivors.size() != next.size() * 2) {
+            log.warn("Cannot re-seed {} for season {} ({} survivor(s), {} slot(s), seeds known: {})"
+                            + " — falling back to fixed bracket advancement",
+                    nextRound, completedGame.getSeasonId(), survivors.size(), next.size(), seedsKnown);
+            // The whole round, not just this game: the earlier results were held back by the
+            // round-complete check above and have not been advanced anywhere yet.
+            for (Game played : current) {
+                advanceFixedBracket(played, currentRound, nextRound, next);
+            }
+            return;
+        }
+
+        for (int i = 0; i < next.size(); i++) {
+            Long better = survivors.get(i);
+            Long worse = survivors.get(survivors.size() - 1 - i);
+            Game slot = next.get(i);
+            setParticipants(slot, better, seeds.get(better), worse, seeds.get(worse));
+            gameRepository.save(slot);
+            log.info("Re-seeded {} pos {}: seed {} (home) vs seed {}",
+                    nextRound, slot.getBracketPosition(), seeds.get(better), seeds.get(worse));
+        }
+    }
+
+    /**
+     * The pre-re-seeding behaviour, kept as a fallback for a bracket whose seeds are unknown.
+     *
+     * <p>Position P feeds ceil(P/2) of the next round; odd positions take the home slot. Correct
+     * as far as it goes, but it cannot honour seeding — home is decided by which slot fed it.
+     */
+    private void advanceFixedBracket(Game completedGame, String currentRound, String nextRound,
+                                     List<Game> nextRoundGames) {
+        Long winnerId = bracketWinner(completedGame);
+        if (winnerId == null) return;
+
         int currentPos = completedGame.getBracketPosition();
-        int nextPos = (currentPos + 1) / 2; // ceil(P/2)
-        boolean isHomeSlot = (currentPos % 2 == 1); // odd positions → home
+        int nextPos = (currentPos + 1) / 2;
+        boolean isHomeSlot = (currentPos % 2 == 1);
 
-        final String nextRoundFinal = nextRound;
-        gameRepository.findBySeasonId(completedGame.getSeasonId()).stream()
-                .filter(g -> "PLAYOFF".equals(g.getGameType())
-                        && nextRoundFinal.equals(g.getPlayoffRound())
-                        && g.getBracketPosition() != null
-                        && g.getBracketPosition() == nextPos)
+        nextRoundGames.stream()
+                .filter(g -> g.getBracketPosition() == nextPos)
                 .findFirst()
                 .ifPresent(nextGame -> {
                     if (isHomeSlot) {

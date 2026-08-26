@@ -146,6 +146,12 @@ public class GameDto {
         private String gameType;
         private String playoffRound;
         private Integer bracketPosition;
+        /**
+         * Playoff seeds of the two participants; null outside league bracket games. Read-only —
+         * set when the bracket is initialized and when a round is re-seeded, never by a client.
+         */
+        private Integer homeSeed;
+        private Integer awaySeed;
         /** POOL | ROUND_ROBIN | BRACKET | PLACEMENT | CONSOLATION; null for league games. */
         private String tournamentStage;
         /** Regulation periods this game was played under; null for league games. */
