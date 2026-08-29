@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, Fragment } from 'react';
+import { useState, useEffect, useCallback, useRef, Fragment } from 'react';
 import api from '../../services/api';
 import { useSeason } from '../../contexts/SeasonContext';
 import { resolveTeamColor } from '../../constants/teamColors';
@@ -273,7 +273,7 @@ function formatWeekRange(dates) {
     return firstStr === lastStr ? firstStr : `${firstStr} – ${lastStr}`;
 }
 
-function CoordinatorBoard({ role }) {
+function CoordinatorBoard({ role, onAlertCount }) {
     const { selectedSeasonId } = useSeason();
     const seasonId = selectedSeasonId ?? 13;
 
@@ -302,6 +302,7 @@ function CoordinatorBoard({ role }) {
     const [proposerBusy, setProposerBusy] = useState(null); // 'generate' | 'send' | 'publish' | null
     const [banner, setBanner] = useState(null);
     const [proposerRun, setProposerRun] = useState(null);   // last auto-propose result ("why" data)
+    const loadedOnce = useRef(false);                       // don't report an alert count from the empty initial state
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -321,6 +322,7 @@ function CoordinatorBoard({ role }) {
             setStaff([...(staffData || [])].sort((a, b) => getName(a).localeCompare(getName(b))));
             setAssignments(assignData || []);
             setRankByTeam(rankTeams(standingsData || teamsData || []));
+            loadedOnce.current = true;
         } catch {
             setError('Failed to load data');
         } finally {
@@ -367,6 +369,15 @@ function CoordinatorBoard({ role }) {
         const data = await api.getCoordinatorAssignments(seasonId, role);
         setAssignments(data || []);
     };
+
+    // The role tab's badge counts exactly what this board is already holding, so report it from
+    // here instead of leaving the parent on its one mount-time fetch. Every confirm, decline and
+    // assign funnels through setAssignments, so the badge now drops the moment the row does.
+    useEffect(() => {
+        if (!onAlertCount || !loadedOnce.current) return;
+        onAlertCount(role, assignments.filter(
+            a => a.status === 'SIGNED_UP' || a.status === 'DECLINED').length);
+    }, [assignments, role, onAlertCount]);
 
     const teamById = (id) => teams.find(t => t.id === id);
 

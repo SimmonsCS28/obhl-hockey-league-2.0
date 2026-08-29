@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useSeason } from '../../contexts/SeasonContext';
@@ -46,10 +46,17 @@ function CoordinatorDashboard() {
                     }
                 })
             );
-            setAlertCounts(results);
+            // Merge behind anything the board has already reported: it reads the same endpoint and
+            // its value is the fresher one if a confirm landed while this was still in flight.
+            setAlertCounts(prev => ({ ...results, ...prev }));
         };
         if (roleTabs.length) loadAlerts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // The active board owns its own count once it has loaded — see CoordinatorBoard.
+    const handleAlertCount = useCallback((role, count) => {
+        setAlertCounts(prev => (prev[role] === count ? prev : { ...prev, [role]: count }));
     }, []);
 
     if (roleTabs.length === 0) {
@@ -152,7 +159,7 @@ function CoordinatorDashboard() {
                                 Confirmed slots publish to live score entry and game management.
                             </p>
                         </div>
-                        <CoordinatorBoard key={activeRole} role={activeRole} />
+                        <CoordinatorBoard key={activeRole} role={activeRole} onAlertCount={handleAlertCount} />
                     </div>
                 </>
             ) : (
