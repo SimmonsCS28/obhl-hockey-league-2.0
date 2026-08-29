@@ -55,8 +55,8 @@ function Dashboard() {
     const [activeRole, setActiveRole] = useState(officialRoles[0] || null);
     const [openSlotsByRole, setOpenSlotsByRole] = useState({}); // { REF: [...], SCOREKEEPER: [...] }
     const [goalieWeeks, setGoalieWeeks] = useState([]);          // for GOALIE
-    const [myScoredGames, setMyScoredGames] = useState([]);      // season games with me as scorekeeper
-    const [showAllScored, setShowAllScored] = useState(false);
+    const [seasonGames, setSeasonGames] = useState([]);           // every game this season, for shift history
+    const [showAllWorked, setShowAllWorked] = useState(false);
     const [busy, setBusy] = useState(null);
 
     // Chicken Licks — shared between the teammate-notice banner (below) and the
@@ -108,15 +108,13 @@ function Dashboard() {
         if (officialRoles.includes('GOALIE')) {
             api.getGoalieAvailability(selectedSeasonId).then(setGoalieWeeks).catch(() => setGoalieWeeks([]));
         }
-        // Read the season's games rather than the assignment rows: shifts claimed before the
-        // coordinator flow existed, or handed out directly by an admin, have no assignment to
-        // read, and this list has to be a complete record of what someone actually worked.
-        if (officialRoles.includes('SCOREKEEPER')) {
-            api.getGames(selectedSeasonId)
-                .then(gs => setMyScoredGames((gs || []).filter(g => Number(g.scorekeeperId) === Number(user?.id))))
-                .catch(() => setMyScoredGames([]));
+        // Shift history reads the season's games rather than the assignment rows: shifts claimed
+        // before the coordinator flow existed, or handed out directly by an admin, have no
+        // assignment to read, and this has to be a complete record of what someone actually worked.
+        if (officialRoles.length) {
+            api.getGames(selectedSeasonId).then(gs => setSeasonGames(gs || [])).catch(() => setSeasonGames([]));
         }
-    }, [selectedSeasonId, officialRoles, user?.id]);
+    }, [selectedSeasonId, officialRoles]);
     useEffect(() => { loadOfficiating(); }, [loadOfficiating]);
 
     if (loading) return <div className="dash-state">Loading your dashboard…</div>;
@@ -164,20 +162,35 @@ function Dashboard() {
     // A goalie week is still relevant until its last game has passed.
     const upcomingGoalieWeeks = goalieWeeks.filter(w => isUpcoming({ gameDate: w.endDate || w.startDate }));
 
-    // ── Scorekeeper: games already played ──
+    // ── Shift history for the active role ──
     // The commitments card above drops a game a few hours after puck drop, which used to be the
-    // end of a scorekeeper's access to it. A game nobody finalized — or never even started — has
-    // to stay reachable, so list everything already played and keep the way in to Live Score Entry.
-    // Anything still on the commitments card is excluded so a game never appears twice.
+    // end of it: no record anywhere of what you'd worked, and for scorekeepers no way back into a
+    // game nobody finalized. List everything already played instead. Anything still on the
+    // commitments card is excluded so a game never appears twice.
+    const myId = Number(user?.id);
+    const worksGame = (g, role) => {
+        if (role === 'SCOREKEEPER') return Number(g.scorekeeperId) === myId;
+        if (role === 'REF') return Number(g.referee1Id) === myId || Number(g.referee2Id) === myId;
+        if (role === 'GOALIE') return Number(g.goalie1Id) === myId || Number(g.goalie2Id) === myId;
+        return false;
+    };
     const committedGameIds = new Set(myCommitments.map(c => Number(c.gameId)).filter(id => !isNaN(id)));
-    const scoredGames = [...myScoredGames].sort(
-        (a, b) => (toDate(b.gameDate)?.getTime() ?? 0) - (toDate(a.gameDate)?.getTime() ?? 0)
-    );
-    const playedScoredGames = scoredGames.filter(g => { const d = toDate(g.gameDate); return d && d < now; });
-    const pastScoredGames = playedScoredGames.filter(g => !committedGameIds.has(Number(g.id)));
-    const unscoredGames = playedScoredGames.filter(g => g.status !== 'completed');
-    const visibleScoredGames = showAllScored ? pastScoredGames : pastScoredGames.slice(0, 4);
-    const scoredAhead = scoredGames.length - playedScoredGames.length;
+    const roleGames = seasonGames
+        .filter(g => worksGame(g, activeRole))
+        .sort((a, b) => (toDate(b.gameDate)?.getTime() ?? 0) - (toDate(a.gameDate)?.getTime() ?? 0));
+    const playedGames = roleGames.filter(g => { const d = toDate(g.gameDate); return d && d < now; });
+    const historyGames = playedGames.filter(g => !committedGameIds.has(Number(g.id)));
+    const unscoredGames = playedGames.filter(g => g.status !== 'completed');
+    const visibleHistory = showAllWorked ? historyGames : historyGames.slice(0, 4);
+    const gamesAhead = roleGames.length - playedGames.length;
+    // Which net / which whistle, so the row says what you actually did in that game.
+    const myGameSlot = (g) => {
+        if (activeRole === 'REF') return Number(g.referee1Id) === myId ? 'Ref 1' : 'Ref 2';
+        if (activeRole === 'GOALIE') {
+            return `In net for ${teamName(Number(g.goalie1Id) === myId ? g.homeTeamId : g.awayTeamId)}`;
+        }
+        return null;
+    };
     const tabCountLabel = (r) => (r === 'GOALIE' ? 'Set availability' : `${openCount(r)} open`);
 
     const respondPending = async (id, action) => {
@@ -373,7 +386,7 @@ function Dashboard() {
 
                         <div className="dash-role-tabs">
                             {officialRoles.map(r => (
-                                <button key={r} className={`dash-role-tab${activeRole === r ? ' is-active' : ''}`} onClick={() => setActiveRole(r)}>
+                                <button key={r} className={`dash-role-tab${activeRole === r ? ' is-active' : ''}`} onClick={() => { setActiveRole(r); setShowAllWorked(false); }}>
                                     {ROLE_LABEL[r]}
                                     <span className="dash-role-tab-count">{tabCountLabel(r)}</span>
                                 </button>
@@ -570,48 +583,73 @@ function Dashboard() {
                             </div>
                         </div>
 
-                        {/* Everything already played, with the way back into Live Score Entry. */}
-                        {activeRole === 'SCOREKEEPER' && (
-                            <div className="dash-worked">
-                                <div className="dash-col-title">Games You&apos;ve Worked</div>
-                                <p className="dash-col-note">
-                                    {playedScoredGames.length === 0
-                                        ? 'No scorekeeper games played yet this season.'
-                                        : `${playedScoredGames.length} game${playedScoredGames.length === 1 ? '' : 's'} this season`}
-                                    {scoredAhead > 0 && ` · ${scoredAhead} still to come`}
-                                </p>
+                        {/* Everything already played in this role — and, for scorekeepers, the way
+                            back into Live Score Entry for a game nobody finalized. */}
+                        <div className="dash-worked">
+                            <div className="dash-col-title">
+                                {activeRole === 'GOALIE' ? 'Games You’ve Played' : 'Games You’ve Worked'}
+                            </div>
+                            <p className="dash-col-note">
+                                {playedGames.length === 0
+                                    ? `No ${ROLE_LABEL[activeRole].toLowerCase()} games played yet this season.`
+                                    : `${playedGames.length} game${playedGames.length === 1 ? '' : 's'} this season`}
+                                {gamesAhead > 0 && ` · ${gamesAhead} still to come`}
+                            </p>
 
-                                {unscoredGames.length > 0 && (
-                                    <div className="dash-worked-alert">
-                                        {unscoredGames.length === 1
-                                            ? 'One game you worked has no final score yet. Open it and enter'
-                                            : `${unscoredGames.length} games you worked have no final score yet. Open them and enter`}
-                                        {' '}the goals whenever you get a chance — nothing expires.
-                                    </div>
-                                )}
+                            {activeRole === 'SCOREKEEPER' && unscoredGames.length > 0 && (
+                                <div className="dash-worked-alert">
+                                    {unscoredGames.length === 1
+                                        ? 'One game you worked has no final score yet. Open it and enter'
+                                        : `${unscoredGames.length} games you worked have no final score yet. Open them and enter`}
+                                    {' '}the goals whenever you get a chance — nothing expires.
+                                </div>
+                            )}
 
-                                {pastScoredGames.length === 0 ? (
-                                    <div className="dash-empty-dashed">
-                                        Games you scorekeep show up here once they&apos;ve been played, and stay reachable.
-                                    </div>
-                                ) : (
-                                    <>
-                                        <div className="dash-commit-list">
-                                            {visibleScoredGames.map(g => {
-                                                const done = g.status === 'completed';
-                                                return (
-                                                    <div key={g.id} className="dash-commit-card">
-                                                        <div className="dash-commit-top">
-                                                            <span className="dash-commit-game">
-                                                                {teamName(g.homeTeamId)} vs {teamName(g.awayTeamId)}
-                                                            </span>
-                                                            <span className={`dash-commit-status dash-commit-status--${done ? 'confirmed' : 'pending'}`}>
-                                                                {done ? `Final ${g.homeScore ?? 0}–${g.awayScore ?? 0}` : 'Needs Scores'}
-                                                            </span>
-                                                        </div>
-                                                        <div className="dash-commit-meta">
-                                                            {fmtWhen(g.gameDate)}{g.rink ? ` · ${g.rink}` : ''}{g.week != null ? ` · Week ${g.week}` : ''}
-                                                        </div>
+                            {historyGames.length === 0 ? (
+                                <div className="dash-empty-dashed">
+                                    {activeRole === 'SCOREKEEPER'
+                                        ? 'Games you scorekeep show up here once they’ve been played, and stay reachable.'
+                                        : `Games you ${activeRole === 'GOALIE' ? 'play in net' : 'referee'} show up here once they’ve been played.`}
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="dash-commit-list">
+                                        {visibleHistory.map(g => {
+                                            const done = g.status === 'completed';
+                                            const slot = myGameSlot(g);
+                                            const isSk = activeRole === 'SCOREKEEPER';
+                                            // Goalies get the result from their own net; everyone
+                                            // else gets the plain final.
+                                            let badge, badgeCls;
+                                            if (!done) {
+                                                badge = isSk ? 'Needs Scores' : 'No Result Posted';
+                                                badgeCls = isSk ? 'pending' : 'signed';
+                                            } else if (activeRole === 'GOALIE') {
+                                                const inHomeNet = Number(g.goalie1Id) === myId;
+                                                const mine = (inHomeNet ? g.homeScore : g.awayScore) ?? 0;
+                                                const opp = (inHomeNet ? g.awayScore : g.homeScore) ?? 0;
+                                                badge = `${mine > opp ? 'Won' : mine < opp ? 'Lost' : 'Tied'} ${mine}–${opp}`;
+                                                badgeCls = 'signed';
+                                            } else {
+                                                badge = `Final ${g.homeScore ?? 0}–${g.awayScore ?? 0}`;
+                                                badgeCls = isSk ? 'confirmed' : 'signed';
+                                            }
+                                            return (
+                                                <div key={g.id} className="dash-commit-card">
+                                                    <div className="dash-commit-top">
+                                                        <span className="dash-commit-game">
+                                                            {teamName(g.homeTeamId)} vs {teamName(g.awayTeamId)}
+                                                        </span>
+                                                        <span className={`dash-commit-status dash-commit-status--${badgeCls}`}>
+                                                            {badge}
+                                                        </span>
+                                                    </div>
+                                                    <div className="dash-commit-meta">
+                                                        {fmtWhen(g.gameDate)}{g.rink ? ` · ${g.rink}` : ''}{g.week != null ? ` · Week ${g.week}` : ''}
+                                                        {slot ? ` · ${slot}` : ''}
+                                                    </div>
+                                                    {/* Scorekeepers can still edit; everyone else just gets the recap. */}
+                                                    {isSk ? (
                                                         <div className="dash-drop-row">
                                                             <button
                                                                 className={`dash-btn dash-btn--${done ? 'ghost' : 'gold'}`}
@@ -620,19 +658,28 @@ function Dashboard() {
                                                                 {done ? 'View Score Sheet →' : 'Enter Score →'}
                                                             </button>
                                                         </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                        {pastScoredGames.length > 4 && (
-                                            <button className="dash-worked-toggle" onClick={() => setShowAllScored(v => !v)}>
-                                                {showAllScored ? 'Show fewer' : `Show all ${pastScoredGames.length} games`}
-                                            </button>
-                                        )}
-                                    </>
-                                )}
-                            </div>
-                        )}
+                                                    ) : done && (
+                                                        <div className="dash-drop-row">
+                                                            <button
+                                                                className="dash-btn dash-btn--ghost"
+                                                                onClick={() => navigate(`/game/${g.id}/recap`, { state: { from: '/dashboard', backLabel: 'Dashboard' } })}
+                                                            >
+                                                                Game Recap →
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    {historyGames.length > 4 && (
+                                        <button className="dash-worked-toggle" onClick={() => setShowAllWorked(v => !v)}>
+                                            {showAllWorked ? 'Show fewer' : `Show all ${historyGames.length} games`}
+                                        </button>
+                                    )}
+                                </>
+                            )}
+                        </div>
                     </div>
                 </section>
             )}
