@@ -55,6 +55,8 @@ function Dashboard() {
     const [activeRole, setActiveRole] = useState(officialRoles[0] || null);
     const [openSlotsByRole, setOpenSlotsByRole] = useState({}); // { REF: [...], SCOREKEEPER: [...] }
     const [goalieWeeks, setGoalieWeeks] = useState([]);          // for GOALIE
+    const [myScoredGames, setMyScoredGames] = useState([]);      // season games with me as scorekeeper
+    const [showAllScored, setShowAllScored] = useState(false);
     const [busy, setBusy] = useState(null);
 
     // Chicken Licks — shared between the teammate-notice banner (below) and the
@@ -106,7 +108,15 @@ function Dashboard() {
         if (officialRoles.includes('GOALIE')) {
             api.getGoalieAvailability(selectedSeasonId).then(setGoalieWeeks).catch(() => setGoalieWeeks([]));
         }
-    }, [selectedSeasonId, officialRoles]);
+        // Read the season's games rather than the assignment rows: shifts claimed before the
+        // coordinator flow existed, or handed out directly by an admin, have no assignment to
+        // read, and this list has to be a complete record of what someone actually worked.
+        if (officialRoles.includes('SCOREKEEPER')) {
+            api.getGames(selectedSeasonId)
+                .then(gs => setMyScoredGames((gs || []).filter(g => Number(g.scorekeeperId) === Number(user?.id))))
+                .catch(() => setMyScoredGames([]));
+        }
+    }, [selectedSeasonId, officialRoles, user?.id]);
     useEffect(() => { loadOfficiating(); }, [loadOfficiating]);
 
     if (loading) return <div className="dash-state">Loading your dashboard…</div>;
@@ -153,6 +163,21 @@ function Dashboard() {
     const openCount = (r) => (openSlotsByRole[r] || []).filter(s => s.state === 'OPEN' && isUpcoming(s)).length;
     // A goalie week is still relevant until its last game has passed.
     const upcomingGoalieWeeks = goalieWeeks.filter(w => isUpcoming({ gameDate: w.endDate || w.startDate }));
+
+    // ── Scorekeeper: games already played ──
+    // The commitments card above drops a game a few hours after puck drop, which used to be the
+    // end of a scorekeeper's access to it. A game nobody finalized — or never even started — has
+    // to stay reachable, so list everything already played and keep the way in to Live Score Entry.
+    // Anything still on the commitments card is excluded so a game never appears twice.
+    const committedGameIds = new Set(myCommitments.map(c => Number(c.gameId)).filter(id => !isNaN(id)));
+    const scoredGames = [...myScoredGames].sort(
+        (a, b) => (toDate(b.gameDate)?.getTime() ?? 0) - (toDate(a.gameDate)?.getTime() ?? 0)
+    );
+    const playedScoredGames = scoredGames.filter(g => { const d = toDate(g.gameDate); return d && d < now; });
+    const pastScoredGames = playedScoredGames.filter(g => !committedGameIds.has(Number(g.id)));
+    const unscoredGames = playedScoredGames.filter(g => g.status !== 'completed');
+    const visibleScoredGames = showAllScored ? pastScoredGames : pastScoredGames.slice(0, 4);
+    const scoredAhead = scoredGames.length - playedScoredGames.length;
     const tabCountLabel = (r) => (r === 'GOALIE' ? 'Set availability' : `${openCount(r)} open`);
 
     const respondPending = async (id, action) => {
@@ -544,6 +569,70 @@ function Dashboard() {
                                 )}
                             </div>
                         </div>
+
+                        {/* Everything already played, with the way back into Live Score Entry. */}
+                        {activeRole === 'SCOREKEEPER' && (
+                            <div className="dash-worked">
+                                <div className="dash-col-title">Games You&apos;ve Worked</div>
+                                <p className="dash-col-note">
+                                    {playedScoredGames.length === 0
+                                        ? 'No scorekeeper games played yet this season.'
+                                        : `${playedScoredGames.length} game${playedScoredGames.length === 1 ? '' : 's'} this season`}
+                                    {scoredAhead > 0 && ` · ${scoredAhead} still to come`}
+                                </p>
+
+                                {unscoredGames.length > 0 && (
+                                    <div className="dash-worked-alert">
+                                        {unscoredGames.length === 1
+                                            ? 'One game you worked has no final score yet. Open it and enter'
+                                            : `${unscoredGames.length} games you worked have no final score yet. Open them and enter`}
+                                        {' '}the goals whenever you get a chance — nothing expires.
+                                    </div>
+                                )}
+
+                                {pastScoredGames.length === 0 ? (
+                                    <div className="dash-empty-dashed">
+                                        Games you scorekeep show up here once they&apos;ve been played, and stay reachable.
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="dash-commit-list">
+                                            {visibleScoredGames.map(g => {
+                                                const done = g.status === 'completed';
+                                                return (
+                                                    <div key={g.id} className="dash-commit-card">
+                                                        <div className="dash-commit-top">
+                                                            <span className="dash-commit-game">
+                                                                {teamName(g.homeTeamId)} vs {teamName(g.awayTeamId)}
+                                                            </span>
+                                                            <span className={`dash-commit-status dash-commit-status--${done ? 'confirmed' : 'pending'}`}>
+                                                                {done ? `Final ${g.homeScore ?? 0}–${g.awayScore ?? 0}` : 'Needs Scores'}
+                                                            </span>
+                                                        </div>
+                                                        <div className="dash-commit-meta">
+                                                            {fmtWhen(g.gameDate)}{g.rink ? ` · ${g.rink}` : ''}{g.week != null ? ` · Week ${g.week}` : ''}
+                                                        </div>
+                                                        <div className="dash-drop-row">
+                                                            <button
+                                                                className={`dash-btn dash-btn--${done ? 'ghost' : 'gold'}`}
+                                                                onClick={() => navigate(`/scorekeeper/game/${g.id}`)}
+                                                            >
+                                                                {done ? 'View Score Sheet →' : 'Enter Score →'}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        {pastScoredGames.length > 4 && (
+                                            <button className="dash-worked-toggle" onClick={() => setShowAllScored(v => !v)}>
+                                                {showAllScored ? 'Show fewer' : `Show all ${pastScoredGames.length} games`}
+                                            </button>
+                                        )}
+                                    </>
+                                )}
+                            </div>
+                        )}
                     </div>
                 </section>
             )}
