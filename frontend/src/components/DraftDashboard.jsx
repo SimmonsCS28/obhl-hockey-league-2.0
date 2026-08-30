@@ -1,20 +1,33 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import { useBlocker } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import DraftService from '../services/DraftService';
-import { buildBuddyPickMap as buildBuddyPickMapPure } from './admin/draft/buddyGraph';
 import {
     calculateTeamStats as calculateTeamStatsPure,
     getSortedTeamPlayers as getSortedTeamPlayersPure,
     getFilteredPlayers as getFilteredPlayersPure
 } from './admin/draft/draftSelectors';
+import {
+    ACTIONS, documentReducer, withUndo, initialUndoableState, fromDraftPayload
+} from './admin/draft/draftReducer';
+import { useAutoSave, SAVE_STATES, saveStatusLabel } from './admin/draft/useAutoSave';
 import './DraftDashboard.css';
+
+const undoableDraftReducer = withUndo(documentReducer);
 
 const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '/api') || '/api';
 const DraftDashboard = () => {
+    // Board document + undo stack. Everything the draft *is* lives here; everything
+    // about how it is being looked at stays in useState below.
+    const [boardState, dispatch] = useReducer(undoableDraftReducer, undefined, () => initialUndoableState(4));
+    const doc = boardState.present;
+    const {
+        seasonName, seasonId: selectedSeasonId, teamCount, isLive,
+        playerPool, teams, teamColors, teamSortOptions, buddyPickMap
+    } = doc;
+    const historyDepth = boardState.past.length;
+
     // State
-    const [seasonName, setSeasonName] = useState('');
-    const [selectedSeasonId, setSelectedSeasonId] = useState(null);
     const [availableSeasons, setAvailableSeasons] = useState([]);
     const [seasonsLoading, setSeasonsLoading] = useState(true);
     const [showCreateSeasonModal, setShowCreateSeasonModal] = useState(false);
@@ -22,10 +35,6 @@ const DraftDashboard = () => {
         name: '', startDate: '', endDate: '', status: 'upcoming', isActive: false
     });
     const [newSeasonSaving, setNewSeasonSaving] = useState(false);
-    const [teamCount, setTeamCount] = useState(4);
-    const [playerPool, setPlayerPool] = useState([]);
-    const [teams, setTeams] = useState([]);
-    const [isLive, setIsLive] = useState(false);
     const [warning, setWarning] = useState('');
     const [viewMode, setViewMode] = useState('balanced'); // 'detailed', 'balanced', 'overview'
     const [isPoolCollapsed, setIsPoolCollapsed] = useState(false);
@@ -38,17 +47,14 @@ const DraftDashboard = () => {
     const [sortAsc, setSortAsc] = useState(true);
 
     // Team-specific state
-    const [teamColors, setTeamColors] = useState({});
-    const [teamSortOptions, setTeamSortOptions] = useState({});
     const [editingTeamId, setEditingTeamId] = useState(null);
 
     // Draft save state
-    const [currentDraftSaveId, setCurrentDraftSaveId] = useState(null);
     const [showResumePrompt, setShowResumePrompt] = useState(false);
     const [savedDraft, setSavedDraft] = useState(null);
 
-    // Buddy pick map: email → array of buddy emails
-    const [buddyPickMap, setBuddyPickMap] = useState({});
+    // Buddy links are derived in the reducer from the cards themselves, so there is no
+    // separate buddy state to keep in step any more.
 
     // Buddy pick modal state
     const [showBuddyModal, setShowBuddyModal] = useState(false);
@@ -77,50 +83,29 @@ const DraftDashboard = () => {
     const [showDuplicateResolutionModal, setShowDuplicateResolutionModal] = useState(false);
     const [duplicatePlayersToResolve, setDuplicatePlayersToResolve] = useState([]);
 
-    // Undo History State
-    const [history, setHistory] = useState([]);
+    const [currentDraftSaveId, setCurrentDraftSaveId] = useState(null);
 
-    // Unsaved changes tracking
-    const [isDirty, setIsDirty] = useState(false);
-    const isInitialMount = useRef(true);
+    // Autosave. Only runs once the draft is live and a season is chosen -- before that
+    // there is nothing meaningful to persist and no row to persist it to.
+    const autoSave = useAutoSave({
+        doc,
+        enabled: isLive && !!selectedSeasonId,
+        draftId: currentDraftSaveId,
+        onDraftId: setCurrentDraftSaveId,
+        onError: (err) => console.error('Autosave failed:', err)
+    });
+    const isDirty = autoSave.isDirty;
 
     // Block in-app navigation (React Router) when there are unsaved changes
     const blocker = useBlocker(isDirty);
 
     // Save current state to history stack
-    const saveHistory = () => {
-        const currentState = {
-            playerPool: [...playerPool],
-            teams: JSON.parse(JSON.stringify(teams)), // Deep copy for nested players array
-            buddyPickMap: { ...buddyPickMap },
-            warning,
-            teamColors: { ...teamColors },
-            teamSortOptions: { ...teamSortOptions }
-        };
-
-        setHistory(prev => {
-            const newHistory = [...prev, currentState];
-            // Limit history size to 20
-            if (newHistory.length > 20) {
-                return newHistory.slice(newHistory.length - 20);
-            }
-            return newHistory;
-        });
-    };
-
-    // Undo last action
+    // Undo is a property of the reducer now: mutating actions push a snapshot of the
+    // board automatically, so no handler has to remember to call anything first.
     const handleUndo = () => {
-        if (history.length === 0) return;
-
-        const previousState = history[history.length - 1];
-        setHistory(prev => prev.slice(0, prev.length - 1));
-
-        setPlayerPool(previousState.playerPool);
-        setTeams(previousState.teams);
-        setBuddyPickMap(previousState.buddyPickMap);
+        if (historyDepth === 0) return;
+        dispatch({ type: 'UNDO' });
         setWarning('Action undone.');
-        setTeamColors(previousState.teamColors);
-        setTeamSortOptions(previousState.teamSortOptions);
     };
 
 
@@ -140,27 +125,7 @@ const DraftDashboard = () => {
         'Green': '#39751f'
     };
 
-    // Initialize Teams
-    useEffect(() => {
-        if (!isLive && teams.length !== parseInt(teamCount)) {
-            const newTeams = Array.from({ length: parseInt(teamCount) }, (_, i) => ({
-                id: i + 1,
-                name: `Team ${i + 1}`,
-                players: []
-            }));
-            setTeams(newTeams);
-
-            // Initialize team colors to White
-            const colors = {};
-            const sortOpts = {};
-            newTeams.forEach(team => {
-                colors[team.id] = 'White';
-                sortOpts[team.id] = 'Position + Rating';
-            });
-            setTeamColors(colors);
-            setTeamSortOptions(sortOpts);
-        }
-    }, [teamCount, isLive]);
+    // (Team initialisation is handled by the reducer's SET_TEAM_COUNT.)
 
     // Fetch available seasons and check for saved drafts on mount
     useEffect(() => {
@@ -169,16 +134,7 @@ const DraftDashboard = () => {
     }, []);
 
     // Mark dirty whenever teams or playerPool change while the draft is live
-    // Skip the very first render and the initial data load
-    useEffect(() => {
-        if (isInitialMount.current) {
-            isInitialMount.current = false;
-            return;
-        }
-        if (isLive) {
-            setIsDirty(true);
-        }
-    }, [teams, playerPool]); // eslint-disable-line react-hooks/exhaustive-deps
+
 
     // Block browser tab close / page refresh when there are unsaved changes
     useEffect(() => {
@@ -216,8 +172,7 @@ const DraftDashboard = () => {
             if (autoSelectId) {
                 const created = combined.find(s => s.id === autoSelectId);
                 if (created) {
-                    setSelectedSeasonId(created.id);
-                    setSeasonName(created.name);
+                    dispatch({ type: ACTIONS.SET_SEASON, seasonId: created.id, seasonName: created.name });
                 }
             }
         } catch (error) {
@@ -269,7 +224,7 @@ const DraftDashboard = () => {
     };
 
     const handleSavePotentialMatches = () => {
-        setPlayerPool(prevPool => {
+        const buildPool = (prevPool) => {
             const newPool = [...prevPool];
             potentialMatches.forEach(pm => {
                 const idx = newPool.findIndex(p => p.email === pm.email);
@@ -292,16 +247,18 @@ const DraftDashboard = () => {
                     }
                 }
             });
-            checkMissingVeterans(newPool);
             return newPool;
-        });
+        };
+
+        const newPool = buildPool(playerPool);
+        dispatch({ type: ACTIONS.SET_POOL, players: newPool });
+        checkMissingVeterans(newPool);
         setShowPotentialMatchesModal(false);
         setPotentialMatches([]);
     };
 
     const handleCancelPotentialMatches = () => {
-        setPlayerPool([]);
-        setBuddyPickMap({});
+        dispatch({ type: ACTIONS.SET_POOL, players: [] });
         setShowPotentialMatchesModal(false);
         setPotentialMatches([]);
         setWarning('File upload cancelled.');
@@ -315,24 +272,20 @@ const DraftDashboard = () => {
 
     // Save manually entered veteran ratings
     const handleSaveUnratedVeterans = () => {
-        setPlayerPool(prevPool => {
-            const newPool = [...prevPool];
-            unratedVeterans.forEach(uv => {
-                const idx = newPool.findIndex(p => p.email === uv.email);
-                if (idx !== -1) {
-                    newPool[idx] = { ...newPool[idx], skillRating: uv.skillRating };
-                }
-            });
-            return newPool;
+        const newPool = [...playerPool];
+        unratedVeterans.forEach(uv => {
+            const idx = newPool.findIndex(p => p.email === uv.email);
+            if (idx !== -1) {
+                newPool[idx] = { ...newPool[idx], skillRating: uv.skillRating };
+            }
         });
-        // Buddy pick map was already built with old ratings, no need to rebuild just for rating changes
+        dispatch({ type: ACTIONS.SET_POOL, players: newPool });
         setShowUnratedVeteransModal(false);
         setUnratedVeterans([]);
     };
 
     const handleCancelUnratedVeterans = () => {
-        setPlayerPool([]);
-        setBuddyPickMap({});
+        dispatch({ type: ACTIONS.SET_POOL, players: [] });
         setShowUnratedVeteransModal(false);
         setUnratedVeterans([]);
         setWarning('File upload cancelled.');
@@ -344,12 +297,8 @@ const DraftDashboard = () => {
         ));
     };
 
-    // Rebuild buddy pick map when players move between pool and teams
-    useEffect(() => {
-        if (playerPool.length > 0 || teams.some(t => t.players && t.players.length > 0)) {
-            buildBuddyPickMap(playerPool, teams);
-        }
-    }, [playerPool, teams]);
+    // (The buddy map is rebuilt inside the reducer whenever a roster or a buddy field
+    // changes, so there is no effect to keep in step here.)
 
     // Auto-clear warning/info banner after 10 seconds
     useEffect(() => {
@@ -381,10 +330,7 @@ const DraftDashboard = () => {
         }
     };
 
-    // Build buddy pick map from player data
-    const buildBuddyPickMap = (players, teamsData = null) => {
-        setBuddyPickMap(buildBuddyPickMapPure(players, teamsData));
-    };
+
 
     // Handlers
     const handleFileUpload = async (e) => {
@@ -394,8 +340,7 @@ const DraftDashboard = () => {
         try {
             const players = await DraftService.importRegistration(file);
 
-            setPlayerPool(players);
-            buildBuddyPickMap(players);
+            dispatch({ type: ACTIONS.SET_POOL, players });
             setWarning('');
 
             const matches = players.filter(p => p.potentialMatchFound);
@@ -413,91 +358,51 @@ const DraftDashboard = () => {
         }
     };
 
-    const handleStartDraft = () => {
+    const handleStartDraft = async () => {
         if (!seasonName) {
             setWarning('Please enter a Season Name.');
+            return;
+        }
+        if (!selectedSeasonId) {
+            setWarning('Please select a season before starting - autosave needs somewhere to write.');
             return;
         }
         if (playerPool.length === 0) {
             setWarning('Please upload a registration file.');
             return;
         }
-        setIsLive(true);
+
+        dispatch({ type: ACTIONS.START_DRAFT });
         setWarning('');
+        // Create the saved-draft row now so every later write is an update. Without this
+        // the first autosave would have to POST, and a second flush arriving while it was
+        // in flight would create a duplicate row -- there is no unique constraint to stop it.
+        const liveDoc = documentReducer(doc, { type: ACTIONS.START_DRAFT });
+        await autoSave.createNow(liveDoc);
     };
 
     const handleReset = () => {
-        saveHistory(); // Save state before mutation
-
-        console.log('=== RESET BUTTON CLICKED ===');
-        console.log('Reset starting - Current state:', {
-            playerPoolSize: playerPool.length,
-            teamsCount: teams.length,
-            totalPlayersInTeams: teams.reduce((sum, t) => sum + t.players.length, 0)
-        });
-
-        // Collect all players from teams and add them back to the pool
-        const allPlayers = [...playerPool];
-        teams.forEach(team => {
-            allPlayers.push(...team.players);
-        });
-
-        console.log('All players collected:', allPlayers.length);
-
-        // Reset teams to empty
-        const newTeams = Array.from({ length: parseInt(teamCount) }, (_, i) => ({
-            id: i + 1,
-            name: `Team ${i + 1}`,
-            players: []
-        }));
-
-        // Reset team colors and sort options
-        const colors = {};
-        const sortOpts = {};
-        newTeams.forEach(team => {
-            colors[team.id] = 'White';
-            sortOpts[team.id] = 'Position + Rating';
-        });
-
-        console.log('Setting new state...');
-        setPlayerPool(allPlayers);
-        setTeams(newTeams);
-        setTeamColors(colors);
-        setTeamSortOptions(sortOpts);
-        // Keep isLive as true - draft stays active
+        dispatch({ type: ACTIONS.RESET_BOARD });
         setWarning('Draft board reset - all players returned to pool.');
-        console.log('=== RESET COMPLETE ===');
     };
 
     // Handler for changing team colors
     const handleTeamColorChange = (teamId, color) => {
-        setTeamColors(prev => ({
-            ...prev,
-            [teamId]: color
-        }));
+        dispatch({ type: ACTIONS.SET_TEAM_COLOR, teamId, color });
     };
 
     // Handler for changing team sort options
     const handleTeamSortChange = (teamId, sortOption) => {
-        setTeamSortOptions(prev => ({
-            ...prev,
-            [teamId]: sortOption
-        }));
+        dispatch({ type: ACTIONS.SET_TEAM_SORT, teamId, sortOption });
     };
 
     // Handler for changing team names
     const handleTeamNameChange = (teamId, newName) => {
-        setTeams(prevTeams =>
-            prevTeams.map(team =>
-                team.id === teamId ? { ...team, name: newName } : team
-            )
-        );
+        dispatch({ type: ACTIONS.SET_TEAM_NAME, teamId, name: newName });
     };
 
     // Handler for assigning GMs to teams
     const handleAssignGMs = () => {
-        saveHistory(); // Save state before mutation
-
         // Get all GMs from player pool AND teams
         const allPlayers = [...playerPool];
         teams.forEach(team => {
@@ -531,39 +436,11 @@ const DraftDashboard = () => {
             return;
         }
 
-        // Shuffle available GMs for random assignment
+        // The shuffle stays here so the reducer can remain pure; seating the shuffled
+        // list and re-sorting the columns is ASSIGN_GMS's job.
         const shuffledGMs = [...availableGMs].sort(() => Math.random() - 0.5);
-
-        // Assign one GM to each team that doesn't have one
-        let gmIndex = 0;
-        const updatedTeams = teams.map(team => {
-            const hasGM = team.players.some(player => player.isGm);
-            if (!hasGM && gmIndex < shuffledGMs.length) {
-                return {
-                    ...team,
-                    players: [...team.players, shuffledGMs[gmIndex++]]
-                };
-            }
-            return team;
-        });
-
-        // Remove assigned GMs from player pool
-        const assignedGMEmails = shuffledGMs.slice(0, teamsWithoutGM.length).map(gm => gm.email);
-        const updatedPool = playerPool.filter(player => !assignedGMEmails.includes(player.email));
-
-        // Sort teams by average skill rating (Low to High)
-        updatedTeams.sort((a, b) => {
-            const getAvg = (players) => {
-                if (!players || players.length === 0) return 0;
-                const total = players.reduce((sum, p) => sum + (p.skillRating || 0), 0);
-                return total / players.length;
-            };
-            return getAvg(a.players) - getAvg(b.players);
-        });
-
-        setTeams(updatedTeams);
-        setPlayerPool(updatedPool);
-        setWarning(`Successfully assigned ${teamsWithoutGM.length} GMs to teams without GMs!`);
+        dispatch({ type: ACTIONS.ASSIGN_GMS, gms: shuffledGMs });
+        setWarning(`Assigned ${teamsWithoutGM.length} GMs. The columns moved on purpose - the board re-sorts by average skill.`);
     };
 
     // Handler for assigning GM buddy picks to teams using the wizard
@@ -668,79 +545,8 @@ const DraftDashboard = () => {
             setWarning('Please select a season before saving.');
             return false;
         }
-
-        try {
-            const draftData = {
-                seasonName,
-                seasonId: selectedSeasonId,
-                teamCount,
-                isLive,
-                teams: teams.map(team => ({
-                    id: team.id,
-                    name: team.name,
-                    color: teamColors[team.id] || 'White',
-                    sortOption: teamSortOptions[team.id] || 'Position + Rating',
-                    players: team.players.map(player => ({
-                        ...player,
-                        // Ensure all player properties are included
-                        firstName: player.firstName,
-                        lastName: player.lastName,
-                        email: player.email,
-                        position: player.position,
-                        skillRating: player.skillRating,
-                        isVeteran: player.isVeteran,
-                        isGm: player.isGm || false,
-                        isRef: player.isRef || false,
-                        status: player.status || (player.isVeteran ? 'Veteran' : 'Rookie'),
-                        buddyEmail: player.buddyEmail || null
-                    }))
-                })),
-                playerPool: playerPool.map(player => ({
-                    ...player,
-                    firstName: player.firstName,
-                    lastName: player.lastName,
-                    email: player.email,
-                    position: player.position,
-                    skillRating: player.skillRating,
-                    isVeteran: player.isVeteran,
-                    isGm: player.isGm || false,
-                    isRef: player.isRef || false,
-                    status: player.status || (player.isVeteran ? 'Veteran' : 'Rookie'),
-                    buddyEmail: player.buddyEmail || null
-                }))
-            };
-
-            // Use PUT to update if we have an ID, POST to create new
-            const url = currentDraftSaveId
-                ? `${API_BASE_URL}/league/draft/save/${currentDraftSaveId}`
-                : `${API_BASE_URL}/league/draft/save`;
-            const method = currentDraftSaveId ? 'PUT' : 'POST';
-
-            const response = await fetch(url, {
-                method: method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify(draftData)
-            });
-
-            if (response.ok) {
-                const result = await response.json();
-                setCurrentDraftSaveId(result.id);
-                setIsDirty(false); // Draft is now saved — clear dirty flag
-                const action = currentDraftSaveId ? 'updated' : 'saved';
-                setWarning(`Draft "${seasonName}" ${action} successfully! (ID: ${result.id})`);
-                return true;
-            } else {
-                setWarning('Failed to save draft');
-                return false;
-            }
-        } catch (error) {
-            console.error('Error saving draft:', error);
-            setWarning('Error saving draft. Check console for details.');
-            return false;
-        }
+        await autoSave.saveNow();
+        return true;
     };
 
     const handleSaveDuplicateResolution = async () => {
@@ -759,11 +565,14 @@ const DraftDashboard = () => {
             });
         };
 
-        setPlayerPool(prev => applyResolution(prev));
-        setTeams(prev => prev.map(t => ({
-            ...t,
-            players: applyResolution(t.players || [])
-        })));
+        dispatch({
+            type: ACTIONS.HYDRATE,
+            doc: {
+                ...doc,
+                playerPool: applyResolution(playerPool),
+                teams: teams.map(t => ({ ...t, players: applyResolution(t.players || []) }))
+            }
+        });
 
         setShowDuplicateResolutionModal(false);
         setDuplicatePlayersToResolve([]);
@@ -840,7 +649,7 @@ const DraftDashboard = () => {
 
             const result = await response.json();
             setWarning(`✅ Draft finalized successfully! Season ID: ${result.seasonId}`);
-            setIsLive(false);
+            dispatch({ type: ACTIONS.FINALIZED });
         } catch (error) {
             setWarning(`Error finalizing draft: ${error.message}`);
         }
@@ -894,28 +703,12 @@ const DraftDashboard = () => {
         if (!savedDraft) return;
 
         try {
-            const data = JSON.parse(savedDraft.draftData);
-
-            // Restore team colors and sort options FIRST
-            const colors = {};
-            const sortOpts = {};
-            data.teams.forEach(team => {
-                colors[team.id] = team.color;
-                sortOpts[team.id] = team.sortOption;
-            });
-
-            setTeamColors(colors);
-            setTeamSortOptions(sortOpts);
-
-            // Then restore other state
-            setSeasonName(data.seasonName);
-            setSelectedSeasonId(data.seasonId || null);
-            setTeamCount(data.teamCount);
-            setIsLive(data.isLive || false);
-            setTeams(data.teams);
-            setPlayerPool(data.playerPool || []);
-
+            const restored = fromDraftPayload(JSON.parse(savedDraft.draftData));
+            dispatch({ type: ACTIONS.HYDRATE, doc: restored });
             setCurrentDraftSaveId(savedDraft.id);
+            // The board we just loaded IS the saved board, so tell autosave that rather
+            // than letting it fire a redundant write on the next tick.
+            autoSave.markClean(restored);
             setShowResumePrompt(false);
             setWarning('Draft resumed successfully!');
         } catch (error) {
@@ -945,21 +738,9 @@ const DraftDashboard = () => {
         setShowResumePrompt(false);
         setSavedDraft(null);
         setCurrentDraftSaveId(null);
-
-        // Full Hard Reset
-        setSeasonName('');
-        setSelectedSeasonId(null);
-        setIsLive(false);
-        setPlayerPool([]);
-        setTeams([]);
-        setHistory([]);
-        setTeamColors({});
-        setTeamSortOptions({});
-        setBuddyPickMap({});
+        dispatch({ type: ACTIONS.NEW_DRAFT });
+        autoSave.reset();
         setWarning('');
-
-        // Reset team count to default
-        setTeamCount(4);
     };
 
     // Handler for confirming new draft from modal
@@ -1147,15 +928,11 @@ const DraftDashboard = () => {
             // Moving player back to pool
             if (source === 'pool') return;
 
-            saveHistory(); // Save state before mutation
-
-            const sourceTeamId = parseInt(source.split('-')[1]);
-            setTeams(prev => prev.map(t =>
-                t.id === sourceTeamId
-                    ? { ...t, players: t.players.filter(p => p.email !== currentPlayer.email) }
-                    : t
-            ));
-            setPlayerPool(prev => [...prev, currentPlayer]);
+            dispatch({
+                type: ACTIONS.RETURN_TO_POOL,
+                player: currentPlayer,
+                sourceTeamId: parseInt(source.split('-')[1])
+            });
         } else {
             // Moving player to a team - check for buddy picks using CURRENT player data
             // Gather all chained buddies recursively (similar to wizard) to be safe?
@@ -1219,55 +996,10 @@ const DraftDashboard = () => {
 
     // Complete the drop operation (called directly or after modal confirmation)
     const completeDrop = (player, source, targetTeamId, additionalPlayers = []) => {
-        saveHistory(); // Save state before mutation
-
-        const allPlayersToMove = [player, ...additionalPlayers];
-        const allEmails = allPlayersToMove.map(p => p.email);
-
-        // 1. Update Player Pool: Remove ANY players that are currently in the pool
-        setPlayerPool(prev => prev.filter(p => !allEmails.includes(p.email)));
-
-        // 2. Update Teams: Remove from ANY source team and Add to Target Team
-        setTeams(prev => {
-            const updatedTeams = prev.map(team => {
-                let newPlayers = [...team.players];
-
-                // Remove moving players from this team (so we don't duplicate if moving between teams)
-                newPlayers = newPlayers.filter(p => !allEmails.includes(p.email));
-
-                // If this is the target team, add all players
-                if (team.id === targetTeamId) {
-                    newPlayers = [...newPlayers, ...allPlayersToMove];
-                }
-
-                return { ...team, players: newPlayers };
-            });
-
-            // 3. Sort Target Team by Average Rating
-            return updatedTeams.map(team => {
-                if (team.id === targetTeamId) {
-                    const getAvg = (players) => {
-                        if (!players || players.length === 0) return 0;
-                        const total = players.reduce((sum, p) => sum + (p.skillRating || 0), 0);
-                        return total / players.length;
-                    };
-                    // We need to sort the Teams ARRAY? No, user wants Players sorted within team?
-                    // Wait, "automatic sorting of teams by average skill rating" -> Sort the TEAMS list order?
-                    // Re-reading Step 3012: "Implement automatic sorting of teams by average skill rating (lowest to highest) whenever the "Assign GMs" ... buttons are clicked".
-                    // And "whenever a player is dropped onto a team".
-                    // This implies sorting the TEAMS in the DASHBOARD view.
-                    // Yes.
-                    // So I need to sort `updatedTeams` Array.
-                }
-                return team;
-            }).sort((a, b) => {
-                const getAvg = (players) => {
-                    if (!players || players.length === 0) return 0;
-                    const total = players.reduce((sum, p) => sum + (p.skillRating || 0), 0);
-                    return total / players.length;
-                };
-                return getAvg(a.players) - getAvg(b.players);
-            });
+        dispatch({
+            type: ACTIONS.MOVE_PLAYERS,
+            players: [player, ...additionalPlayers],
+            targetTeamId
         });
     };
 
@@ -1339,116 +1071,29 @@ const DraftDashboard = () => {
     };
 
     const completeDropWithWizardCheck = (player, source, targetTeamId, buddies) => {
-        // Check if player is already on team (e.g. from Auto-Assign GM)
+        // From the GM-buddy wizard the anchor player is usually already seated, so only
+        // the buddies actually move. MOVE_PLAYERS pulls each of them off whatever list
+        // they are on, which is the same work either way.
         const targetTeam = teams.find(t => t.id === targetTeamId);
         const isAlreadyOnTeam = targetTeam && targetTeam.players.some(p => p.email === player.email);
 
         if (isAlreadyOnTeam) {
-            saveHistory(); // Save state before mutation
-
-            // Just add buddies to the team and remove from wherever they are
             if (buddies.length > 0) {
-                const buddyEmails = buddies.map(b => b.email);
-
-                // 1. Remove buddies from Pool
-                setPlayerPool(prev => prev.filter(p => !buddyEmails.includes(p.email)));
-
-                // 2. Remove buddies from Source teams (including 'source' argued, but generic search is safer)
-                setTeams(prev => {
-                    const updatedTeams = prev.map(t => {
-                        let newPlayers = t.players;
-
-                        // Remove buddies if present
-                        if (newPlayers.some(p => buddyEmails.includes(p.email))) {
-                            newPlayers = newPlayers.filter(p => !buddyEmails.includes(p.email));
-                        }
-
-                        // Add buddies if target team
-                        if (t.id === targetTeamId) {
-                            newPlayers = [...newPlayers, ...buddies];
-                        }
-
-                        return { ...t, players: newPlayers };
-                    });
-
-                    return updatedTeams.sort((a, b) => {
-                        const getAvg = (players) => {
-                            if (!players || players.length === 0) return 0;
-                            const total = players.reduce((sum, p) => sum + (p.skillRating || 0), 0);
-                            return total / players.length;
-                        };
-                        return getAvg(a.players) - getAvg(b.players);
-                    });
-                });
+                dispatch({ type: ACTIONS.MOVE_PLAYERS, players: buddies, targetTeamId });
             }
         } else {
-            // Standard drop logic (Player + Buddies moving together)
             completeDrop(player, source, targetTeamId, buddies);
         }
     };
 
     // Update buddy pick map when a player's buddy pick field is edited
-    const updateBuddyPickMapForPlayer = (playerEmail, newBuddyPickValue) => {
-        // Build name→email lookup from all players (pool + teams)
-        const allPlayers = [...playerPool];
-        teams.forEach(team => {
-            allPlayers.push(...team.players);
-        });
 
-        const nameToEmail = {};
-        allPlayers.forEach(player => {
-            const fullName = `${player.firstName} ${player.lastName}`.toLowerCase().trim();
-            nameToEmail[fullName] = player.email;
-        });
-
-        // Parse new buddy pick value
-        const newBuddyEmails = [];
-        if (newBuddyPickValue && newBuddyPickValue.trim() !== '') {
-            const buddyNames = newBuddyPickValue.split(',').map(name => name.trim().toLowerCase());
-            buddyNames.forEach(name => {
-                const email = nameToEmail[name];
-                if (email) {
-                    newBuddyEmails.push(email);
-                }
-            });
-        }
-
-        // Update the buddy pick map
-        setBuddyPickMap(prev => {
-            const updated = { ...prev };
-
-            if (newBuddyEmails.length > 0) {
-                // Add or update the entry
-                updated[playerEmail] = newBuddyEmails;
-            } else {
-                // Remove the entry if no buddies
-                delete updated[playerEmail];
-            }
-
-            return updated;
-        });
-    };
 
     // Player field updates
-    const updatePlayerField = (playerEmail, field, value, source, teamId = null) => {
-        saveHistory(); // Save state before mutation
-
-        // If updating buddyPick field, update the buddy pick map
-        if (field === 'buddyPick') {
-            updateBuddyPickMapForPlayer(playerEmail, value);
-        }
-
-        if (source === 'pool') {
-            setPlayerPool(prev => prev.map(p =>
-                p.email === playerEmail ? { ...p, [field]: value } : p
-            ));
-        } else {
-            setTeams(prev => prev.map(t =>
-                t.id === teamId
-                    ? { ...t, players: t.players.map(p => p.email === playerEmail ? { ...p, [field]: value } : p) }
-                    : t
-            ));
-        }
+    const updatePlayerField = (playerEmail, field, value) => {
+        // The reducer applies the edit wherever the player is and rebuilds the buddy
+        // links, so the caller no longer has to say which list they came from.
+        dispatch({ type: ACTIONS.UPDATE_PLAYER, email: playerEmail, field, value });
     };
 
     // Calculate team statistics
@@ -1803,9 +1448,8 @@ const DraftDashboard = () => {
                         value={selectedSeasonId || ''}
                         onChange={(e) => {
                             const id = e.target.value ? Number(e.target.value) : null;
-                            setSelectedSeasonId(id);
                             const season = availableSeasons.find(s => s.id === id);
-                            setSeasonName(season ? season.name : '');
+                            dispatch({ type: ACTIONS.SET_SEASON, seasonId: id, seasonName: season ? season.name : '' });
                         }}
                         disabled={isLive || seasonsLoading}
                         style={{ minWidth: '200px' }}
@@ -1837,7 +1481,7 @@ const DraftDashboard = () => {
                     <select
                         className="draft-input"
                         value={teamCount}
-                        onChange={(e) => setTeamCount(e.target.value)}
+                        onChange={(e) => dispatch({ type: ACTIONS.SET_TEAM_COUNT, teamCount: e.target.value })}
                         disabled={isLive}
                     >
                         {[...Array(14)].map((_, i) => (
@@ -1912,17 +1556,17 @@ const DraftDashboard = () => {
                             <button
                                 className="btn-draft btn-undo"
                                 onClick={handleUndo}
-                                disabled={history.length === 0}
+                                disabled={historyDepth === 0}
                                 title="Undo last action"
                                 style={{
-                                    opacity: history.length === 0 ? 0.5 : 1,
-                                    cursor: history.length === 0 ? 'not-allowed' : 'pointer',
-                                    backgroundColor: history.length === 0 ? '#718096' : '#e53e3e',
+                                    opacity: historyDepth === 0 ? 0.5 : 1,
+                                    cursor: historyDepth === 0 ? 'not-allowed' : 'pointer',
+                                    backgroundColor: historyDepth === 0 ? '#718096' : '#e53e3e',
                                     color: 'white',
                                     marginLeft: '0.5rem'
                                 }}
                             >
-                                Undo {history.length > 0 && `(${history.length})`}
+                                Undo {historyDepth > 0 && `(${historyDepth})`}
                             </button>
                             {/* Export Button */}
                             <button
@@ -1933,7 +1577,22 @@ const DraftDashboard = () => {
                             >
                                 💾 Export CSV
                             </button>
-                            <button className="btn-draft btn-save" onClick={handleSaveDraft}>Save Draft</button>
+                            <span
+                                className="draft-save-state"
+                                data-state={autoSave.status}
+                                title="Changes save on their own. Use Save now if you want an explicit commit point."
+                                style={{
+                                    fontSize: '0.8rem',
+                                    whiteSpace: 'nowrap',
+                                    color: autoSave.status === SAVE_STATES.ERROR ? '#e08a8a' : '#9db9cd'
+                                }}
+                            >
+                                {saveStatusLabel(autoSave.status, autoSave.lastSavedAt)}
+                            </span>
+                            {autoSave.status === SAVE_STATES.ERROR && (
+                                <button className="btn-draft" onClick={() => autoSave.saveNow()}>Retry</button>
+                            )}
+                            <button className="btn-draft btn-save" onClick={handleSaveDraft}>Save now</button>
                             <button className="btn-draft btn-finalize" onClick={handleFinalizeDraft}>Finalize Draft</button>
                             <button
                                 className="btn-draft btn-reset"
