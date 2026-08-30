@@ -56,6 +56,35 @@ button {
   transition: border-color 0.25s;
 }
 
+/* App-wide button baseline.
+   These declarations lived in DraftDashboard.css as `.btn-draft, button` and leaked to the
+   whole app from there. They are relocated here verbatim because the app genuinely depends on
+   them now -- measured, not assumed: scoping them away without this block changes every button
+   on the admin shell (the sidebar items, the season picker, the footer link and the header
+   pills all shift height, radius, weight or display).
+
+   Two known debts, deliberately NOT fixed here so this stays a zero-visual-change commit:
+     * `border-radius: 4px !important` overrides components that set their own radius --
+       `.obi-side-item` wants 7px on its right edge and never gets it.
+     * This rule and the Vite-scaffold `button` rule above it are two competing baselines.
+   Reconcile both in their own change, where the visual diff can be reviewed on its merits. */
+button {
+  padding: 0.4rem 0.75rem;
+  border-radius: 4px !important;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: white;
+  white-space: nowrap;
+  font-size: 0.875rem;
+  height: 36px;
+  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 button:hover {
   border-color: #646cff;
 }
