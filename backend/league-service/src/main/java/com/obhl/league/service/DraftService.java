@@ -372,6 +372,13 @@ public class DraftService {
         if (rating > 10) rating = 10;
         map.put("skillRating", rating);
         map.put("isVeteran", dto.isVeteran());
+        // Carried onto players as of migration 059. These were previously dropped at
+        // finalize, so the season began with no record of who asked to play with whom,
+        // who the GMs were, or who volunteered to referee.
+        map.put("buddyPick", dto.getBuddyPick());
+        map.put("buddyEmail", dto.getBuddyEmail());
+        map.put("isGm", dto.isGm());
+        map.put("isRef", dto.isRef());
         map.put("seasonId", seasonId);
         map.put("teamId", teamId);
         map.put("isActive", true);

@@ -213,6 +213,14 @@ public class PlayerController {
                         existing.setHometown((String) updates.get("hometown"));
                     if (updates.containsKey("isActive"))
                         existing.setIsActive((Boolean) updates.get("isActive"));
+                    if (updates.containsKey("buddyPick"))
+                        existing.setBuddyPick((String) updates.get("buddyPick"));
+                    if (updates.containsKey("buddyEmail"))
+                        existing.setBuddyEmail((String) updates.get("buddyEmail"));
+                    if (updates.containsKey("isGm"))
+                        existing.setIsGm((Boolean) updates.get("isGm"));
+                    if (updates.containsKey("isRef"))
+                        existing.setIsRef((Boolean) updates.get("isRef"));
 
                     return ResponseEntity.ok(playerRepository.save(existing));
                 })

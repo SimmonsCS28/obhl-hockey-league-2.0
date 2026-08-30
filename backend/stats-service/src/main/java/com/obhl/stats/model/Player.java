@@ -103,6 +103,43 @@ public class Player {
     @Column(name = "draft_pick")
     private Integer draftPick;
 
+    /**
+     * Free-text, comma-separated names of the people this player asked to be placed with,
+     * carried through from the registration form by the draft (migration 059).
+     *
+     * <p>Privileged because it names other members: a public roster should not expose who
+     * asked to play with whom.
+     */
+    @Column(name = "buddy_pick")
+    @JsonView(Views.Privileged.class)
+    private String buddyPick;
+
+    /**
+     * Resolved email of a buddy pick, when the draft tool could match the free-text name to
+     * a real registrant. Privileged for the same reason as {@link #email}.
+     */
+    @Column(name = "buddy_email")
+    @JsonView(Views.Privileged.class)
+    private String buddyEmail;
+
+    /**
+     * Whether this player is a GM for their team this season (migration 059).
+     *
+     * <p>Deliberately has no @JsonView: who the GM is gets shown on public roster pages.
+     * Note teams.gm_id also exists but is overloaded — its migration documents it as a user
+     * account id while the league draft writes a players.id into it — so this is the
+     * reliable read path.
+     */
+    @Column(name = "is_gm")
+    private Boolean isGm = false;
+
+    /**
+     * Whether this player volunteered to referee this season. No @JsonView for the same
+     * reason as isGm — it is not sensitive.
+     */
+    @Column(name = "is_ref")
+    private Boolean isRef = false;
+
     public static final int TWO_GOAL_LIMIT_THRESHOLD = 9;
 
     /**
