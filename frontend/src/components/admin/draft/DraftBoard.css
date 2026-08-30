@@ -849,6 +849,19 @@
 .obi-draft-card.is-selected.is-match { border-color: var(--obi-text); background: rgba(246, 169, 28, 0.16); box-shadow: 0 0 0 2px var(--obi-text), inset 3px 0 0 0 var(--obi-accent); }
 .obi-draft-card.is-dragging { background: rgba(246, 169, 28, 0.07); box-shadow: 0 0 0 1px rgba(246, 169, 28, 0.4); }
 
+/* Keyboard focus. Deliberately an icy outline OUTSIDE the card rather than amber or white:
+   amber already means "selected" and paper-white already means "search match", and a third
+   meaning sharing either colour would be unreadable when they overlap. */
+.obi-draft-card:focus { outline: none; }
+.obi-draft-card:focus-visible {
+    outline: 2px solid var(--obi-icy);
+    outline-offset: 2px;
+}
+.obi-draft-root :focus-visible {
+    outline: 2px solid var(--obi-icy);
+    outline-offset: 1px;
+}
+
 @keyframes obi-draft-beacon {
     0% { box-shadow: 0 0 0 0 rgba(234, 238, 242, 0.55); }
     100% { box-shadow: 0 0 0 9px rgba(234, 238, 242, 0); }

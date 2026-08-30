@@ -93,14 +93,43 @@ export default function PlayerCard({
     const set = (field) => (e) => onFieldChange(player.email, field, e.target.value);
     const setInt = (field) => (e) => onFieldChange(player.email, field, parseInt(e.target.value, 10));
 
+    /**
+     * Keyboard equivalent of the drag. Arrows walk the list the card is already in, so the
+     * operator never has to tab through every roster to reach the next player; if this card
+     * was the selected one, the selection follows the focus, which is what the selection
+     * banner promises with "↑ ↓ to change player".
+     */
+    const onKeyDown = (e) => {
+        if (!isLive) return;
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onSelect(player.email);
+            return;
+        }
+        if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+        const sibling = e.key === 'ArrowDown'
+            ? e.currentTarget.nextElementSibling
+            : e.currentTarget.previousElementSibling;
+        if (!sibling || !sibling.classList.contains('obi-draft-card')) return;
+        e.preventDefault();
+        sibling.focus();
+        if (isSelected && sibling.dataset.email) onSelect(sibling.dataset.email);
+    };
+
     return (
         <div
             className={classes}
             style={{ padding: metrics.padding }}
             title={title}
+            data-email={player.email}
+            role={isLive ? 'button' : undefined}
+            tabIndex={isLive ? 0 : undefined}
+            aria-pressed={isLive ? isSelected : undefined}
+            aria-label={isLive ? `${player.firstName} ${player.lastName}, ${title}` : undefined}
             draggable={isLive}
             onDragStart={isLive ? (e) => onDragStart(e, player, source) : undefined}
             onClick={isLive ? () => onSelect(player.email) : undefined}
+            onKeyDown={onKeyDown}
             ref={(el) => registerRef && registerRef(player.email, el)}
         >
             {isOverview ? (

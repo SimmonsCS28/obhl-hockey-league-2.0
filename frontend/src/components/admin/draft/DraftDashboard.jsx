@@ -736,7 +736,11 @@ export default function DraftDashboard() {
             />
 
             {message && (
-                <div className={`obi-draft-msg is-${message.kind}`}>
+                <div
+                    className={`obi-draft-msg is-${message.kind}`}
+                    role={message.kind === 'error' ? 'alert' : 'status'}
+                    aria-live={message.kind === 'error' ? 'assertive' : 'polite'}
+                >
                     <span className="obi-draft-msg-kind">{message.kind}</span>
                     <span className="obi-draft-msg-text">{message.text}</span>
                     <button type="button" className="obi-draft-msg-x" onClick={() => setMessage(null)} aria-label="Dismiss">✕</button>
@@ -772,7 +776,7 @@ export default function DraftDashboard() {
             )}
 
             {selectedPlayer && (
-                <div className="obi-draft-selbar">
+                <div className="obi-draft-selbar" role="status" aria-live="polite">
                     <span className="obi-draft-selbar-tag">Assigning</span>
                     <span className="obi-draft-selbar-name">{selectedPlayer.firstName} {selectedPlayer.lastName}</span>
                     <span className="obi-draft-selbar-meta">
@@ -861,6 +865,7 @@ export default function DraftDashboard() {
                 <div className="obi-draft-boardwrap">
                     <div
                         className="obi-draft-board"
+                        aria-label={`Team board, ${teams.length} teams`}
                         style={{
                             overflowX: geometry.overflowX,
                             overflowY: geometry.overflowY,

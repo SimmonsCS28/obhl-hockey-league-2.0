@@ -164,8 +164,12 @@ export default function DraftToolbar({
             {/* ---- save state ---- */}
             <div className="obi-draft-bar-group">
                 <span className="obi-draft-save" data-state={saveStatus}>
-                    <span className="obi-draft-save-dot" />
-                    <span className="obi-draft-save-text">{saveStatusLabel(saveStatus, lastSavedAt)}</span>
+                    <span className="obi-draft-save-dot" aria-hidden="true" />
+                    {/* polite, not assertive: autosave chatter must never interrupt someone
+                        mid-sentence while they are drafting. */}
+                    <span className="obi-draft-save-text" role="status" aria-live="polite">
+                        {saveStatusLabel(saveStatus, lastSavedAt)}
+                    </span>
                     {saveStatus === SAVE_STATES.ERROR && (
                         <button type="button" className="obi-draft-save-retry" onClick={onRetry}>Retry</button>
                     )}
