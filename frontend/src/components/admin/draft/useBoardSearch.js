@@ -124,8 +124,12 @@ export function useBoardSearch({ playerPool, teams, density, cardSize, layout })
         }
 
         setMatchIndex(next);
-        // The DOM must reflect `next` before the card can be measured.
-        requestAnimationFrame(() => revealMatch(matches[next]));
+        // Scroll synchronously. This deliberately does NOT wait for the re-render behind a
+        // requestAnimationFrame: rAF is throttled in a backgrounded or occluded tab, so the
+        // callback can be deferred indefinitely and the board silently never moves (observed).
+        // Nothing here needs the new render anyway - every column and card is already mounted,
+        // and the match index only changes which one is highlighted.
+        revealMatch(matches[next]);
     }, [matches, layout, revealMatch]);
 
     const jumpToPlayer = useCallback((email) => {

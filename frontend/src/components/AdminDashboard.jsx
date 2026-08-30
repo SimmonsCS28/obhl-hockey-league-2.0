@@ -4,7 +4,7 @@ import AdminAssignments from './admin/AdminAssignments';
 import AdminStandings from './admin/AdminStandings';
 import GameManagementAdmin from './admin/GameManagementAdmin';
 import AdminLayout from './AdminLayout';
-import DraftDashboard from './DraftDashboard';
+import DraftDashboard from './admin/draft/DraftDashboard';
 import PlayerManagement from './PlayerManagement';
 import ScorekeeperContent from './ScorekeeperContent';
 import SeasonManagement from './SeasonManagement';

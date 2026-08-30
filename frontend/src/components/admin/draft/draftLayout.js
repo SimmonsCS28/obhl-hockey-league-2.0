@@ -132,6 +132,30 @@ export function badgeCap(density, colW) {
 export const dotCap = (density) => (density === DENSITY.OVERVIEW ? 1 : 2);
 
 /**
+ * The twelve jersey colours, as raw hex.
+ *
+ * These are real jersey colours, not a palette: the operator picks "Red" because that team
+ * wears red. They cannot be remapped to tokens, which is why jerseyHeader() exists - the
+ * discipline comes from how they are rendered, not from changing which colours exist.
+ */
+export const TEAM_COLORS = {
+    White: '#f0f0f0',
+    Teal: '#007a7a',
+    Blue: '#0100fe',
+    Red: '#fb0102',
+    'Lt. Blue': '#5e9ed6',
+    Tan: '#b8956f',
+    Purple: '#9a00ff',
+    Orange: '#fd9a01',
+    Black: '#000000',
+    Gray: '#666666',
+    Maroon: '#a64d79',
+    Green: '#39751f'
+};
+
+export const TEAM_COLOR_NAMES = Object.keys(TEAM_COLORS);
+
+/**
  * Relative luminance, used to decide whether a jersey colour needs dark or light text.
  * The 12 team colours are real jersey colours and cannot be remapped, so the discipline
  * has to come from how they are rendered.
