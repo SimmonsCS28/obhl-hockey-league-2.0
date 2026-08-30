@@ -81,9 +81,14 @@
     gap: 0.5rem;
 }
 
-/* Buttons */
-.btn-draft,
-button {
+/* Buttons -- scoped to the draft tool.
+   This was `.btn-draft, button` for a long time, a bare tag selector that restyled every
+   button in the entire application whenever the admin bundle loaded (the CSS ships as one
+   global stylesheet, so that was always). At least nine other components grew defensive
+   overrides against it. The declarations the rest of the app actually depends on now live
+   in index.css as an explicit baseline; this copy governs the draft tool only. */
+.draft-dashboard button,
+.btn-draft {
     padding: 0.4rem 0.75rem;
     border-radius: 4px !important;
     border: none;
