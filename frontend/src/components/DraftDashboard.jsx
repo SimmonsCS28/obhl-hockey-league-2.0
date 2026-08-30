@@ -2,6 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useBlocker } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import DraftService from '../services/DraftService';
+import { buildBuddyPickMap as buildBuddyPickMapPure } from './admin/draft/buddyGraph';
+import {
+    calculateTeamStats as calculateTeamStatsPure,
+    getSortedTeamPlayers as getSortedTeamPlayersPure,
+    getFilteredPlayers as getFilteredPlayersPure
+} from './admin/draft/draftSelectors';
 import './DraftDashboard.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL?.replace('/api/v1', '/api') || '/api';
@@ -377,80 +383,28 @@ const DraftDashboard = () => {
 
     // Build buddy pick map from player data
     const buildBuddyPickMap = (players, teamsData = null) => {
-        // Collect all players from pool AND teams
-        const allPlayers = [...players];
-        if (teamsData) {
-            teamsData.forEach(team => {
-                if (team.players) {
-                    allPlayers.push(...team.players);
-                }
-            });
-        }
-
-        // First, build a name→email lookup map (case-insensitive)
-        const nameToEmail = {};
-        allPlayers.forEach(player => {
-            const fullName = `${player.firstName} ${player.lastName}`.toLowerCase().trim();
-            nameToEmail[fullName] = player.email;
-        });
-
-        // Now build email→buddy emails map
-        const buddyMap = {};
-        allPlayers.forEach(player => {
-            if (player.buddyPick && player.buddyPick.trim() !== '') {
-                // Split by comma and trim each buddy name
-                const buddyNames = player.buddyPick.split(',').map(name => name.trim().toLowerCase());
-
-                // Resolve buddy names to emails
-                const buddyEmails = buddyNames
-                    .map(name => nameToEmail[name])
-                    .filter(email => email !== undefined); // Remove unmatched names
-
-                if (buddyEmails.length > 0) {
-                    buddyMap[player.email] = buddyEmails;
-                }
-            }
-        });
-
-        setBuddyPickMap(buddyMap);
+        setBuddyPickMap(buildBuddyPickMapPure(players, teamsData));
     };
 
     // Handlers
-    const handleFileUpload = async (e, type) => {
+    const handleFileUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
         try {
-            if (type === 'registration') {
-                const players = await DraftService.importRegistration(file);
-                
-                setPlayerPool(players);
-                buildBuddyPickMap(players);
-                setWarning('');
+            const players = await DraftService.importRegistration(file);
 
-                const matches = players.filter(p => p.potentialMatchFound);
-                if (matches.length > 0) {
-                    // Initialize adoptRating to true by default
-                    setPotentialMatches(matches.map(m => ({ ...m, adoptRating: true })));
-                    setShowPotentialMatchesModal(true);
-                } else {
-                    checkMissingVeterans(players);
-                }
-            } else if (type === 'draft') {
-                const state = await DraftService.loadDraftState(file);
-                setSeasonName(state.seasonName);
-                setTeamCount(state.teamCount);
-                setPlayerPool(state.playerPool);
-                setTeams(state.teams);
-                setIsLive(state.isLive);
-                setTeamColors(state.teamColors || {});
-                setTeamSortOptions(state.teamSortOptions || {});
-                setViewMode(state.viewMode || 'balanced');
+            setPlayerPool(players);
+            buildBuddyPickMap(players);
+            setWarning('');
 
-                // Build buddy pick map from both pool and teams
-                buildBuddyPickMap(state.playerPool || [], state.teams || []);
-
-                setWarning('');
+            const matches = players.filter(p => p.potentialMatchFound);
+            if (matches.length > 0) {
+                // Initialize adoptRating to true by default
+                setPotentialMatches(matches.map(m => ({ ...m, adoptRating: true })));
+                setShowPotentialMatchesModal(true);
+            } else {
+                checkMissingVeterans(players);
             }
         } catch (error) {
             setWarning(`Upload failed: ${error.message}`);
@@ -1498,122 +1452,14 @@ const DraftDashboard = () => {
     };
 
     // Calculate team statistics
-    const calculateTeamStats = (players) => {
-        if (players.length === 0) return { forwards: 0, defense: 0, avgF: 0, avgD: 0, total: 0, avg: 0 };
-
-        const forwards = players.filter(p => p.position === 'Forward');
-        const defense = players.filter(p => p.position === 'Defense');
-
-        const avgF = forwards.length > 0
-            ? (forwards.reduce((sum, p) => sum + (p.skillRating || 0), 0) / forwards.length).toFixed(1)
-            : 0;
-        const avgD = defense.length > 0
-            ? (defense.reduce((sum, p) => sum + (p.skillRating || 0), 0) / defense.length).toFixed(1)
-            : 0;
-        const total = players.reduce((sum, p) => sum + (p.skillRating || 0), 0);
-        const avg = (total / players.length).toFixed(1);
-
-        return {
-            forwards: forwards.length,
-            defense: defense.length,
-            avgF,
-            avgD,
-            total,
-            avg
-        };
-    };
+    const calculateTeamStats = (players) => calculateTeamStatsPure(players);
 
     // Sort team players
-    const getSortedTeamPlayers = (players, sortOption) => {
-        const sorted = [...players];
-
-        // Helper to handle GM prioritization
-        const compareWithGMPriority = (a, b, normalCompare) => {
-            // GMs always come first
-            if (a.isGm && !b.isGm) return -1;
-            if (!a.isGm && b.isGm) return 1;
-            // Valid comparison if neither or both are GMs
-            return normalCompare(a, b);
-        };
-
-        switch (sortOption) {
-            case 'Rating: High to Low':
-                return sorted.sort((a, b) => compareWithGMPriority(a, b, (p1, p2) => (p2.skillRating || 0) - (p1.skillRating || 0)));
-            case 'Rating: Low to High':
-                return sorted.sort((a, b) => compareWithGMPriority(a, b, (p1, p2) => (p1.skillRating || 0) - (p2.skillRating || 0)));
-            case 'Position':
-                return sorted.sort((a, b) => compareWithGMPriority(a, b, (p1, p2) => p1.position.localeCompare(p2.position)));
-            case 'Position + Rating':
-                return sorted.sort((a, b) => compareWithGMPriority(a, b, (p1, p2) => {
-                    if (p1.position !== p2.position) return p1.position.localeCompare(p2.position);
-                    return (p2.skillRating || 0) - (p1.skillRating || 0);
-                }));
-            default:
-                // Even for default sort, prioritize GMs
-                return sorted.sort((a, b) => {
-                    if (a.isGm && !b.isGm) return -1;
-                    if (!a.isGm && b.isGm) return 1;
-                    return 0;
-                });
-        }
-    };
+    const getSortedTeamPlayers = (players, sortOption) => getSortedTeamPlayersPure(players, sortOption);
 
     // Filtering & Sorting Logic for Player Pool
-    const getFilteredPlayers = () => {
-        let filtered = [...playerPool];
-
-        // Search text filtering
-        if (searchQuery.trim()) {
-            const query = searchQuery.toLowerCase().trim();
-            filtered = filtered.filter(p =>
-                (p.firstName && p.firstName.toLowerCase().includes(query)) ||
-                (p.lastName && p.lastName.toLowerCase().includes(query))
-            );
-        }
-
-        switch (filter) {
-            case 'Forwards':
-                filtered = filtered.filter(p => p.position === 'Forward');
-                break;
-            case 'Defense':
-                filtered = filtered.filter(p => p.position === 'Defense');
-                break;
-            case 'Refs':
-                filtered = filtered.filter(p => p.isRef);
-                break;
-            case 'GMs':
-                filtered = filtered.filter(p => p.isGm);
-                break;
-            case 'Has Buddy':
-                filtered = filtered.filter(p => p.buddyPick);
-                break;
-            default:
-                break;
-        }
-
-        filtered.sort((a, b) => {
-            let comparison = 0;
-            switch (sortOption) {
-                case 'Name':
-                    comparison = `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
-                    break;
-                case 'Position':
-                    comparison = a.position.localeCompare(b.position);
-                    break;
-                case 'Skill':
-                    comparison = (a.skillRating || 0) - (b.skillRating || 0);
-                    break;
-                case 'Veteran':
-                    comparison = (b.isVeteran ? 1 : 0) - (a.isVeteran ? 1 : 0);
-                    break;
-                default:
-                    break;
-            }
-            return sortAsc ? comparison : -comparison;
-        });
-
-        return filtered;
-    };
+    const getFilteredPlayers = () =>
+        getFilteredPlayersPure(playerPool, { searchQuery, filter, sortOption, sortAsc });
 
     // Check if ready to start draft
     const isReadyToStart = () => {
@@ -2129,7 +1975,7 @@ const DraftDashboard = () => {
                     <div className="menu-section">
                         <label className="btn-draft btn-secondary">
                             Upload File
-                            <input type="file" hidden accept=".xlsx" onChange={(e) => handleFileUpload(e, 'registration')} disabled={isLive} />
+                            <input type="file" hidden accept=".xlsx" onChange={handleFileUpload} disabled={isLive} />
                         </label>
                         <button className="btn-draft btn-secondary" onClick={handleDownloadTemplate}>Download Template</button>
                     </div>

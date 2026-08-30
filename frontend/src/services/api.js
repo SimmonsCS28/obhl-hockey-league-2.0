@@ -15,7 +15,10 @@ const getAuthHeaders = () => {
 // the public pages currently do.
 export const request = async (url, options = {}) => {
     // List prefixes that shouldn't be prepended with API_BASE_URL
-    const PROXY_PREFIXES = ['/games-api', '/stats-api'];
+    // '/api/league' is the gateway's league-service proxy (draft save/load/finalize and
+    // the registration import). Like the games/stats proxies it is already a full path,
+    // so it must not have the /api/v1 prefix prepended.
+    const PROXY_PREFIXES = ['/games-api', '/stats-api', '/api/league'];
     const isProxyPath = PROXY_PREFIXES.some(prefix => url.startsWith(prefix));
 
     const fullUrl = url.startsWith('http') 

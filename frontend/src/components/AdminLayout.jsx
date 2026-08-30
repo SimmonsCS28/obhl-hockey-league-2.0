@@ -20,7 +20,7 @@ const NAV = [
     { id: 'seasons', label: 'Seasons' },
     { id: 'teams', label: 'Teams' },
     { id: 'players', label: 'Players' },
-    { id: 'draft', label: 'Draft Tool', badge: true },
+    { id: 'draft', label: 'Draft Tool' },
     { group: 'People' },
     { id: 'users', label: 'Users & Roles' },
     { id: 'announcements', label: 'Announcements' },
