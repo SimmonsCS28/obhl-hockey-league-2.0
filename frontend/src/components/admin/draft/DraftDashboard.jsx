@@ -20,6 +20,7 @@ import {
 } from './draftLayout';
 import { getFilteredPlayers } from './draftSelectors';
 import { transitiveBuddyEmails, isReciprocal } from './buddyGraph';
+import { loadViewPrefs, saveViewPrefs } from './draftViewPrefs';
 
 import DraftToolbar from './DraftToolbar';
 import TeamColumn from './TeamColumn';
@@ -46,16 +47,21 @@ export default function DraftDashboard() {
     } = doc;
     const undoDepth = boardState.past.length;
 
-    // ---- session state: how the board is being looked at. Never undone, never saved. ----
-    const [density, setDensity] = useState(DENSITY.BALANCED);
-    const [cardSize, setCardSize] = useState(CARD_SIZE.M);
-    const [layout, setLayout] = useState(LAYOUT.ROWS);
-    const [perRow, setPerRow] = useState(5);
-    const [gridRosters, setGridRosters] = useState(GRID_ROSTERS.FULL);
-    const [poolOpen, setPoolOpen] = useState(true);
-    const [poolFilter, setPoolFilter] = useState('All');
-    const [poolSort, setPoolSort] = useState('Name');
-    const [sortAsc, setSortAsc] = useState(true);
+    // ---- session state: how the board is being looked at. ----
+    //
+    // Never undone - undoing a roster move must not move the view out from under the
+    // operator - but DO remembered between visits, so resuming a draft comes back looking
+    // the way it was left instead of resetting to defaults every time.
+    const savedView = useRef(loadViewPrefs()).current;
+    const [density, setDensity] = useState(savedView.density);
+    const [cardSize, setCardSize] = useState(savedView.cardSize);
+    const [layout, setLayout] = useState(savedView.layout);
+    const [perRow, setPerRow] = useState(savedView.perRow);
+    const [gridRosters, setGridRosters] = useState(savedView.gridRosters);
+    const [poolOpen, setPoolOpen] = useState(savedView.poolOpen);
+    const [poolFilter, setPoolFilter] = useState(savedView.poolFilter);
+    const [poolSort, setPoolSort] = useState(savedView.poolSort);
+    const [sortAsc, setSortAsc] = useState(savedView.sortAsc);
     const [selectedEmail, setSelectedEmail] = useState(null);
     const [draggingEmail, setDraggingEmail] = useState(null);
     const [dropTarget, setDropTarget] = useState(null);
@@ -115,6 +121,13 @@ export default function DraftDashboard() {
         window.addEventListener('beforeunload', onBeforeUnload);
         return () => window.removeEventListener('beforeunload', onBeforeUnload);
     }, [autoSave.isDirty]);
+
+    useEffect(() => {
+        saveViewPrefs({
+            density, cardSize, layout, perRow, gridRosters,
+            poolOpen, poolFilter, poolSort, sortAsc
+        });
+    }, [density, cardSize, layout, perRow, gridRosters, poolOpen, poolFilter, poolSort, sortAsc]);
 
     // Success and info fade; errors stay until dismissed or replaced.
     useEffect(() => {
