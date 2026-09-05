@@ -109,6 +109,32 @@
 }
 .obi-draft-btn.is-accent:hover:not(:disabled) { background: rgba(246, 169, 28, 0.18); }
 
+/* A reserved slot, not a feature. Dashed and quiet so it reads as a placeholder rather
+   than something that works - it is a note-to-self about what comes next, sitting in the
+   tool where the work will happen. */
+.obi-draft-btn.is-reserved {
+    background: none;
+    border: 1px dashed rgba(157, 185, 205, 0.35);
+    color: var(--obi-text-dim);
+    font-weight: 700;
+}
+.obi-draft-btn.is-reserved:hover:not(:disabled) {
+    color: var(--obi-text-muted);
+    border-color: rgba(157, 185, 205, 0.55);
+}
+.obi-draft-soon {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 8.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: rgba(157, 185, 205, 0.12);
+    border: 1px solid rgba(157, 185, 205, 0.28);
+    color: var(--obi-icy);
+}
+
 .obi-draft-input,
 .obi-draft-select {
     background: var(--obi-bg-card);

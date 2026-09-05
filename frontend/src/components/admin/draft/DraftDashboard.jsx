@@ -831,6 +831,7 @@ export default function DraftDashboard() {
                 onUndo={() => { dispatch({ type: 'UNDO' }); say('info', 'Action undone.'); }}
                 undoDepth={undoDepth}
                 onExport={exportCsv}
+                onAutoDraft={() => say('info', 'Auto-draft isn’t built yet — this is a placeholder for filling the board automatically.')}
                 onFinalize={startFinalize}
                 saveStatus={autoSave.status}
                 lastSavedAt={autoSave.lastSavedAt}

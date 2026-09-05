@@ -48,7 +48,7 @@ export default function DraftToolbar({
     phase, seasons, seasonId, seasonsLoading, onSeasonChange, onCreateSeason,
     teamCount, onTeamCount, onUpload, onTemplate, onStart, startDisabled, startHint, ready,
     onAssignGMs, onAssignBuddies, showAssignGMs, showAssignBuddies,
-    onUndo, undoDepth, onExport, onFinalize,
+    onUndo, undoDepth, onExport, onAutoDraft, onFinalize,
     saveStatus, lastSavedAt, onSaveNow, onRetry,
     density, onDensity, cardSize, onCardSize, layout, onLayout,
     perRow, onPerRow, gridRosters, onGridRosters,
@@ -211,6 +211,17 @@ export default function DraftToolbar({
                         ↩ Undo {undoDepth > 0 ? `(${undoDepth})` : ''}
                     </button>
                     <button type="button" className="obi-draft-btn is-quiet" onClick={onExport}>Export CSV</button>
+                    {/* Reserved slot. Sits after Export CSV because it would be a batch
+                        action on the whole board, not a per-pick one. */}
+                    <button
+                        type="button"
+                        className="obi-draft-btn is-reserved"
+                        onClick={onAutoDraft}
+                        title="Not built yet — a placeholder for filling the board automatically"
+                    >
+                        Auto-draft
+                        <span className="obi-draft-soon">Soon</span>
+                    </button>
                 </div>
             )}
 
