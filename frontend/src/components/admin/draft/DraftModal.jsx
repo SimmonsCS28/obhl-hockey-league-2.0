@@ -24,6 +24,16 @@ export default function DraftModal({
     const panelRef = useRef(null);
     const returnFocusRef = useRef(null);
 
+    // onClose is read through a ref so the setup effect can run ONCE.
+    //
+    // It used to depend on [onClose], and every caller passes an inline arrow, so the
+    // identity changed on every render - which meant every keystroke in a modal input tore
+    // the effect down and re-ran it, re-focusing the first focusable element. Typing one
+    // character into the season name threw focus onto the ✕ button and you could not type a
+    // second. Mount-once setup plus a ref is what keeps focus where the operator put it.
+    const onCloseRef = useRef(onClose);
+    useEffect(() => { onCloseRef.current = onClose; });
+
     useEffect(() => {
         returnFocusRef.current = document.activeElement;
         const previousOverflow = document.body.style.overflow;
@@ -34,13 +44,20 @@ export default function DraftModal({
             panel ? panel.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])') : []
         ).filter(el => !el.disabled && el.offsetParent !== null);
 
-        const first = focusables()[0];
-        if (first) first.focus();
+        // Prefer the first control in the BODY. The first focusable overall is the ✕, and
+        // opening a dialog with focus parked on "close" is a poor place to start.
+        const body = panel ? panel.querySelector('.obi-draft-modal-body') : null;
+        const bodyFirst = body
+            ? Array.from(body.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'))
+                .find(el => !el.disabled && el.offsetParent !== null)
+            : null;
+        const target = bodyFirst || focusables()[0];
+        if (target) target.focus();
 
         const onKeyDown = (e) => {
             if (e.key === 'Escape') {
                 e.stopPropagation();
-                onClose();
+                onCloseRef.current();
                 return;
             }
             if (e.key !== 'Tab') return;
@@ -64,7 +81,8 @@ export default function DraftModal({
             const back = returnFocusRef.current;
             if (back && typeof back.focus === 'function') back.focus();
         };
-    }, [onClose]);
+        // Mount-once on purpose: see the note on onCloseRef above.
+    }, []);
 
     return (
         <div
