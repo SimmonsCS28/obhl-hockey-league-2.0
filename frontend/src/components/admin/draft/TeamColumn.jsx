@@ -68,7 +68,11 @@ export default function TeamColumn({
             >
                 <input
                     className="obi-draft-col-name"
-                    style={{ color: header.foreground, textShadow: header.nameShadow }}
+                    style={{
+                        color: header.foreground,
+                        textShadow: header.nameShadow,
+                        fontSize: metrics.nameSize
+                    }}
                     value={team.name}
                     onChange={(e) => onRename(team.id, e.target.value)}
                     title="Click to rename"
@@ -79,7 +83,13 @@ export default function TeamColumn({
                         {matchCount} ⌕
                     </span>
                 )}
-                <span className="obi-draft-col-size" style={{ color: header.foreground }}>{balance.size}</span>
+                <span
+                    className="obi-draft-col-size"
+                    style={{ color: header.foreground, fontSize: metrics.skillSize }}
+                    title={`${balance.size} player${balance.size === 1 ? '' : 's'} on this team`}
+                >
+                    {balance.size}
+                </span>
             </div>
 
             {showMeta && (

@@ -678,11 +678,15 @@
     font-family: var(--obi-font-display);
     font-weight: 900;
     font-style: italic;
-    font-size: 14.5px;
+    /* Size is set inline from the same metrics the player cards use, so the header
+       tracks card size instead of sitting at a fixed 14.5px. */
     letter-spacing: 0.3px;
     padding: 0;
 }
-.obi-draft-col-size { flex: none; font-family: var(--obi-font-display); font-weight: 900; font-size: 13px; opacity: 0.75; }
+/* The roster count matches the cards' skill size, at full strength. It used to be 13px
+   at 0.75 opacity, which made the one number summarising the column the faintest thing
+   on it - and on a black jersey header, genuinely hard to read. */
+.obi-draft-col-size { flex: none; font-family: var(--obi-font-display); font-weight: 900; }
 /* Paper-white so it reads on every one of the 12 jersey colours. */
 .obi-draft-col-matches {
     flex: none;
