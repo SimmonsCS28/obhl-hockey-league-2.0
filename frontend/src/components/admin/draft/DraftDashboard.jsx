@@ -21,6 +21,10 @@ import {
 import { getFilteredPlayers } from './draftSelectors';
 import { transitiveBuddyEmails, isReciprocal } from './buddyGraph';
 import { loadViewPrefs, saveViewPrefs } from './draftViewPrefs';
+import {
+    DIRECTION, ORDER_AXES, ORDER_AXIS, axisById, desiredOrder, directionLabel,
+    directionSentence, outOfPlaceCount, rankDeltas, reorderMessage
+} from './draftOrder';
 
 import DraftToolbar from './DraftToolbar';
 import TeamColumn from './TeamColumn';
@@ -62,6 +66,15 @@ export default function DraftDashboard() {
     const [poolFilter, setPoolFilter] = useState(savedView.poolFilter);
     const [poolSort, setPoolSort] = useState(savedView.poolSort);
     const [sortAsc, setSortAsc] = useState(savedView.sortAsc);
+    const [orderAxis, setOrderAxis] = useState(savedView.orderAxis);
+    const [orderDirections, setOrderDirections] = useState(savedView.orderDirections);
+    const [autoReorder, setAutoReorder] = useState(savedView.autoReorder);
+    // Columns that actually moved in the last re-order, ringed briefly so the movement is
+    // legible instead of surprising.
+    const [justMoved, setJustMoved] = useState([]);
+    // Set by batch actions (Assign GMs, GM buddies) so the re-order runs against the board
+    // as it is AFTER the dispatch, not the stale one in this render.
+    const [pendingBatchReorder, setPendingBatchReorder] = useState(false);
     const [selectedEmail, setSelectedEmail] = useState(null);
     const [draggingEmail, setDraggingEmail] = useState(null);
     const [dropTarget, setDropTarget] = useState(null);
@@ -125,9 +138,11 @@ export default function DraftDashboard() {
     useEffect(() => {
         saveViewPrefs({
             density, cardSize, layout, perRow, gridRosters,
-            poolOpen, poolFilter, poolSort, sortAsc
+            poolOpen, poolFilter, poolSort, sortAsc,
+            orderAxis, orderDirections, autoReorder
         });
-    }, [density, cardSize, layout, perRow, gridRosters, poolOpen, poolFilter, poolSort, sortAsc]);
+    }, [density, cardSize, layout, perRow, gridRosters, poolOpen, poolFilter, poolSort, sortAsc,
+        orderAxis, orderDirections, autoReorder]);
 
     // Success and info fade; errors stay until dismissed or replaced.
     useEffect(() => {
@@ -169,6 +184,88 @@ export default function DraftDashboard() {
         balance.perTeam.forEach(entry => { map[entry.team.id] = entry.balance; });
         return map;
     }, [balance]);
+
+    // ---- column order ----
+    //
+    // desired is what the axis says; the board only catches up at deliberate moments. The
+    // gap between them is what the strip counts and the headers report.
+    const orderDirection = orderDirections[orderAxis] || axisById(orderAxis).defaultDirection;
+    const desiredIds = useMemo(
+        () => desiredOrder(teams, orderAxis, orderDirection),
+        [teams, orderAxis, orderDirection]
+    );
+    const deltas = useMemo(() => rankDeltas(teams, desiredIds), [teams, desiredIds]);
+    const pendingCount = outOfPlaceCount(deltas);
+
+    const applyReorder = useCallback((announce = true) => {
+        const moved = Object.keys(deltas).map(Number);
+        if (moved.length === 0) {
+            if (announce) say('info', reorderMessage(orderAxis, orderDirection, 0));
+            return;
+        }
+        dispatch({ type: ACTIONS.REORDER_TEAMS, orderedIds: desiredIds });
+        setJustMoved(moved);
+        if (announce) say('success', reorderMessage(orderAxis, orderDirection, moved.length));
+    }, [deltas, desiredIds, orderAxis, orderDirection, say]);
+
+    // Auto re-order settles the board AFTER the interaction finishes - never during a
+    // drag and never while a card is selected, because the whole point is that a column
+    // must not move out from under the operator's hand. The delay lets the drop land.
+    useEffect(() => {
+        if (!autoReorder || !isLive) return undefined;
+        if (orderAxis === ORDER_AXIS.FIXED) return undefined;
+        if (draggingEmail || selectedEmail) return undefined;
+        if (pendingCount === 0) return undefined;
+        const t = setTimeout(() => applyReorder(false), 700);
+        return () => clearTimeout(t);
+    }, [autoReorder, isLive, orderAxis, draggingEmail, selectedEmail, pendingCount, applyReorder]);
+
+    useEffect(() => {
+        if (!pendingBatchReorder) return;
+        setPendingBatchReorder(false);
+        if (orderAxis !== ORDER_AXIS.FIXED) applyReorder(true);
+    }, [pendingBatchReorder, orderAxis, applyReorder]);
+
+    // Clear the "just moved" rings once the animation has run its course.
+    useEffect(() => {
+        if (justMoved.length === 0) return undefined;
+        const t = setTimeout(() => setJustMoved([]), 1900);
+        return () => clearTimeout(t);
+    }, [justMoved]);
+
+    const chooseAxis = (axisId) => {
+        setOrderAxis(axisId);
+        // Auto follows the axis: on for skill (the long-standing behaviour), off for the
+        // others, which would otherwise move columns mid-pick for reasons nobody asked for.
+        const auto = axisById(axisId).autoByDefault;
+        setAutoReorder(auto);
+        const next = desiredOrder(teams, axisId, orderDirections[axisId] || axisById(axisId).defaultDirection);
+        const moved = Object.keys(rankDeltas(teams, next)).map(Number);
+        if (moved.length > 0) {
+            dispatch({ type: ACTIONS.REORDER_TEAMS, orderedIds: next });
+            setJustMoved(moved);
+        }
+        if (axisId === ORDER_AXIS.FIXED) {
+            say('info', 'Columns are fixed in setup order and will not move.');
+        } else if (auto) {
+            say('info', `Ordered by ${directionSentence(axisId, orderDirections[axisId] || axisById(axisId).defaultDirection)}. The board keeps this order as you pick.`);
+        } else {
+            say('info', `Ordered by ${directionSentence(axisId, orderDirections[axisId] || axisById(axisId).defaultDirection)}. Columns will stay put from here — the strip counts how many are out of place, and Re-order now moves them when you're ready.`);
+        }
+    };
+
+    const flipDirection = () => {
+        const next = orderDirection === DIRECTION.ASC ? DIRECTION.DESC : DIRECTION.ASC;
+        const directions = { ...orderDirections, [orderAxis]: next };
+        setOrderDirections(directions);
+        const ids = desiredOrder(teams, orderAxis, next);
+        const moved = Object.keys(rankDeltas(teams, ids)).map(Number);
+        if (moved.length > 0) {
+            dispatch({ type: ACTIONS.REORDER_TEAMS, orderedIds: ids });
+            setJustMoved(moved);
+        }
+        say('info', `Ordered by ${directionSentence(orderAxis, next)}.`);
+    };
 
     const filteredPool = useMemo(() => {
         const base = getFilteredPlayers(playerPool, {
@@ -375,7 +472,10 @@ export default function DraftDashboard() {
         }
         const shuffled = [...available].sort(() => Math.random() - 0.5);
         dispatch({ type: ACTIONS.ASSIGN_GMS, gms: shuffled });
-        say('info', `Assigned ${without.length} GMs. The columns moved on purpose — the board re-sorts by average skill.`);
+        // A deliberate batch action, so it re-orders on whatever axis is current and
+        // announces it rather than letting the columns move silently.
+        setPendingBatchReorder(true);
+        say('info', `Assigned ${without.length} GMs.`);
     };
 
     const assignGMBuddies = () => {
@@ -762,29 +862,100 @@ export default function DraftDashboard() {
 
             {isLive && (
                 <div className="obi-draft-strip">
-                    <span className="obi-draft-eyebrow">Board balance</span>
-                    {balance.chips.map(chip => (
-                        <button
-                            key={chip.axis}
-                            type="button"
-                            className={`obi-draft-chip ${chip.band === 'ok' ? '' : `is-${chip.band}`}`}
-                            title={chip.title}
-                            disabled={!chip.teamId}
-                            onClick={() => {
-                                if (!chip.teamId) return;
-                                const el = search.columnRefs.current[chip.teamId];
-                                const board = search.boardRef.current;
-                                if (!el || !board) return;
-                                const cr = el.getBoundingClientRect();
-                                const br = board.getBoundingClientRect();
-                                if (layout === LAYOUT.GRID) board.scrollTop += (cr.top - br.top) - 24;
-                                else board.scrollLeft += (cr.left - br.left) - 24;
-                            }}
-                        >
-                            <span className="obi-draft-chip-axis">{chip.axis}</span>
-                            <span className="obi-draft-chip-text">{chip.text}</span>
-                        </button>
-                    ))}
+                    <span className="obi-draft-eyebrow">Board balance · order by</span>
+                    {ORDER_AXES.map(axis => {
+                        const active = axis.id === orderAxis;
+                        const chip = balance.chips.find(c => c.axisId === axis.id);
+                        const flagged = chip && chip.band !== 'ok';
+                        return (
+                            <span key={axis.id} style={{ display: 'flex', flex: 'none' }}>
+                                <button
+                                    type="button"
+                                    className={`obi-draft-chip ${active ? 'is-active' : flagged ? `is-${chip.band}` : ''}`}
+                                    title={active
+                                        ? `Ordering columns by ${axis.label.toLowerCase()}`
+                                        : `Order the columns by ${axis.label.toLowerCase()}`}
+                                    aria-pressed={active}
+                                    onClick={() => chooseAxis(axis.id)}
+                                >
+                                    <span className="obi-draft-chip-axis">{axis.label}</span>
+                                    {chip && <span className="obi-draft-chip-text">{chip.text}</span>}
+                                    {axis.id === ORDER_AXIS.FIXED && !chip && (
+                                        <span className="obi-draft-chip-text">as set up</span>
+                                    )}
+                                    {active && axis.id !== ORDER_AXIS.FIXED && (
+                                        <span
+                                            className="obi-draft-chip-dir"
+                                            role="button"
+                                            tabIndex={0}
+                                            title="Flip the direction"
+                                            onClick={(e) => { e.stopPropagation(); flipDirection(); }}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                    e.preventDefault(); e.stopPropagation(); flipDirection();
+                                                }
+                                            }}
+                                        >
+                                            {orderDirection === DIRECTION.ASC ? '↑' : '↓'} {directionLabel(orderAxis, orderDirection)}
+                                        </span>
+                                    )}
+                                </button>
+                                {/* The jump only exists on an axis you are NOT ordering by:
+                                    order by it and the worst offender is column one, so a
+                                    jump would go nowhere. */}
+                                {!active && flagged && chip.teamId && (
+                                    <button
+                                        type="button"
+                                        className="obi-draft-chip-jump"
+                                        title={chip.title}
+                                        aria-label={`Jump to ${chip.title}`}
+                                        onClick={() => {
+                                            const el = search.columnRefs.current[chip.teamId];
+                                            const board = search.boardRef.current;
+                                            if (!el || !board) return;
+                                            const cr = el.getBoundingClientRect();
+                                            const br = board.getBoundingClientRect();
+                                            if (layout === LAYOUT.GRID) board.scrollTop += (cr.top - br.top) - 24;
+                                            else board.scrollLeft += (cr.left - br.left) - 24;
+                                        }}
+                                    >
+                                        →
+                                    </button>
+                                )}
+                            </span>
+                        );
+                    })}
+
+                    {orderAxis !== ORDER_AXIS.FIXED && (
+                        <span className="obi-draft-strip-end">
+                            {pendingCount > 0 ? (
+                                <button type="button" className="obi-draft-reorder" onClick={() => applyReorder(true)}>
+                                    ⇄ Re-order now · {pendingCount} column{pendingCount === 1 ? '' : 's'} out of place
+                                </button>
+                            ) : (
+                                <span className="obi-draft-strip-state">Columns in order</span>
+                            )}
+                            <button
+                                type="button"
+                                className={`obi-draft-auto ${autoReorder ? 'is-on' : ''}`}
+                                aria-pressed={autoReorder}
+                                title={autoReorder
+                                    ? 'The board re-orders itself as you pick. Click to stop it.'
+                                    : 'Columns stay put until you press Re-order now. Click to let the board re-order itself.'}
+                                onClick={() => {
+                                    const next = !autoReorder;
+                                    setAutoReorder(next);
+                                    if (next) applyReorder(false);
+                                    say('info', next
+                                        ? 'Auto re-order on — the columns will settle themselves after each pick.'
+                                        : 'Auto re-order off — the columns will stay where they are.');
+                                }}
+                            >
+                                <span className="obi-draft-auto-dot" />
+                                {autoReorder ? 'Auto re-order' : 'Manual'}
+                            </button>
+                        </span>
+                    )}
                 </div>
             )}
 
@@ -912,6 +1083,9 @@ export default function DraftDashboard() {
                                 draggingEmail={draggingEmail}
                                 hasSelection={!!selectedPlayer}
                                 showMeta={density !== DENSITY.OVERVIEW}
+                                rankDelta={deltas[team.id] || 0}
+                                justMoved={justMoved.includes(team.id)}
+                                isGrid={layout === LAYOUT.GRID}
                                 onDragOver={(e) => { e.preventDefault(); setDropTarget(team.id); }}
                                 onDragLeave={() => setDropTarget(prev => (prev === team.id ? null : prev))}
                                 onDrop={(e) => onDropTeam(e, team.id)}

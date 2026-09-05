@@ -36,6 +36,9 @@ export default function TeamColumn({
     draggingEmail,
     hasSelection,
     showMeta,
+    rankDelta,
+    justMoved,
+    isGrid,
     onDragOver,
     onDragLeave,
     onDrop,
@@ -55,7 +58,13 @@ export default function TeamColumn({
 
     return (
         <div
-            className={`obi-draft-col ${balance.flagged ? 'is-flagged' : ''} ${isDropTarget ? 'is-drop-target' : ''}`}
+            className={[
+                'obi-draft-col',
+                balance.flagged ? 'is-flagged' : '',
+                isDropTarget ? 'is-drop-target' : '',
+                rankDelta ? 'is-out-of-place' : '',
+                justMoved ? 'just-moved' : ''
+            ].filter(Boolean).join(' ')}
             style={{ width, height, maxHeight }}
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
@@ -78,6 +87,18 @@ export default function TeamColumn({
                     title="Click to rename"
                     aria-label={`${team.name} name`}
                 />
+                {/* How far this column would move if the board were re-ordered now.
+                    Grid runs top-to-bottom, so the arrows change accordingly. */}
+                {rankDelta ? (
+                    <span
+                        className="obi-draft-col-delta"
+                        style={{ color: header.foreground }}
+                        title={`Would move ${Math.abs(rankDelta)} place${Math.abs(rankDelta) === 1 ? '' : 's'} `
+                            + `${rankDelta > 0 ? (isGrid ? 'up' : 'left') : (isGrid ? 'down' : 'right')} if you re-order now`}
+                    >
+                        {rankDelta > 0 ? (isGrid ? '▲' : '◀') : (isGrid ? '▼' : '▶')} {Math.abs(rankDelta)}
+                    </span>
+                ) : null}
                 {matchCount > 0 && (
                     <span className="obi-draft-col-matches" title={`${matchCount} search match${matchCount === 1 ? '' : 'es'} on this team`}>
                         {matchCount} ⌕
@@ -107,12 +128,16 @@ export default function TeamColumn({
                             {colourOptions.map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
                     </span>
+                    {/* Labelled so it cannot be confused with the column order in the
+                        strip. Two sorts on one screen, each saying what it orders. */}
+                    {density === 'detailed' && <span className="obi-draft-meta-label">Players</span>}
                     <select
                         className="obi-draft-select"
                         style={{ flex: 1, minWidth: 0 }}
                         value={sortOption}
                         onChange={(e) => onSort(team.id, e.target.value)}
-                        aria-label={`${team.name} roster sort`}
+                        title="Orders the players inside this card — not the columns"
+                        aria-label={`${team.name}: order the players inside this card`}
                     >
                         {TEAM_SORTS.map(o => <option key={o} value={o}>{o}</option>)}
                     </select>

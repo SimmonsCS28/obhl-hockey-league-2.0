@@ -507,6 +507,160 @@
 .obi-draft-chip.is-error { background: rgba(224, 138, 138, 0.1); border-color: rgba(224, 138, 138, 0.45); }
 .obi-draft-chip.is-error .obi-draft-chip-text { color: var(--obi-error); }
 
+/* ---- order-by: the balance chips double as the column-order control ----
+   The chip you can read is the axis you can order by. Active chip is accent-filled and
+   carries the worded direction toggle; inactive-but-flagged chips keep the jump arrow;
+   inactive-and-clean chips carry nothing, so nothing is dormant. */
+
+.obi-draft-chip.is-active {
+    background: var(--obi-accent);
+    border-color: var(--obi-accent);
+}
+.obi-draft-chip.is-active .obi-draft-chip-axis,
+.obi-draft-chip.is-active .obi-draft-chip-text { color: var(--obi-bg); }
+.obi-draft-chip.is-active:hover { filter: brightness(1.08); }
+
+.obi-draft-chip-dir {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: 2px;
+    padding-left: 7px;
+    border-left: 1px solid rgba(11, 12, 15, 0.35);
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 10px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--obi-bg);
+    background: none;
+    border-top: none;
+    border-right: none;
+    border-bottom: none;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.obi-draft-chip-dir:hover { text-decoration: underline; }
+
+/* Only on a flagged axis you are NOT ordering by: ordering by it puts the worst offender
+   in column one, which makes "jump to the worst offender" a jump to nowhere. */
+.obi-draft-chip-jump {
+    margin-left: 4px;
+    padding: 0 2px;
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.85;
+}
+.obi-draft-chip-jump:hover { opacity: 1; }
+
+.obi-draft-strip-end { flex: none; display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+.obi-draft-reorder {
+    flex: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    height: 26px;
+    padding: 0 11px;
+    border-radius: 6px;
+    background: var(--obi-accent-soft);
+    border: 1px solid rgba(246, 169, 28, 0.55);
+    color: var(--obi-accent);
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 0.9px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.obi-draft-reorder:hover { background: rgba(246, 169, 28, 0.2); color: #fff; }
+
+.obi-draft-strip-state {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--obi-text-dim);
+    white-space: nowrap;
+}
+
+.obi-draft-auto {
+    flex: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 26px;
+    padding: 0 10px;
+    border-radius: 6px;
+    background: rgba(157, 185, 205, 0.07);
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    color: var(--obi-text-muted);
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 10px;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+.obi-draft-auto:hover { color: #fff; border-color: rgba(157, 185, 205, 0.45); }
+.obi-draft-auto-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--obi-text-dim); flex: none; }
+.obi-draft-auto.is-on { color: var(--obi-success); border-color: rgba(127, 181, 154, 0.45); background: rgba(127, 181, 154, 0.1); }
+.obi-draft-auto.is-on .obi-draft-auto-dot { background: var(--obi-success); }
+
+/* ---- column signals that an order is pending ---- */
+
+/* Rank delta, on the jersey header. Sits on a 30% black plate and inherits the header's
+   own luminance-flipped ink, so it reads on all twelve jersey colours. */
+.obi-draft-col-delta {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 1px 5px;
+    border-radius: 9px;
+    background: rgba(0, 0, 0, 0.3);
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+}
+
+/* The only pending signal that still works at Overview density, where the header cannot
+   afford the delta chip at all. */
+.obi-draft-col.is-out-of-place { box-shadow: inset 2px 0 0 0 var(--obi-icy); }
+
+/* Movement made legible rather than prevented: whatever actually moved is ringed briefly. */
+.obi-draft-col.just-moved {
+    animation: obi-draft-moved 1.8s ease-out 1;
+}
+@keyframes obi-draft-moved {
+    0% { box-shadow: 0 0 0 2px var(--obi-accent), 0 0 18px rgba(246, 169, 28, 0.45); }
+    100% { box-shadow: 0 0 0 2px rgba(246, 169, 28, 0), 0 0 18px rgba(246, 169, 28, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .obi-draft-col.just-moved { animation: none; box-shadow: 0 0 0 2px var(--obi-accent); }
+}
+
+/* Distinguishes the in-card roster sort from the column order. Two sorts on one screen,
+   each labelled with what it orders. */
+.obi-draft-meta-label {
+    flex: none;
+    align-self: center;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 8.5px;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+    color: var(--obi-text-dim);
+}
+
 /* ------------------------------------------------------ selection banner */
 
 .obi-draft-selbar {

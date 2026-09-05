@@ -125,12 +125,31 @@ export function boardBalance(teams) {
     const minSize = sizes.length ? Math.min(...sizes) : 0;
     const maxSize = sizes.length ? Math.max(...sizes) : 0;
 
+    // One chip per ORDER axis, because the chips double as the column-order control:
+    // the axis you can read is the axis you can order by. Defence and forwards come from
+    // the same F/D stat but are worded separately - "short on D" and "off on F" answer
+    // different questions even though they share a number.
     const rosterWorst = worstOn(0);
     const skillWorst = worstOn(1);
     const splitWorst = worstOn(2);
 
+    const forwards = teams.map(t => (t.players || []).filter(p => p.position === POSITION_FORWARD).length);
+    const defence = teams.map(t => (t.players || []).filter(p => p.position === POSITION_DEFENSE).length);
+    const spread = (list) => (list.length ? Math.max(...list) - Math.min(...list) : 0);
+
     const chips = [
         {
+            axisId: 'skill',
+            axis: 'Skill avg',
+            text: skillWorst ? `${Math.abs(Number(skillWorst.stat.delta)).toFixed(1)} off avg` : 'even',
+            band: skillWorst ? skillWorst.stat.band : BAND.OK,
+            teamId: skillWorst ? skillWorst.entry.team.id : null,
+            title: skillWorst
+                ? `${skillWorst.entry.team.name} is furthest from the average skill`
+                : 'Every team is within half a point of the average'
+        },
+        {
+            axisId: 'roster',
             axis: 'Roster',
             text: rosterWorst ? `${minSize}-${maxSize}` : `even, ${minSize}-${maxSize}`,
             band: rosterWorst ? rosterWorst.stat.band : BAND.OK,
@@ -140,22 +159,22 @@ export function boardBalance(teams) {
                 : 'Every roster is within one of the average'
         },
         {
-            axis: 'Skill',
-            text: skillWorst ? `${Math.abs(Number(skillWorst.stat.delta)).toFixed(1)} off avg` : 'even',
-            band: skillWorst ? skillWorst.stat.band : BAND.OK,
-            teamId: skillWorst ? skillWorst.entry.team.id : null,
-            title: skillWorst
-                ? `${skillWorst.entry.team.name} is furthest from the average skill`
-                : 'Every team is within half a point of the average'
-        },
-        {
-            axis: 'F/D',
-            text: splitWorst ? splitWorst.stat.delta : 'even',
+            axisId: 'defence',
+            axis: 'Defence',
+            text: splitWorst ? (splitWorst.stat.delta === 'even' ? 'even' : `${splitWorst.stat.delta}`) : `even, ${spread(defence)} apart`,
             band: splitWorst ? splitWorst.stat.band : BAND.OK,
             teamId: splitWorst ? splitWorst.entry.team.id : null,
             title: splitWorst
-                ? `${splitWorst.entry.team.name} is furthest from the expected forward/defence split`
-                : 'Every team matches the expected forward/defence split'
+                ? `${splitWorst.entry.team.name} is furthest from the expected defence count`
+                : 'Every team matches the expected defence count'
+        },
+        {
+            axisId: 'forwards',
+            axis: 'Forwards',
+            text: `${spread(forwards)} apart`,
+            band: BAND.OK,
+            teamId: null,
+            title: 'Spread between the largest and smallest forward group'
         }
     ];
 

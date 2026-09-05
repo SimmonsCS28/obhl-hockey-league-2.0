@@ -1,4 +1,5 @@
 import { CARD_SIZE, DENSITY, GRID_ROSTERS, LAYOUT } from './draftLayout';
+import { DIRECTION, ORDER_AXES, ORDER_AXIS, axisById, defaultDirections } from './draftOrder';
 
 /**
  * How the operator likes to look at the board, remembered between sessions.
@@ -25,7 +26,11 @@ export const DEFAULT_VIEW = {
     poolOpen: true,
     poolFilter: 'All',
     poolSort: 'Name',
-    sortAsc: true
+    sortAsc: true,
+    orderAxis: ORDER_AXIS.SKILL,
+    // Per axis, so switching back to one you used earlier restores how you had it.
+    orderDirections: defaultDirections(),
+    autoReorder: true
 };
 
 const POOL_FILTERS = ['All', 'Forwards', 'Defense', 'Refs', 'GMs', 'Has Buddy'];
@@ -40,6 +45,15 @@ function coerce(stored) {
     const oneOf = (value, allowed, fallback) => (allowed.includes(value) ? value : fallback);
     const perRow = Number(stored.perRow);
 
+    const orderAxis = oneOf(stored.orderAxis, ORDER_AXES.map(a => a.id), DEFAULT_VIEW.orderAxis);
+    const storedDirections = (stored.orderDirections && typeof stored.orderDirections === 'object')
+        ? stored.orderDirections
+        : {};
+    const directions = ORDER_AXES.reduce((acc, a) => ({
+        ...acc,
+        [a.id]: oneOf(storedDirections[a.id], Object.values(DIRECTION), axisById(a.id).defaultDirection)
+    }), {});
+
     return {
         density: oneOf(stored.density, Object.values(DENSITY), DEFAULT_VIEW.density),
         cardSize: oneOf(stored.cardSize, Object.values(CARD_SIZE), DEFAULT_VIEW.cardSize),
@@ -49,7 +63,15 @@ function coerce(stored) {
         poolOpen: typeof stored.poolOpen === 'boolean' ? stored.poolOpen : DEFAULT_VIEW.poolOpen,
         poolFilter: oneOf(stored.poolFilter, POOL_FILTERS, DEFAULT_VIEW.poolFilter),
         poolSort: oneOf(stored.poolSort, POOL_SORTS, DEFAULT_VIEW.poolSort),
-        sortAsc: typeof stored.sortAsc === 'boolean' ? stored.sortAsc : DEFAULT_VIEW.sortAsc
+        sortAsc: typeof stored.sortAsc === 'boolean' ? stored.sortAsc : DEFAULT_VIEW.sortAsc,
+        orderAxis,
+        orderDirections: directions,
+        // Auto only survives a reload on the skill axis. On the others it moves columns
+        // for reasons the operator did not ask for mid-pick, so it starts off again -
+        // "the columns shouldn't surprise you" outranks remembering the toggle.
+        autoReorder: orderAxis === ORDER_AXIS.SKILL
+            ? (typeof stored.autoReorder === 'boolean' ? stored.autoReorder : true)
+            : false
     };
 }
 

@@ -1,5 +1,5 @@
 import { buildBuddyPickMap } from './buddyGraph';
-import { averageSkill } from './draftSelectors';
+import { applyOrder } from './draftOrder';
 
 /**
  * Draft board state.
@@ -33,6 +33,7 @@ export const ACTIONS = {
     SET_TEAM_NAME: 'SET_TEAM_NAME',
     SET_TEAM_COLOR: 'SET_TEAM_COLOR',
     SET_TEAM_SORT: 'SET_TEAM_SORT',
+    REORDER_TEAMS: 'REORDER_TEAMS',
     // Undoable from here down.
     MOVE_PLAYERS: 'MOVE_PLAYERS',
     RETURN_TO_POOL: 'RETURN_TO_POOL',
@@ -70,15 +71,6 @@ export function defaultTeamMaps(teams) {
         teamSortOptions[team.id] = DEFAULT_TEAM_SORT;
     });
     return { teamColors, teamSortOptions };
-}
-
-/**
- * Columns are ordered weakest-average-first, and re-ordered after every pick and every
- * GM assignment. The board visibly reshuffles as a result; that is deliberate and
- * long-standing, so it is preserved here rather than quietly dropped.
- */
-function sortTeamsByAverageSkill(teams) {
-    return [...teams].sort((a, b) => averageSkill(a.players) - averageSkill(b.players));
 }
 
 /** Buddy links are derived from the free text on the cards, so they are recomputed
@@ -139,6 +131,9 @@ export function documentReducer(doc, action) {
         case ACTIONS.SET_TEAM_COLOR:
             return { ...doc, teamColors: { ...doc.teamColors, [action.teamId]: action.color } };
 
+        case ACTIONS.REORDER_TEAMS:
+            return { ...doc, teams: applyOrder(doc.teams, action.orderedIds) };
+
         case ACTIONS.SET_TEAM_SORT:
             return {
                 ...doc,
@@ -157,10 +152,14 @@ export function documentReducer(doc, action) {
                     ? { ...team, players: [...remaining, ...moving] }
                     : { ...team, players: remaining };
             });
+            // Deliberately does NOT re-order the columns. The board used to re-sort on
+            // every pick, which moves the column just dropped onto out from under the
+            // cursor. Ordering is now an explicit REORDER_TEAMS, at moments the operator
+            // chose - see draftOrder.
             return withBuddies({
                 ...doc,
                 playerPool: doc.playerPool.filter(p => !emails.has(p.email)),
-                teams: sortTeamsByAverageSkill(teams)
+                teams
             });
         }
 
@@ -188,10 +187,12 @@ export function documentReducer(doc, action) {
             const seated = new Set(
                 action.gms.slice(0, action.gms.length - queue.length).map(g => g.email)
             );
+            // Assign GMs is a deliberate batch action, so the caller follows it with a
+            // REORDER_TEAMS on whatever axis is current, and says so.
             return withBuddies({
                 ...doc,
                 playerPool: doc.playerPool.filter(p => !seated.has(p.email)),
-                teams: sortTeamsByAverageSkill(teams)
+                teams
             });
         }
 
