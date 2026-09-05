@@ -1,10 +1,13 @@
 package com.obhl.league.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.io.ByteArrayOutputStream;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -36,8 +39,21 @@ class ExcelParserServiceTest {
     @BeforeEach
     void setUp() {
         service = new ExcelParserService(statsClient);
-        // The DB enrichment step is exercised separately; here it must not override ratings.
-        when(statsClient.getAllPlayers()).thenReturn(Collections.emptyList());
+        // Most tests only care about parsing, so the DB contributes nothing. The
+        // rating-resolution tests below stub getAllPlayers() themselves.
+        lenient().when(statsClient.getAllPlayers()).thenReturn(Collections.emptyList());
+    }
+
+    private Map<String, Object> dbPlayer(long id, Long seasonId, String first, String last,
+            String email, int skill) {
+        Map<String, Object> p = new HashMap<>();
+        p.put("id", id);
+        p.put("seasonId", seasonId);
+        p.put("firstName", first);
+        p.put("lastName", last);
+        p.put("email", email);
+        p.put("skillRating", skill);
+        return p;
     }
 
     private MockMultipartFile workbookOf(String[][] rows) throws Exception {
@@ -188,5 +204,72 @@ class ExcelParserServiceTest {
 
         assertThat(players).hasSize(1);
         assertThat(players.get(0).get("firstName")).isEqualTo("Real");
+    }
+    /**
+     * A person has one row per season. The older row is returned LAST here on purpose:
+     * that is the ordering that used to win, and it meant a player whose rating had been
+     * revised down was imported at their previous, higher value.
+     */
+    @Test
+    void takesTheRatingFromTheMostRecentSeason() throws Exception {
+        when(statsClient.getAllPlayers()).thenReturn(Arrays.asList(
+                dbPlayer(300L, 13L, "Aaron", "Krehbiel", "krehwen@example.com", 3),
+                dbPlayer(165L, 12L, "Aaron", "Krehbiel", "krehwen@example.com", 5)));
+
+        List<Map<String, Object>> players = service.parseRegistrationFile(workbookOf(new String[][] {
+                { "First Name", "Last Name", "Email", "Skill Rating" },
+                { "Aaron", "Krehbiel", "krehwen@example.com", "1" },
+        }));
+
+        assertThat(players.get(0).get("skillRating")).isEqualTo(3);
+        assertThat(players.get(0).get("ratingFoundInDb")).isEqualTo(true);
+        assertThat(players.get(0).get("dbId")).isEqualTo(300L);
+    }
+
+    /** Same season on both rows (or no season at all): the higher id is the later one. */
+    @Test
+    void fallsBackToTheHigherIdWhenSeasonCannotDecide() throws Exception {
+        when(statsClient.getAllPlayers()).thenReturn(Arrays.asList(
+                dbPlayer(500L, null, "Pat", "Kane", "pat@example.com", 9),
+                dbPlayer(120L, null, "Pat", "Kane", "pat@example.com", 4)));
+
+        List<Map<String, Object>> players = service.parseRegistrationFile(workbookOf(new String[][] {
+                { "First Name", "Last Name", "Email", "Skill Rating" },
+                { "Pat", "Kane", "pat@example.com", "1" },
+        }));
+
+        assertThat(players.get(0).get("skillRating")).isEqualTo(9);
+    }
+
+    /** A row carrying a real season beats one with none, whichever order they arrive in. */
+    @Test
+    void prefersARowWithASeasonOverOneWithout() throws Exception {
+        when(statsClient.getAllPlayers()).thenReturn(Arrays.asList(
+                dbPlayer(900L, null, "Sam", "Bell", "sam@example.com", 2),
+                dbPlayer(100L, 13L, "Sam", "Bell", "sam@example.com", 7)));
+
+        List<Map<String, Object>> players = service.parseRegistrationFile(workbookOf(new String[][] {
+                { "First Name", "Last Name", "Email", "Skill Rating" },
+                { "Sam", "Bell", "sam@example.com", "1" },
+        }));
+
+        assertThat(players.get(0).get("skillRating")).isEqualTo(7);
+    }
+
+    /** The name-match path offers a rating too, and must pick the recent one as well. */
+    @Test
+    void offersTheMostRecentRatingOnANameMatch() throws Exception {
+        when(statsClient.getAllPlayers()).thenReturn(Arrays.asList(
+                dbPlayer(299L, 13L, "Chris", "Lewis", "old.address@example.com", 7),
+                dbPlayer(138L, 12L, "Chris", "Lewis", "older.address@example.com", 6)));
+
+        List<Map<String, Object>> players = service.parseRegistrationFile(workbookOf(new String[][] {
+                { "First Name", "Last Name", "Email", "Skill Rating" },
+                { "Chris", "Lewis", "brand.new@example.com", "1" },
+        }));
+
+        assertThat(players.get(0).get("potentialMatchFound")).isEqualTo(true);
+        assertThat(players.get(0).get("potentialMatchSkill")).isEqualTo(7);
+        assertThat(players.get(0).get("potentialMatchId")).isEqualTo(299L);
     }
 }

@@ -275,6 +275,28 @@ public class ExcelParserService {
     }
 
     /**
+     * Of two rows for the same person, the one from the later season - falling back to the
+     * higher id when the season is equal or missing, which covers rows predating season_id
+     * being populated.
+     */
+    private static Map<String, Object> mostRecent(Map<String, Object> existing, Map<String, Object> candidate) {
+        return compareRecency(candidate, existing) > 0 ? candidate : existing;
+    }
+
+    private static int compareRecency(Map<String, Object> a, Map<String, Object> b) {
+        int bySeason = Long.compare(asLong(a.get("seasonId")), asLong(b.get("seasonId")));
+        if (bySeason != 0) {
+            return bySeason;
+        }
+        return Long.compare(asLong(a.get("id")), asLong(b.get("id")));
+    }
+
+    /** Missing or non-numeric sorts oldest, so a real row always beats one without a season. */
+    private static long asLong(Object value) {
+        return value instanceof Number ? ((Number) value).longValue() : Long.MIN_VALUE;
+    }
+
+    /**
      * Overrides skill ratings from the database where the player already exists, and
      * flags name-matches-with-a-different-email for operator confirmation.
      */
@@ -284,14 +306,22 @@ public class ExcelParserService {
             Map<String, Map<String, Object>> emailToPlayer = new HashMap<>();
             Map<String, Map<String, Object>> nameToPlayer = new HashMap<>();
 
+            // A person has one players row PER SEASON, so several rows share an email and
+            // their ratings differ. Keep the most recent one.
+            //
+            // This used to be a plain put(), i.e. whichever row the unordered findAll()
+            // happened to return last. Measured against real data that picked the older
+            // season's rating about half the time -- a player whose rating had been revised
+            // down came onto the board at their previous value.
             for (Map<String, Object> dbPlayer : dbPlayers) {
                 if (dbPlayer.get("email") != null) {
-                    emailToPlayer.put(dbPlayer.get("email").toString().toLowerCase().trim(), dbPlayer);
+                    emailToPlayer.merge(dbPlayer.get("email").toString().toLowerCase().trim(),
+                            dbPlayer, ExcelParserService::mostRecent);
                 }
                 if (dbPlayer.get("firstName") != null && dbPlayer.get("lastName") != null) {
                     String nameKey = dbPlayer.get("firstName").toString().toLowerCase().trim() + " "
                             + dbPlayer.get("lastName").toString().toLowerCase().trim();
-                    nameToPlayer.put(nameKey, dbPlayer);
+                    nameToPlayer.merge(nameKey, dbPlayer, ExcelParserService::mostRecent);
                 }
             }
 
