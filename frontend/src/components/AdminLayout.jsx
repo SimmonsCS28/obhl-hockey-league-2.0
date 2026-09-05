@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import logo from '../assets/images/buzzard-logo.png';
 import { useAuth } from '../contexts/AuthContext';
@@ -40,6 +40,26 @@ const NAV = [
 
 function AdminLayout({ children, activeTab }) {
     const [mobileOpen, setMobileOpen] = useState(false);
+
+    // Desktop collapse. Remembered across pages and reloads, because it is a working
+    // preference - somebody who collapsed it to fit the draft board does not want it back
+    // every time they change tab. Separate from mobileOpen, which is the off-canvas drawer
+    // below 900px and has its own behaviour.
+    const [navCollapsed, setNavCollapsed] = useState(() => {
+        try {
+            return localStorage.getItem('obi-admin-nav-collapsed') === '1';
+        } catch {
+            return false;
+        }
+    });
+
+    useEffect(() => {
+        try {
+            localStorage.setItem('obi-admin-nav-collapsed', navCollapsed ? '1' : '0');
+        } catch {
+            // Private browsing or blocked storage: the toggle still works for this session.
+        }
+    }, [navCollapsed]);
     const { user } = useAuth();
     // allSeasons, not seasons: the admin legitimately needs the tournament season to reach
     // Live Score Entry, Assignments and the Coordinator Console for tournament games. The public
@@ -82,8 +102,20 @@ function AdminLayout({ children, activeTab }) {
     const activeSeasonName = allSeasons?.find(s => s.id === selectedSeasonId)?.name || 'No season';
 
     return (
-        <div className="obi-admin-shell">
+        <div className={`obi-admin-shell ${navCollapsed ? 'is-nav-collapsed' : ''}`}>
             <aside className={`obi-side ${mobileOpen ? 'is-open' : ''}`}>
+                {/* The way back in. Mirrors the draft tool's collapsed pool rail so the
+                    gesture reads the same in both places. */}
+                <button
+                    className="obi-side-reopen"
+                    onClick={() => setNavCollapsed(false)}
+                    title="Show the menu"
+                    aria-label="Show the menu"
+                    aria-expanded={false}
+                >
+                    <span aria-hidden="true">»</span>
+                    <span className="obi-side-reopen-label">Menu</span>
+                </button>
                 <div className="obi-side-brand">
                     <button className="obi-side-brand-link" onClick={() => navigate('/')} aria-label="Go to public site">
                         <img src={logo} alt="OBHL" className="obi-side-logo" />
@@ -94,6 +126,15 @@ function AdminLayout({ children, activeTab }) {
                     </button>
                     <button className="obi-side-burger" onClick={() => setMobileOpen(o => !o)} aria-label="Toggle menu">
                         <span></span><span></span><span></span>
+                    </button>
+                    <button
+                        className="obi-side-collapse"
+                        onClick={() => setNavCollapsed(true)}
+                        title="Hide the menu for more room"
+                        aria-label="Hide the menu"
+                        aria-expanded
+                    >
+                        «
                     </button>
                 </div>
 

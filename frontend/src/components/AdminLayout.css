@@ -316,6 +316,73 @@
 }
 
 /* ---------- Burger / mobile ---------- */
+/* ---------- Desktop collapse ----------
+   Reclaims the 236px rail on wide admin screens - the draft board in particular needs
+   every pixel at 14 teams. Deliberately collapses to a narrow rail rather than vanishing:
+   this nav has no icons, so an icon rail is not possible, and a menu with no visible way
+   back is a menu people lose. The rail rhymes with the draft tool's collapsed player pool.
+
+   Scoped to wide viewports only. Below 900px the sidebar is an off-canvas drawer with its
+   own open/closed state, and a second, persisted notion of "collapsed" on top of that
+   would fight it. */
+
+.obi-side-collapse {
+    display: none;
+    width: 28px;
+    height: 28px;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(157, 185, 205, 0.08);
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    border-radius: 7px;
+    color: var(--obi-icy);
+    font-size: 13px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+}
+.obi-side-collapse:hover { color: #fff; border-color: rgba(157, 185, 205, 0.5); }
+
+.obi-side-reopen {
+    display: none;
+    width: 100%;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 0;
+    background: none;
+    border: none;
+    color: var(--obi-icy);
+    cursor: pointer;
+    font-size: 13px;
+}
+.obi-side-reopen:hover { color: #fff; background: rgba(157, 185, 205, 0.06); }
+.obi-side-reopen-label {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    writing-mode: vertical-rl;
+}
+
+@media (min-width: 901px) {
+    .obi-side-collapse { display: flex; }
+
+    .is-nav-collapsed .obi-side { width: 46px; }
+    .is-nav-collapsed .obi-admin-main { margin-left: 46px; }
+
+    /* Hidden rather than unmounted: the sidebar keeps its scroll position and focus
+       target, and reopening does not remount the whole nav. */
+    .is-nav-collapsed .obi-side-brand,
+    .is-nav-collapsed .obi-side-nav,
+    .is-nav-collapsed .obi-side-foot { display: none; }
+
+    .is-nav-collapsed .obi-side-reopen { display: flex; }
+}
+
 .obi-side-burger {
     display: none;
     flex-direction: column;
