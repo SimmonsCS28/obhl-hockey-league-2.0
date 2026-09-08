@@ -327,7 +327,39 @@
 }
 
 /* ---------- Responsive ---------- */
-@media (max-width: 760px) {
+/* The inline nav used to hold on down to 760px, which was only ever true for a member whose
+   pill says nothing but LOG OUT. An admin or coordinator carries two or three extra pill links,
+   and at that width the header ran past the right edge of the window instead of collapsing.
+   Handing over to the dropdown earlier uses the fallback that was already designed, rather than
+   letting the header bleed. */
+/* The middle band.
+   .obi-header-inner is capped at --obi-page-max so the header lines up with the page content
+   below it. That cap is the actual cause of the overflow: the header's own contents need about
+   1500px (brand + eight links + Donate + the user pill), so they spill out of a 1240px box at
+   EVERY width -- it is just invisible on a large monitor, where the spill lands in the gutters
+   either side. Once the window is narrow enough that those gutters run out, the overflow reaches
+   the edge of the screen and the page grows a horizontal scrollbar.
+
+   So in this band the bar stops being capped and uses the window, and the links give back the
+   padding and letter-spacing they can afford. Above 1800px nothing changes: there the gutters are
+   wide enough to absorb the spill, and the header stays aligned with the content as designed. */
+@media (min-width: 1401px) and (max-width: 1800px) {
+    .obi-header-inner {
+        max-width: none;
+        gap: 16px;
+    }
+
+    .obi-nav { gap: 2px; }
+
+    .obi-nav-link {
+        padding: 9px 9px;
+        letter-spacing: 0.8px;
+    }
+
+    .obi-nav-actions { margin-left: 6px; }
+}
+
+@media (max-width: 1400px) {
     .obi-burger {
         display: inline-flex;
     }
