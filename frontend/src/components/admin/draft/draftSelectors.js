@@ -123,7 +123,11 @@ export function getFilteredPlayers(playerPool, { searchQuery = '', filter = 'All
         let comparison = 0;
         switch (sortOption) {
             case 'Name':
-                comparison = `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
+                // Surname first, given name only as a tiebreaker. A roster is read out and
+                // called by last name, so sorting on "first last" scatters the Smiths down
+                // the list and makes a player hard to find by the name you know them by.
+                comparison = (a.lastName || '').localeCompare(b.lastName || '')
+                    || (a.firstName || '').localeCompare(b.firstName || '');
                 break;
             case 'Position':
                 comparison = a.position.localeCompare(b.position);
