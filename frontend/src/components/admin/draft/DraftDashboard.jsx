@@ -103,6 +103,9 @@ export default function DraftDashboard() {
     const [duplicateRows, setDuplicateRows] = useState([]);
     const [addPlayer, setAddPlayer] = useState(null);   // the late-registration form
     const [addError, setAddError] = useState('');
+    // A name clash is a question, not a verdict - two real people can share a name - so it
+    // is held separately from addError and can be answered with "Add anyway".
+    const [addWarning, setAddWarning] = useState('');
 
     const fileInputRef = useRef(null);
 
@@ -602,6 +605,22 @@ export default function DraftDashboard() {
         isGm: false, isRef: false, buddyPick: ''
     });
 
+    // Every edit clears both messages. That is what stops an "Add anyway" answer from
+    // outliving the name it was given about: change a letter and the clash is re-checked.
+    const updateForm = (patch) => {
+        setAddPlayer(f => ({ ...f, ...(typeof patch === 'function' ? patch(f) : patch) }));
+        setAddError('');
+        setAddWarning('');
+    };
+
+    // Where a matched player currently sits, so the message can point at them. Both checks
+    // deliberately span the pool AND every roster: someone already drafted is exactly the
+    // case the operator cannot see from the pool they are looking at.
+    const whereIs = (player) => {
+        const team = teams.find(t => (t.players || []).some(p => p.email === player.email));
+        return team ? `on ${team.name}` : 'in the pool';
+    };
+
     const submitNewPlayer = () => {
         const form = addPlayer;
         const first = (form.firstName || '').trim();
@@ -614,10 +633,28 @@ export default function DraftDashboard() {
         // duplicate one silently collapses two people into one.
         if (!email) { setAddError('An email is needed — it is how this player is identified everywhere else.'); return; }
 
-        const taken = [...playerPool, ...teams.flatMap(t => t.players || [])]
-            .find(p => (p.email || '').toLowerCase() === email);
+        const everyone = [...playerPool, ...teams.flatMap(t => t.players || [])];
+
+        // A duplicate email is refused outright rather than warned about. It is not a
+        // matter of taste: moves filter by email, so dragging one of two players sharing
+        // an address pulls BOTH out of their slots, inline edits write to both, and the
+        // two cards collide as React keys. There is no "add anyway" that survives that.
+        const taken = everyone.find(p => (p.email || '').toLowerCase() === email);
         if (taken) {
-            setAddError(`${taken.firstName} ${taken.lastName} is already on the board with that email.`);
+            setAddError(`${taken.firstName} ${taken.lastName} is already ${whereIs(taken)} with that email.`);
+            return;
+        }
+
+        // A name clash is only probably a mistake, so it asks instead of refusing. The
+        // warning is cleared by any edit to the form, so answering it cannot carry over to
+        // a different name than the one it was raised about.
+        const sameName = everyone.find(p =>
+            (p.firstName || '').trim().toLowerCase() === first.toLowerCase()
+            && (p.lastName || '').trim().toLowerCase() === last.toLowerCase());
+        if (sameName && !addWarning) {
+            setAddWarning(`${sameName.firstName} ${sameName.lastName} is already ${whereIs(sameName)}`
+                + `${sameName.email ? ` (${sameName.email})` : ''}. `
+                + 'Add anyway only if this is a different person.');
             return;
         }
 
@@ -634,6 +671,7 @@ export default function DraftDashboard() {
         dispatch({ type: ACTIONS.ADD_POOL_PLAYER, player });
         setAddPlayer(null);
         setAddError('');
+        setAddWarning('');
 
         // A pool filter that hides the player you just added looks exactly like a failure.
         const hidden = (poolFilter === 'Forwards' && player.position !== 'Forward')
@@ -1049,7 +1087,7 @@ export default function DraftDashboard() {
                                     <button
                                         type="button"
                                         className="obi-draft-pool-add"
-                                        onClick={() => { setAddPlayer(blankPlayer()); setAddError(''); }}
+                                        onClick={() => { setAddPlayer(blankPlayer()); setAddError(''); setAddWarning(''); }}
                                         title="Add somebody the registration sheet missed"
                                     >
                                         + Add
@@ -1368,11 +1406,17 @@ export default function DraftDashboard() {
             {addPlayer && (
                 <DraftModal
                     title="Add a player to the pool"
-                    onClose={() => { setAddPlayer(null); setAddError(''); }}
+                    onClose={() => { setAddPlayer(null); setAddError(''); setAddWarning(''); }}
                     note="They join the pool as any imported player would"
                     footer={<>
-                        <button type="button" className="obi-draft-btn" onClick={() => { setAddPlayer(null); setAddError(''); }}>Cancel</button>
-                        <button type="button" className="obi-draft-btn is-primary" onClick={submitNewPlayer}>Add to pool</button>
+                        <button type="button" className="obi-draft-btn" onClick={() => { setAddPlayer(null); setAddError(''); setAddWarning(''); }}>Cancel</button>
+                        <button
+                            type="button"
+                            className={`obi-draft-btn ${addWarning ? 'is-accent' : 'is-primary'}`}
+                            onClick={submitNewPlayer}
+                        >
+                            {addWarning ? 'Add anyway' : 'Add to pool'}
+                        </button>
                     </>}
                 >
                     <p className="obi-draft-form-lede">
@@ -1386,7 +1430,7 @@ export default function DraftDashboard() {
                             <input
                                 className="obi-draft-input"
                                 value={addPlayer.firstName}
-                                onChange={(e) => setAddPlayer(f => ({ ...f, firstName: e.target.value }))}
+                                onChange={(e) => updateForm({ firstName: e.target.value })}
                             />
                         </label>
                         <label className="obi-draft-field">
@@ -1394,7 +1438,7 @@ export default function DraftDashboard() {
                             <input
                                 className="obi-draft-input"
                                 value={addPlayer.lastName}
-                                onChange={(e) => setAddPlayer(f => ({ ...f, lastName: e.target.value }))}
+                                onChange={(e) => updateForm({ lastName: e.target.value })}
                             />
                         </label>
                         <label className="obi-draft-field">
@@ -1404,7 +1448,7 @@ export default function DraftDashboard() {
                                 type="email"
                                 value={addPlayer.email}
                                 placeholder="how this player is identified everywhere else"
-                                onChange={(e) => setAddPlayer(f => ({ ...f, email: e.target.value }))}
+                                onChange={(e) => updateForm({ email: e.target.value })}
                             />
                         </label>
                         <label className="obi-draft-field">
@@ -1413,7 +1457,7 @@ export default function DraftDashboard() {
                                 className="obi-draft-select"
                                 aria-label="Position"
                                 value={addPlayer.position}
-                                onChange={(e) => setAddPlayer(f => ({ ...f, position: e.target.value }))}
+                                onChange={(e) => updateForm({ position: e.target.value })}
                             >
                                 <option value="Forward">Forward</option>
                                 <option value="Defense">Defense</option>
@@ -1425,7 +1469,7 @@ export default function DraftDashboard() {
                                 className="obi-draft-select"
                                 aria-label="Skill rating"
                                 value={String(addPlayer.skillRating)}
-                                onChange={(e) => setAddPlayer(f => ({ ...f, skillRating: parseInt(e.target.value, 10) }))}
+                                onChange={(e) => updateForm({ skillRating: parseInt(e.target.value, 10) })}
                             >
                                 {Array.from({ length: 10 }, (_, i) => String(i + 1)).map(o => (
                                     <option key={o} value={o}>{o}</option>
@@ -1438,7 +1482,7 @@ export default function DraftDashboard() {
                                 className="obi-draft-select"
                                 aria-label="Status"
                                 value={addPlayer.status}
-                                onChange={(e) => setAddPlayer(f => ({ ...f, status: e.target.value }))}
+                                onChange={(e) => updateForm({ status: e.target.value })}
                             >
                                 <option value="Rookie">Rookie</option>
                                 <option value="Veteran">Veteran</option>
@@ -1450,7 +1494,7 @@ export default function DraftDashboard() {
                                 className="obi-draft-input"
                                 value={addPlayer.buddyPick}
                                 placeholder="names, comma separated"
-                                onChange={(e) => setAddPlayer(f => ({ ...f, buddyPick: e.target.value }))}
+                                onChange={(e) => updateForm({ buddyPick: e.target.value })}
                             />
                         </label>
                         <div className="obi-draft-field">
@@ -1461,19 +1505,22 @@ export default function DraftDashboard() {
                                     className={`obi-draft-toggle is-gm ${addPlayer.isGm ? 'is-on' : ''}`}
                                     aria-label="Also a GM"
                                     aria-pressed={addPlayer.isGm}
-                                    onClick={() => setAddPlayer(f => ({ ...f, isGm: !f.isGm }))}
+                                    onClick={() => updateForm(f => ({ isGm: !f.isGm }))}
                                 >GM</button>
                                 <button
                                     type="button"
                                     className={`obi-draft-toggle is-ref ${addPlayer.isRef ? 'is-on' : ''}`}
                                     aria-label="Also a referee"
                                     aria-pressed={addPlayer.isRef}
-                                    onClick={() => setAddPlayer(f => ({ ...f, isRef: !f.isRef }))}
+                                    onClick={() => updateForm(f => ({ isRef: !f.isRef }))}
                                 >REF</button>
                             </span>
                         </div>
                     </div>
 
+                    {addWarning && (
+                        <div className="obi-draft-form-warn" role="alert">{addWarning}</div>
+                    )}
                     {addError && (
                         <div className="obi-draft-form-error" role="alert">{addError}</div>
                     )}
