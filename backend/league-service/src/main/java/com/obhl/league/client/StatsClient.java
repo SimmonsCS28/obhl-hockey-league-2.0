@@ -49,12 +49,13 @@ public interface StatsClient {
         void deletePlayer(@PathVariable("id") Long id);
 
         /**
-         * seasonIds is the positive list of seasons to sweep. Pass league season ids only --
-         * without it this would deactivate tournament players too, since they never appear in a
-         * league registration list.
+         * Deactivates every non-goalie player row in the given FINISHED seasons, so is_active
+         * means "on a roster in the current season". Pass the league seasons other than the one
+         * just drafted; an empty list deactivates nobody, so a bad call fails closed.
+         *
+         * Goalies are exempt on the server side - they are never drafted, so they never appear
+         * in a registration list, and the previous email-based sweep deactivated all of them.
          */
-        @PutMapping("/api/v1/players/deactivate-unregistered")
-        void deactivateUnregisteredPlayers(
-                        @RequestParam("seasonIds") List<Long> seasonIds,
-                        @RequestBody List<String> registeredEmails);
+        @PutMapping("/api/v1/players/deactivate-prior-seasons")
+        void deactivatePriorSeasons(@RequestParam("seasonIds") List<Long> seasonIds);
 }

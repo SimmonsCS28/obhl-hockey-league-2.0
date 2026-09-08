@@ -233,31 +233,27 @@ public class DraftService {
                 }
             }
 
-            // Deactivate players who didn't register for the new season
-            List<String> registeredEmails = new ArrayList<>();
-            for (DraftTeamDTO draftTeam : draftState.getTeams()) {
-                for (DraftPlayerDTO draftPlayer : draftTeam.getPlayers()) {
-                    if (draftPlayer.getEmail() != null) {
-                        registeredEmails.add(draftPlayer.getEmail());
-                    }
-                }
-            }
-            if (draftState.getPlayerPool() != null) {
-                for (DraftPlayerDTO poolPlayer : draftState.getPlayerPool()) {
-                    if (poolPlayer.getEmail() != null) {
-                        registeredEmails.add(poolPlayer.getEmail());
-                    }
-                }
-            }
-            // Sweep every LEAGUE season, so the only players left active anywhere are the ones just
-            // drafted -- that cross-season cleanup is the point of this call. Tournament seasons are
-            // excluded because their players never appear in a league registration list and would
-            // otherwise all be deactivated.
-            List<Long> leagueSeasonIds = seasonRepository.findByType(Season.TYPE_LEAGUE)
+            // Retire the player rows from the seasons that just ended, so is_active means
+            // "on a roster in the current season" rather than "registered at some point".
+            //
+            // This deliberately sweeps by SEASON, not by registration list. Matching on email
+            // never deactivated a returning player's old rows - their address was in the list -
+            // so a player who had been around a few years ended up active in every season at
+            // once. The new season's own rows are untouched because it is not in this list.
+            //
+            // Goalies survive, on the stats-service side: they are never drafted, so they never
+            // appear in a registration list, and the old sweep deactivated every one of them on
+            // every finalize.
+            // `season` is reassigned above, so it cannot be captured by the lambda directly.
+            final Long draftedSeasonId = season.getId();
+            List<Long> finishedLeagueSeasonIds = seasonRepository.findByType(Season.TYPE_LEAGUE)
                     .stream()
                     .map(Season::getId)
+                    .filter(id -> !id.equals(draftedSeasonId))
                     .collect(java.util.stream.Collectors.toList());
-            statsClient.deactivateUnregisteredPlayers(leagueSeasonIds, registeredEmails);
+            if (!finishedLeagueSeasonIds.isEmpty()) {
+                statsClient.deactivatePriorSeasons(finishedLeagueSeasonIds);
+            }
 
             // 8. Mark draft as completed
             draft.setStatus("complete");

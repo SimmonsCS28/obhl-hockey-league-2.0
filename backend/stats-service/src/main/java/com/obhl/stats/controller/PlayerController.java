@@ -131,38 +131,47 @@ public class PlayerController {
     }
 
     /**
-     * Deactivates players across the given seasons who are not in the current registration list.
+     * Deactivates every player row belonging to a season that is now finished, so that
+     * is_active means "on a roster in the current season".
      *
-     * <p>The cross-season sweep is intended: after a league draft, the only players showing as
-     * active anywhere should be the ones just drafted, so stale rows from previous seasons stop
-     * appearing in pickers and rosters.
+     * <p>This replaces an email-based sweep that deactivated players who were not in the new
+     * registration list. That had two problems. It never deactivated a RETURNING player's old
+     * rows -- their email was in the list, so every season they had ever played stayed active,
+     * and one person ended up active in three seasons at once. And it compared emails with a
+     * case-sensitive contains(), so a player whose stored address differed only in case was
+     * deactivated by mistake.
      *
-     * <p>{@code seasonIds} is required and is a positive list -- the seasons to sweep, not the ones
-     * to skip. It exists so the sweep cannot reach tournament players, who never appear in a league
-     * registration list and would be deactivated wholesale by an unbounded
-     * findByIsActiveTrue(). Caller passes the league season ids; an empty or missing list
+     * <p>GOALIES ARE EXEMPT, and that exemption is the whole reason this takes a position into
+     * account. Goalies have player profiles but are never drafted, so they never appear in a
+     * registration list -- the old sweep deactivated every one of them on every finalize. Their
+     * roster is managed separately through season_goalies, not by the draft.
+     *
+     * <p>{@code seasonIds} is a positive list: the finished seasons to sweep, never the current
+     * one. It exists so the sweep cannot reach tournament players, and an empty or missing list
      * deactivates nobody rather than everybody, so a bad call fails closed.
      */
-    @PutMapping("/deactivate-unregistered")
-    public ResponseEntity<Void> deactivateUnregisteredPlayers(
-            @RequestParam List<Long> seasonIds,
-            @RequestBody List<String> registeredEmails) {
+    @PutMapping("/deactivate-prior-seasons")
+    public ResponseEntity<java.util.Map<String, Integer>> deactivatePriorSeasons(
+            @RequestParam List<Long> seasonIds) {
         if (seasonIds == null || seasonIds.isEmpty()) {
             return ResponseEntity.badRequest().build();
         }
 
         List<Player> activePlayers = playerRepository.findBySeasonIdInAndIsActiveTrue(seasonIds);
-        int deactivatedCount = 0;
+        int deactivated = 0;
+        int goaliesKept = 0;
         for (Player p : activePlayers) {
-            if (p.getEmail() != null && !registeredEmails.contains(p.getEmail())) {
-                p.setIsActive(false);
-                playerRepository.save(p);
-                deactivatedCount++;
+            if ("G".equalsIgnoreCase(p.getPosition())) {
+                goaliesKept++;
+                continue;
             }
+            p.setIsActive(false);
+            playerRepository.save(p);
+            deactivated++;
         }
-        System.out.println("Deactivated " + deactivatedCount + " player records across seasons "
-                + seasonIds + " not in current registration.");
-        return ResponseEntity.ok().build();
+        System.out.println("Deactivated " + deactivated + " player records in finished seasons "
+                + seasonIds + "; kept " + goaliesKept + " goalies active.");
+        return ResponseEntity.ok(java.util.Map.of("deactivated", deactivated, "goaliesKept", goaliesKept));
     }
 
     @PatchMapping("/{playerId}")
