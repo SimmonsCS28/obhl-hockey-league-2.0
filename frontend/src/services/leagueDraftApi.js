@@ -58,6 +58,25 @@ export const leagueDraftApi = {
      */
     async finalize(draftId) {
         return request(`${DRAFT_BASE}/${draftId}/finalize`, { method: 'POST' });
+    },
+
+    /** Whether a read-only share link is currently live. Never returns the token itself. */
+    async shareStatus(draftId) {
+        return request(`${DRAFT_BASE}/${draftId}/share`);
+    },
+
+    /**
+     * Mints a share link and returns { token }. This is the ONLY time the raw token exists in a
+     * readable form — only its hash is stored — so whatever calls this has to show it to the
+     * operator immediately. Calling it again rotates the token and kills any link already shared.
+     */
+    async createShare(draftId) {
+        return request(`${DRAFT_BASE}/${draftId}/share`, { method: 'POST' });
+    },
+
+    /** Turns sharing off. Every link already handed out stops working. */
+    async revokeShare(draftId) {
+        return request(`${DRAFT_BASE}/${draftId}/share`, { method: 'DELETE' });
     }
 };
 

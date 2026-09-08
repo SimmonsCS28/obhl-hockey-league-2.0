@@ -17,6 +17,15 @@ import { DIRECTION, ORDER_AXES, ORDER_AXIS, axisById, defaultDirections } from '
 
 const KEY = 'obi-draft-view-prefs';
 
+/**
+ * The read-only watch board keeps its own copy under a different key.
+ *
+ * An operator who opens their own share link to check it would otherwise overwrite the density
+ * and card size they had set up for running the draft, from a page they only meant to glance at.
+ * Same shape, same validation, separate drawer.
+ */
+export const WATCH_KEY = 'obi-draft-watch-prefs';
+
 export const DEFAULT_VIEW = {
     density: DENSITY.BALANCED,
     cardSize: CARD_SIZE.M,
@@ -75,9 +84,9 @@ function coerce(stored) {
     };
 }
 
-export function loadViewPrefs() {
+export function loadViewPrefs(storageKey = KEY) {
     try {
-        const raw = localStorage.getItem(KEY);
+        const raw = localStorage.getItem(storageKey);
         if (!raw) return { ...DEFAULT_VIEW };
         const parsed = JSON.parse(raw);
         if (!parsed || typeof parsed !== 'object') return { ...DEFAULT_VIEW };
@@ -88,9 +97,9 @@ export function loadViewPrefs() {
     }
 }
 
-export function saveViewPrefs(view) {
+export function saveViewPrefs(view, storageKey = KEY) {
     try {
-        localStorage.setItem(KEY, JSON.stringify(view));
+        localStorage.setItem(storageKey, JSON.stringify(view));
     } catch {
         // Storage full or blocked: the board still works, it just forgets next time.
     }

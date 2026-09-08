@@ -107,6 +107,10 @@ export default function DraftDashboard() {
     // is held separately from addError and can be answered with "Add anyway".
     const [addWarning, setAddWarning] = useState('');
 
+    // The read-only link GMs watch on. `token` is only ever populated straight after minting —
+    // the server keeps a hash, so once this modal closes the raw value is gone for good.
+    const [shareModal, setShareModal] = useState(null);   // { shared, token, busy, error }
+
     const fileInputRef = useRef(null);
 
     const say = useCallback((kind, text) => setMessage({ kind, text }), []);
@@ -687,6 +691,50 @@ export default function DraftDashboard() {
         }
     };
 
+    // ---- read-only share link ----
+    //
+    // Scoped by an unguessable link rather than by role, because a GM is not flagged as one in
+    // the system until finalize — which happens after the draft they want to watch.
+    const openShare = async () => {
+        setMenuOpen(false);
+        if (!draftId) {
+            say('error', 'Start the draft before sharing a view link — there is no board to share yet.');
+            return;
+        }
+        setShareModal({ shared: false, token: '', busy: true, error: '' });
+        try {
+            const status = await leagueDraftApi.shareStatus(draftId);
+            setShareModal({ shared: !!status.shared, token: '', busy: false, error: '' });
+        } catch {
+            setShareModal({ shared: false, token: '', busy: false, error: 'Could not check the share status.' });
+        }
+    };
+
+    const mintShareLink = async () => {
+        setShareModal(m => ({ ...m, busy: true, error: '' }));
+        try {
+            const result = await leagueDraftApi.createShare(draftId);
+            setShareModal({ shared: true, token: result.token, busy: false, error: '' });
+        } catch {
+            setShareModal(m => ({ ...m, busy: false, error: 'Could not create the link.' }));
+        }
+    };
+
+    const revokeShareLink = async () => {
+        setShareModal(m => ({ ...m, busy: true, error: '' }));
+        try {
+            await leagueDraftApi.revokeShare(draftId);
+            setShareModal({ shared: false, token: '', busy: false, error: '' });
+            say('success', 'Sharing is off. Any link already handed out has stopped working.');
+        } catch {
+            setShareModal(m => ({ ...m, busy: false, error: 'Could not turn sharing off.' }));
+        }
+    };
+
+    const shareUrl = shareModal && shareModal.token
+        ? `${window.location.origin}/draft/watch?t=${encodeURIComponent(shareModal.token)}`
+        : '';
+
     // ---- export / template ----
     const exportCsv = () => {
         const header = ['Team Name', 'Team Abbr', 'Is GM', 'First Name', 'Last Name', 'Position', 'Skill Rating', 'Status', 'Email', 'Buddy'];
@@ -940,6 +988,7 @@ export default function DraftDashboard() {
                 perRow={perRow} onPerRow={(n) => setPerRow(Math.min(7, Math.max(3, n)))}
                 gridRosters={gridRosters} onGridRosters={setGridRosters}
                 search={search}
+                onShare={openShare}
                 menuOpen={menuOpen}
                 onToggleMenu={setMenuOpen}
                 onNewDraft={askNewDraft}
@@ -1530,6 +1579,72 @@ export default function DraftDashboard() {
                     )}
                     {addError && (
                         <div className="obi-draft-form-error" role="alert">{addError}</div>
+                    )}
+                </DraftModal>
+            )}
+
+            {shareModal && (
+                <DraftModal
+                    title="Share a view link"
+                    onClose={() => setShareModal(null)}
+                    note="Anyone with the link can watch — treat it like a key"
+                    footer={<>
+                        <button type="button" className="obi-draft-btn" onClick={() => setShareModal(null)}>Done</button>
+                        {shareModal.shared ? (
+                            <button type="button" className="obi-draft-btn is-accent" onClick={revokeShareLink} disabled={shareModal.busy}>
+                                Turn sharing off
+                            </button>
+                        ) : (
+                            <button type="button" className="obi-draft-btn is-primary" onClick={mintShareLink} disabled={shareModal.busy}>
+                                {shareModal.busy ? 'Working…' : 'Create link'}
+                            </button>
+                        )}
+                    </>}
+                >
+                    <p className="obi-draft-form-lede">
+                        Gives GMs a read-only board on their own phones, updating as picks land. They
+                        cannot move a player, rename a team or change anything — only you can. Their
+                        density and card size are their own and never touch your board.
+                    </p>
+
+                    {shareModal.token ? (
+                        <>
+                            <div className="obi-draft-field">
+                                <span className="obi-draft-field-label">Link</span>
+                                <input className="obi-draft-input" readOnly value={shareUrl} onFocus={(e) => e.target.select()} aria-label="Share link" />
+                                <button
+                                    type="button"
+                                    className="obi-draft-btn is-quiet"
+                                    onClick={() => navigator.clipboard?.writeText(shareUrl).then(
+                                        () => say('success', 'Link copied.'),
+                                        () => say('info', 'Copy it from the box — the clipboard was blocked.')
+                                    )}
+                                >Copy</button>
+                            </div>
+                            <div className="obi-draft-form-warn" role="alert">
+                                Copy it now. Only a hash is stored, so this is the one time the link
+                                can be shown — creating another one replaces this and breaks it.
+                            </div>
+                        </>
+                    ) : (
+                        <p style={{ marginTop: 0, fontSize: 13 }}>
+                            {shareModal.busy && !shareModal.error
+                                ? 'Checking…'
+                                : shareModal.shared
+                                    ? 'A link is already live. The link itself cannot be shown again — if it '
+                                      + 'has been lost, create a new one, which replaces the old one.'
+                                    : 'No link yet.'}
+                        </p>
+                    )}
+
+                    {shareModal.shared && !shareModal.token && (
+                        <button type="button" className="obi-draft-linkbtn" onClick={mintShareLink} disabled={shareModal.busy}>
+                            Create a replacement link
+                        </button>
+                    )}
+
+                    {shareModal.error && (
+                        <div className="obi-draft-form-error" role="alert">{shareModal.error}</div>
                     )}
                 </DraftModal>
             )}

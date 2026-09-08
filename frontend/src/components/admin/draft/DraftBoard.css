@@ -1355,3 +1355,43 @@
     .obi-draft-find-box { width: 220px; }
     .obi-draft-pool { width: 226px; }
 }
+
+/* ===== Read-only watch board (GMs following the draft on their own devices) ===== */
+
+/* .obi-draft-root subtracts the admin shell's header. This page is standalone and has no
+   header to subtract, so it takes the full viewport instead. */
+.obi-draft-watch { height: 100vh; }
+
+.obi-draft-watch-state {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding: 2rem;
+    background: var(--obi-bg);
+    color: var(--obi-text-muted);
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    text-align: center;
+}
+.obi-draft-watch-state-title {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 17px;
+    color: var(--obi-text);
+}
+
+.obi-draft-watch-stamp {
+    margin-left: auto;
+    flex: none;
+    font-size: 11px;
+    color: var(--obi-text-muted);
+    white-space: nowrap;
+}
+
+/* The operator's chips are buttons that set the column order. Here the same information is
+   just a readout, so it must not look pressable. */
+.obi-draft-chip.is-static { cursor: default; }
+.obi-draft-chip.is-static:hover { background: inherit; }

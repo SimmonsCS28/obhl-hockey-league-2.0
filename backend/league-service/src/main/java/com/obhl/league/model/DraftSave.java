@@ -36,6 +36,15 @@ public class DraftSave {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    // Read-only share link for GMs following along. Only the SHA-256 hex of the token is held;
+    // the raw value is shown to the operator once and is not recoverable. NULL = sharing off,
+    // so revoking a link is just nulling this. See migration 060.
+    @Column(name = "share_token_hash", length = 64)
+    private String shareTokenHash;
+
+    @Column(name = "share_created_at")
+    private LocalDateTime shareCreatedAt;
+
     // Constructors
     public DraftSave() {
         this.createdAt = LocalDateTime.now();
@@ -102,5 +111,21 @@ public class DraftSave {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getShareTokenHash() {
+        return shareTokenHash;
+    }
+
+    public void setShareTokenHash(String shareTokenHash) {
+        this.shareTokenHash = shareTokenHash;
+    }
+
+    public LocalDateTime getShareCreatedAt() {
+        return shareCreatedAt;
+    }
+
+    public void setShareCreatedAt(LocalDateTime shareCreatedAt) {
+        this.shareCreatedAt = shareCreatedAt;
     }
 }

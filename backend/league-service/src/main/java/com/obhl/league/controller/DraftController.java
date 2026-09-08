@@ -9,12 +9,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.obhl.league.dto.DraftStateDTO;
 import com.obhl.league.model.DraftSave;
 import com.obhl.league.service.DraftService;
+import com.obhl.league.service.DraftShareService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,6 +28,7 @@ import lombok.RequiredArgsConstructor;
 public class DraftController {
 
     private final DraftService draftService;
+    private final DraftShareService draftShareService;
 
     @PostMapping("/{id}/finalize")
     public ResponseEntity<?> finalizeDraft(@PathVariable Long id) {
@@ -120,10 +124,70 @@ public class DraftController {
         } catch (Exception e) {
             throw new RuntimeException("Failed to convert draft state to JSON", e);
         }
-    }}
+    }
+    // ===== Read-only share link (GMs following along) =====
 
-    
-    
-        
-        
-    
+    /**
+     * Mints a share link. The raw token comes back exactly once -- it is not stored and cannot be
+     * read again, so the caller must show it to the operator now. Calling this a second time
+     * rotates the token, which kills any link already handed out.
+     */
+    @PostMapping("/{id}/share")
+    public ResponseEntity<?> createShareLink(@PathVariable Long id) {
+        try {
+            String token = draftShareService.createShareToken(id);
+            return ResponseEntity.ok(java.util.Map.of("token", token));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(java.util.Map.of("error", "Failed to create share link"));
+        }
+    }
+
+    /** Whether a live share link exists, without disclosing it. */
+    @GetMapping("/{id}/share")
+    public ResponseEntity<?> shareStatus(@PathVariable Long id) {
+        return ResponseEntity.ok(java.util.Map.of("shared", draftShareService.isShared(id)));
+    }
+
+    @DeleteMapping("/{id}/share")
+    public ResponseEntity<?> revokeShareLink(@PathVariable Long id) {
+        try {
+            draftShareService.revokeShareToken(id);
+            return ResponseEntity.ok(java.util.Map.of("shared", false));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * The viewer's board. Reached only through the gateway's public /api/v1/auth/draft-watch, and
+     * every response goes through DraftShareService.projectForViewing -- never the raw blob, which
+     * carries an email address for every player.
+     *
+     * <p>A bad token and a revoked token are answered identically, so the response cannot be used
+     * to distinguish "wrong token" from "sharing turned off".
+     */
+    @GetMapping("/watch")
+    public ResponseEntity<?> watch(@RequestParam("t") String token) {
+        try {
+            Optional<DraftSave> draft = draftShareService.findByToken(token);
+            if (draft.isEmpty()) {
+                return ResponseEntity.status(404)
+                        .body(java.util.Map.of("error", "This draft link is not valid, or sharing has been turned off."));
+            }
+            DraftSave save = draft.get();
+            return ResponseEntity.ok(java.util.Map.of(
+                    "seasonName", save.getSeasonName(),
+                    "status", save.getStatus(),
+                    "updatedAt", save.getUpdatedAt().toString(),
+                    "draftData", draftShareService.projectForViewing(save)));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError()
+                    .body(java.util.Map.of("error", "Could not load the draft board."));
+        }
+    }
+}

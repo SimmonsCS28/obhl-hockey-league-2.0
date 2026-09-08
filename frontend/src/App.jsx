@@ -5,6 +5,7 @@ import AdminLayout from './components/AdminLayout';
 import GMLayout from './components/GMLayout';
 import LiveScoreEntry from './components/LiveScoreEntry';
 import ProtectedRoute from './components/ProtectedRoute';
+import DraftWatch from './components/admin/draft/DraftWatch';
 import PublicLayout from './components/PublicLayout';
 import TournamentLayout from './components/tournament/TournamentLayout';
 import TournamentHome from './components/tournament/TournamentHome';
@@ -57,6 +58,14 @@ import RefereeShiftSignup from './components/user/RefereeShiftSignup';
 import ScorekeeperShiftSignup from './components/user/ScorekeeperShiftSignup';
 
 const router = createBrowserRouter([
+  {
+    // Read-only draft board for GMs, scoped by an unguessable link rather than by role — a GM
+    // is not flagged as one until finalize, which happens after the draft they want to watch.
+    // Deliberately OUTSIDE PublicLayout: a 14-column board needs the whole width, and the site
+    // nav is not useful to somebody watching picks land.
+    path: "/draft/watch",
+    element: <DraftWatch />
+  },
   {
     path: "/",
     element: <PublicLayout />,

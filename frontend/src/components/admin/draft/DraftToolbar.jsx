@@ -52,7 +52,7 @@ export default function DraftToolbar({
     saveStatus, lastSavedAt, onSaveNow, onRetry,
     density, onDensity, cardSize, onCardSize, layout, onLayout,
     perRow, onPerRow, gridRosters, onGridRosters,
-    search, menuOpen, onToggleMenu, onNewDraft, onReset
+    search, menuOpen, onToggleMenu, onNewDraft, onReset, onShare
 }) {
     const isLive = phase === 'live';
     const menuRef = useRef(null);
@@ -267,6 +267,10 @@ export default function DraftToolbar({
                             <div className="obi-draft-pop-head">Draft file</div>
                             <button type="button" className="obi-draft-menu-item" onClick={onTemplate}>Download template</button>
                             <button type="button" className="obi-draft-menu-item" onClick={onUpload}>Re-upload registrations…</button>
+                            {/* Lives in the overflow rather than the bar: it is used once at the
+                                start of a draft, and the bar has no spare width. */}
+                            <div className="obi-draft-pop-head">Watchers</div>
+                            <button type="button" className="obi-draft-menu-item" onClick={onShare}>Share view link…</button>
                             <div className="obi-draft-pop-head is-danger">Can’t be undone</div>
                             <button type="button" className="obi-draft-menu-item is-danger" onClick={onNewDraft}>New draft…</button>
                             <button type="button" className="obi-draft-menu-item is-danger" onClick={onReset}>Reset draft…</button>

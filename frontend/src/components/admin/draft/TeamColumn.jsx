@@ -51,7 +51,12 @@ export default function TeamColumn({
     onFieldChange,
     registerColumn,
     registerRoster,
-    registerCard
+    registerCard,
+    // The watch board renders this same column for GMs following along. Everything here is
+    // display except the name input and the two selects, which carry no isLive gate of their
+    // own — so a viewer could otherwise type into a team name. Defaults false, so nothing
+    // about the operator's column changes.
+    readOnly = false
 }) {
     const header = jerseyHeader(colour);
     const sorted = getSortedTeamPlayers(team.players || [], sortOption);
@@ -69,7 +74,7 @@ export default function TeamColumn({
             onDragOver={onDragOver}
             onDragLeave={onDragLeave}
             onDrop={onDrop}
-            ref={(el) => registerColumn(team.id, el)}
+            ref={(el) => registerColumn && registerColumn(team.id, el)}
         >
             <div
                 className="obi-draft-col-head"
@@ -83,8 +88,9 @@ export default function TeamColumn({
                         fontSize: metrics.nameSize
                     }}
                     value={team.name}
-                    onChange={(e) => onRename(team.id, e.target.value)}
-                    title="Click to rename"
+                    readOnly={readOnly}
+                    onChange={readOnly ? undefined : (e) => onRename(team.id, e.target.value)}
+                    title={readOnly ? team.name : 'Click to rename'}
                     aria-label={`${team.name} name`}
                 />
                 {/* How far this column would move if the board were re-ordered now.
@@ -121,7 +127,8 @@ export default function TeamColumn({
                             className="obi-draft-select"
                             style={{ width: 74 }}
                             value={colourName}
-                            onChange={(e) => onColour(team.id, e.target.value)}
+                            disabled={readOnly}
+                            onChange={readOnly ? undefined : (e) => onColour(team.id, e.target.value)}
                             title="Jersey colour"
                             aria-label={`${team.name} jersey colour`}
                         >
@@ -135,7 +142,8 @@ export default function TeamColumn({
                         className="obi-draft-select"
                         style={{ flex: 1, minWidth: 0 }}
                         value={sortOption}
-                        onChange={(e) => onSort(team.id, e.target.value)}
+                        disabled={readOnly}
+                        onChange={readOnly ? undefined : (e) => onSort(team.id, e.target.value)}
                         title="Orders the players inside this card — not the columns"
                         aria-label={`${team.name}: order the players inside this card`}
                     >
@@ -169,7 +177,7 @@ export default function TeamColumn({
             <div
                 className="obi-draft-roster"
                 style={{ minHeight: rosterMinHeight, maxHeight: rosterMaxHeight }}
-                ref={(el) => registerRoster(team.id, el)}
+                ref={(el) => registerRoster && registerRoster(team.id, el)}
             >
                 {sorted.length === 0 && <div className="obi-draft-roster-empty">No players yet</div>}
                 {sorted.map(player => (

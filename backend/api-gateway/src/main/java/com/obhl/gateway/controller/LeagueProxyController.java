@@ -8,6 +8,7 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -342,6 +343,48 @@ public class LeagueProxyController {
             } catch (Exception jsonEx) {
                 return ResponseEntity.internalServerError().body("{\"error\":\"Internal server error\"}");
             }
+        }
+    }
+
+    // ===== Read-only share link for the draft board =====
+    //
+    // These stay on the AUTHENTICATED /api/league path: minting and revoking a link are operator
+    // actions. Only the viewer-facing read is public, and it lives in DraftWatchController under
+    // the /api/v1/auth/** prefix instead.
+
+    @PostMapping("/draft/{id}/share")
+    public ResponseEntity<?> createShareLink(@PathVariable Long id, HttpServletRequest request) {
+        return forwardDraftShare(HttpMethod.POST, "/draft/" + id + "/share", request);
+    }
+
+    @GetMapping("/draft/{id}/share")
+    public ResponseEntity<?> shareStatus(@PathVariable Long id, HttpServletRequest request) {
+        return forwardDraftShare(HttpMethod.GET, "/draft/" + id + "/share", request);
+    }
+
+    @DeleteMapping("/draft/{id}/share")
+    public ResponseEntity<?> revokeShareLink(@PathVariable Long id, HttpServletRequest request) {
+        return forwardDraftShare(HttpMethod.DELETE, "/draft/" + id + "/share", request);
+    }
+
+    /** The three share calls differ only by verb, so they share one forwarder. */
+    private ResponseEntity<?> forwardDraftShare(HttpMethod method, String path, HttpServletRequest request) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("Content-Type", "application/json");
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null) {
+                headers.set("Authorization", authHeader);
+            }
+            ResponseEntity<String> response = restTemplate.exchange(
+                    leagueServiceUrl + path,
+                    method,
+                    new HttpEntity<>(headers),
+                    String.class);
+            return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+        } catch (Exception e) {
+            System.err.println("Error proxying draft share request: " + e.getMessage());
+            return ResponseEntity.internalServerError().body("{\"error\":\"Failed to update the share link\"}");
         }
     }
 }
