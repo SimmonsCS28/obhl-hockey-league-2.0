@@ -101,6 +101,8 @@ export default function DraftDashboard() {
     const [buddyModal, setBuddyModal] = useState(null);    // {anchor, targetTeamId, source, buddies, selected, queue}
     const [confirm, setConfirm] = useState(null);          // {kind, title, body, confirmLabel, onConfirm}
     const [duplicateRows, setDuplicateRows] = useState([]);
+    const [addPlayer, setAddPlayer] = useState(null);   // the late-registration form
+    const [addError, setAddError] = useState('');
 
     const fileInputRef = useRef(null);
 
@@ -590,6 +592,63 @@ export default function DraftDashboard() {
     const updateField = (email, field, value) =>
         dispatch({ type: ACTIONS.UPDATE_PLAYER, email, field, value });
 
+    // ---- adding somebody the registration sheet missed ----
+    //
+    // People forget to register, and rookies get missed. Before this the only route was to
+    // edit the spreadsheet and re-import, which throws away a draft already in progress.
+    const blankPlayer = () => ({
+        firstName: '', lastName: '', email: '',
+        position: 'Forward', skillRating: 5, status: 'Rookie',
+        isGm: false, isRef: false, buddyPick: ''
+    });
+
+    const submitNewPlayer = () => {
+        const form = addPlayer;
+        const first = (form.firstName || '').trim();
+        const last = (form.lastName || '').trim();
+        const email = (form.email || '').trim().toLowerCase();
+
+        if (!first || !last) { setAddError('First and last name are both needed.'); return; }
+        // Email is not optional here, and not for tidiness: it is the identity key on the
+        // board, the React key on the card, and what finalize matches against. A blank or
+        // duplicate one silently collapses two people into one.
+        if (!email) { setAddError('An email is needed — it is how this player is identified everywhere else.'); return; }
+
+        const taken = [...playerPool, ...teams.flatMap(t => t.players || [])]
+            .find(p => (p.email || '').toLowerCase() === email);
+        if (taken) {
+            setAddError(`${taken.firstName} ${taken.lastName} is already on the board with that email.`);
+            return;
+        }
+
+        const player = {
+            ...form,
+            firstName: first,
+            lastName: last,
+            email,
+            skillRating: Math.min(10, Math.max(1, parseInt(form.skillRating, 10) || 1)),
+            isVeteran: form.status === 'Veteran',
+            buddyPick: (form.buddyPick || '').trim()
+        };
+
+        dispatch({ type: ACTIONS.ADD_POOL_PLAYER, player });
+        setAddPlayer(null);
+        setAddError('');
+
+        // A pool filter that hides the player you just added looks exactly like a failure.
+        const hidden = (poolFilter === 'Forwards' && player.position !== 'Forward')
+            || (poolFilter === 'Defense' && player.position !== 'Defense')
+            || (poolFilter === 'Refs' && !player.isRef)
+            || (poolFilter === 'GMs' && !player.isGm)
+            || (poolFilter === 'Has Buddy' && !player.buddyPick);
+        if (hidden) {
+            setPoolFilter('All');
+            say('success', `Added ${first} ${last} to the pool. The pool filter was cleared so you can see them.`);
+        } else {
+            say('success', `Added ${first} ${last} to the pool.`);
+        }
+    };
+
     // ---- export / template ----
     const exportCsv = () => {
         const header = ['Team Name', 'Team Abbr', 'Is GM', 'First Name', 'Last Name', 'Position', 'Skill Rating', 'Status', 'Email', 'Buddy'];
@@ -986,6 +1045,16 @@ export default function DraftDashboard() {
                                 <span className="obi-draft-pool-name">PLAYER POOL</span>
                                 <span className="obi-draft-pool-count">{playerPool.length}</span>
                                 <div style={{ flex: 1 }} />
+                                {isLive && (
+                                    <button
+                                        type="button"
+                                        className="obi-draft-pool-add"
+                                        onClick={() => { setAddPlayer(blankPlayer()); setAddError(''); }}
+                                        title="Add somebody the registration sheet missed"
+                                    >
+                                        + Add
+                                    </button>
+                                )}
                                 <button type="button" className="obi-draft-pool-collapse" onClick={() => setPoolOpen(false)} title="Collapse pool">«</button>
                             </div>
                             <div className="obi-draft-pool-controls">
@@ -1293,6 +1362,121 @@ export default function DraftDashboard() {
                             <span className="obi-draft-row-meta">{b.position === 'Defense' ? 'D' : 'F'}:{b.skillRating}</span>
                         </div>
                     ))}
+                </DraftModal>
+            )}
+
+            {addPlayer && (
+                <DraftModal
+                    title="Add a player to the pool"
+                    onClose={() => { setAddPlayer(null); setAddError(''); }}
+                    note="They join the pool as any imported player would"
+                    footer={<>
+                        <button type="button" className="obi-draft-btn" onClick={() => { setAddPlayer(null); setAddError(''); }}>Cancel</button>
+                        <button type="button" className="obi-draft-btn is-primary" onClick={submitNewPlayer}>Add to pool</button>
+                    </>}
+                >
+                    <p className="obi-draft-form-lede">
+                        For somebody who forgot to register, or a rookie the sheet missed. The draft
+                        keeps going — nothing is re-imported and nothing already drafted moves.
+                    </p>
+
+                    <div className="obi-draft-form">
+                        <label className="obi-draft-field">
+                            <span className="obi-draft-field-label">First name</span>
+                            <input
+                                className="obi-draft-input"
+                                value={addPlayer.firstName}
+                                onChange={(e) => setAddPlayer(f => ({ ...f, firstName: e.target.value }))}
+                            />
+                        </label>
+                        <label className="obi-draft-field">
+                            <span className="obi-draft-field-label">Last name</span>
+                            <input
+                                className="obi-draft-input"
+                                value={addPlayer.lastName}
+                                onChange={(e) => setAddPlayer(f => ({ ...f, lastName: e.target.value }))}
+                            />
+                        </label>
+                        <label className="obi-draft-field">
+                            <span className="obi-draft-field-label">Email</span>
+                            <input
+                                className="obi-draft-input"
+                                type="email"
+                                value={addPlayer.email}
+                                placeholder="how this player is identified everywhere else"
+                                onChange={(e) => setAddPlayer(f => ({ ...f, email: e.target.value }))}
+                            />
+                        </label>
+                        <label className="obi-draft-field">
+                            <span className="obi-draft-field-label">Position</span>
+                            <select
+                                className="obi-draft-select"
+                                aria-label="Position"
+                                value={addPlayer.position}
+                                onChange={(e) => setAddPlayer(f => ({ ...f, position: e.target.value }))}
+                            >
+                                <option value="Forward">Forward</option>
+                                <option value="Defense">Defense</option>
+                            </select>
+                        </label>
+                        <label className="obi-draft-field">
+                            <span className="obi-draft-field-label">Skill</span>
+                            <select
+                                className="obi-draft-select"
+                                aria-label="Skill rating"
+                                value={String(addPlayer.skillRating)}
+                                onChange={(e) => setAddPlayer(f => ({ ...f, skillRating: parseInt(e.target.value, 10) }))}
+                            >
+                                {Array.from({ length: 10 }, (_, i) => String(i + 1)).map(o => (
+                                    <option key={o} value={o}>{o}</option>
+                                ))}
+                            </select>
+                        </label>
+                        <label className="obi-draft-field">
+                            <span className="obi-draft-field-label">Status</span>
+                            <select
+                                className="obi-draft-select"
+                                aria-label="Status"
+                                value={addPlayer.status}
+                                onChange={(e) => setAddPlayer(f => ({ ...f, status: e.target.value }))}
+                            >
+                                <option value="Rookie">Rookie</option>
+                                <option value="Veteran">Veteran</option>
+                            </select>
+                        </label>
+                        <label className="obi-draft-field">
+                            <span className="obi-draft-field-label">Buddies</span>
+                            <input
+                                className="obi-draft-input"
+                                value={addPlayer.buddyPick}
+                                placeholder="names, comma separated"
+                                onChange={(e) => setAddPlayer(f => ({ ...f, buddyPick: e.target.value }))}
+                            />
+                        </label>
+                        <div className="obi-draft-field">
+                            <span className="obi-draft-field-label">Also</span>
+                            <span className="obi-draft-field-toggles">
+                                <button
+                                    type="button"
+                                    className={`obi-draft-toggle is-gm ${addPlayer.isGm ? 'is-on' : ''}`}
+                                    aria-label="Also a GM"
+                                    aria-pressed={addPlayer.isGm}
+                                    onClick={() => setAddPlayer(f => ({ ...f, isGm: !f.isGm }))}
+                                >GM</button>
+                                <button
+                                    type="button"
+                                    className={`obi-draft-toggle is-ref ${addPlayer.isRef ? 'is-on' : ''}`}
+                                    aria-label="Also a referee"
+                                    aria-pressed={addPlayer.isRef}
+                                    onClick={() => setAddPlayer(f => ({ ...f, isRef: !f.isRef }))}
+                                >REF</button>
+                            </span>
+                        </div>
+                    </div>
+
+                    {addError && (
+                        <div className="obi-draft-form-error" role="alert">{addError}</div>
+                    )}
                 </DraftModal>
             )}
 

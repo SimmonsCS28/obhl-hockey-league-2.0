@@ -35,6 +35,7 @@ export const ACTIONS = {
     SET_TEAM_SORT: 'SET_TEAM_SORT',
     REORDER_TEAMS: 'REORDER_TEAMS',
     // Undoable from here down.
+    ADD_POOL_PLAYER: 'ADD_POOL_PLAYER',
     MOVE_PLAYERS: 'MOVE_PLAYERS',
     RETURN_TO_POOL: 'RETURN_TO_POOL',
     ASSIGN_GMS: 'ASSIGN_GMS',
@@ -48,6 +49,7 @@ export const ACTIONS = {
  * in one place.
  */
 export const UNDOABLE_ACTIONS = new Set([
+    ACTIONS.ADD_POOL_PLAYER,
     ACTIONS.MOVE_PLAYERS,
     ACTIONS.RETURN_TO_POOL,
     ACTIONS.ASSIGN_GMS,
@@ -139,6 +141,12 @@ export function documentReducer(doc, action) {
                 ...doc,
                 teamSortOptions: { ...doc.teamSortOptions, [action.teamId]: action.sortOption }
             };
+
+        case ACTIONS.ADD_POOL_PLAYER:
+            // Someone who forgot to register, or a rookie the sheet missed. Appended to
+            // the pool exactly as an imported player would be, so everything downstream -
+            // buddy resolution, balance, finalize - treats them identically.
+            return withBuddies({ ...doc, playerPool: [...doc.playerPool, action.player] });
 
         case ACTIONS.MOVE_PLAYERS: {
             // Players may come from the pool or from another team, so they are removed
