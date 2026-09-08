@@ -225,10 +225,14 @@ export default function DraftToolbar({
                 </div>
             )}
 
-            <div className="obi-draft-bar-spacer" />
-
             {/* ---- endgame: how the board looks, then how it ends ---- */}
-            <div className="obi-draft-bar-group">
+            {/* Right-aligned by an auto margin rather than a spacer element. Grid adds two
+                more controls here (Across, Rosters), and at common widths that pushes the
+                group onto its own line - where a spacer would have left it packed against
+                the left edge with a ragged gap, while itself ballooning to fill the line
+                above. An auto margin absorbs the free space on whichever line the group
+                lands on, so its right edge stays put whether it shares a line or not. */}
+            <div className="obi-draft-bar-group is-trailing">
                 <Segmented label="Density" steps={DENSITY_STEPS} value={density} onChange={onDensity} />
                 <Segmented label="Card size" steps={CARD_SIZE_STEPS} value={cardSize} onChange={onCardSize} />
                 <Segmented label="Layout" steps={LAYOUT_STEPS} value={layout} onChange={onLayout} />
