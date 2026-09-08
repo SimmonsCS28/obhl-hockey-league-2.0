@@ -15,8 +15,16 @@ import { COLUMN_GAP, LAYOUT, columnWidth, scrollAxisTo } from './draftLayout';
  * cases the team's own roster well then scrolls vertically to the card.
  */
 
-/** first name, last name, full "first last", and email - all case-insensitive substrings. */
-export function matchesQuery(player, query) {
+/**
+ * first name, last name, full "first last", and email - all case-insensitive substrings.
+ *
+ * `includeEmail` exists for the read-only watch board, where that field does not hold an email
+ * at all: league-service substitutes an opaque hex digest so the public payload carries no
+ * personal data. Hex is 0-9a-f, which is enough of the alphabet to make real names collide --
+ * "ada", "bad", "cafe", "face" would all match somebody's digest and produce a result the
+ * viewer cannot explain. Searching a hash was never the point, so that board turns it off.
+ */
+export function matchesQuery(player, query, includeEmail = true) {
     if (!query) return false;
     const first = (player.firstName || '').toLowerCase();
     const last = (player.lastName || '').toLowerCase();
@@ -24,26 +32,26 @@ export function matchesQuery(player, query) {
     return first.includes(query)
         || last.includes(query)
         || `${first} ${last}`.includes(query)
-        || email.includes(query);
+        || (includeEmail && email.includes(query));
 }
 
-export function findMatches(playerPool, teams, rawQuery) {
+export function findMatches(playerPool, teams, rawQuery, includeEmail = true) {
     const query = (rawQuery || '').trim().toLowerCase();
     if (!query) return [];
 
     const out = [];
     playerPool.forEach(p => {
-        if (matchesQuery(p, query)) out.push({ player: p, teamId: null, teamIndex: -1, team: null });
+        if (matchesQuery(p, query, includeEmail)) out.push({ player: p, teamId: null, teamIndex: -1, team: null });
     });
     teams.forEach((team, teamIndex) => {
         (team.players || []).forEach(p => {
-            if (matchesQuery(p, query)) out.push({ player: p, teamId: team.id, teamIndex, team });
+            if (matchesQuery(p, query, includeEmail)) out.push({ player: p, teamId: team.id, teamIndex, team });
         });
     });
     return out;
 }
 
-export function useBoardSearch({ playerPool, teams, density, cardSize, layout }) {
+export function useBoardSearch({ playerPool, teams, density, cardSize, layout, includeEmail = true }) {
     const [query, setQuery] = useState('');
     const [matchIndex, setMatchIndex] = useState(0);
 
@@ -55,8 +63,8 @@ export function useBoardSearch({ playerPool, teams, density, cardSize, layout })
     const savedScrollRef = useRef(null);
 
     const matches = useMemo(
-        () => findMatches(playerPool, teams, query),
-        [playerPool, teams, query]
+        () => findMatches(playerPool, teams, query, includeEmail),
+        [playerPool, teams, query, includeEmail]
     );
 
     /** email -> 2 for the current match, 1 for the others. Drives the card outline. */

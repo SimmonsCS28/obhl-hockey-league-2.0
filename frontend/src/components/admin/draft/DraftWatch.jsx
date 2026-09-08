@@ -10,6 +10,7 @@ import {
 } from './draftLayout';
 import { DEFAULT_TEAM_COLOR, DEFAULT_TEAM_SORT, fromDraftPayload } from './draftReducer';
 import { WATCH_KEY, loadViewPrefs, saveViewPrefs } from './draftViewPrefs';
+import { useBoardSearch } from './useBoardSearch';
 import './DraftBoard.css';
 
 /**
@@ -148,6 +149,25 @@ export default function DraftWatch() {
         [density, cardSize, layout, perRow]
     );
 
+    // Same find-and-reveal the operator has: it narrows the pool rail and jumps the board to a
+    // player already drafted, on both axes. includeEmail is off because that field holds an
+    // opaque digest here, not an address - see matchesQuery.
+    const search = useBoardSearch({ playerPool, teams, density, cardSize, layout, includeEmail: false });
+
+    // Escape clears the find, matching the operator board. Nothing else on this page is
+    // dismissible, so it can be unconditional.
+    useEffect(() => {
+        const onKey = (e) => { if (e.key === 'Escape') search.clear(); };
+        document.addEventListener('keydown', onKey);
+        return () => document.removeEventListener('keydown', onKey);
+    }, [search]);
+
+    const visiblePool = useMemo(() => {
+        if (!search.hasQuery) return playerPool;
+        const hits = new Set(search.poolHits.map(h => h.player.email));
+        return playerPool.filter(p => hits.has(p.email));
+    }, [playerPool, search.hasQuery, search.poolHits]);
+
     const balance = useMemo(() => boardBalance(teams), [teams]);
     const balanceById = useMemo(() => {
         const map = {};
@@ -196,6 +216,32 @@ export default function DraftWatch() {
                     {seasonName && <span className="obi-draft-hint is-ready">{seasonName}</span>}
                 </div>
 
+                <div className="obi-draft-find">
+                    <div className={`obi-draft-find-box ${search.hasQuery ? 'is-active' : ''}`}>
+                        <span aria-hidden="true" style={{ fontSize: 12, color: 'var(--obi-text-muted)' }}>&#8981;</span>
+                        <input
+                            className="obi-draft-find-input"
+                            value={search.query}
+                            onChange={(e) => search.search(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') { e.preventDefault(); search.next(); }
+                            }}
+                            placeholder="Find a player anywhere on the board"
+                            aria-label="Find a player anywhere on the board"
+                        />
+                        {search.hasQuery && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 'none' }}>
+                                <span className="obi-draft-find-count">
+                                    {search.matches.length ? `${search.matchIndex + 1} / ${search.matches.length}` : 'none'}
+                                </span>
+                                <button type="button" className="obi-draft-find-nav" onClick={search.previous} title="Previous match" disabled={!search.matches.length}>&#8249;</button>
+                                <button type="button" className="obi-draft-find-nav" onClick={search.next} title="Next match (Enter)" disabled={!search.matches.length}>&#8250;</button>
+                                <button type="button" className="obi-draft-find-clear" onClick={search.clear} title="Clear (Esc)">&#10005;</button>
+                            </span>
+                        )}
+                    </div>
+                </div>
+
                 <div className="obi-draft-bar-group is-trailing">
                     {segmented('Density', [
                         { value: DENSITY.DETAILED, label: 'Detailed' },
@@ -233,15 +279,28 @@ export default function DraftWatch() {
                             <span className="obi-draft-pool-name">STILL AVAILABLE</span>
                             <span className="obi-draft-pool-count">{playerPool.length}</span>
                         </div>
-                    </div>
-                    <div className="obi-draft-pool-list">
-                        {playerPool.length === 0 && (
-                            <div className="obi-draft-empty">
-                                <div className="obi-draft-empty-title">Nobody left</div>
-                                <div className="obi-draft-empty-body">Every player has been drafted.</div>
+                        {search.hasQuery && (
+                            <div className="obi-draft-pool-filtered">
+                                <span className="obi-draft-pool-filtered-tag">Filtered by find</span>
+                                <span className="obi-draft-pool-filtered-q">&#8220;{search.query}&#8221;</span>
+                                <button type="button" className="obi-draft-find-clear" onClick={search.clear}>&#10005;</button>
                             </div>
                         )}
-                        {playerPool.map(player => (
+                    </div>
+                    <div className="obi-draft-pool-list">
+                        {visiblePool.length === 0 && (
+                            <div className="obi-draft-empty">
+                                <div className="obi-draft-empty-title">
+                                    {playerPool.length === 0 ? 'Nobody left' : 'Nothing matches'}
+                                </div>
+                                <div className="obi-draft-empty-body">
+                                    {playerPool.length === 0
+                                        ? 'Every player has been drafted.'
+                                        : 'They may already be on a team - check the match count above.'}
+                                </div>
+                            </div>
+                        )}
+                        {visiblePool.map(player => (
                             <PlayerCard
                                 key={player.email}
                                 player={player}
@@ -250,6 +309,8 @@ export default function DraftWatch() {
                                 colW={colW}
                                 metrics={metrics}
                                 isLive={false}
+                                matchMark={search.matchMarks[player.email] || 0}
+                                registerRef={search.registerCard}
                             />
                         ))}
                     </div>
@@ -265,6 +326,7 @@ export default function DraftWatch() {
                             flexWrap: geometry.flexWrap,
                             alignItems: geometry.alignItems
                         }}
+                        ref={search.registerBoard}
                     >
                         {teams.map(team => (
                             <TeamColumn
@@ -284,11 +346,14 @@ export default function DraftWatch() {
                                 colW={colW}
                                 metrics={metrics}
                                 isLive={false}
-                                matchCount={0}
-                                matchMarks={{}}
+                                matchCount={search.teamMatchCounts[team.id] || 0}
+                                matchMarks={search.matchMarks}
                                 showMeta={density !== DENSITY.OVERVIEW}
                                 rankDelta={0}
                                 isGrid={layout === LAYOUT.GRID}
+                                registerColumn={search.registerColumn}
+                                registerRoster={search.registerRoster}
+                                registerCard={search.registerCard}
                                 readOnly
                             />
                         ))}
