@@ -1307,6 +1307,20 @@
     border: 1px solid var(--obi-card-border);
     margin-bottom: 7px;
 }
+.obi-draft-row-tag {
+    flex: none;
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 9.5px;
+    letter-spacing: 0.9px;
+    text-transform: uppercase;
+    border: 1px solid transparent;
+}
+.obi-draft-row-tag.is-vet { color: var(--obi-icy); background: rgba(157, 185, 205, 0.12); border-color: rgba(157, 185, 205, 0.3); }
+.obi-draft-row-tag.is-rookie { color: var(--obi-accent); background: var(--obi-accent-soft); border-color: rgba(246, 169, 28, 0.38); }
+
 .obi-draft-row-name { font-family: var(--obi-font-display); font-weight: 700; font-size: 14px; color: var(--obi-text); flex: 1; min-width: 0; }
 .obi-draft-row-meta { font-size: 12px; color: var(--obi-text-muted); }
 .obi-draft-summary {

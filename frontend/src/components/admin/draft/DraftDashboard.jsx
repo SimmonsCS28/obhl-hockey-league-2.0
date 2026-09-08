@@ -18,7 +18,7 @@ import {
     TEAM_COLORS, TEAM_COLOR_NAMES,
     boardGeometry, cardMetrics, columnWidth, columnWidthCss
 } from './draftLayout';
-import { getFilteredPlayers } from './draftSelectors';
+import { getFilteredPlayers, needsRating } from './draftSelectors';
 import { transitiveBuddyEmails, isReciprocal } from './buddyGraph';
 import { loadViewPrefs, saveViewPrefs } from './draftViewPrefs';
 import {
@@ -96,7 +96,7 @@ export default function DraftDashboard() {
     // ---- flows ----
     const [importStep, setImportStep] = useState(null);   // null | 1 | 2
     const [matchRows, setMatchRows] = useState([]);
-    const [veteranRows, setVeteranRows] = useState([]);
+    const [ratingRows, setRatingRows] = useState([]);
     const [step1Summary, setStep1Summary] = useState(null);
     const [buddyModal, setBuddyModal] = useState(null);    // {anchor, targetTeamId, source, buddies, selected, queue}
     const [confirm, setConfirm] = useState(null);          // {kind, title, body, confirmLabel, onConfirm}
@@ -357,9 +357,9 @@ export default function DraftDashboard() {
                 setMatchRows(matches.map(m => ({ ...m, adoptRating: true })));
                 setImportStep(1);
             } else {
-                const unrated = players.filter(p => p.isVeteran && !p.ratingFoundInDb && !p.adoptedMatchSkill);
+                const unrated = players.filter(needsRating);
                 if (unrated.length > 0) {
-                    setVeteranRows(unrated.map(v => ({ ...v, skillRating: v.skillRating || 1 })));
+                    setRatingRows(unrated.map(v => ({ ...v, skillRating: v.skillRating || 1 })));
                     setStep1Summary(null);
                     setImportStep(2);
                 } else {
@@ -386,9 +386,9 @@ export default function DraftDashboard() {
         const adopted = matchRows.filter(m => m.adoptRating).length;
         setStep1Summary(`${adopted} of ${matchRows.length} kept their existing rating.`);
 
-        const unrated = pool.filter(p => p.isVeteran && !p.ratingFoundInDb && !p.adoptedMatchSkill);
+        const unrated = pool.filter(needsRating);
         if (unrated.length > 0) {
-            setVeteranRows(unrated.map(v => ({ ...v, skillRating: v.skillRating || 1 })));
+            setRatingRows(unrated.map(v => ({ ...v, skillRating: v.skillRating || 1 })));
             setImportStep(2);
         } else {
             setImportStep(null);
@@ -398,12 +398,12 @@ export default function DraftDashboard() {
 
     const applyStep2 = () => {
         const pool = playerPool.map(p => {
-            const row = veteranRows.find(v => v.email === p.email);
+            const row = ratingRows.find(v => v.email === p.email);
             return row ? { ...p, skillRating: row.skillRating } : p;
         });
         dispatch({ type: ACTIONS.SET_POOL, players: pool });
         setImportStep(null);
-        setVeteranRows([]);
+        setRatingRows([]);
         say('success', `Imported ${pool.length} players.`);
     };
 
@@ -435,13 +435,13 @@ export default function DraftDashboard() {
             return;
         }
         setImportStep(null);
-        setVeteranRows([]);
+        setRatingRows([]);
         say('info', 'Kept everything decided so far. Players still needing a rating are flagged on their cards.');
     };
 
     const unresolvedCount = useMemo(() => {
         const all = [...playerPool, ...teams.flatMap(t => t.players || [])];
-        return all.filter(p => (p.potentialMatchFound && !p.duplicateResolved) || (p.isVeteran && !p.ratingFoundInDb && !p.adoptedMatchSkill && !p.skillRating)).length;
+        return all.filter(p => (p.potentialMatchFound && !p.duplicateResolved) || (needsRating(p) && !p.skillRating)).length;
     }, [playerPool, teams]);
 
     // ---- draft actions ----
@@ -1291,11 +1291,11 @@ export default function DraftDashboard() {
 
             {importStep === 2 && (
                 <DraftModal
-                    title="Veterans with no rating"
+                    title="Players with no rating"
                     step="Step 2 of 2"
                     wide
                     onClose={cancelImport}
-                    note={`${veteranRows.length} to rate`}
+                    note={`${ratingRows.length} to rate`}
                     footer={<>
                         {step1Summary && <button type="button" className="obi-draft-btn" onClick={() => setImportStep(1)}>Back</button>}
                         <button type="button" className="obi-draft-btn" onClick={cancelImport}>Cancel</button>
@@ -1309,12 +1309,19 @@ export default function DraftDashboard() {
                         </div>
                     )}
                     <p style={{ marginTop: 0 }}>
-                        These players registered as veterans but we have no rating on file for them.
-                        Anyone left unrated stays flagged on the board, and finalize will refuse until they are sorted.
+                        Veterans we hold no rating for, and rookies who did not give one. A rookie
+                        left at zero is not neutral — it drags their team's average down, and the
+                        board will then order the columns as though that team needs the next pick.
                     </p>
-                    {veteranRows.map(row => (
+                    {ratingRows.map(row => (
                         <div key={row.email} className="obi-draft-row">
                             <span className="obi-draft-row-name">{row.firstName} {row.lastName}</span>
+                            {/* The list holds two populations now, and they are different
+                                judgments: a veteran whose record we simply cannot find, versus
+                                a rookie nobody has seen play. Say which. */}
+                            <span className={`obi-draft-row-tag ${row.isVeteran ? 'is-vet' : 'is-rookie'}`}>
+                                {row.isVeteran ? 'Veteran' : 'Rookie'}
+                            </span>
                             <input
                                 className="obi-draft-input"
                                 style={{ width: 70, height: 28 }}
@@ -1322,7 +1329,7 @@ export default function DraftDashboard() {
                                 min="1"
                                 max="10"
                                 value={row.skillRating}
-                                onChange={(e) => setVeteranRows(rows => rows.map(r => r.email === row.email ? { ...r, skillRating: Math.min(10, Math.max(1, parseInt(e.target.value, 10) || 1)) } : r))}
+                                onChange={(e) => setRatingRows(rows => rows.map(r => r.email === row.email ? { ...r, skillRating: Math.min(10, Math.max(1, parseInt(e.target.value, 10) || 1)) } : r))}
                                 aria-label={`Rating for ${row.firstName} ${row.lastName}`}
                             />
                         </div>

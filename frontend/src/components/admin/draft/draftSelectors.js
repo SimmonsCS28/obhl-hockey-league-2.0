@@ -82,6 +82,30 @@ export function getSortedTeamPlayers(players, sortOption) {
 }
 
 /**
+ * Who still needs a skill rating entered by hand after an import.
+ *
+ * Two different gaps, one question. A VETERAN is surfaced when we hold no rating for them on
+ * file - the database is the source of truth for someone who has played before, so what they
+ * typed on the form does not settle it. A ROOKIE has no history to look up at all, so the only
+ * gap that matters is an empty rating; if they self-reported one, that is all we are going to
+ * get and it stands.
+ *
+ * Rookies were originally left out of this, which meant they imported at skillRating 0 and
+ * nothing ever asked. Zero is not neutral - it feeds averageSkill, so unrated rookies drag a
+ * team's average down and the skill-avg column ordering then ranks that team as needing the
+ * next pick. The distortion lands on exactly the number the board is steered by.
+ *
+ * Kept here, as one predicate, because the old version was written out longhand at three call
+ * sites and only two of them mentioned rookies once anyone thought to add them.
+ */
+export function needsRating(player) {
+    if (player.isVeteran) {
+        return !player.ratingFoundInDb && !player.adoptedMatchSkill;
+    }
+    return !player.skillRating;
+}
+
+/**
  * Search / filter / sort for the player pool.
  *
  * KNOWN GAP, preserved deliberately: the search matches firstName and lastName
