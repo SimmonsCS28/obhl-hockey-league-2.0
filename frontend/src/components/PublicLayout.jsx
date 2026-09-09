@@ -31,7 +31,7 @@ function PublicLayout() {
     // Close mobile menu on resize to desktop
     useEffect(() => {
         const handleResize = () => {
-            if (window.innerWidth > 760) {
+            if (window.innerWidth > 1400) {
                 setIsMobileMenuOpen(false);
             }
         };
@@ -98,7 +98,7 @@ function PublicLayout() {
                                 {link.label}
                             </Link>
                         ))}
-                        <div className="obi-nav-actions">
+                        <div className="obi-nav-actions" onClick={closeMobileMenu}>
                             <DonateButton />
                             {authActions()}
                         </div>

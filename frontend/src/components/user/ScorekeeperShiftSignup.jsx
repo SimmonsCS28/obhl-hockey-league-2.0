@@ -123,7 +123,10 @@ const ScorekeeperShiftSignup = () => {
                     <span></span>
                     <span></span>
                 </button>
-                <div className={`header-buttons ${mobileMenuOpen ? 'mobile-open' : ''}`}>
+                <div
+                    className={`header-buttons ${mobileMenuOpen ? 'mobile-open' : ''}`}
+                    onClick={() => setMobileMenuOpen(false)}
+                >
                     <button
                         className="back-button"
                         onClick={() => navigate('/user')}

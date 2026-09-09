@@ -108,7 +108,7 @@ function TournamentLayout() {
                           * element between parents. UserPill is stateless -- both copies read the
                           * same auth context -- and only ever one is displayed.
                           */}
-                        <div className="tcc-nav-auth">
+                        <div className="tcc-nav-auth" onClick={() => setMenuOpen(false)}>
                             {isAuthenticated ? (
                                 <UserPill />
                             ) : (
