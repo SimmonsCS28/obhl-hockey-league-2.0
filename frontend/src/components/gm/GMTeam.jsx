@@ -11,6 +11,11 @@ const getAuthHeaders = () => {
     return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
+// Team name bounds. The column is varchar(100), but the longest name the league has ever used is
+// 19 characters, so 32 is a generous typo guard that still fits the standings and roster layouts.
+const NAME_MAX = 32;
+const NAME_MIN = 2;
+
 // Collapse a detailed position code to F / D / G for the roster chip.
 const shortPos = (pos) => {
     if (!pos) return '—';
@@ -36,9 +41,11 @@ function GMTeam() {
     const [isEditingName, setIsEditingName] = useState(false);
     const [editedName, setEditedName] = useState('');
     const [savingName, setSavingName] = useState(false);
-    // Enter and blur both save, and flipping savingName disables the focused input -- which itself
-    // fires blur, so one Enter press used to send two identical PUTs (both are in the prod access
-    // log). Guard with a ref, not the savingName state: the blur arrives before React re-renders.
+    const [nameError, setNameError] = useState(null);
+    const [savedFlash, setSavedFlash] = useState(false);
+    const nameInputRef = useRef(null);
+    // Enter and the Save button can both fire a save, so guard with a ref rather than the
+    // savingName state: a second call can arrive before React has re-rendered.
     const savingNameRef = useRef(false);
 
     useEffect(() => {
@@ -197,14 +204,44 @@ function GMTeam() {
         }
     };
 
+    // Focus and select here rather than with autoFocus: autoFocus lands before the input is laid
+    // out and the selection comes back collapsed, so the GM has to select the old name by hand.
+    useEffect(() => {
+        if (isEditingName) {
+            nameInputRef.current?.focus();
+            nameInputRef.current?.select();
+        }
+    }, [isEditingName]);
+
+    const startEditName = () => {
+        setEditedName(teamInfo?.name || '');
+        setNameError(null);
+        setSavedFlash(false);
+        setIsEditingName(true);
+    };
+
+    // Blur cancels rather than saves -- a rename is deliberate, and the roster inputs below are
+    // the only save-on-blur controls here. Ignored mid-save so an in-flight PUT can still report.
+    const cancelEditName = () => {
+        if (savingNameRef.current) return;
+        setIsEditingName(false);
+        setNameError(null);
+    };
+
     const handleSaveTeamName = async () => {
         if (savingNameRef.current) return;
         const trimmed = editedName.trim();
-        if (!trimmed || trimmed === teamInfo?.name) {
+        if (trimmed === teamInfo?.name) {
             setIsEditingName(false);
             return;
         }
+        if (trimmed.length < NAME_MIN) {
+            setNameError(`Team names need at least ${NAME_MIN} characters.`);
+            nameInputRef.current?.focus();
+            return;
+        }
         savingNameRef.current = true;
+        setNameError(null);
         setSavingName(true);
         try {
             await axios.put(
@@ -214,15 +251,18 @@ function GMTeam() {
             );
             setTeamInfo(prev => ({ ...prev, name: trimmed }));
             setIsEditingName(false);
-            showMessage('success', `Team renamed to "${trimmed}"`);
+            setSavedFlash(true);
+            setTimeout(() => setSavedFlash(false), 2600);
         } catch (error) {
             console.error('Failed to rename team:', error);
-            // The gateway rejects a name already used in this season with a plain-text reason;
-            // show that rather than the generic line, which told the GM nothing actionable.
+            // The gateway rejects a name already used in this season with a plain-text reason.
+            // It goes on the hint line beside the field, not in the toast: the GM is still in the
+            // editor and needs to see what to change without the message timing out on them.
             const reason = typeof error.response?.data === 'string' && error.response.data.trim()
                 ? error.response.data
-                : 'Failed to save team name';
-            showMessage('error', reason);
+                : 'Failed to save team name.';
+            setNameError(reason);
+            nameInputRef.current?.focus();
         } finally {
             savingNameRef.current = false;
             setSavingName(false);
@@ -272,33 +312,89 @@ function GMTeam() {
         <div className="gm-team">
             <div className="gm-team-head">
                 <div className="gm-team-headings">
-                    <h2 className="gm-team-title">
-                        Manage{' '}
-                        {isEditingName ? (
-                            <input
-                                className="gm-team-name-input"
-                                value={editedName}
-                                onChange={e => setEditedName(e.target.value)}
-                                onKeyDown={e => {
-                                    if (e.key === 'Enter') handleSaveTeamName();
-                                    if (e.key === 'Escape') setIsEditingName(false);
-                                }}
-                                onBlur={handleSaveTeamName}
-                                autoFocus
-                                maxLength={100}
-                                disabled={savingName}
-                            />
-                        ) : (
-                            <button
-                                type="button"
-                                className="gm-team-name"
-                                title="Click to rename your team"
-                                onClick={() => { setEditedName(teamInfo?.name || ''); setIsEditingName(true); }}
+                    <h2 className="gm-team-title">Team Management</h2>
+
+                    {/* The team name is a captioned field, not styled-down text: the caption names
+                        the value, the box gives it field chrome and the chip carries the verb, so
+                        the control reads as editable with no hover and no prior knowledge. */}
+                    <div className="obi-gmname-caption">Your team name</div>
+
+                    {isEditingName ? (
+                        <div>
+                            <div className="obi-gmname-editrow">
+                                <input
+                                    ref={nameInputRef}
+                                    className={`obi-gmname-input${nameError ? ' obi-gmname-input--error' : ''}`}
+                                    value={editedName}
+                                    onChange={e => setEditedName(e.target.value)}
+                                    onKeyDown={e => {
+                                        if (e.key === 'Enter') handleSaveTeamName();
+                                        if (e.key === 'Escape') cancelEditName();
+                                    }}
+                                    onBlur={cancelEditName}
+                                    maxLength={NAME_MAX}
+                                    aria-label="Team name"
+                                />
+                                {/* preventDefault on mousedown so the blur that cancels the edit
+                                    doesn't unmount these before their click lands. */}
+                                <button
+                                    type="button"
+                                    className="obi-gmname-save"
+                                    onMouseDown={e => e.preventDefault()}
+                                    onClick={handleSaveTeamName}
+                                    disabled={savingName}
+                                >
+                                    {savingName ? 'Saving…' : 'Save'}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="obi-gmname-cancel"
+                                    onMouseDown={e => e.preventDefault()}
+                                    onClick={cancelEditName}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                            <div
+                                className={`obi-gmname-hint${nameError ? ' obi-gmname-hint--error' : ''}`}
+                                aria-live="polite"
                             >
-                                {teamInfo?.name || 'My Team'}
-                            </button>
-                        )}
-                    </h2>
+                                {nameError || `Enter to save · Esc to cancel · up to ${NAME_MAX} characters`}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="obi-gmname-rest">
+                            {/* A div, not a button: index.css's bare `button` rule forces
+                                height/inline-flex/white text and an !important radius. */}
+                            <div
+                                className="obi-gmname-field"
+                                role="button"
+                                tabIndex={0}
+                                aria-label={`Rename team, currently ${teamInfo?.name || 'My Team'}`}
+                                onClick={startEditName}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        startEditName();
+                                    }
+                                }}
+                            >
+                                <span className="obi-gmname-value">{teamInfo?.name || 'My Team'}</span>
+                                <span className="obi-gmname-cta">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                                        <path d="M12 20h9" />
+                                        <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+                                    </svg>
+                                    Rename
+                                </span>
+                            </div>
+                            <span className="obi-gmname-saved" aria-live="polite">
+                                {savedFlash ? '✓ Saved' : ''}
+                            </span>
+                        </div>
+                    )}
+
                     <p className="gm-team-sub">Edit jersey numbers and skill ratings for your roster. Changes save to your team.</p>
                 </div>
 

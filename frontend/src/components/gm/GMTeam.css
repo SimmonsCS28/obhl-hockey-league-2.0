@@ -15,56 +15,208 @@
 /* ── Header ── */
 .gm-team-head {
     display: flex;
-    align-items: flex-end;
+    align-items: flex-start;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 14px;
+    gap: 18px;
     margin: 6px 0 22px;
 }
 
+/* Fixed section title now -- the team name moved out of the heading and into its own field, so
+   there is a clean seam between the label and the editable value. */
 .gm-team-title {
     font-family: var(--obi-font-display);
     font-weight: 900;
     font-style: italic;
-    font-size: clamp(26px, 4vw, 38px);
+    font-size: clamp(26px, 3.4vw, 36px);
     line-height: 0.95;
-    margin: 0 0 6px;
+    margin: 0 0 14px;
     color: #fff;
+    text-transform: uppercase;
 }
 
-.gm-team-name {
-    font: inherit;
-    color: inherit;
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    transition: color .15s;
+/* ── Team name — captioned field ──
+   The old control was the name itself painted to look like the heading beside it, with only a
+   hover colour and a title tooltip to say it was editable. Neither exists on touch, and 8 of 10
+   GMs never found it. Three independent signals now say "editable": the caption naming the value,
+   the field chrome around it, and the verb on the chip. */
+.obi-gmname-caption {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.8px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    margin-bottom: 7px;
 }
 
-.gm-team-name:hover {
-    color: var(--obi-accent);
+.obi-gmname-rest {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
-.gm-team-name-input {
+/* A div with role="button", not a <button>: index.css has a bare `button` rule forcing
+   height:36px, inline-flex, 0.875rem, white text and border-radius:4px !important, and the
+   !important cannot be beaten from a class. See TECHNICAL_DEBT / the comment in index.css. */
+.obi-gmname-field {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 52px;
+    padding: 6px 8px 6px 16px;
+    background: #0e1116;
+    border: 1px solid rgba(157, 185, 205, 0.32);
+    border-bottom: 2px solid rgba(246, 169, 28, 0.75);
+    border-radius: 10px;
+    cursor: text;
+    transition: border-color .15s, background .15s;
+}
+
+.obi-gmname-field:hover {
+    background: #11151b;
+    border-color: rgba(246, 169, 28, 0.55);
+}
+
+.obi-gmname-field:focus-visible {
+    outline: 2px solid var(--obi-accent);
+    outline-offset: 2px;
+}
+
+.obi-gmname-value {
     font-family: var(--obi-font-display);
     font-weight: 900;
     font-style: italic;
-    font-size: clamp(24px, 3.5vw, 34px);
-    background: #0e1116;
-    border: 1px solid rgba(246, 169, 28, 0.5);
-    border-radius: 8px;
-    padding: 2px 10px;
+    font-size: clamp(24px, 3vw, 32px);
+    line-height: 1;
     color: #fff;
+}
+
+.obi-gmname-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 40px;
+    padding: 9px 12px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--obi-accent);
+    background: var(--obi-accent-soft);
+    border: 1px solid rgba(246, 169, 28, 0.4);
+    border-radius: 8px;
+}
+
+.obi-gmname-cta svg {
+    flex: none;
+}
+
+.obi-gmname-saved {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12.5px;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+    color: var(--obi-success);
+}
+
+/* ── Edit state — same box, so nothing jumps on click ── */
+.obi-gmname-editrow {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.obi-gmname-input {
+    min-width: 240px;
+    padding: 9px 14px;
+    background: #0e1116;
+    border: 1px solid rgba(246, 169, 28, 0.7);
+    border-radius: 10px;
+    color: #fff;
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 32px;
+    line-height: 1.1;
     outline: none;
-    max-width: 320px;
+}
+
+.obi-gmname-input--error {
+    border-color: var(--obi-error);
+}
+
+/* These two ARE real buttons, so every property the global rule forces is overridden here. */
+.obi-gmname-save,
+.obi-gmname-cancel {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: auto;
+    min-height: 44px;
+    padding: 12px 18px;
+    border-radius: 9px !important;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 1.1px;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.obi-gmname-save {
+    color: var(--obi-bg);
+    background: var(--obi-accent);
+    border: none;
+}
+
+.obi-gmname-save:hover:not(:disabled) {
+    background: #ffc356;
+}
+
+.obi-gmname-save:disabled {
+    opacity: .65;
+    cursor: default;
+}
+
+.obi-gmname-cancel {
+    color: var(--obi-text-secondary);
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(157, 185, 205, 0.25);
+}
+
+.obi-gmname-cancel:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.obi-gmname-hint {
+    margin-top: 8px;
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+    color: var(--obi-text-muted);
+}
+
+.obi-gmname-hint--error {
+    color: var(--obi-error);
+}
+
+@media (max-width: 480px) {
+    .obi-gmname-input {
+        min-width: 0;
+        width: 100%;
+        font-size: 26px;
+    }
 }
 
 .gm-team-sub {
     font-family: var(--obi-font-body);
     font-size: 14px;
     color: var(--obi-icy);
-    margin: 0;
+    margin: 20px 0 0;
 }
 
 .gm-team-actions {
