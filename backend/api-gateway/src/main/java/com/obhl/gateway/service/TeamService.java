@@ -10,8 +10,12 @@ import org.springframework.transaction.annotation.Transactional;
 import com.obhl.gateway.client.StatsClient;
 import com.obhl.gateway.dto.PlayerDto;
 import com.obhl.gateway.dto.TeamDto;
+import com.obhl.gateway.model.Role;
 import com.obhl.gateway.model.Team;
+import com.obhl.gateway.model.User;
+import com.obhl.gateway.repository.RoleRepository;
 import com.obhl.gateway.repository.TeamRepository;
+import com.obhl.gateway.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,6 +25,8 @@ public class TeamService {
 
     private final TeamRepository teamRepository;
     private final StatsClient statsClient;
+    private final UserRepository userRepository;
+    private final RoleRepository roleRepository;
 
     @Transactional(readOnly = true)
     public List<TeamDto.Response> getTeams(Long seasonId, int skip, int limit) {
@@ -67,7 +73,9 @@ public class TeamService {
         team.setGoalsFor(dto.getGoalsFor());
         team.setGoalsAgainst(dto.getGoalsAgainst());
 
-        return toResponse(teamRepository.save(team));
+        Team saved = teamRepository.save(team);
+        grantGmRole(saved.getGmId());
+        return toResponse(saved);
     }
 
     @Transactional
@@ -106,7 +114,63 @@ public class TeamService {
         if (dto.getGoalsAgainst() != null)
             team.setGoalsAgainst(dto.getGoalsAgainst());
 
-        return toResponse(teamRepository.save(team));
+        Team saved = teamRepository.save(team);
+        if (dto.getGmId() != null) {
+            grantGmRole(dto.getGmId());
+        }
+        return toResponse(saved);
+    }
+
+    /**
+     * Give a team's GM the GM role, so naming them GM is the whole of the job.
+     *
+     * Naming a GM writes teams.gm_id and nothing else, and gm_id points at a player rather
+     * than at a user, so the GM portal — which is gated on the role — stayed shut for anybody
+     * who had not held the role before. That is every GM a draft introduces: the finalize sets
+     * gm_id through this same endpoint, so hooking it here covers the draft and the Teams page
+     * alike. Additive only: a GM who loses the job keeps the role until an admin removes it,
+     * which is the behaviour the Users page has always had.
+     *
+     * Never fatal. A team must still save when stats-service is down or the GM has no account.
+     */
+    private void grantGmRole(Long gmPlayerId) {
+        if (gmPlayerId == null) {
+            return;
+        }
+        try {
+            PlayerDto gmPlayer = statsClient.getPlayer(gmPlayerId);
+            if (gmPlayer == null || gmPlayer.getEmail() == null || gmPlayer.getEmail().isBlank()) {
+                return;
+            }
+
+            Optional<User> match = userRepository.findByEmailIgnoreCase(gmPlayer.getEmail().trim());
+            if (match.isEmpty()) {
+                match = userRepository.findByUsernameIgnoreCase(gmPlayer.getEmail().trim());
+            }
+            if (match.isEmpty()) {
+                return; // No account yet — Generate Users creates it, and the next save picks it up.
+            }
+
+            User user = match.get();
+            boolean alreadyGm = user.getRoles() != null
+                    && user.getRoles().stream().anyMatch(r -> "GM".equals(r.getName()));
+            if (alreadyGm) {
+                return;
+            }
+
+            Role gmRole = roleRepository.findByName("GM").orElse(null);
+            if (gmRole == null) {
+                return;
+            }
+
+            java.util.Set<Role> roles = new java.util.HashSet<>(
+                    user.getRoles() == null ? java.util.Set.of() : user.getRoles());
+            roles.add(gmRole);
+            user.setRoles(roles);
+            userRepository.save(user);
+        } catch (Exception e) {
+            System.err.println("Could not grant the GM role for player " + gmPlayerId + ": " + e.getMessage());
+        }
     }
 
     @Transactional
