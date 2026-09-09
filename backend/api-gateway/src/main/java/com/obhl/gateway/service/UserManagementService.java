@@ -485,75 +485,294 @@ public class UserManagementService {
         return createdUsers;
     }
 
+    /** What the import will do with one CSV row. */
+    private enum GoalieImportAction {
+        /** Nobody has ever rated them: the admin sets the rating in the review modal. */
+        NEW,
+        /** Already in the league: their last known rating comes forward, unchanged. */
+        CARRY_FORWARD,
+        /** Nothing to do. */
+        SKIP
+    }
+
+    private static class ClassifiedGoalie {
+        com.obhl.gateway.dto.GoalieImportDTO dto;
+        String email;
+        GoalieImportAction action;
+        String reason;
+        Integer carriedRating;
+        Integer existingRating;
+        boolean needsAccount;
+    }
+
+    /**
+     * Decide what the import should do with each CSV row.
+     *
+     * Shared by the preview and the import itself so the two cannot drift - the modal shows
+     * exactly what the import will do, and the import re-derives it rather than trusting
+     * whatever the browser sends back.
+     *
+     * The CSV has no skill-rating column, so a returning goalie's row arrives at the default.
+     * Their rating therefore never comes from the file: it is read off their most recent
+     * season and carried forward. Only a goalie nobody has ever rated is put in front of the
+     * admin for one.
+     */
+    private List<ClassifiedGoalie> classifyGoalieImport(
+            List<com.obhl.gateway.dto.GoalieImportDTO> goalieDtos, Long activeSeasonId) {
+
+        Map<String, Integer> lastKnownRating = lastKnownSkillRatings(activeSeasonId);
+        Set<String> seenEmails = new HashSet<>();
+        List<ClassifiedGoalie> out = new ArrayList<>();
+
+        for (com.obhl.gateway.dto.GoalieImportDTO dto : goalieDtos) {
+            if (dto.getEmail() == null || dto.getEmail().isBlank()) {
+                continue;
+            }
+
+            ClassifiedGoalie c = new ClassifiedGoalie();
+            c.dto = dto;
+            c.email = dto.getEmail().trim();
+            String key = c.email.toLowerCase();
+
+            // A CSV that lists the same address twice would otherwise import it twice.
+            if (!seenEmails.add(key)) {
+                c.action = GoalieImportAction.SKIP;
+                c.reason = "Listed more than once in this file";
+                out.add(c);
+                continue;
+            }
+
+            PlayerDto thisSeason = findPlayerForSeason(c.email, activeSeasonId);
+            if (thisSeason != null) {
+                c.action = GoalieImportAction.SKIP;
+                c.reason = "Already on the Players page this season";
+                c.existingRating = thisSeason.getSkillRating();
+                out.add(c);
+                continue;
+            }
+
+            c.needsAccount = userRepository.findByEmailIgnoreCase(c.email).isEmpty()
+                    && userRepository.findByUsernameIgnoreCase(c.email).isEmpty();
+
+            Integer carried = lastKnownRating.get(key);
+            if (carried != null) {
+                c.action = GoalieImportAction.CARRY_FORWARD;
+                c.carriedRating = carried;
+            } else {
+                c.action = GoalieImportAction.NEW;
+            }
+            out.add(c);
+        }
+
+        return out;
+    }
+
+    /**
+     * Most recent skill rating per person, keyed by lowercased email.
+     *
+     * players carries one row per person per season, so "their rating" means the rating on
+     * the newest season they have a row for. Seasons after the active one are ignored: a
+     * future season that has been set up but not started must not be treated as current.
+     */
+    private Map<String, Integer> lastKnownSkillRatings(Long activeSeasonId) {
+        Map<String, Integer> rating = new java.util.HashMap<>();
+        Map<String, Long> fromSeason = new java.util.HashMap<>();
+        try {
+            List<PlayerDto> players = playerService.getAllPlayers();
+            if (players == null) {
+                return rating;
+            }
+            for (PlayerDto p : players) {
+                if (p.getEmail() == null || p.getSkillRating() == null || p.getSeasonId() == null) {
+                    continue;
+                }
+                if (activeSeasonId != null && p.getSeasonId() > activeSeasonId) {
+                    continue;
+                }
+                String key = p.getEmail().trim().toLowerCase();
+                Long seen = fromSeason.get(key);
+                if (seen == null || p.getSeasonId() > seen) {
+                    fromSeason.put(key, p.getSeasonId());
+                    rating.put(key, p.getSkillRating());
+                }
+            }
+        } catch (RuntimeException e) {
+            // Ratings are best-effort. Without stats-service every row looks new, and the
+            // admin is asked for a rating rather than one being carried forward wrongly.
+        }
+        return rating;
+    }
+
+    /**
+     * Split a goalie CSV into the rows the admin still has to rate, the returning goalies
+     * whose rating comes forward untouched, and the rows there is nothing to do for.
+     */
+    @Transactional(readOnly = true)
+    public com.obhl.gateway.dto.GoalieImportPreviewDTO previewGoalieImport(
+            List<com.obhl.gateway.dto.GoalieImportDTO> goalieDtos) {
+
+        List<com.obhl.gateway.dto.GoalieImportDTO> toImport = new ArrayList<>();
+        List<com.obhl.gateway.dto.GoalieImportPreviewDTO.CarriedGoalie> toCarryForward = new ArrayList<>();
+        List<com.obhl.gateway.dto.GoalieImportPreviewDTO.SkippedGoalie> alreadyInLeague = new ArrayList<>();
+
+        for (ClassifiedGoalie c : classifyGoalieImport(goalieDtos, resolveActiveSeasonId())) {
+            switch (c.action) {
+                case NEW:
+                    toImport.add(c.dto);
+                    break;
+                case CARRY_FORWARD:
+                    toCarryForward.add(new com.obhl.gateway.dto.GoalieImportPreviewDTO.CarriedGoalie(
+                            c.dto, c.carriedRating, c.needsAccount));
+                    break;
+                case SKIP:
+                default:
+                    alreadyInLeague.add(new com.obhl.gateway.dto.GoalieImportPreviewDTO.SkippedGoalie(
+                            c.dto, c.reason, c.existingRating));
+                    break;
+            }
+        }
+
+        return new com.obhl.gateway.dto.GoalieImportPreviewDTO(toImport, toCarryForward, alreadyInLeague);
+    }
+
+    private Long resolveActiveSeasonId() {
+        try {
+            Map<String, Object> activeSeason = leagueClient.getActiveSeason();
+            return ((Number) activeSeason.get("id")).longValue();
+        } catch (Exception e) {
+            // No active season resolvable - goalies will still be created as users,
+            // just without a players row (same as any other onboarding gap); the
+            // admin can add them to the Players page manually once a season is active.
+            return null;
+        }
+    }
+
+    private PlayerDto findPlayerForSeason(String email, Long seasonId) {
+        if (seasonId == null) {
+            return null;
+        }
+        try {
+            return statsClient.getPlayerByEmailAndSeason(email, seasonId);
+        } catch (Exception e) {
+            // 404 = no player record for this season, which is the answer we wanted.
+            return null;
+        }
+    }
+
+    /**
+     * Put every goalie in the file onto this season's roster.
+     *
+     * A goalie who is new to the league gets an account and the rating the admin chose. A
+     * goalie the league already knows gets the season player record they were missing,
+     * carrying their existing rating - they are not re-rated and not re-accounted. Either
+     * way they end up with the GOALIE role and a player record for the active season, which
+     * is what the Players page and the goalie proposer both read.
+     */
     @Transactional
-    public List<UserDTO> importGoalies(List<com.obhl.gateway.dto.GoalieImportDTO> goalieDtos) {
+    public com.obhl.gateway.dto.GoalieImportResultDTO importGoalies(
+            List<com.obhl.gateway.dto.GoalieImportDTO> goalieDtos) {
+
         List<UserDTO> createdUsers = new java.util.ArrayList<>();
+        List<String> carriedForward = new java.util.ArrayList<>();
+        int skipped = 0;
+
         Role goalieRole = roleRepository.findByName("GOALIE")
                 .orElseThrow(() -> new RuntimeException("Role 'GOALIE' not found"));
 
         String defaultPasswordHash = passwordEncoder.encode("Welcome1!");
+        Long activeSeasonId = resolveActiveSeasonId();
 
-        Long activeSeasonId = null;
-        try {
-            Map<String, Object> activeSeason = leagueClient.getActiveSeason();
-            activeSeasonId = ((Number) activeSeason.get("id")).longValue();
-        } catch (Exception e) {
-            // No active season resolvable — goalies will still be created as users,
-            // just without a players row (same as any other onboarding gap); the
-            // admin can add them to the Players page manually once a season is active.
-        }
-
-        for (com.obhl.gateway.dto.GoalieImportDTO dto : goalieDtos) {
-            String email = dto.getEmail().trim();
-            if (userRepository.findByEmailIgnoreCase(email).isPresent()
-                    || userRepository.findByUsernameIgnoreCase(email).isPresent()) {
-                continue; // Skip if user exists
+        for (ClassifiedGoalie c : classifyGoalieImport(goalieDtos, activeSeasonId)) {
+            if (c.action == GoalieImportAction.SKIP) {
+                skipped++;
+                continue;
             }
 
-            User user = new User();
-            user.setUsername(email);
-            user.setEmail(email);
-            user.setFirstName(dto.getFirstName());
-            user.setLastName(dto.getLastName());
-            user.setPhoneNumber(dto.getPhoneNumber());
-            user.setPasswordHash(defaultPasswordHash);
-            user.setRoles(Collections.singleton(goalieRole));
-            user.setIsActive(true);
-            user.setMustChangePassword(true);
+            com.obhl.gateway.dto.GoalieImportDTO dto = c.dto;
 
-            User savedUser = userRepository.save(user);
+            if (c.needsAccount) {
+                User user = new User();
+                user.setUsername(c.email);
+                user.setEmail(c.email);
+                user.setFirstName(dto.getFirstName());
+                user.setLastName(dto.getLastName());
+                user.setPhoneNumber(dto.getPhoneNumber());
+                user.setPasswordHash(defaultPasswordHash);
+                user.setRoles(Collections.singleton(goalieRole));
+                user.setIsActive(true);
+                user.setMustChangePassword(true);
 
-            com.obhl.gateway.model.GoalieProfile profile = new com.obhl.gateway.model.GoalieProfile();
-            profile.setUser(savedUser);
-            profile.setEmail(email);
-            profile.setIsActive(true);
+                User savedUser = userRepository.save(user);
 
-            goalieProfileRepository.save(profile);
+                com.obhl.gateway.model.GoalieProfile profile = new com.obhl.gateway.model.GoalieProfile();
+                profile.setUser(savedUser);
+                profile.setEmail(c.email);
+                profile.setIsActive(true);
+                goalieProfileRepository.save(profile);
+
+                createdUsers.add(convertToDTO(savedUser));
+            } else {
+                // Returning goalie who already has an account. Being on the league's goalie
+                // list is what the GOALIE role means, and without it their own availability
+                // page is closed to them - so add it if it is missing. Additive, like every
+                // other role grant here; nothing is taken away.
+                grantGoalieRole(c.email, goalieRole);
+            }
+
+            if (c.action == GoalieImportAction.CARRY_FORWARD) {
+                carriedForward.add(dto.getFirstName() + " " + dto.getLastName());
+            }
 
             // Goalies are treated like regular players (position='G') so they show up
             // on the Players page with the same editable skill rating.
-            if (activeSeasonId != null) {
-                Map<String, Object> playerMap = new java.util.HashMap<>();
-                playerMap.put("firstName", dto.getFirstName());
-                playerMap.put("lastName", dto.getLastName());
-                playerMap.put("email", email);
-                playerMap.put("position", "G");
-                playerMap.put("skillRating", dto.getSkillRating());
-                playerMap.put("seasonId", activeSeasonId);
-                playerMap.put("teamId", null);
-                playerMap.put("isActive", true);
-                try {
-                    statsClient.createPlayers(List.of(playerMap));
-                } catch (Exception e) {
-                    // Player creation failure shouldn't block the user account from
-                    // being created; the goalie just won't appear on the Players page
-                    // until an admin adds them manually.
-                }
-            }
-
-            createdUsers.add(convertToDTO(savedUser));
+            Integer rating = c.action == GoalieImportAction.CARRY_FORWARD
+                    ? c.carriedRating
+                    : dto.getSkillRating();
+            createSeasonPlayerRow(dto, c.email, rating, activeSeasonId);
         }
-        return createdUsers;
+
+        return new com.obhl.gateway.dto.GoalieImportResultDTO(createdUsers, carriedForward, skipped);
+    }
+
+    private void grantGoalieRole(String email, Role goalieRole) {
+        Optional<User> match = userRepository.findByEmailIgnoreCase(email);
+        if (match.isEmpty()) {
+            match = userRepository.findByUsernameIgnoreCase(email);
+        }
+        if (match.isEmpty()) {
+            return;
+        }
+        User user = match.get();
+        Set<Role> roles = new HashSet<>(user.getRoles() == null ? Set.<Role>of() : user.getRoles());
+        if (roles.stream().anyMatch(r -> "GOALIE".equals(r.getName()))) {
+            return;
+        }
+        roles.add(goalieRole);
+        user.setRoles(roles);
+        userRepository.save(user);
+    }
+
+    private void createSeasonPlayerRow(com.obhl.gateway.dto.GoalieImportDTO dto, String email,
+            Integer skillRating, Long activeSeasonId) {
+        if (activeSeasonId == null) {
+            return;
+        }
+        Map<String, Object> playerMap = new java.util.HashMap<>();
+        playerMap.put("firstName", dto.getFirstName());
+        playerMap.put("lastName", dto.getLastName());
+        playerMap.put("email", email);
+        playerMap.put("position", "G");
+        playerMap.put("skillRating", skillRating);
+        playerMap.put("seasonId", activeSeasonId);
+        playerMap.put("teamId", null);
+        playerMap.put("isActive", true);
+        try {
+            statsClient.createPlayers(List.of(playerMap));
+        } catch (Exception e) {
+            // Player creation failure shouldn't block the user account from
+            // being created; the goalie just won't appear on the Players page
+            // until an admin adds them manually.
+        }
     }
 
     /**

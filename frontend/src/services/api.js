@@ -742,6 +742,13 @@ const api = {
         return request('/users/generate', { method: 'POST' });
     },
 
+    async previewGoalieImport(goalies) {
+        return request('/users/import-goalies/preview', {
+            method: 'POST',
+            body: JSON.stringify(goalies)
+        });
+    },
+
     async importGoalies(goalies) {
         return request('/users/import-goalies', {
             method: 'POST',
@@ -980,6 +987,7 @@ export const {
     deleteUser,
     generatePreview,
     generateUsers,
+    previewGoalieImport,
     importGoalies,
     getAllGoalieUnavailability,
     getCoordinatorAssignments,

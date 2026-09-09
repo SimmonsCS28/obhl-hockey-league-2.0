@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { generatePreview, generateUsers, importGoalies, updateUser } from '../services/api';
+import { generatePreview, generateUsers, importGoalies, previewGoalieImport, updateUser } from '../services/api';
 import './UserGenerationTab.css';
 
 const UserGenerationTab = ({ onUserGenerated }) => {
@@ -17,6 +17,12 @@ const UserGenerationTab = ({ onUserGenerated }) => {
     // Goalie Import State
     const [showGoalieModal, setShowGoalieModal] = useState(false);
     const [goalieCandidates, setGoalieCandidates] = useState([]);
+    // Returning goalies: they get this season's player record at the rating they already
+    // have, so they are shown for confirmation but never asked for a rating.
+    const [goalieCarried, setGoalieCarried] = useState([]);
+    // Rows there is nothing to do for, kept so the modal can say who was left out rather
+    // than silently shortening the list.
+    const [goalieSkipped, setGoalieSkipped] = useState([]);
     const [importLoading, setImportLoading] = useState(false);
     const [importError, setImportError] = useState(null);
     const [importSuccess, setImportSuccess] = useState('');
@@ -107,7 +113,7 @@ const UserGenerationTab = ({ onUserGenerated }) => {
         reader.readAsText(file);
     };
 
-    const processGoalieCSV = (csvText) => {
+    const processGoalieCSV = async (csvText) => {
         setImportError(null);
         setImportSuccess('');
         try {
@@ -144,12 +150,44 @@ const UserGenerationTab = ({ onUserGenerated }) => {
                 return;
             }
 
-            setGoalieCandidates(candidates);
+            // The CSV carries no rating, so every row arrives at the default — which is only
+            // the right rating for someone nobody has rated yet. The backend splits the file
+            // on that basis: new goalies come back for the admin to rate, returning goalies
+            // come back with the rating they already have, to be carried forward untouched.
+            setImportLoading(true);
+            let preview;
+            try {
+                preview = await previewGoalieImport(candidates);
+            } finally {
+                setImportLoading(false);
+            }
+
+            const toImport = preview.toImport || [];
+            const carried = preview.toCarryForward || [];
+            const skipped = preview.alreadyInLeague || [];
+
+            if (toImport.length === 0 && carried.length === 0) {
+                setImportError(
+                    `Every goalie in that file is already on this season's roster (${skipped.length} row${skipped.length === 1 ? '' : 's'}) — nothing to import.`
+                );
+                return;
+            }
+
+            setGoalieCandidates(toImport.map(g => ({ ...g, skillRating: g.skillRating ?? 5 })));
+            setGoalieCarried(carried);
+            setGoalieSkipped(skipped);
             setShowGoalieModal(true);
         } catch (err) {
-            setImportError('Failed to parse CSV file.');
             console.error(err);
+            setImportError(err.message || 'Failed to read that CSV file.');
         }
+    };
+
+    const closeGoalieModal = () => {
+        setShowGoalieModal(false);
+        setGoalieCandidates([]);
+        setGoalieCarried([]);
+        setGoalieSkipped([]);
     };
 
     const handleSkillChange = (index, value) => {
@@ -161,14 +199,24 @@ const UserGenerationTab = ({ onUserGenerated }) => {
     };
 
     const handleConfirmImport = async () => {
-        if (!confirm(`Are you sure you want to import ${goalieCandidates.length} new goalies?`)) return;
+        const total = goalieCandidates.length + goalieCarried.length;
+        if (!confirm(`Add ${total} goalie${total === 1 ? '' : 's'} to this season's roster?`)) return;
         setImportLoading(true);
         setImportError(null);
         try {
-            const result = await importGoalies(goalieCandidates);
-            setImportSuccess(`Successfully imported ${result.length} new goalies.`);
-            setShowGoalieModal(false);
-            setGoalieCandidates([]);
+            // Returning goalies go back too: they need this season's player record. The
+            // backend re-derives which is which and re-reads their rating itself, so the
+            // ratings sent with them are never the ones that get written.
+            const result = await importGoalies([...goalieCandidates, ...goalieCarried.map(c => c.goalie)]);
+            const created = result.createdUsers?.length ?? 0;
+            const carried = result.carriedForward?.length ?? 0;
+            setImportSuccess(
+                [
+                    created > 0 && `Imported ${created} new goalie${created === 1 ? '' : 's'}`,
+                    carried > 0 && `carried ${carried} returning goalie${carried === 1 ? '' : 's'} forward at their existing rating`,
+                ].filter(Boolean).join(' and ') + '.'
+            );
+            closeGoalieModal();
             if (onUserGenerated) onUserGenerated();
         } catch (err) {
             console.error('Error importing goalies:', err);
@@ -265,7 +313,7 @@ const UserGenerationTab = ({ onUserGenerated }) => {
                         ))}
                     </div>
                     <div className="gen-confirm-row">
-                        <button type="button" className="btn-cancel" onClick={handleCancelReview} disabled={resolving}>
+                        <button type="button" className="gen-btn gen-btn--cancel" onClick={handleCancelReview} disabled={resolving}>
                             Cancel
                         </button>
                         <button type="button" className="gen-btn gen-btn--generate" onClick={handleConfirmGenerate} disabled={resolving}>
@@ -297,51 +345,128 @@ const UserGenerationTab = ({ onUserGenerated }) => {
                 <div className="gen-empty">Every drafted player already has a user account — nothing to generate.</div>
             )}
 
-            {/* Goalie Import Modal */}
+            {/* Goalie Import Modal.
+                Scoped gen-modal-* classnames, not the shared modal-overlay/modal-content pair:
+                that pair is declared in five stylesheets, one of which paints it white, so this
+                modal was landing dark-theme text on a white card. */}
             {showGoalieModal && (
-                <div className="modal-overlay">
-                    <div className="modal-content" style={{ maxWidth: '760px', width: '95vw' }}>
-                        <div className="modal-header">
-                            <h3>Review Goalie Import</h3>
-                            <button className="modal-close" onClick={() => setShowGoalieModal(false)} aria-label="Close">×</button>
+                <div className="gen-modal-overlay" onClick={closeGoalieModal}>
+                    <div className="gen-modal" onClick={(e) => e.stopPropagation()}>
+                        <div className="gen-modal-head">
+                            <h3 className="gen-modal-title">Review Goalie Import</h3>
+                            <button className="gen-modal-close" onClick={closeGoalieModal} aria-label="Close">×</button>
                         </div>
-                        <div style={{ padding: '20px 24px' }}>
+                        <div className="gen-modal-body">
                             <p className="gen-modal-note">
-                                Found {goalieCandidates.length} potential goalies. Please review and assign skill ratings.
+                                {goalieCandidates.length > 0 && (
+                                    <>
+                                        {goalieCandidates.length} goalie{goalieCandidates.length === 1 ? ' is' : 's are'} new
+                                        to the league — assign each a skill rating.{' '}
+                                    </>
+                                )}
+                                {goalieCarried.length > 0 && (
+                                    <>
+                                        {goalieCarried.length} returning goalie{goalieCarried.length === 1 ? '' : 's'} will
+                                        join this season at the rating they already have.
+                                    </>
+                                )}
                             </p>
-                            <div className="gen-modal-table-wrap">
-                                <table className="gen-modal-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Name</th>
-                                            <th>Email</th>
-                                            <th>Phone</th>
-                                            <th>Skill Rating (1-10)</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {goalieCandidates.map((candidate, index) => (
-                                            <tr key={index}>
-                                                <td><b>{candidate.firstName} {candidate.lastName}</b></td>
-                                                <td>{candidate.email}</td>
-                                                <td>{candidate.phoneNumber}</td>
-                                                <td>
-                                                    <input
-                                                        type="number"
-                                                        min="1"
-                                                        max="10"
-                                                        className="gen-skill-input"
-                                                        value={candidate.skillRating}
-                                                        onChange={(e) => handleSkillChange(index, e.target.value)}
-                                                    />
-                                                </td>
-                                            </tr>
+
+                            {goalieCandidates.length > 0 && (
+                                <div className="gen-modal-section">
+                                    <div className="gen-modal-section-head">New to the league — set a rating</div>
+                                    <div className="gen-modal-table-wrap">
+                                        <table className="gen-modal-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Name</th>
+                                                    <th>Email</th>
+                                                    <th>Phone</th>
+                                                    <th>Skill Rating (1-10)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {goalieCandidates.map((candidate, index) => (
+                                                    <tr key={index}>
+                                                        <td><b>{candidate.firstName} {candidate.lastName}</b></td>
+                                                        <td>{candidate.email}</td>
+                                                        <td>{candidate.phoneNumber}</td>
+                                                        <td>
+                                                            <input
+                                                                type="number"
+                                                                min="1"
+                                                                max="10"
+                                                                className="gen-skill-input"
+                                                                value={candidate.skillRating}
+                                                                onChange={(e) => handleSkillChange(index, e.target.value)}
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+
+                            {goalieCarried.length > 0 && (
+                                <div className="gen-modal-section">
+                                    <div className="gen-modal-section-head gen-modal-section-head--carry">
+                                        Returning — rating carried forward, not re-rated
+                                    </div>
+                                    <div className="gen-modal-table-wrap">
+                                        <table className="gen-modal-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>Name</th>
+                                                    <th>Email</th>
+                                                    <th>Phone</th>
+                                                    <th>Skill Rating</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {goalieCarried.map((c, i) => (
+                                                    <tr key={`carry-${i}`}>
+                                                        <td><b>{c.goalie.firstName} {c.goalie.lastName}</b></td>
+                                                        <td>{c.goalie.email}</td>
+                                                        <td>{c.goalie.phoneNumber}</td>
+                                                        <td>
+                                                            <span className="gen-carried-rating">{c.skillRating}</span>
+                                                            {c.needsAccount && (
+                                                                <span className="gen-carried-note">+ new account</span>
+                                                            )}
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            )}
+
+                            {goalieSkipped.length > 0 && (
+                                <div className="gen-modal-skipped">
+                                    <div className="gen-modal-skipped-head">
+                                        {goalieSkipped.length} row{goalieSkipped.length === 1 ? '' : 's'} skipped — nothing to do
+                                    </div>
+                                    <ul className="gen-modal-skipped-list">
+                                        {goalieSkipped.map((s, i) => (
+                                            <li key={`skip-${i}`}>
+                                                <span className="gen-modal-skipped-name">
+                                                    {s.goalie.firstName} {s.goalie.lastName}
+                                                </span>
+                                                <span className="gen-modal-skipped-reason">
+                                                    {s.reason}
+                                                    {s.existingSkillRating != null && ` · rated ${s.existingSkillRating}`}
+                                                </span>
+                                            </li>
                                         ))}
-                                    </tbody>
-                                </table>
-                            </div>
+                                    </ul>
+                                </div>
+                            )}
+
                             <div className="gen-confirm-row">
-                                <button className="btn-cancel" onClick={() => setShowGoalieModal(false)} disabled={importLoading}>
+                                <button className="gen-btn gen-btn--cancel" onClick={closeGoalieModal} disabled={importLoading}>
                                     Cancel
                                 </button>
                                 <button className="gen-btn gen-btn--import" onClick={handleConfirmImport} disabled={importLoading}>

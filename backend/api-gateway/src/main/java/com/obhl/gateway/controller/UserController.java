@@ -20,6 +20,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.obhl.gateway.dto.CreateUserRequest;
 import com.obhl.gateway.dto.GoalieImportDTO;
+import com.obhl.gateway.dto.GoalieImportPreviewDTO;
+import com.obhl.gateway.dto.GoalieImportResultDTO;
 import com.obhl.gateway.dto.UpdateUserRequest;
 import com.obhl.gateway.dto.UpdateUserRolesRequest;
 import com.obhl.gateway.dto.UserDTO;
@@ -147,12 +149,21 @@ public class UserController {
     }
 
     /**
+     * Split parsed CSV rows into goalies worth importing and goalies already in the league,
+     * so the review modal only asks for skill ratings it will actually use.
+     */
+    @PostMapping("/import-goalies/preview")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<GoalieImportPreviewDTO> previewGoalieImport(@RequestBody List<GoalieImportDTO> goalieDtos) {
+        return ResponseEntity.ok(userManagementService.previewGoalieImport(goalieDtos));
+    }
+
+    /**
      * Import goalies from CSV data
      */
     @PostMapping("/import-goalies")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<List<UserDTO>> importGoalies(@RequestBody List<GoalieImportDTO> goalieDtos) {
-        List<UserDTO> importedUsers = userManagementService.importGoalies(goalieDtos);
-        return ResponseEntity.status(HttpStatus.CREATED).body(importedUsers);
+    public ResponseEntity<GoalieImportResultDTO> importGoalies(@RequestBody List<GoalieImportDTO> goalieDtos) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(userManagementService.importGoalies(goalieDtos));
     }
 }
