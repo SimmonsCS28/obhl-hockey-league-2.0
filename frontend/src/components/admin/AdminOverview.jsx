@@ -20,7 +20,7 @@ function AdminOverview() {
             try {
                 const [gamesData, teamsData] = await Promise.all([
                     api.getGames(selectedSeasonId),
-                    api.getTeams(),
+                    api.getTeams({ seasonId: selectedSeasonId }),
                 ]);
                 if (cancelled) return;
                 const teamMap = Object.fromEntries(teamsData.map(t => [String(t.id), t]));

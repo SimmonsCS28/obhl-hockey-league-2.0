@@ -180,8 +180,15 @@ const api = {
     // ============================================
     // TEAMS API
     // ============================================
-    async getTeams() {
-        return request('/teams');
+    // Takes the same optional params object as getPlayers -- callers already pass
+    // { seasonId }, and teams are per-season rows, so an unfiltered call returns every
+    // team the league has ever had.
+    async getTeams(params = {}) {
+        const filtered = Object.fromEntries(
+            Object.entries(params).filter(([, v]) => v != null && v !== '')
+        );
+        const queryString = new URLSearchParams(filtered).toString();
+        return request(`/teams${queryString ? '?' + queryString : ''}`);
     },
 
     // Teams with this season's precomputed stats (points/wins/GF/GA), for standings ranking.
