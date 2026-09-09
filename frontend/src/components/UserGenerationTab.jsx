@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { generatePreview, generateUsers, importGoalies, previewGoalieImport, updateUser } from '../services/api';
+import { generatePreview, generateUsers, importGoalies, previewGoalieImport, syncGoalieRoster, updateUser } from '../services/api';
 import './UserGenerationTab.css';
 
 const UserGenerationTab = ({ onUserGenerated }) => {
@@ -183,6 +183,32 @@ const UserGenerationTab = ({ onUserGenerated }) => {
         }
     };
 
+    // The import settles the roster itself, so this is for a season imported before that
+    // existed, or after a goalie is added to the Players page by hand.
+    const handleSyncRoster = async () => {
+        setImportError(null);
+        setImportSuccess('');
+        setImportLoading(true);
+        try {
+            const roster = await syncGoalieRoster();
+            const fullTime = roster.fullTime?.length ?? 0;
+            const subs = roster.carriedAsSubstitute?.length ?? 0;
+            setImportSuccess(
+                `Season roster settled: ${fullTime} full-time` +
+                (subs > 0 ? `, ${subs} carried forward as substitutes` : '') +
+                (roster.playerRecordsCreated > 0
+                    ? ` (${roster.playerRecordsCreated} rating${roster.playerRecordsCreated === 1 ? '' : 's'} carried onto this season).`
+                    : '.')
+            );
+            if (onUserGenerated) onUserGenerated();
+        } catch (err) {
+            console.error('Error settling the goalie roster:', err);
+            setImportError(err.message || 'Failed to settle the goalie roster');
+        } finally {
+            setImportLoading(false);
+        }
+    };
+
     const closeGoalieModal = () => {
         setShowGoalieModal(false);
         setGoalieCandidates([]);
@@ -265,6 +291,15 @@ const UserGenerationTab = ({ onUserGenerated }) => {
                         disabled={loading || importLoading}
                     >
                         Import Goalies (CSV)
+                    </button>
+                    <button
+                        type="button"
+                        className="gen-btn gen-btn--cancel"
+                        onClick={handleSyncRoster}
+                        disabled={loading || importLoading}
+                        title="Full-time = registered this season; everyone else is carried forward as a substitute"
+                    >
+                        Sync Goalie Roster
                     </button>
                     <input
                         type="file"

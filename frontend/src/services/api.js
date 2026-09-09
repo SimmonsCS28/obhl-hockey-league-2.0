@@ -742,6 +742,11 @@ const api = {
         return request('/users/generate', { method: 'POST' });
     },
 
+    async syncGoalieRoster(seasonId) {
+        const q = seasonId ? `?seasonId=${seasonId}` : '';
+        return request(`/users/goalie-roster/sync${q}`, { method: 'POST' });
+    },
+
     async previewGoalieImport(goalies) {
         return request('/users/import-goalies/preview', {
             method: 'POST',
@@ -987,6 +992,7 @@ export const {
     deleteUser,
     generatePreview,
     generateUsers,
+    syncGoalieRoster,
     previewGoalieImport,
     importGoalies,
     getAllGoalieUnavailability,

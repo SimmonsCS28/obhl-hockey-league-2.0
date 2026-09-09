@@ -729,7 +729,7 @@ public class UserManagementService {
             Integer rating = c.action == GoalieImportAction.CARRY_FORWARD
                     ? c.carriedRating
                     : dto.getSkillRating();
-            createSeasonPlayerRow(dto, c.email, rating, activeSeasonId);
+            createSeasonPlayerRow(dto, c.email, rating, activeSeasonId, true);
         }
 
         // Registering is what makes a goalie full-time, so the roster the weekly proposer
@@ -784,6 +784,12 @@ public class UserManagementService {
             if (!"G".equalsIgnoreCase(p.getPosition())) {
                 continue;
             }
+            // Carried-forward records are inactive; only a registration makes a goalie
+            // full-time. Without this the sync promotes every substitute on its second run,
+            // because by then it has given them a record for this season itself.
+            if (!Boolean.TRUE.equals(p.getIsActive())) {
+                continue;
+            }
             findUserByEmailOrUsername(p.getEmail().trim()).ifPresent(
                     u -> fullTime.put(u.getId(), displayName(p.getFirstName(), p.getLastName(), u)));
         }
@@ -820,7 +826,7 @@ public class UserManagementService {
                         com.obhl.gateway.dto.GoalieImportDTO stand = new com.obhl.gateway.dto.GoalieImportDTO(
                                 prev.getFirstName(), prev.getLastName(), user.getEmail().trim(),
                                 user.getPhoneNumber(), prev.getSkillRating());
-                        createSeasonPlayerRow(stand, user.getEmail().trim(), prev.getSkillRating(), season);
+                        createSeasonPlayerRow(stand, user.getEmail().trim(), prev.getSkillRating(), season, false);
                         playerRowsCreated++;
                     }
                 }
@@ -897,8 +903,14 @@ public class UserManagementService {
         userRepository.save(user);
     }
 
+    /**
+     * @param registered true when they signed up for this season, false when the row exists only
+     *                   to carry a non-registering goalie's rating forward. This flag is the only
+     *                   thing that tells the two apart afterwards, so the roster sync can run
+     *                   twice without promoting every carried substitute to full-time.
+     */
     private void createSeasonPlayerRow(com.obhl.gateway.dto.GoalieImportDTO dto, String email,
-            Integer skillRating, Long activeSeasonId) {
+            Integer skillRating, Long activeSeasonId, boolean registered) {
         if (activeSeasonId == null) {
             return;
         }
@@ -910,7 +922,7 @@ public class UserManagementService {
         playerMap.put("skillRating", skillRating);
         playerMap.put("seasonId", activeSeasonId);
         playerMap.put("teamId", null);
-        playerMap.put("isActive", true);
+        playerMap.put("isActive", registered);
         try {
             statsClient.createPlayers(List.of(playerMap));
         } catch (Exception e) {
