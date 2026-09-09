@@ -58,6 +58,25 @@ public class TeamController {
     public ResponseEntity<?> updateTeam(
             @PathVariable Long teamId,
             @RequestBody TeamDto.Update updateDto) {
+        // A team's name is unique per season (teams_name_season_unique). Check it up front the
+        // way createTeam does. Without this the constraint violation escapes as a
+        // DataIntegrityViolationException, which the catch below flattens into a bare 404 with no
+        // body -- so a GM renaming their team to one that is already taken just sees "Failed to
+        // save team name" and has no way to know the name was the problem.
+        // The name may be sent on its own (the GM rename does), so fall back to the team's
+        // current season rather than assuming the payload carries seasonId.
+        if (updateDto.getName() != null) {
+            Long seasonId = updateDto.getSeasonId() != null
+                    ? updateDto.getSeasonId()
+                    : teamService.getTeamById(teamId).map(TeamDto.Response::getSeasonId).orElse(null);
+            if (seasonId != null && teamService.getTeamByNameAndSeason(updateDto.getName(), seasonId)
+                    .filter(existing -> !existing.getId().equals(teamId))
+                    .isPresent()) {
+                return ResponseEntity.badRequest()
+                        .body("Team with name '" + updateDto.getName() + "' already exists in this season");
+            }
+        }
+
         try {
             TeamDto.Response updated = teamService.updateTeam(teamId, updateDto);
             return ResponseEntity.ok(updated);

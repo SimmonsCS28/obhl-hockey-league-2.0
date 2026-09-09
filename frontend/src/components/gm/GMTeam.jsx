@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import './GMTeam.css';
@@ -36,6 +36,10 @@ function GMTeam() {
     const [isEditingName, setIsEditingName] = useState(false);
     const [editedName, setEditedName] = useState('');
     const [savingName, setSavingName] = useState(false);
+    // Enter and blur both save, and flipping savingName disables the focused input -- which itself
+    // fires blur, so one Enter press used to send two identical PUTs (both are in the prod access
+    // log). Guard with a ref, not the savingName state: the blur arrives before React re-renders.
+    const savingNameRef = useRef(false);
 
     useEffect(() => {
         if (user) {
@@ -194,11 +198,13 @@ function GMTeam() {
     };
 
     const handleSaveTeamName = async () => {
+        if (savingNameRef.current) return;
         const trimmed = editedName.trim();
         if (!trimmed || trimmed === teamInfo?.name) {
             setIsEditingName(false);
             return;
         }
+        savingNameRef.current = true;
         setSavingName(true);
         try {
             await axios.put(
@@ -211,8 +217,14 @@ function GMTeam() {
             showMessage('success', `Team renamed to "${trimmed}"`);
         } catch (error) {
             console.error('Failed to rename team:', error);
-            showMessage('error', 'Failed to save team name');
+            // The gateway rejects a name already used in this season with a plain-text reason;
+            // show that rather than the generic line, which told the GM nothing actionable.
+            const reason = typeof error.response?.data === 'string' && error.response.data.trim()
+                ? error.response.data
+                : 'Failed to save team name';
+            showMessage('error', reason);
         } finally {
+            savingNameRef.current = false;
             setSavingName(false);
         }
     };
