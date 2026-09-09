@@ -22,6 +22,7 @@ import com.obhl.gateway.dto.CreateUserRequest;
 import com.obhl.gateway.dto.GoalieImportDTO;
 import com.obhl.gateway.dto.GoalieImportPreviewDTO;
 import com.obhl.gateway.dto.GoalieImportResultDTO;
+import com.obhl.gateway.dto.GoalieRosterSyncDTO;
 import com.obhl.gateway.dto.UpdateUserRequest;
 import com.obhl.gateway.dto.UpdateUserRolesRequest;
 import com.obhl.gateway.dto.UserDTO;
@@ -156,6 +157,18 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<GoalieImportPreviewDTO> previewGoalieImport(@RequestBody List<GoalieImportDTO> goalieDtos) {
         return ResponseEntity.ok(userManagementService.previewGoalieImport(goalieDtos));
+    }
+
+    /**
+     * Settle the season goalie roster without running an import.
+     *
+     * The import does this itself, so this is for a season that was imported before the roster
+     * step existed, or to pick up goalies added to the Players page by hand afterwards.
+     */
+    @PostMapping("/goalie-roster/sync")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<GoalieRosterSyncDTO> syncGoalieRoster(@RequestParam(required = false) Long seasonId) {
+        return ResponseEntity.ok(userManagementService.syncSeasonGoalieRoster(seasonId));
     }
 
     /**

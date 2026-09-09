@@ -47,6 +47,9 @@ public class UserManagementService {
     @Autowired
     private com.obhl.gateway.client.StatsClient statsClient;
 
+    @Autowired
+    private com.obhl.gateway.repository.SeasonGoalieRepository seasonGoalieRepository;
+
     @org.springframework.beans.factory.annotation.Value("${app.frontend.url:https://oldbuzzardhockey.com}")
     private String frontendUrl;
 
@@ -520,7 +523,7 @@ public class UserManagementService {
     private List<ClassifiedGoalie> classifyGoalieImport(
             List<com.obhl.gateway.dto.GoalieImportDTO> goalieDtos, Long activeSeasonId) {
 
-        Map<String, Integer> lastKnownRating = lastKnownSkillRatings(activeSeasonId);
+        Map<String, PlayerDto> lastKnown = lastKnownPlayerByEmail(activeSeasonId);
         Set<String> seenEmails = new HashSet<>();
         List<ClassifiedGoalie> out = new ArrayList<>();
 
@@ -554,10 +557,10 @@ public class UserManagementService {
             c.needsAccount = userRepository.findByEmailIgnoreCase(c.email).isEmpty()
                     && userRepository.findByUsernameIgnoreCase(c.email).isEmpty();
 
-            Integer carried = lastKnownRating.get(key);
-            if (carried != null) {
+            PlayerDto priorRecord = lastKnown.get(key);
+            if (priorRecord != null) {
                 c.action = GoalieImportAction.CARRY_FORWARD;
-                c.carriedRating = carried;
+                c.carriedRating = priorRecord.getSkillRating();
             } else {
                 c.action = GoalieImportAction.NEW;
             }
@@ -568,19 +571,18 @@ public class UserManagementService {
     }
 
     /**
-     * Most recent skill rating per person, keyed by lowercased email.
+     * Most recent rated player record per person, keyed by lowercased email.
      *
-     * players carries one row per person per season, so "their rating" means the rating on
-     * the newest season they have a row for. Seasons after the active one are ignored: a
-     * future season that has been set up but not started must not be treated as current.
+     * players carries one row per person per season, so "their record" means the row on the
+     * newest season they have one for. Seasons after the active one are ignored: a future
+     * season that has been set up but not started must not be treated as current.
      */
-    private Map<String, Integer> lastKnownSkillRatings(Long activeSeasonId) {
-        Map<String, Integer> rating = new java.util.HashMap<>();
-        Map<String, Long> fromSeason = new java.util.HashMap<>();
+    private Map<String, PlayerDto> lastKnownPlayerByEmail(Long activeSeasonId) {
+        Map<String, PlayerDto> newest = new java.util.HashMap<>();
         try {
             List<PlayerDto> players = playerService.getAllPlayers();
             if (players == null) {
-                return rating;
+                return newest;
             }
             for (PlayerDto p : players) {
                 if (p.getEmail() == null || p.getSkillRating() == null || p.getSeasonId() == null) {
@@ -590,17 +592,16 @@ public class UserManagementService {
                     continue;
                 }
                 String key = p.getEmail().trim().toLowerCase();
-                Long seen = fromSeason.get(key);
-                if (seen == null || p.getSeasonId() > seen) {
-                    fromSeason.put(key, p.getSeasonId());
-                    rating.put(key, p.getSkillRating());
+                PlayerDto seen = newest.get(key);
+                if (seen == null || p.getSeasonId() > seen.getSeasonId()) {
+                    newest.put(key, p);
                 }
             }
         } catch (RuntimeException e) {
             // Ratings are best-effort. Without stats-service every row looks new, and the
             // admin is asked for a rating rather than one being carried forward wrongly.
         }
-        return rating;
+        return newest;
     }
 
     /**
@@ -731,7 +732,151 @@ public class UserManagementService {
             createSeasonPlayerRow(dto, c.email, rating, activeSeasonId);
         }
 
-        return new com.obhl.gateway.dto.GoalieImportResultDTO(createdUsers, carriedForward, skipped);
+        // Registering is what makes a goalie full-time, so the roster the weekly proposer
+        // runs on is settled here rather than left as a separate job somebody has to know
+        // to do. Derived from the season's player records, not from this request, so it is
+        // the same answer whether the file added fifteen goalies or none.
+        com.obhl.gateway.dto.GoalieRosterSyncDTO roster = syncSeasonGoalieRoster(activeSeasonId);
+
+        return new com.obhl.gateway.dto.GoalieImportResultDTO(createdUsers, carriedForward, skipped, roster);
+    }
+
+    /**
+     * Settle a season's goalie roster: who the weekly proposer schedules, and who is only a
+     * substitute.
+     *
+     * The rule is the league's: registering for the season makes you full-time, and a goalie
+     * who does not register is not dropped — they are carried forward as a substitute, at the
+     * rating they already had, so they can still be called on ad hoc. A full-timer who sits a
+     * season out is therefore relegated rather than lost.
+     *
+     * Reads the season's own player records rather than whatever the import happened to
+     * process, so it is idempotent and gives the same answer run twice or run standalone
+     * against a season that was imported earlier.
+     *
+     * Deliberately does not demote: an existing roster row is left alone except to promote a
+     * goalie who has now registered. Nothing here should undo a hand-made correction.
+     */
+    @Transactional
+    public com.obhl.gateway.dto.GoalieRosterSyncDTO syncSeasonGoalieRoster(Long seasonId) {
+        Long season = seasonId != null ? seasonId : resolveActiveSeasonId();
+        if (season == null) {
+            throw new RuntimeException("No active season to build a goalie roster for");
+        }
+
+        Map<String, PlayerDto> lastKnown = lastKnownPlayerByEmail(season);
+        List<PlayerDto> allPlayers;
+        try {
+            allPlayers = playerService.getAllPlayers();
+        } catch (RuntimeException e) {
+            throw new RuntimeException("Could not read players to build the goalie roster: " + e.getMessage());
+        }
+        if (allPlayers == null) {
+            allPlayers = List.of();
+        }
+
+        // --- Registered this season -> full-time ---
+        Map<Long, String> fullTime = new LinkedHashMap<>();
+        for (PlayerDto p : allPlayers) {
+            if (!season.equals(p.getSeasonId()) || p.getEmail() == null) {
+                continue;
+            }
+            if (!"G".equalsIgnoreCase(p.getPosition())) {
+                continue;
+            }
+            findUserByEmailOrUsername(p.getEmail().trim()).ifPresent(
+                    u -> fullTime.put(u.getId(), displayName(p.getFirstName(), p.getLastName(), u)));
+        }
+
+        // --- Everyone on the previous roster who did not -> carried as a substitute ---
+        Long priorSeason = seasonGoalieRepository.findAll().stream()
+                .map(com.obhl.gateway.model.SeasonGoalie::getSeasonId)
+                .filter(id -> id != null && id < season)
+                .max(Long::compareTo)
+                .orElse(null);
+
+        Map<Long, String> carried = new LinkedHashMap<>();
+        int playerRowsCreated = 0;
+        if (priorSeason != null) {
+            for (com.obhl.gateway.model.SeasonGoalie prior : seasonGoalieRepository.findBySeasonId(priorSeason)) {
+                Long uid = prior.getUserId();
+                if (uid == null || fullTime.containsKey(uid)) {
+                    continue;
+                }
+                Optional<User> maybeUser = userRepository.findById(uid);
+                if (maybeUser.isEmpty() || Boolean.FALSE.equals(maybeUser.get().getIsActive())) {
+                    continue;
+                }
+                User user = maybeUser.get();
+                carried.put(uid, displayName(user.getFirstName(), user.getLastName(), user));
+
+                // Their rating has to exist on THIS season's records or the proposer cannot
+                // score them — it reads the current season's row and drops anyone unresolved
+                // to the league median.
+                if (user.getEmail() != null) {
+                    String key = user.getEmail().trim().toLowerCase();
+                    PlayerDto prev = lastKnown.get(key);
+                    if (prev != null && findPlayerForSeason(user.getEmail().trim(), season) == null) {
+                        com.obhl.gateway.dto.GoalieImportDTO stand = new com.obhl.gateway.dto.GoalieImportDTO(
+                                prev.getFirstName(), prev.getLastName(), user.getEmail().trim(),
+                                user.getPhoneNumber(), prev.getSkillRating());
+                        createSeasonPlayerRow(stand, user.getEmail().trim(), prev.getSkillRating(), season);
+                        playerRowsCreated++;
+                    }
+                }
+            }
+        }
+
+        // --- Write the roster ---
+        Map<Long, com.obhl.gateway.model.SeasonGoalie> existing = new java.util.HashMap<>();
+        for (com.obhl.gateway.model.SeasonGoalie sg : seasonGoalieRepository.findBySeasonId(season)) {
+            existing.put(sg.getUserId(), sg);
+        }
+
+        for (Long uid : fullTime.keySet()) {
+            com.obhl.gateway.model.SeasonGoalie row = existing.get(uid);
+            if (row == null) {
+                row = new com.obhl.gateway.model.SeasonGoalie();
+                row.setSeasonId(season);
+                row.setUserId(uid);
+            } else if (Boolean.TRUE.equals(row.getIsFulltime())) {
+                continue;
+            }
+            row.setIsFulltime(true);
+            seasonGoalieRepository.save(row);
+        }
+
+        for (Long uid : carried.keySet()) {
+            if (existing.containsKey(uid)) {
+                continue; // Already on this season's roster — leave whatever it says alone.
+            }
+            com.obhl.gateway.model.SeasonGoalie row = new com.obhl.gateway.model.SeasonGoalie();
+            row.setSeasonId(season);
+            row.setUserId(uid);
+            row.setIsFulltime(false);
+            seasonGoalieRepository.save(row);
+        }
+
+        return new com.obhl.gateway.dto.GoalieRosterSyncDTO(
+                season, priorSeason,
+                new ArrayList<>(fullTime.values()),
+                new ArrayList<>(carried.values()),
+                playerRowsCreated);
+    }
+
+    private Optional<User> findUserByEmailOrUsername(String email) {
+        Optional<User> match = userRepository.findByEmailIgnoreCase(email);
+        return match.isPresent() ? match : userRepository.findByUsernameIgnoreCase(email);
+    }
+
+    private static String displayName(String firstName, String lastName, User fallback) {
+        if (firstName != null && lastName != null) {
+            return firstName + " " + lastName;
+        }
+        if (fallback.getFirstName() != null && fallback.getLastName() != null) {
+            return fallback.getFirstName() + " " + fallback.getLastName();
+        }
+        return fallback.getUsername();
     }
 
     private void grantGoalieRole(String email, Role goalieRole) {

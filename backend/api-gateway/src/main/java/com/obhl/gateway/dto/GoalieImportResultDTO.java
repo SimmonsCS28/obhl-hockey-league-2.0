@@ -24,4 +24,7 @@ public class GoalieImportResultDTO {
 
     /** Rows that needed nothing doing. */
     private int skipped;
+
+    /** The season goalie roster as the import left it — who is full-time, who is a substitute. */
+    private GoalieRosterSyncDTO roster;
 }

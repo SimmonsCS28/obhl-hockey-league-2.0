@@ -210,12 +210,18 @@ const UserGenerationTab = ({ onUserGenerated }) => {
             const result = await importGoalies([...goalieCandidates, ...goalieCarried.map(c => c.goalie)]);
             const created = result.createdUsers?.length ?? 0;
             const carried = result.carriedForward?.length ?? 0;
-            setImportSuccess(
-                [
-                    created > 0 && `Imported ${created} new goalie${created === 1 ? '' : 's'}`,
-                    carried > 0 && `carried ${carried} returning goalie${carried === 1 ? '' : 's'} forward at their existing rating`,
-                ].filter(Boolean).join(' and ') + '.'
-            );
+            const fullTime = result.roster?.fullTime?.length ?? 0;
+            const subs = result.roster?.carriedAsSubstitute?.length ?? 0;
+            const importLine = [
+                created > 0 && `Imported ${created} new goalie${created === 1 ? '' : 's'}`,
+                carried > 0 && `carried ${carried} returning goalie${carried === 1 ? '' : 's'} forward at their existing rating`,
+            ].filter(Boolean).join(' and ');
+            // The roster line is the part that makes the weekly proposer work, so it is
+            // reported even when the file itself changed nothing.
+            const rosterLine = fullTime > 0
+                ? `Season roster: ${fullTime} full-time${subs > 0 ? `, ${subs} carried as substitutes` : ''}.`
+                : '';
+            setImportSuccess([importLine && importLine + '.', rosterLine].filter(Boolean).join(' '));
             closeGoalieModal();
             if (onUserGenerated) onUserGenerated();
         } catch (err) {
