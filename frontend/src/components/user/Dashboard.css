@@ -355,3 +355,7 @@
     color: #fff;
     background: rgba(255, 255, 255, 0.08);
 }
+
+/* The other four tips get their spacing from .obi-sectiontip-row. My Week has no heading of its
+   own, so its tip rides the existing My Schedule row, which has no gap. */
+.dash-sched-head .obi-sectiontip { margin-left: 10px; }

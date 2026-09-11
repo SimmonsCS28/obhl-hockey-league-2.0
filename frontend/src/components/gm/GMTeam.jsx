@@ -2,9 +2,25 @@ import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import SectionTip from '../common/SectionTip';
 import './GMTeam.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
+
+// Section tip copy. It lives here rather than in Dashboard so that both routes GMTeam renders on
+// get it, and so a capability and the line promising it change together. Read off the roster
+// table below, not off the handoff: the email column is readOnly, so the "fix a teammate's email"
+// line the design carried would have promised something the GM cannot do.
+const TEAM_TIP = {
+    lines: [
+        'Rename your team — the new name shows league-wide immediately.',
+        'Click into any jersey number box and type the new number, 1–99.',
+        'Set a player’s skill rating with the − and + buttons, 1 to 10.',
+        'Jersey and rating edits stage up until you hit Save Changes.',
+        'Copy the whole roster’s emails to your clipboard.',
+    ],
+    footnote: 'Goals, assists and PIM come from scoresheets. Emails are read-only here.',
+};
 
 const getAuthHeaders = () => {
     const token = localStorage.getItem('token');
@@ -312,7 +328,10 @@ function GMTeam() {
         <div className="gm-team">
             <div className="gm-team-head">
                 <div className="gm-team-headings">
-                    <h2 className="gm-team-title">Team Management</h2>
+                    <div className="obi-sectiontip-row">
+                        <h2 className="gm-team-title">Team Management</h2>
+                        <SectionTip id="team-management" section="Team Management" {...TEAM_TIP} />
+                    </div>
 
                     {/* The team name is a captioned field, not styled-down text: the caption names
                         the value, the box gives it field chrome and the chip carries the verb, so

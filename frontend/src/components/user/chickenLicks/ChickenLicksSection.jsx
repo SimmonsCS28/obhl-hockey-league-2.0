@@ -1,11 +1,22 @@
 import { useCallback, useEffect, useState } from 'react';
 import api from '../../../services/api';
+import SectionTip from '../../common/SectionTip';
 import ItemConfigModal from './ItemConfigModal';
 import { defaultWingsDraft, defaultBurgerDraft } from './chickenLicksDrafts';
 import chickenLicksLogo from '../../../assets/images/chicken-licks-logo.png';
 import './ChickenLicksSection.css';
 
 const TZ = 'America/Chicago';
+
+// Section tip copy — kept beside the section it describes, not in SectionTip.
+const CHICKEN_LICKS_TIP = {
+    lines: [
+        'Start a personal or team wing order, or join one a teammate opened.',
+        'Add your items and see the running total before anyone calls it in.',
+        'Look back at past orders for the season.',
+    ],
+};
+
 const money = (v) => Number(v || 0).toFixed(2);
 const fmtWhen = (s) => {
     if (!s) return '';
@@ -140,7 +151,10 @@ function ChickenLicksSection({ seasonId, openOrders, onRefresh }) {
                 <header className="cl-header">
                     <img src={chickenLicksLogo} alt="Chicken Licks" className="cl-logo" />
                     <div className="cl-title-block">
-                        <h2 className="cl-title">Chicken Licks</h2>
+                        <div className="obi-sectiontip-row">
+                            <h2 className="cl-title">Chicken Licks</h2>
+                            <SectionTip id="chicken-licks" section="Chicken Licks" {...CHICKEN_LICKS_TIP} />
+                        </div>
                         <p className="cl-desc">Build your order right here, then call it in — the summary stays on
                             screen so whoever's calling can read it straight off the phone. Personal and team orders
                             are separate and can both be open at once.</p>

@@ -5,10 +5,43 @@ import { useSeason } from '../../contexts/SeasonContext';
 import { useCurrentTournament } from '../tournament/tournamentData';
 import { resolveTeamColor, textOn } from '../../constants/teamColors';
 import api from '../../services/api';
+import SectionTip from '../common/SectionTip';
 import GMTeam from '../gm/GMTeam';
 import GoalieStatsPanel from '../goalie/GoalieStatsPanel';
 import ChickenLicksSection from './chickenLicks/ChickenLicksSection';
 import './Dashboard.css';
+
+// ── Section tip copy ──
+// Deliberately here and not inside SectionTip: a capability and the line that promises it then
+// change in the same diff. Both of these lists were read off the components below rather than
+// off the handoff — the Signups one in particular described a 48-hour drop deadline that has
+// never existed in the API. Five lines max, fourteen words max each.
+const MY_WEEK_TIP = {
+    lines: [
+        'See your next game, last result and full upcoming schedule.',
+        'Confirm or decline anything a coordinator has assigned you.',
+        'Jump to a game preview or recap.',
+    ],
+};
+
+const SIGNUPS_TIP = {
+    lines: [
+        'Claim open referee and scorekeeper slots for games this season.',
+        'Goalies mark weekly availability — the coordinator builds the matchups.',
+        'Confirm or decline an assignment, or drop a shift you confirmed.',
+        'Track which of your signups are still awaiting a coordinator.',
+        'Revisit games you have worked, including any still missing a score.',
+    ],
+    footnote: 'You only see the roles a coordinator has cleared you for.',
+};
+
+const GOALIE_STATS_TIP = {
+    lines: [
+        'Season GAA, games played and recent form for every rostered goalie.',
+        'Open a goalie for a game-by-game breakdown.',
+    ],
+    footnote: 'Ratings are set by the Goalie Coordinator — GMs can’t change them here.',
+};
 
 const TZ = 'America/Chicago';
 const OFFICIAL_ROLES = ['GOALIE', 'REF', 'SCOREKEEPER'];
@@ -351,8 +384,11 @@ function Dashboard() {
                 </div>
 
                 {/* My Schedule */}
+                {/* My Week has no heading of its own, so its tip rides the first one in the
+                    section. The copy covers the whole zone, not just the schedule. */}
                 <div className="dash-sched-head">
                     <span className="dash-zone-title">My Schedule</span>
+                    <SectionTip id="my-week" section="My Week" {...MY_WEEK_TIP} />
                     {team && <span className="dash-zone-sub">{team.name} · upcoming games</span>}
                 </div>
                 <div className="dash-sched-card">
@@ -378,7 +414,10 @@ function Dashboard() {
             {isOfficial && (
                 <section id="signups" className="dash-zone dash-zone--alt">
                     <div className="obi-container">
-                        <h2 className="dash-zone-h2">Signups</h2>
+                        <div className="obi-sectiontip-row">
+                            <h2 className="dash-zone-h2">Signups</h2>
+                            <SectionTip id="signups" section="Signups" {...SIGNUPS_TIP} />
+                        </div>
                         <p className="dash-zone-intro">
                             Goalies mark weekly availability so the coordinator can schedule balanced matchups. Refs and scorekeepers
                             sign up for open slots. Confirm any assignment a coordinator gives you. You only see the roles you're cleared for.
@@ -699,10 +738,11 @@ function Dashboard() {
             {(isGM || isAdmin) && (
                 <section id="goalie-stats" className="dash-zone dash-zone--alt">
                     <div className="obi-container">
-                        <h2 className="dash-zone-h2">
-                            Goalie Stats
+                        <div className="obi-sectiontip-row">
+                            <h2 className="dash-zone-h2">Goalie Stats</h2>
+                            <SectionTip id="goalie-stats" section="Goalie Stats" {...GOALIE_STATS_TIP} />
                             <span className="gp-readonly-pill">Read-Only</span>
-                        </h2>
+                        </div>
                         <p className="dash-zone-intro">
                             Season GAA, recent form, and the Goalie Coordinator&apos;s rating for every rostered goalie.
                             Ratings are set by the coordinator.

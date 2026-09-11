@@ -1,0 +1,240 @@
+/* Section tip — the ⓘ beside a section heading and its "what you can do here" popover.
+   See SectionTip.jsx for why none of this is a <button>.
+
+   Every classname is prefixed obi-sectiontip-*: this codebase has no CSS scoping and generic
+   names like .tip or .info have collided before.
+
+   The tip renders inside headings that are italic, uppercase and 900-weight, so the glyph and
+   the popover both reset font-style, text-transform, letter-spacing and font-weight explicitly.
+   Without that the ⓘ arrives as a slanted capital "I". */
+
+/* The ⓘ is a sibling of the heading, never a child of it. Inside an <h2> the open popover's text
+   becomes part of the heading's accessible name, and heading navigation reads the whole bubble. */
+.obi-sectiontip-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.obi-sectiontip {
+    position: relative;
+    display: inline-flex;
+    vertical-align: middle;
+}
+
+.obi-sectiontip-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1px solid rgba(157, 185, 205, 0.4);
+    background: transparent;
+    color: var(--obi-icy);
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 15px;
+    font-style: normal;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+/* 26px of glyph, 44px of target. An invisible ring rather than padding, so the heading's
+   baseline and spacing are unaffected. */
+.obi-sectiontip-btn::before {
+    content: '';
+    position: absolute;
+    inset: -9px;
+    border-radius: 50%;
+}
+
+/* Never opened on this device. A static accent tint carries the state on its own, so the
+   pulse below can be switched off for reduced motion without losing the signal. */
+.obi-sectiontip-btn--unseen {
+    color: var(--obi-accent);
+    border-color: var(--obi-accent);
+    background: var(--obi-accent-soft);
+}
+
+.obi-sectiontip-btn--unseen::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 50%;
+    border: 1px solid var(--obi-accent);
+    pointer-events: none;
+    animation: obi-sectiontip-pulse 2.8s ease-out infinite;
+}
+
+@keyframes obi-sectiontip-pulse {
+    0% { transform: scale(1); opacity: 0.55; }
+    70%, 100% { transform: scale(1.85); opacity: 0; }
+}
+
+.obi-sectiontip-btn:hover,
+.obi-sectiontip-btn--open {
+    color: var(--obi-bg);
+    background: var(--obi-accent);
+    border-color: var(--obi-accent);
+}
+
+.obi-sectiontip-btn:focus-visible {
+    outline: 2px solid var(--obi-accent);
+    outline-offset: 3px;
+}
+
+/* ── the popover ── */
+
+.obi-sectiontip-pop {
+    position: absolute;
+    top: 34px;
+    left: -8px;
+    z-index: 60;
+    display: block;
+    width: 320px;
+    padding: 16px 17px 15px;
+    background: linear-gradient(180deg, var(--obi-bg-deep-card), var(--obi-bg-elevated));
+    border: 1px solid rgba(246, 169, 28, 0.45);
+    border-radius: 12px;
+    box-shadow: 0 20px 44px rgba(0, 0, 0, 0.55);
+    cursor: auto;
+    text-align: left;
+    font-style: normal;
+    font-weight: 400;
+    letter-spacing: normal;
+    text-transform: none;
+    animation: obi-sectiontip-in 0.12s ease-out;
+}
+
+@keyframes obi-sectiontip-in {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.obi-sectiontip-arrow {
+    position: absolute;
+    top: -6px;
+    left: 14px;
+    width: 10px;
+    height: 10px;
+    transform: rotate(45deg);
+    background: var(--obi-bg-deep-card);
+    border-left: 1px solid rgba(246, 169, 28, 0.45);
+    border-top: 1px solid rgba(246, 169, 28, 0.45);
+}
+
+.obi-sectiontip-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 9px;
+}
+
+.obi-sectiontip-eyebrow {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 11.5px;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: var(--obi-accent);
+}
+
+.obi-sectiontip-close {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 22px;
+    height: 22px;
+    font-family: var(--obi-font-body);
+    font-size: 16px;
+    line-height: 1;
+    color: var(--obi-text-muted);
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.15s;
+}
+
+.obi-sectiontip-close::before {
+    content: '';
+    position: absolute;
+    inset: -11px;
+}
+
+.obi-sectiontip-close:hover {
+    color: #fff;
+}
+
+.obi-sectiontip-close:focus-visible {
+    outline: 2px solid var(--obi-accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.obi-sectiontip-lines {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.obi-sectiontip-line {
+    display: flex;
+    gap: 9px;
+    font-family: var(--obi-font-body);
+    font-size: 13.5px;
+    font-weight: 400;
+    line-height: 1.45;
+    color: var(--obi-text-secondary);
+}
+
+.obi-sectiontip-chevron {
+    flex: none;
+    color: var(--obi-accent);
+}
+
+/* The "why is this greyed out" line. Deliberately quieter than the capabilities above it. */
+.obi-sectiontip-foot {
+    display: block;
+    margin-top: 11px;
+    padding-top: 10px;
+    border-top: 1px solid var(--obi-divider);
+    font-family: var(--obi-font-body);
+    font-size: 12.5px;
+    font-weight: 400;
+    line-height: 1.45;
+    color: var(--obi-text-muted);
+}
+
+/* On a phone the bubble stops being anchored and spans the viewport under the heading — 320px
+   pinned to an ⓘ near the left edge leaves no usable margin. The horizontal shift and width are
+   measured and applied inline (see SectionTip.jsx); only the arrow and the offset are here. */
+@media (max-width: 480px) {
+    .obi-sectiontip-pop {
+        top: 40px;
+        max-width: none;
+    }
+
+    .obi-sectiontip-arrow {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .obi-sectiontip-pop {
+        animation: none;
+    }
+
+    .obi-sectiontip-btn--unseen::after {
+        animation: none;
+    }
+}
