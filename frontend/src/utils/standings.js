@@ -1,27 +1,39 @@
 // The league's canonical standings order, so every place that shows a team's
-// rank agrees: the Standings page, the admin standings table, the player
-// dashboard, and the matchup preview.
+// rank agrees: the Standings page, the Teams grid, the team roster header, the
+// admin standings table, the player dashboard, and the matchup preview.
 //
-// This lived as a copy-pasted sort block in five components, and one copy drifted
-// — the matchup preview tiebroke on `wins` alone and skipped the goal
-// tiebreakers, so two teams tied on points could be listed in the opposite order
-// there than on the Standings page. Import this instead of rewriting the sort.
+// This lived as a copy-pasted sort block in five components, and the copies
+// drifted — at one point the Standings page tiebroke on goals-against, the
+// Teams grid on goal differential, and the roster header on regulation wins
+// alone, so Orange was 2nd, 4th and 5th on three pages of the same season.
+// Import this instead of rewriting the sort.
 //
-// Order: points desc → total wins (regulation + overtime) desc → goals against
-// asc → goals for desc.
+// The official rules (Scoring & Tiebreakers §9) break ties by head-to-head →
+// division → regulation wins → total wins → fewest PIM → coin flip. The team
+// record doesn't carry head-to-head or penalty minutes, so this applies the two
+// win steps and then falls back to goal differential and goals for, the
+// conventional hockey fallback and the one people expect to see (a +4 team
+// above a +2 team).
+//
+// Order: points desc → regulation wins desc → total wins (regulation +
+// overtime) desc → goal differential desc → goals for desc.
 
 const num = (v) => v || 0;
 
 export const compareStandings = (a, b) => {
     if (num(b.points) !== num(a.points)) return num(b.points) - num(a.points);
 
-    // Overtime wins count toward a team's win total here and in the W column on
-    // the Standings page; leaving them out is what caused the preview's drift.
+    // `wins` is regulation-only; overtime wins are tracked separately (TeamStatsUpdater).
+    if (num(b.wins) !== num(a.wins)) return num(b.wins) - num(a.wins);
+
     const bWins = num(b.wins) + num(b.overtimeWins);
     const aWins = num(a.wins) + num(a.overtimeWins);
     if (bWins !== aWins) return bWins - aWins;
 
-    if (num(a.goalsAgainst) !== num(b.goalsAgainst)) return num(a.goalsAgainst) - num(b.goalsAgainst);
+    const bDiff = num(b.goalsFor) - num(b.goalsAgainst);
+    const aDiff = num(a.goalsFor) - num(a.goalsAgainst);
+    if (bDiff !== aDiff) return bDiff - aDiff;
+
     return num(b.goalsFor) - num(a.goalsFor);
 };
 

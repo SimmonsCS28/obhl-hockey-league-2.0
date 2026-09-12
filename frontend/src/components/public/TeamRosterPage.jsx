@@ -2,13 +2,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import * as api from '../../services/api';
 import { resolveTeamColor } from '../../constants/teamColors';
+import { sortByStandings, ordinal } from '../../utils/standings';
 import './TeamRosterPage.css';
-
-const ordinal = (n) => {
-    const s = ['th', 'st', 'nd', 'rd'];
-    const v = n % 100;
-    return n + (s[(v - 20) % 10] || s[v] || s[0]);
-};
 
 const posLabel = (pos) => {
     const p = (pos || '').toUpperCase();
@@ -47,8 +42,8 @@ function TeamRosterPage() {
             if (seasonTeamsResponse.ok) {
                 const seasonTeams = await seasonTeamsResponse.json();
                 setLeagueTeams(seasonTeams);
-                const sorted = [...seasonTeams].sort((a, b) =>
-                    (b.points || 0) !== (a.points || 0) ? (b.points || 0) - (a.points || 0) : (b.wins || 0) - (a.wins || 0));
+                // Same order as the Standings page, so the place shown here matches the table.
+                const sorted = sortByStandings(seasonTeams);
                 const idx = sorted.findIndex(t => t.id === parseInt(teamId));
                 if (idx !== -1) setRank(idx + 1);
             }

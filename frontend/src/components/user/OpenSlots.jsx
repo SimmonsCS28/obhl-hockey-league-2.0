@@ -439,7 +439,8 @@ const OpenSlots = ({ mode = 'league' }) => {
                                                         </div>
 
                                                         <span className={`os-role-badge${isRefSlot ? ' os-role-badge--ref' : ' os-role-badge--sk'}`}>
-                                                            {ROLE_DISPLAY[s.role] ?? s.role}
+                                                            {/* Two ref slots per game — number them so the pair doesn't read as a duplicate. */}
+                                                            {isRefSlot ? `Ref ${s.slot}` : (ROLE_DISPLAY[s.role] ?? s.role)}
                                                         </span>
 
                                                         <div className="os-slot-info">

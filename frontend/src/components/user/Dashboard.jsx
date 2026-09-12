@@ -597,7 +597,9 @@ function Dashboard() {
                                                     <div key={s.slotId} className="dash-slot-row">
                                                         <div className="dash-slot-info">
                                                             <div className="dash-commit-game">{s.homeTeam} vs {s.awayTeam}</div>
-                                                            <div className="dash-commit-meta">{fmtWhen(s.gameDate)}{s.rink ? ` · ${s.rink}` : ''}</div>
+                                                            {/* Refs get two slots per game, so the same matchup can list
+                                                                twice; say which one this is or it reads as a duplicate. */}
+                                                            <div className="dash-commit-meta">{fmtWhen(s.gameDate)}{s.rink ? ` · ${s.rink}` : ''} · {slotLabel(s)}</div>
                                                         </div>
                                                         <button className="dash-btn dash-btn--gold" disabled={busy === s.slotId} onClick={() => signup(s.slotId)}>Sign Up</button>
                                                     </div>

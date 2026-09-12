@@ -3,14 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useSeason } from '../../contexts/SeasonContext';
 import { resolveTeamColor } from '../../constants/teamColors';
 import SeasonSelector from '../common/SeasonSelector';
+import { sortByStandings, ordinal } from '../../utils/standings';
 import heroBg from '../../assets/images/buzzard-full.jpg';
 import './TeamsPage.css';
-
-const ordinal = (n) => {
-    const s = ['th', 'st', 'nd', 'rd'];
-    const v = n % 100;
-    return n + (s[(v - 20) % 10] || s[v] || s[0]);
-};
 
 function TeamsPage() {
     const navigate = useNavigate();
@@ -36,15 +31,8 @@ function TeamsPage() {
             const response = await fetch(`/api/v1/teams?seasonId=${seasonId}`);
             if (!response.ok) throw new Error('Failed to fetch teams');
             const data = await response.json();
-            // Rank by points, then total wins, then goal differential
-            const sorted = data.sort((a, b) => {
-                if ((b.points || 0) !== (a.points || 0)) return (b.points || 0) - (a.points || 0);
-                const bw = (b.wins || 0) + (b.overtimeWins || 0);
-                const aw = (a.wins || 0) + (a.overtimeWins || 0);
-                if (bw !== aw) return bw - aw;
-                return ((b.goalsFor || 0) - (b.goalsAgainst || 0)) - ((a.goalsFor || 0) - (a.goalsAgainst || 0));
-            });
-            setTeams(sorted);
+            // Same order as the Standings page, so the place pill and the table agree.
+            setTeams(sortByStandings(data));
         } catch (err) {
             setError(err.message);
         } finally {

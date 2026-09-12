@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import GameEditModal from './GameEditModal';
+import { sortByStandings } from '../utils/standings';
 import './ScheduleManager.css';
 
 const API_BASE_URL = '/api/v1';
@@ -689,14 +690,9 @@ const ScheduleManager = () => {
             onConfirm: async () => {
                 setLoading(true);
                 try {
-                    // Sort teams by points desc, then goal differential desc
-                    const sorted = [...teams].sort((a, b) => {
-                        const ptsDiff = (b.points || 0) - (a.points || 0);
-                        if (ptsDiff !== 0) return ptsDiff;
-                        const aGD = (a.goalsFor || 0) - (a.goalsAgainst || 0);
-                        const bGD = (b.goalsFor || 0) - (b.goalsAgainst || 0);
-                        return bGD - aGD;
-                    });
+                    // Seed in the same order the Standings page shows, so the bracket
+                    // matches what everyone has been looking at all season.
+                    const sorted = sortByStandings(teams);
 
                     const teamIds = sorted.map(t => t.id);
 
