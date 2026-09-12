@@ -730,11 +730,13 @@ public class CoordinatorService {
      * goalie answering "actually I'm free, put me in" reaches a person — From is always the league's
      * unmonitored noreply@, which on its own would make "reply to this email" false.
      *
-     * @return how many goalies were emailed
+     * <p>Counts what Resend <em>accepted</em>, not what was attempted. {@link EmailService#send}
+     * swallows its own failures and returns false, so an attempt count would report success for a
+     * goalie whose message never left the building.
      */
-    public int notifyUnassignedGoalies(Long seasonId, Integer week, Long coordinatorUserId) {
+    public BenchNoticeOutcome notifyUnassignedGoalies(Long seasonId, Integer week, Long coordinatorUserId) {
         if (week == null) {
-            return 0;
+            return new BenchNoticeOutcome(0, 0);
         }
         List<GameResponseDTO> all = gameProxyService.getGamesBySeason(seasonId);
         List<Long> weekGameIds = (all == null ? List.<GameResponseDTO>of() : all).stream()
@@ -742,7 +744,7 @@ public class CoordinatorService {
                 .map(GameResponseDTO::getId)
                 .collect(Collectors.toList());
         if (weekGameIds.isEmpty()) {
-            return 0;
+            return new BenchNoticeOutcome(0, 0);
         }
 
         Set<Long> assigned = assignmentRepository.findByGameIdInAndRole(weekGameIds, "GOALIE").stream()
@@ -766,7 +768,8 @@ public class CoordinatorService {
                         ? coordinator.getFirstName() : coordinator.getUsername());
         String coordinatorEmail = coordinator == null ? null : coordinator.getEmail();
 
-        int notified = 0;
+        int eligible = 0;
+        int accepted = 0;
         for (SeasonGoalie sg : seasonGoalieRepository.findBySeasonIdAndIsFulltimeTrue(seasonId)) {
             if (sg.getUserId() == null || assigned.contains(sg.getUserId())) {
                 continue;
@@ -777,19 +780,33 @@ public class CoordinatorService {
                         || userOpt.get().getEmail().isBlank()) {
                     continue;
                 }
+                eligible++;
                 User user = userOpt.get();
                 String name = (user.getFirstName() != null && !user.getFirstName().isBlank())
                         ? user.getFirstName()
                         : user.getUsername();
-                emailService.sendGoalieNoAssignmentEmail(user.getEmail(), name, week,
+                if (emailService.sendGoalieNoAssignmentEmail(user.getEmail(), name, week,
                         unavailable.contains(sg.getUserId()), weekSchedule,
-                        coordinatorName, coordinatorEmail);
-                notified++;
+                        coordinatorName, coordinatorEmail)) {
+                    accepted++;
+                }
             } catch (RuntimeException e) {
                 // Skip this goalie; the rest of the bench still gets told.
             }
         }
-        return notified;
+        return new BenchNoticeOutcome(eligible, accepted);
+    }
+
+    /**
+     * What a bench notice run achieved. {@code eligible} is how many full-time goalies had no slot
+     * and a usable address; {@code accepted} is how many of those Resend took a message for. The two
+     * differ only when sends fail, which is exactly the case the caller must not record as "told".
+     */
+    public record BenchNoticeOutcome(int eligible, int accepted) {
+        /** Nothing left to do for this week: everyone eligible was reached, or nobody was eligible. */
+        public boolean settled() {
+            return eligible == 0 || accepted > 0;
+        }
     }
 
     /**

@@ -106,8 +106,11 @@ public class EmailService {
      * <p>Leads with "nothing to do" because that is the whole message; the week schedule sits below
      * as context so they can see who did draw the slots. A goalie who marked themselves unavailable
      * gets that reflected back instead of a line implying they were passed over.
+     *
+     * @return whether Resend accepted the message. The caller counts these, and that count is what
+     *         the coordinator sees — so it has to be deliveries, not attempts.
      */
-    public void sendGoalieNoAssignmentEmail(String toEmail, String name, Integer week,
+    public boolean sendGoalieNoAssignmentEmail(String toEmail, String name, Integer week,
             boolean markedUnavailable, String weekScheduleHtml,
             String coordinatorName, String coordinatorEmail) {
         String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";
@@ -141,7 +144,7 @@ public class EmailService {
                 + scheduleBlock
                 + closing;
 
-        send(toEmail, subject, html, canReply ? coordinatorEmail : null);
+        return send(toEmail, subject, html, canReply ? coordinatorEmail : null);
     }
 
     /**

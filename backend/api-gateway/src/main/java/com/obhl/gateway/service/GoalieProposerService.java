@@ -19,10 +19,12 @@ import com.obhl.gateway.dto.CoordinatorDto;
 import com.obhl.gateway.dto.GameResponseDTO;
 import com.obhl.gateway.dto.PlayerDto;
 import com.obhl.gateway.model.GoalieAvailability;
+import com.obhl.gateway.model.GoalieBenchNotice;
 import com.obhl.gateway.model.SeasonGoalie;
 import com.obhl.gateway.model.ShiftAssignment;
 import com.obhl.gateway.model.User;
 import com.obhl.gateway.repository.GoalieAvailabilityRepository;
+import com.obhl.gateway.repository.GoalieBenchNoticeRepository;
 import com.obhl.gateway.repository.SeasonGoalieRepository;
 import com.obhl.gateway.repository.ShiftAssignmentRepository;
 import com.obhl.gateway.repository.UserRepository;
@@ -69,6 +71,9 @@ public class GoalieProposerService {
 
     @Autowired
     private SeasonGoalieRepository seasonGoalieRepository;
+
+    @Autowired
+    private GoalieBenchNoticeRepository benchNoticeRepository;
 
     @Autowired
     private ShiftAssignmentRepository assignmentRepository;
@@ -452,13 +457,13 @@ public class GoalieProposerService {
 
         List<ShiftAssignment> weekRows = assignmentRepository.findByGameIdInAndRole(gameIds, "GOALIE");
 
-        // Whether this is the week's first send has to be read BEFORE propose() moves rows out of
-        // AUTO_PROPOSED. Anything already PROPOSED or CONFIRMED means confirmations went out for
-        // this week once already, and the bench was told then — a top-up send (after a decline, say)
-        // must not mail them "you have no game" a second time.
-        boolean firstSendForWeek = weekRows.stream().noneMatch(a ->
-                ShiftAssignment.STATUS_PROPOSED.equals(a.getStatus())
-                        || ShiftAssignment.STATUS_CONFIRMED.equals(a.getStatus()));
+        // Whether the bench has already been told is a stored fact, not something read off the
+        // week's assignment statuses. It used to be inferred — "no row is PROPOSED or CONFIRMED yet,
+        // so this must be the first send" — and that broke the moment a single slot was proposed by
+        // hand before the bulk send: the one PROPOSED row made the week look like a top-up, and the
+        // bench was silently never told (season 15, week 1). A top-up send after a decline still
+        // must not mail them "you have no game" twice, which is what the row guarantees.
+        boolean benchAlreadyTold = benchNoticeRepository.findBySeasonIdAndWeek(seasonId, week).isPresent();
 
         int sent = 0;
         for (ShiftAssignment a : weekRows) {
@@ -472,9 +477,23 @@ public class GoalieProposerService {
 
         // Only once the week has actually gone out to somebody: a click that sends no confirmations
         // has announced nothing, so there is nothing for the bench to be told about yet.
-        int notifiedUnassigned = (sent > 0 && firstSendForWeek)
-                ? coordinatorService.notifyUnassignedGoalies(seasonId, week, coordinatorUserId)
-                : 0;
+        int notifiedUnassigned = 0;
+        if (sent > 0 && !benchAlreadyTold) {
+            CoordinatorService.BenchNoticeOutcome outcome =
+                    coordinatorService.notifyUnassignedGoalies(seasonId, week, coordinatorUserId);
+            notifiedUnassigned = outcome.accepted();
+            // Record the week as told only if it actually was. If every send failed (Resend down),
+            // leaving no row means the next Send Confirmations tries the bench again instead of
+            // treating the silence as done.
+            if (outcome.settled()) {
+                GoalieBenchNotice notice = new GoalieBenchNotice();
+                notice.setSeasonId(seasonId);
+                notice.setWeek(week);
+                notice.setSentBy(coordinatorUserId);
+                notice.setRecipientCount(outcome.accepted());
+                benchNoticeRepository.save(notice);
+            }
+        }
 
         List<CoordinatorDto.AssignmentView> views = coordinatorService.getAssignments(seasonId, "GOALIE", week);
         return new CoordinatorDto.SendConfirmationsResult(sent, notifiedUnassigned, views);
