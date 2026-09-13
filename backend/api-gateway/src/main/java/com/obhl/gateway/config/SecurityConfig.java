@@ -58,6 +58,11 @@ public class SecurityConfig {
                         // served by MediaResourceConfig's resource handler). Writes stay
                         // ADMIN-only via @PreAuthorize on HighlightController.
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/highlights", "/api/v1/highlights/**").permitAll()
+                        // Player profile photos (MediaResourceConfig). Under /media rather than
+                        // /players/media because PlayerProxyController's /** mapping would swallow
+                        // the latter before the resource handler ever saw it. Uploads and deletes
+                        // are on /user/player-profile/** (authenticated) and ADMIN-only endpoints.
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/media/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/chicken-licks/standings").permitAll()
                         // The draft is ADMIN-only for EVERY verb including GET, and must be stated
                         // BEFORE the public tournament GET below — matchers are evaluated in order,

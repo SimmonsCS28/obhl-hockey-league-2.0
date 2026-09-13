@@ -146,11 +146,50 @@ This document tracks known technical debt, workarounds, and future improvements 
 - Implement backend endpoints for loading/saving live game events
 - Connect frontend to real endpoints
 
+### 8. Player profile detaches on email change
+**Status**: Known gap, by design in v1 (2026-09-12)
+
+**Issue**: `player_profiles` (migration 063) is keyed by `lower(players.email)` because email is the
+only identity carried into each new season row. Two edits silently orphan a profile: an admin
+changing `players.email` on a season row (Player Management), or a member changing their account
+email in Account Settings (`AuthService.updateProfile` touches `users` only). The card then falls
+back to the legacy per-season columns and initials; the old profile row and its photo file linger.
+
+**Current Workaround**: None. `player_profiles.user_id` is recorded when resolvable, so a repair
+query can re-key by user when needed.
+
+**Proper Fix Needed**: On either email change, re-key the profile (`UPDATE player_profiles SET
+email_lower = ...`) or, better, make `user_id` the primary link once `players.user_id` is populated
+for league players (today only the tournament draft writes it).
+
+**Affected files**:
+- `backend/api-gateway/src/main/java/com/obhl/gateway/service/PlayerProfileService.java`
+- `backend/api-gateway/src/main/java/com/obhl/gateway/service/AuthService.java` (`updateProfile`)
+- `frontend/src/components/PlayerManagement.jsx` (admin email edit)
+
+### 9. `PlayerRepository.findByEmail` throws for returning players
+**Status**: Latent bug, noted 2026-09-12
+
+**Issue**: `findByEmail` returns `Optional<Player>`, but `players` has one row per person PER SEASON,
+so any email present in two seasons makes Spring Data throw
+`IncorrectResultSizeDataAccessException`. `GET /players/exists` and `GET /players/by-email` call it.
+`Login.jsx` uses `/exists` via `api.checkPlayerProfileExists`, so a returning player's login-time
+check 500s and is swallowed. Both endpoints also match email case-sensitively while `users.email`
+is case-insensitive-unique (044).
+
+**Proper Fix Needed**: Switch both to `findByEmailIgnoreCaseOrderBySeasonIdDesc` (added for the
+profile card's `/players/history`) and take the first row, or drop the endpoints if nothing
+depends on them.
+
+**Affected files**:
+- `backend/stats-service/src/main/java/com/obhl/stats/repository/PlayerRepository.java`
+- `backend/stats-service/src/main/java/com/obhl/stats/controller/PlayerController.java` (`playerExists`, `getPlayerByEmail`)
+
 ---
 
 ## 📝 Notes
 
-- **Last Updated**: 2026-01-07
+- **Last Updated**: 2026-09-12
 - **Priority Legend**: 🔴 High | 🟡 Medium | 🟢 Low
 - All hardcoded `localhost` URLs were replaced with production IP on 2026-01-07
 - AWS Security Group configured with ports: 80, 8000, 8002, 8003

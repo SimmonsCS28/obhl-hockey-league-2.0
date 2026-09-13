@@ -102,6 +102,21 @@ public class PlayerController {
                 .orElse(ResponseEntity.notFound().build());
     }
 
+    /**
+     * Every season row for one person, newest first -- the source of the profile card's
+     * season history. Privileged/internal only: it is an email-keyed lookup, and the
+     * whole point of the Public JSON view is that anonymous callers never learn emails.
+     * The gateway calls this with the internal service key on the public card's behalf.
+     */
+    @GetMapping("/history")
+    public ResponseEntity<?> getPlayerHistory(@RequestParam String email, Authentication authentication) {
+        if (!PlayerAccess.isPrivileged(authentication)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        List<Player> rows = playerRepository.findByEmailIgnoreCaseOrderBySeasonIdDesc(email == null ? "" : email.trim());
+        return ResponseEntity.ok(maskedResponse(rows, authentication));
+    }
+
     @GetMapping("/by-email-season")
     public ResponseEntity<?> getPlayerByEmailAndSeason(
             @RequestParam String email,

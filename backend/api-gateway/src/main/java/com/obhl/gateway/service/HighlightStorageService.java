@@ -26,11 +26,18 @@ import jakarta.annotation.PostConstruct;
  * Files land in {@code app.media.root} (a named Docker volume mounted into the
  * api-gateway container) under a server-generated UUID filename. The client's
  * filename is NEVER used to build a path — it is stored as a display label only.
+ *
+ * Despite the name it also holds player profile photos (in the {@link #PLAYER_PHOTO_DIR}
+ * subfolder) — same root, same volume, same UUID-key discipline. Renaming it to
+ * MediaStorageService would be the honest thing; deferred to keep this change small.
  */
 @Service
 public class HighlightStorageService {
 
     private static final Logger log = LoggerFactory.getLogger(HighlightStorageService.class);
+
+    /** Subfolder of the media root for player profile photos; also the URL segment MediaResourceConfig serves. */
+    public static final String PLAYER_PHOTO_DIR = "players";
 
     /** 30s of Live Barn 1080p lands well under this; the cap is a guard, not a target. */
     private static final long MAX_VIDEO_BYTES = 100L * 1024 * 1024;
@@ -58,7 +65,34 @@ public class HighlightStorageService {
     void init() throws IOException {
         root = Paths.get(mediaRoot).toAbsolutePath().normalize();
         Files.createDirectories(root);
+        Files.createDirectories(root.resolve(PLAYER_PHOTO_DIR));
         log.info("Highlight media root: {}", root);
+    }
+
+    /**
+     * Stores already-validated, already-processed bytes (a ProfilePhotoProcessor
+     * output) under {@code subdir}, returning the bare storage key. The key does NOT
+     * include the subdir — the caller knows which folder it asked for, and the URL
+     * that serves it is per-folder too.
+     */
+    public String storeBytes(byte[] data, String subdir, String extension) {
+        String storageKey = UUID.randomUUID() + extension;
+        Path target = resolve(subdir + "/" + storageKey);
+        try {
+            Files.write(target, data);
+        } catch (IOException e) {
+            log.error("Failed writing bytes to {}", target, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Could not save the uploaded file.");
+        }
+        return storageKey;
+    }
+
+    /** Best-effort delete of a key inside a subdir; see {@link #delete(String)}. */
+    public void delete(String subdir, String storageKey) {
+        if (storageKey == null || storageKey.isBlank()) {
+            return;
+        }
+        delete(subdir + "/" + storageKey);
     }
 
     /** Validates and stores the video, returning its storage key. */

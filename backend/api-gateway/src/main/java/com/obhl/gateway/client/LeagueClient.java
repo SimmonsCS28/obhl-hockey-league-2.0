@@ -17,6 +17,10 @@ public interface LeagueClient {
     @GetMapping("/api/v1/seasons/active")
     Map<String, Object> getActiveSeason();
 
+    /** type = LEAGUE (league-service's default), TOURNAMENT, or ALL. */
+    @GetMapping("/api/v1/seasons")
+    java.util.List<Map<String, Object>> getSeasons(@org.springframework.web.bind.annotation.RequestParam("type") String type);
+
     @GetMapping("/api/v1/teams/{teamId}")
     Map<String, Object> getTeam(@PathVariable("teamId") Long teamId);
 

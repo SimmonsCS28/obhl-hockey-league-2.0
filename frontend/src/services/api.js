@@ -966,6 +966,61 @@ const api = {
     // Public — no auth required
     async getChickenLicksStandings(seasonId) {
         return request(`/chicken-licks/standings?seasonId=${seasonId}`);
+    },
+
+    // ── Player profile card ──
+    // The card is public, but MUST go through the gateway (not /stats-api): the auth header
+    // request() attaches is how the server decides isSelf, and the gateway is what joins the
+    // season row to the person-level profile and season history.
+    async getPlayerCard(playerId) {
+        return request(`/players/${playerId}/card`);
+    },
+    async getMyPlayerProfile() {
+        return request('/user/player-profile');
+    },
+    async updateMyPlayerProfile(data) {
+        return request('/user/player-profile', { method: 'PUT', body: JSON.stringify(data) });
+    },
+    // Multipart — same XHR shape as uploadHighlight, for the same reason (request() forces a
+    // JSON Content-Type and would break the multipart boundary).
+    uploadMyPlayerPhoto(blob, onProgress) {
+        const formData = new FormData();
+        formData.append('file', blob, 'photo.jpg');
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `${API_BASE_URL}/user/player-profile/photo`);
+            const token = getAuthToken();
+            if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+            xhr.upload.onprogress = (e) => {
+                if (onProgress && e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+            };
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    try { resolve(xhr.responseText ? JSON.parse(xhr.responseText) : {}); } catch { resolve({}); }
+                    return;
+                }
+                if (xhr.status === 401) {
+                    window.dispatchEvent(new Event('auth-error'));
+                    reject(new Error('Your session has expired. Please log in again.'));
+                    return;
+                }
+                let message = xhr.responseText;
+                try {
+                    const parsed = JSON.parse(xhr.responseText);
+                    message = parsed.error || parsed.message || message;
+                } catch { /* not JSON — use raw text */ }
+                reject(new Error(message || `Upload failed with status ${xhr.status}`));
+            };
+            xhr.onerror = () => reject(new Error('Upload failed — check your connection and try again.'));
+            xhr.send(formData);
+        });
+    },
+    async deleteMyPlayerPhoto() {
+        return request('/user/player-profile/photo', { method: 'DELETE' });
+    },
+    // ADMIN moderation
+    async adminDeletePlayerPhoto(playerId) {
+        return request(`/players/${playerId}/photo`, { method: 'DELETE' });
     }
 };
 
@@ -1087,7 +1142,13 @@ export const {
     getChickenLicksHistory,
     reorderChickenLicks,
     getChickenLicksMyTotal,
-    getChickenLicksStandings
+    getChickenLicksStandings,
+    getPlayerCard,
+    getMyPlayerProfile,
+    updateMyPlayerProfile,
+    uploadMyPlayerPhoto,
+    deleteMyPlayerPhoto,
+    adminDeletePlayerPhoto
 } = api;
 
 export default api;

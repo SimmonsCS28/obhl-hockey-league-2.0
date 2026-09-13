@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import * as api from '../../services/api';
 import { resolveTeamColor } from '../../constants/teamColors';
 import { sortByStandings, ordinal } from '../../utils/standings';
+import PlayerProfileCard from '../common/PlayerProfileCard';
 import './TeamRosterPage.css';
 
 const posLabel = (pos) => {
@@ -25,6 +26,7 @@ function TeamRosterPage() {
     const [rank, setRank] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [openPlayerId, setOpenPlayerId] = useState(null);
 
     useEffect(() => {
         if (teamId) fetchTeamData();
@@ -223,7 +225,15 @@ function TeamRosterPage() {
                         {roster.length === 0 ? (
                             <div className="obi-tr-msg">No players on roster.</div>
                         ) : roster.map(p => (
-                            <div key={p.id} className="obi-trr-row">
+                            <div
+                                key={p.id}
+                                className="obi-trr-row obi-trr-clickable"
+                                role="button"
+                                tabIndex={0}
+                                aria-label={`${p.firstName} ${p.lastName} — open profile`}
+                                onClick={() => setOpenPlayerId(p.id)}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenPlayerId(p.id); } }}
+                            >
                                 <span className="obi-trr-num">{p.jerseyNumber ?? '—'}</span>
                                 <span className="obi-trr-name">
                                     {p.firstName} {p.lastName}
@@ -254,6 +264,10 @@ function TeamRosterPage() {
                     )}
                 </div>
             </section>
+
+            {openPlayerId != null && (
+                <PlayerProfileCard playerId={openPlayerId} onClose={() => setOpenPlayerId(null)} />
+            )}
         </div>
     );
 }

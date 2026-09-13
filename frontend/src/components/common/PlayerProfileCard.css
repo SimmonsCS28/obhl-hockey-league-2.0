@@ -1,0 +1,663 @@
+/*
+ * Player profile card — obi-pcard-* only.
+ *
+ * Deliberately NOT reusing .modal-overlay/.modal-content/.player-card/.form-group: those
+ * names are already defined several conflicting times (UserManagement.css, TeamManagement.css,
+ * GameEditModal.css, ShiftSignup.css) and this codebase has no CSS scoping. Every button here
+ * also resets white-space/height because DraftDashboard.css leaks a global `button` rule.
+ *
+ * Values come from the Claude Design handback (PlayerProfileCard.dc.html); colours are theme
+ * tokens except team colours, which are the league's literal hexes so the card matches the
+ * dots on the Players page.
+ */
+
+@keyframes obi-pcard-pop { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: scale(1); } }
+@keyframes obi-pcard-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes obi-pcard-shimmer { 0% { opacity: .45; } 50% { opacity: .9; } 100% { opacity: .45; } }
+
+/* ── shell ── */
+.obi-pcard-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(5, 6, 8, 0.74);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 34px 24px;
+    overflow-y: auto;
+}
+
+.obi-pcard {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    margin: auto;
+    background: var(--obi-bg-deep-card);
+    border: 1px solid rgba(157, 185, 205, 0.2);
+    border-radius: var(--obi-radius-card);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+    animation: obi-pcard-pop .18s ease;
+    overflow: hidden;
+    color: var(--obi-text);
+    font-family: var(--obi-font-body);
+}
+
+.obi-pcard-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 18px 12px 20px;
+    border-bottom: 1px solid var(--obi-divider);
+}
+
+.obi-pcard-eyebrow,
+.obi-pcard-section-title {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
+}
+
+.obi-pcard-x {
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: #6E7882;
+    font-size: 24px;
+    line-height: 1;
+    padding: 0 2px;
+    height: auto !important;
+}
+.obi-pcard-x:hover { color: var(--obi-error); }
+.obi-pcard-x:focus-visible { outline: none; color: var(--obi-accent); box-shadow: 0 0 0 2px var(--obi-accent); border-radius: 6px; }
+.obi-pcard-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--obi-accent), 0 0 0 4px rgba(11, 12, 15, 0.9); }
+
+.obi-pcard-body {
+    max-height: 72vh;
+    overflow-y: auto;
+}
+
+/* ── buttons ── */
+.obi-pcard-btn {
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 12px 20px;
+    border-radius: var(--obi-radius-btn);
+    border: 1px solid transparent;
+    white-space: nowrap;
+    height: auto !important;
+    line-height: 1.1;
+    transition: background .12s, color .12s, border-color .12s;
+}
+.obi-pcard-btn:disabled { cursor: default; }
+.obi-pcard-btn-sm { padding: 9px 14px; font-size: 11.5px; border-radius: 7px; }
+
+.obi-pcard-btn-primary {
+    font-weight: 800;
+    color: var(--obi-bg);
+    background: var(--obi-accent);
+    border-color: var(--obi-accent);
+}
+.obi-pcard-btn-primary:hover:not(:disabled) { background: #ffbe4d; border-color: #ffbe4d; }
+.obi-pcard-btn-primary:disabled {
+    color: var(--obi-text-muted);
+    background: rgba(157, 185, 205, 0.14);
+    border-color: transparent;
+}
+
+.obi-pcard-btn-ghost {
+    color: #C8D0D8;
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(157, 185, 205, 0.25);
+}
+.obi-pcard-btn-ghost:hover:not(:disabled) { background: rgba(255, 255, 255, 0.09); }
+
+.obi-pcard-btn-gold-soft {
+    font-weight: 800;
+    color: #F0CE7E;
+    background: rgba(232, 194, 106, 0.12);
+    border-color: rgba(232, 194, 106, 0.34);
+}
+.obi-pcard-btn-gold-soft:hover:not(:disabled) { background: rgba(232, 194, 106, 0.2); }
+
+.obi-pcard-btn-danger {
+    font-weight: 800;
+    font-size: 11.5px;
+    padding: 9px 15px;
+    border-radius: 7px;
+    color: var(--obi-bg);
+    background: var(--obi-error);
+    border-color: var(--obi-error);
+}
+.obi-pcard-btn-danger-outline {
+    font-size: 11.5px;
+    padding: 10px 13px;
+    border-radius: 7px;
+    color: var(--obi-error);
+    background: none;
+    border-color: rgba(224, 138, 138, 0.3);
+}
+.obi-pcard-btn-danger-outline:hover { background: rgba(224, 138, 138, 0.1); }
+.obi-pcard-btn-danger-soft {
+    font-size: 12px;
+    padding: 11px 15px;
+    color: var(--obi-error);
+    background: rgba(224, 138, 138, 0.1);
+    border-color: rgba(224, 138, 138, 0.34);
+}
+
+/* ── loading / error ── */
+.obi-pcard-loading { padding: 24px 20px 28px; }
+.obi-pcard-skel-id { display: flex; gap: 16px; align-items: center; animation: obi-pcard-shimmer 1.3s ease-in-out infinite; }
+.obi-pcard-skel-avatar { width: 104px; height: 104px; border-radius: 16px; background: rgba(157, 185, 205, 0.1); flex: none; }
+.obi-pcard-skel-lines { flex: 1; display: flex; flex-direction: column; gap: 9px; }
+.obi-pcard-skel-lines span { display: block; height: 14px; border-radius: 5px; background: rgba(157, 185, 205, 0.09); }
+.obi-pcard-skel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 24px; animation: obi-pcard-shimmer 1.3s ease-in-out infinite; }
+.obi-pcard-skel-grid span { height: 46px; border-radius: 9px; background: rgba(157, 185, 205, 0.07); }
+.obi-pcard-skel-note { font-size: 12px; color: var(--obi-text-dim); margin-top: 18px; }
+
+.obi-pcard-error { padding: 34px 22px 26px; text-align: center; }
+.obi-pcard-error-disc {
+    width: 44px; height: 44px; margin: 0 auto 14px; border-radius: 50%;
+    background: rgba(224, 138, 138, 0.12); border: 1px solid rgba(224, 138, 138, 0.4);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--obi-font-display); font-weight: 900; font-size: 20px; color: var(--obi-error);
+}
+.obi-pcard-error-title { font-family: var(--obi-font-display); font-weight: 900; font-style: italic; font-size: 20px; color: #fff; }
+.obi-pcard-error-sub { font-size: 13px; color: #8A94A0; margin: 7px 0 20px; }
+.obi-pcard-error-actions { display: flex; gap: 10px; justify-content: center; }
+
+/* ── identity block: this season ── */
+.obi-pcard-identity {
+    position: relative;
+    padding: 20px 20px 19px;
+    border-bottom: 1px solid var(--obi-divider);
+}
+.obi-pcard-wash { position: absolute; inset: 0; pointer-events: none; }
+.obi-pcard-identity-inner { position: relative; display: flex; gap: 16px; align-items: flex-start; }
+
+.obi-pcard-avatar {
+    width: 104px;
+    height: 104px;
+    border-radius: 15px;
+    flex: none;
+    object-fit: cover;
+    box-shadow: inset 0 0 0 1px rgba(157, 185, 205, 0.28);
+    background: #1b212a;
+}
+.obi-pcard-initials {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 36px;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+}
+
+.obi-pcard-id { flex: 1; min-width: 0; }
+.obi-pcard-season-eyebrow {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    margin-bottom: 4px;
+}
+.obi-pcard-name {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-style: italic;
+    font-size: 30px;
+    line-height: 1.02;
+    color: #fff;
+    overflow-wrap: anywhere;
+}
+.obi-pcard-line { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; margin-top: 10px; }
+
+.obi-pcard-team-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.6px;
+    color: var(--obi-text);
+    background: rgba(157, 185, 205, 0.1);
+    border: 1px solid rgba(157, 185, 205, 0.28);
+    padding: 5px 11px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.obi-pcard-dot {
+    width: 9px; height: 9px; border-radius: 50%; flex: none;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
+}
+.obi-pcard-numpos {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    color: #C8D0D8;
+    white-space: nowrap;
+}
+
+.obi-pcard-badges { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px; }
+.obi-pcard-badge {
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 10.5px;
+    letter-spacing: 1.5px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    border: 1px solid;
+}
+.obi-pcard-badge.is-gm  { color: var(--obi-icy); background: rgba(157, 185, 205, 0.14); border-color: rgba(157, 185, 205, 0.32); }
+.obi-pcard-badge.is-vet { color: var(--obi-success); background: rgba(127, 181, 154, 0.14); border-color: rgba(127, 181, 154, 0.34); }
+.obi-pcard-badge.is-2gl { color: #F0CE7E; background: rgba(232, 194, 106, 0.14); border-color: rgba(232, 194, 106, 0.4); }
+
+/* ── banners ── */
+.obi-pcard-banner {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    margin: 16px 20px 0;
+    font-size: 13px;
+    line-height: 1.45;
+    color: var(--obi-error);
+    background: rgba(224, 138, 138, 0.1);
+    border: 1px solid rgba(224, 138, 138, 0.35);
+    border-radius: 9px;
+    padding: 11px 13px;
+}
+.obi-pcard-edit .obi-pcard-banner { margin: 0 0 16px; }
+.obi-pcard-banner b { font-weight: 800; flex: none; }
+
+/* ── onboarding CTA (self, empty) ── */
+.obi-pcard-onboard {
+    margin: 16px 18px 4px;
+    padding: 17px 17px 18px;
+    border-radius: 12px;
+    background: rgba(246, 169, 28, 0.08);
+    border: 1px solid rgba(246, 169, 28, 0.34);
+}
+.obi-pcard-onboard-title { font-family: var(--obi-font-display); font-weight: 900; font-style: italic; font-size: 18px; color: #fff; }
+.obi-pcard-onboard-sub { font-size: 13px; line-height: 1.5; color: #C8D0D8; margin: 6px 0 13px; }
+
+/* ── details: this person ── */
+.obi-pcard-section { padding: 18px 20px 6px; }
+.obi-pcard-section-title { display: block; margin-bottom: 11px; }
+.obi-pcard-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 11px; }
+.obi-pcard-section-head .obi-pcard-section-title { margin-bottom: 0; }
+.obi-pcard-section-count { font-size: 11.5px; color: var(--obi-text-dim); }
+
+.obi-pcard-details { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.obi-pcard-detail {
+    background: rgba(157, 185, 205, 0.05);
+    border: 1px solid rgba(157, 185, 205, 0.13);
+    border-radius: 10px;
+    padding: 9px 12px 10px;
+    min-width: 0;
+}
+.obi-pcard-detail-label {
+    font-family: var(--obi-font-display); font-weight: 700; font-size: 10px;
+    letter-spacing: 1.5px; text-transform: uppercase; color: var(--obi-text-muted);
+}
+.obi-pcard-detail-value {
+    font-family: var(--obi-font-display); font-weight: 700; font-size: 19px; color: #fff; margin-top: 2px;
+    overflow-wrap: anywhere;
+}
+.obi-pcard-empty {
+    font-size: 13px;
+    color: var(--obi-text-muted);
+    background: rgba(157, 185, 205, 0.04);
+    border: 1px dashed rgba(157, 185, 205, 0.2);
+    border-radius: 10px;
+    padding: 14px;
+}
+
+/* ── season history ── */
+.obi-pcard-history { padding: 16px 20px 18px; border-top: 1px solid rgba(157, 185, 205, 0.1); }
+.obi-pcard-hist-list { display: flex; flex-direction: column; gap: 5px; }
+.obi-pcard-hist-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 12px 9px 13px;
+    border-radius: 9px;
+    background: rgba(157, 185, 205, 0.05);
+    border: 1px solid rgba(157, 185, 205, 0.1);
+}
+.obi-pcard-hist-row.is-tournament { background: rgba(157, 185, 205, 0.03); }
+.obi-pcard-hist-row.is-current { background: rgba(246, 169, 28, 0.07); border-color: rgba(246, 169, 28, 0.3); }
+.obi-pcard-hist-bar { position: absolute; left: 0; top: 6px; bottom: 6px; width: 3px; border-radius: 3px; background: transparent; }
+.obi-pcard-hist-row.is-current .obi-pcard-hist-bar { background: var(--obi-accent); }
+
+.obi-pcard-hist-season { flex: 1.35; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.obi-pcard-hist-tag {
+    font-family: var(--obi-font-display); font-weight: 700; font-size: 9px;
+    letter-spacing: 1.6px; text-transform: uppercase; color: #8A94A0;
+}
+.obi-pcard-hist-season-name {
+    font-family: var(--obi-font-display); font-weight: 700; font-size: 14.5px; color: var(--obi-text);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.obi-pcard-hist-row.is-tournament .obi-pcard-hist-season-name { color: var(--obi-text-secondary); }
+.obi-pcard-hist-row.is-current .obi-pcard-hist-season-name { color: #fff; }
+
+.obi-pcard-hist-team { flex: 1.1; min-width: 0; display: flex; align-items: center; gap: 8px; }
+.obi-pcard-hist-team .obi-pcard-dot { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.45); }
+.obi-pcard-hist-team-name { font-size: 13px; color: #C8D0D8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.obi-pcard-hist-team-name.is-free { color: var(--obi-text-muted); }
+.obi-pcard-hist-pos { width: 66px; flex: none; font-size: 12.5px; color: #8A94A0; }
+.obi-pcard-hist-num { width: 34px; flex: none; text-align: right; font-family: var(--obi-font-display); font-weight: 800; font-size: 15px; color: var(--obi-text); }
+.obi-pcard-hist-num.is-none { color: var(--obi-text-dim); }
+.obi-pcard-hist-now-slot { width: 38px; flex: none; display: flex; justify-content: flex-end; }
+.obi-pcard-now {
+    font-family: var(--obi-font-display); font-weight: 800; font-size: 9.5px; letter-spacing: 1.4px;
+    text-transform: uppercase; color: var(--obi-bg); background: var(--obi-accent); padding: 3px 6px; border-radius: 4px;
+}
+.obi-pcard-rookie { font-size: 12px; color: var(--obi-text-dim); margin-top: 9px; }
+
+/* ── admin inline confirm ── */
+.obi-pcard-confirm {
+    margin: 0 18px 14px;
+    padding: 13px 14px;
+    border-radius: 11px;
+    background: rgba(224, 138, 138, 0.09);
+    border: 1px solid rgba(224, 138, 138, 0.38);
+    animation: obi-pcard-fade .16s ease;
+}
+.obi-pcard-confirm-title { font-family: var(--obi-font-display); font-weight: 800; font-size: 13.5px; letter-spacing: 0.4px; color: var(--obi-error); }
+.obi-pcard-confirm-sub { font-size: 12.5px; line-height: 1.5; color: #C8D0D8; margin: 5px 0 11px; }
+.obi-pcard-confirm-actions { display: flex; gap: 9px; flex-wrap: wrap; }
+
+/* ── footer ── */
+.obi-pcard-foot {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 14px 20px;
+    border-top: 1px solid var(--obi-divider);
+}
+.obi-pcard-foot-spacer { flex: 1; min-width: 8px; }
+
+/* ── edit mode ── */
+.obi-pcard-edit { padding: 20px; max-height: 72vh; }
+
+.obi-pcard-photo-editor { display: flex; gap: 16px; align-items: flex-start; }
+.obi-pcard-photo-frame-wrap { position: relative; flex: none; width: 104px; height: 104px; }
+.obi-pcard-photo-frame {
+    position: relative;
+    width: 104px;
+    height: 104px;
+    border-radius: 15px;
+    overflow: hidden;
+    object-fit: cover;
+    display: block;
+    background: #1b212a;
+    box-shadow: inset 0 0 0 1px rgba(157, 185, 205, 0.28);
+}
+.obi-pcard-photo-frame.is-pending { cursor: grab; touch-action: none; user-select: none; }
+.obi-pcard-photo-frame.is-dragging { cursor: grabbing; }
+.obi-pcard-photo-canvas { position: absolute; display: block; pointer-events: none; }
+.obi-pcard-photo-grid {
+    position: absolute; inset: 0; opacity: 0; pointer-events: none; transition: opacity .12s;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.32) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.32) 1px, transparent 1px);
+    background-size: 34.6px 34.6px;
+    background-position: -1px -1px;
+}
+.obi-pcard-photo-frame.is-dragging .obi-pcard-photo-grid { opacity: 1; }
+.obi-pcard-photo-hint {
+    position: absolute; left: 0; right: 0; bottom: 0; padding: 4px 0 5px; text-align: center;
+    background: linear-gradient(180deg, rgba(7, 8, 10, 0), rgba(7, 8, 10, 0.72));
+    font-family: ui-monospace, Menlo, monospace; font-size: 8.5px; letter-spacing: 0.3px; color: #C8D0D8; pointer-events: none;
+}
+.obi-pcard-upload-veil {
+    position: absolute; inset: 0; border-radius: 15px; background: rgba(7, 8, 10, 0.72);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
+}
+.obi-pcard-upload-pct { font-family: var(--obi-font-display); font-weight: 800; font-size: 13px; letter-spacing: 1px; color: #fff; }
+.obi-pcard-upload-bar { width: 70px; height: 4px; border-radius: 3px; background: rgba(255, 255, 255, 0.16); overflow: hidden; }
+.obi-pcard-upload-bar div { height: 100%; background: var(--obi-accent); transition: width .15s; }
+
+.obi-pcard-photo-side { flex: 1; min-width: 180px; }
+.obi-pcard-photo-side .obi-pcard-section-title { margin-bottom: 8px; }
+.obi-pcard-photo-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.obi-pcard-hint { font-size: 11.5px; line-height: 1.5; color: var(--obi-text-muted); margin-top: 6px; }
+.obi-pcard-photo-side .obi-pcard-hint { margin-top: 8px; }
+.obi-pcard-photo-error {
+    font-size: 12.5px; color: var(--obi-error); background: rgba(224, 138, 138, 0.1);
+    border: 1px solid rgba(224, 138, 138, 0.32); border-radius: 8px; padding: 8px 11px; margin-top: 9px;
+}
+.obi-pcard-photo-ok { font-size: 12.5px; color: var(--obi-success); margin-top: 9px; }
+
+.obi-pcard-context {
+    margin-top: 18px;
+    padding: 12px 14px;
+    border-radius: 11px;
+    background: rgba(157, 185, 205, 0.04);
+    border: 1px solid rgba(157, 185, 205, 0.13);
+}
+.obi-pcard-context-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.obi-pcard-context-name { font-family: var(--obi-font-display); font-weight: 700; font-size: 15px; color: #8A94A0; }
+.obi-pcard-context-team { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--obi-text-muted); }
+.obi-pcard-context-team .obi-pcard-dot { box-shadow: none; opacity: .75; }
+.obi-pcard-context-numpos { font-size: 13px; color: var(--obi-text-muted); }
+.obi-pcard-context .obi-pcard-hint { color: var(--obi-text-dim); }
+
+.obi-pcard-field { margin-top: 15px; }
+.obi-pcard-field:first-of-type { margin-top: 18px; }
+.obi-pcard-label {
+    display: block;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-icy);
+    margin-bottom: 6px;
+}
+.obi-pcard-label-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.obi-pcard-label-row .obi-pcard-label { margin-bottom: 0; }
+.obi-pcard-count { font-size: 11px; color: var(--obi-text-dim); }
+.obi-pcard-count.is-over { color: var(--obi-error); }
+
+.obi-pcard-input {
+    width: 100%;
+    box-sizing: border-box;
+    background: #0e1116;
+    border: 1px solid rgba(157, 185, 205, 0.2);
+    border-radius: 8px;
+    padding: 11px 13px;
+    color: var(--obi-text);
+    font-family: var(--obi-font-body);
+    font-size: 14px;
+    outline: none;
+    color-scheme: dark;
+}
+.obi-pcard-input:focus { border-color: rgba(246, 169, 28, 0.6); }
+.obi-pcard-input.is-invalid { border-color: rgba(224, 138, 138, 0.6); }
+.obi-pcard-input::placeholder { color: var(--obi-text-dim); }
+.obi-pcard-input-num {
+    width: 62px;
+    padding: 11px 10px;
+    color: #fff;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 16px;
+    text-align: center;
+    -moz-appearance: textfield;
+}
+.obi-pcard-input-num::-webkit-outer-spin-button,
+.obi-pcard-input-num::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.obi-pcard-input-weight { width: 74px; }
+.obi-pcard-units { display: flex; gap: 8px; align-items: center; }
+.obi-pcard-unit { font-size: 12.5px; color: var(--obi-text-muted); }
+.obi-pcard-field-error { font-size: 12px; color: var(--obi-error); margin-top: 5px; }
+
+.obi-pcard-field-row { display: flex; gap: 12px; flex-wrap: wrap; }
+.obi-pcard-field-row .obi-pcard-field { margin-top: 15px; }
+.obi-pcard-field-height { flex: 1; min-width: 160px; }
+.obi-pcard-field-weight { width: 130px; }
+
+.obi-pcard-seg {
+    display: inline-flex;
+    gap: 4px;
+    padding: 4px;
+    background: #0e1116;
+    border: 1px solid rgba(157, 185, 205, 0.2);
+    border-radius: 9px;
+}
+.obi-pcard-seg-btn {
+    cursor: pointer;
+    min-width: 62px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12.5px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #C8D0D8;
+    background: transparent;
+    border: none;
+    padding: 9px 16px;
+    border-radius: 6px;
+    height: auto !important;
+    white-space: nowrap;
+}
+.obi-pcard-seg-btn.is-clear { min-width: 34px; }
+.obi-pcard-seg-btn.is-on { color: var(--obi-bg); background: var(--obi-accent); }
+
+.obi-pcard-edit-foot { display: flex; gap: 10px; margin-top: 22px; }
+.obi-pcard-btn-cancel { flex: none; min-width: 108px; padding: 13px; }
+.obi-pcard-btn-save { flex: 1; padding: 13px; }
+
+/* ── dashboard-avatar toggle ── */
+.obi-pcard-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 11px 13px;
+    border-radius: 10px;
+    background: rgba(157, 185, 205, 0.05);
+    border: 1px solid rgba(157, 185, 205, 0.13);
+    cursor: pointer;
+}
+.obi-pcard-toggle.is-muted .obi-pcard-toggle-title { color: var(--obi-text-muted); }
+.obi-pcard-toggle-input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.obi-pcard-toggle-track {
+    flex: none;
+    width: 38px; height: 22px; margin-top: 1px;
+    border-radius: 11px;
+    background: rgba(157, 185, 205, 0.2);
+    border: 1px solid rgba(157, 185, 205, 0.28);
+    position: relative;
+    transition: background .15s, border-color .15s;
+}
+.obi-pcard-toggle-thumb {
+    position: absolute; top: 2px; left: 2px;
+    width: 16px; height: 16px; border-radius: 50%;
+    background: #C8D0D8;
+    transition: transform .15s, background .15s;
+}
+.obi-pcard-toggle-input:checked + .obi-pcard-toggle-track { background: var(--obi-accent); border-color: var(--obi-accent); }
+.obi-pcard-toggle-input:checked + .obi-pcard-toggle-track .obi-pcard-toggle-thumb { transform: translateX(16px); background: var(--obi-bg); }
+.obi-pcard-toggle-input:focus-visible + .obi-pcard-toggle-track { box-shadow: 0 0 0 2px var(--obi-accent), 0 0 0 4px rgba(11, 12, 15, 0.9); }
+.obi-pcard-toggle-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.obi-pcard-toggle-title { font-family: var(--obi-font-display); font-weight: 700; font-size: 14px; color: var(--obi-text); }
+.obi-pcard-toggle-sub { font-size: 11.5px; line-height: 1.45; color: var(--obi-text-muted); }
+
+/* ── discard prompt ── */
+.obi-pcard-discard-veil {
+    position: absolute; inset: 0; background: rgba(7, 8, 10, 0.78);
+    display: flex; align-items: center; justify-content: center; padding: 22px; z-index: 2;
+}
+.obi-pcard-discard {
+    width: 100%; max-width: 330px; background: #1b212a; border: 1px solid rgba(157, 185, 205, 0.25);
+    border-radius: 13px; padding: 18px 18px 16px; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5); animation: obi-pcard-pop .15s ease;
+}
+.obi-pcard-discard-title { font-family: var(--obi-font-display); font-weight: 900; font-style: italic; font-size: 19px; color: #fff; }
+.obi-pcard-discard-sub { font-size: 13px; line-height: 1.5; color: var(--obi-text-secondary); margin: 7px 0 15px; }
+.obi-pcard-discard-actions { display: flex; gap: 9px; }
+.obi-pcard-discard-actions .obi-pcard-btn-primary { flex: 1; padding: 11px; font-size: 12px; }
+
+/* ── clickable rows on the Players / roster pages (variant A) ── */
+.obi-prow-clickable,
+.obi-trr-clickable {
+    position: relative;
+    cursor: pointer;
+    outline: none;
+}
+.obi-prow-clickable::before,
+.obi-trr-clickable::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 6px; bottom: 6px;
+    width: 3px;
+    border-radius: 3px;
+    background: transparent;
+    transition: background .12s;
+}
+.obi-prow-clickable:hover::before,
+.obi-trr-clickable:hover::before,
+.obi-prow-clickable:focus-visible::before,
+.obi-trr-clickable:focus-visible::before { background: var(--obi-accent); }
+.obi-prow-clickable::after,
+.obi-trr-clickable::after {
+    content: '›';
+    margin-left: 8px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 20px;
+    line-height: 1;
+    color: var(--obi-accent);
+    opacity: 0;
+    transition: opacity .12s;
+}
+.obi-prow-clickable:hover::after,
+.obi-trr-clickable:hover::after,
+.obi-prow-clickable:focus-visible::after,
+.obi-trr-clickable:focus-visible::after { opacity: 1; }
+.obi-prow-clickable:focus-visible,
+.obi-trr-clickable:focus-visible { box-shadow: inset 0 0 0 2px var(--obi-accent); }
+
+/* ── mobile ── */
+@media (max-width: 520px) {
+    .obi-pcard-scrim { padding: 20px 12px; }
+    .obi-pcard { max-width: 375px; }
+    .obi-pcard-body { max-height: 76vh; }
+    .obi-pcard-identity { padding: 18px 16px 17px; }
+    .obi-pcard-identity-inner { gap: 13px; flex-wrap: wrap; }
+    .obi-pcard-avatar { width: 84px; height: 84px; }
+    .obi-pcard-initials { font-size: 30px; }
+    .obi-pcard-name { font-size: 26px; }
+    .obi-pcard-section { padding: 16px 16px 4px; }
+    .obi-pcard-history { padding: 15px 16px 16px; }
+    .obi-pcard-details { grid-template-columns: 1fr 1fr; }
+    /* Season names here are long ("2026 Fall C League"), not "Season 15" as in the prototype:
+       at 375px the name gets its own line and the team/position/number/NOW row sits under it. */
+    .obi-pcard-hist-row { flex-wrap: wrap; row-gap: 4px; }
+    .obi-pcard-hist-season { flex: 1 0 100%; }
+    .obi-pcard-hist-team { flex: 1 1 auto; }
+    .obi-pcard-hist-pos { width: auto; flex: none; }
+    .obi-pcard-foot { padding: 13px 16px; }
+    .obi-pcard-onboard, .obi-pcard-confirm { margin-left: 14px; margin-right: 14px; }
+    .obi-pcard-edit { padding: 18px 16px; max-height: 76vh; }
+    .obi-pcard-photo-editor { flex-wrap: wrap; }
+    .obi-pcard-btn { min-height: 44px; }
+    .obi-pcard-seg-btn { min-height: 36px; }
+}

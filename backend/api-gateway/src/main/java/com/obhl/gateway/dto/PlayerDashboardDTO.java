@@ -4,6 +4,10 @@ import java.util.List;
 import java.util.Map;
 
 public class PlayerDashboardDTO {
+    /** The player's season row id — what the dashboard banner passes to the profile card. */
+    private Long playerId;
+    /** Profile photo URL when the player opted to use it as their avatar; null means show initials. */
+    private String avatarUrl;
     private String firstName;
     private String lastName;
     private Map<String, Object> team;
@@ -23,6 +27,22 @@ public class PlayerDashboardDTO {
         this.record = record;
         this.nextGame = nextGame;
         this.schedule = schedule;
+    }
+
+    public Long getPlayerId() {
+        return playerId;
+    }
+
+    public void setPlayerId(Long playerId) {
+        this.playerId = playerId;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
     }
 
     public String getFirstName() {

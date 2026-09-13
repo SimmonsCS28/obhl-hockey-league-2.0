@@ -7,6 +7,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import com.obhl.gateway.service.HighlightStorageService;
+
 /**
  * Serves uploaded highlight media straight off disk.
  *
@@ -37,6 +39,14 @@ public class MediaResourceConfig implements WebMvcConfigurer {
                 .addResourceLocations(location)
                 // Filenames are UUIDs and content never changes under a given key,
                 // so these are safe to cache hard.
+                .setCachePeriod(365 * 24 * 60 * 60);
+
+        // Player profile photos live in a players/ subfolder of the same root. The
+        // URL is /media/players/** and NOT /players/media/**: PlayerProxyController
+        // maps /players/** and controller mappings outrank resource handlers, so the
+        // proxy would forward the request to stats-service instead of serving the file.
+        registry.addResourceHandler(apiPrefix + "/media/players/**")
+                .addResourceLocations(location + HighlightStorageService.PLAYER_PHOTO_DIR + "/")
                 .setCachePeriod(365 * 24 * 60 * 60);
     }
 }

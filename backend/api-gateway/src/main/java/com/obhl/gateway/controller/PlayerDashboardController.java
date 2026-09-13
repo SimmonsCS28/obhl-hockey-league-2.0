@@ -22,6 +22,7 @@ import com.obhl.gateway.dto.PlayerDto;
 import com.obhl.gateway.dto.TeamDto;
 import com.obhl.gateway.model.User;
 import com.obhl.gateway.repository.UserRepository;
+import com.obhl.gateway.service.PlayerProfileService;
 import com.obhl.gateway.service.TeamService;
 
 @RestController
@@ -35,14 +36,16 @@ public class PlayerDashboardController {
     private final GameClient gameClient;
     private final TeamService teamService;
     private final UserRepository userRepository;
+    private final PlayerProfileService profileService;
 
     public PlayerDashboardController(StatsClient statsClient, LeagueClient leagueClient, GameClient gameClient,
-            TeamService teamService, UserRepository userRepository) {
+            TeamService teamService, UserRepository userRepository, PlayerProfileService profileService) {
         this.statsClient = statsClient;
         this.leagueClient = leagueClient;
         this.gameClient = gameClient;
         this.teamService = teamService;
         this.userRepository = userRepository;
+        this.profileService = profileService;
     }
 
     @GetMapping
@@ -98,8 +101,18 @@ public class PlayerDashboardController {
             return ResponseEntity.ok(new PlayerDashboardDTO());
         }
 
-        if (player == null || player.getTeamId() == null) {
+        if (player == null) {
             return ResponseEntity.ok(new PlayerDashboardDTO());
+        }
+        if (player.getTeamId() == null) {
+            // Free agent this season: no team/record/schedule, but the banner can still
+            // open their own profile card.
+            PlayerDashboardDTO freeAgent = new PlayerDashboardDTO();
+            freeAgent.setPlayerId(player.getId());
+            freeAgent.setAvatarUrl(profileService.avatarUrlFor(email));
+            freeAgent.setFirstName(player.getFirstName());
+            freeAgent.setLastName(player.getLastName());
+            return ResponseEntity.ok(freeAgent);
         }
 
         // 3. Get Team - use local TeamService (teams live in the api-gateway DB)
@@ -204,6 +217,8 @@ public class PlayerDashboardController {
         int otLosses = teamDto.getOvertimeLosses() != null ? teamDto.getOvertimeLosses() : 0;
 
         PlayerDashboardDTO dto = new PlayerDashboardDTO();
+        dto.setPlayerId(player.getId());
+        dto.setAvatarUrl(profileService.avatarUrlFor(email));
         dto.setFirstName(player.getFirstName());
         dto.setLastName(player.getLastName());
         dto.setTeam(team);

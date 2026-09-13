@@ -14,6 +14,24 @@
     font-family: var(--obi-font-display); font-weight: 900; font-size: 28px; flex: none;
     box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.3);
 }
+/* The avatar is a <button> when it opens the profile card. index.css's global `button` baseline
+   forces border-radius: 4px !important and its own padding/height, which squared the circle —
+   restate the .dash-avatar geometry here with matching weight. */
+.dash-avatar-btn {
+    cursor: pointer; border: none; padding: 0 !important;
+    width: 72px !important; height: 72px !important; border-radius: 50% !important;
+    font-size: 28px !important; line-height: 1;
+    transition: transform .12s, box-shadow .12s;
+}
+.dash-avatar-btn.has-photo { background: #1b212a !important; overflow: hidden; }
+.dash-avatar-img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
+.dash-avatar-btn:hover, .dash-avatar-btn:focus-visible { transform: scale(1.04); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.3), 0 0 0 3px var(--obi-accent); outline: none; }
+.dash-profile-link {
+    display: inline-block; margin-top: 8px; cursor: pointer; background: none; border: none; padding: 0; height: auto !important;
+    font-family: var(--obi-font-display); font-weight: 700; font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--obi-accent);
+}
+.dash-profile-link:hover { color: #ffbe4d; }
+.dash-profile-link:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--obi-accent); border-radius: 4px; }
 .dash-banner-id { flex: 1; min-width: 240px; }
 .dash-eyebrow { font-family: var(--obi-font-display); font-weight: 700; font-size: 13px; letter-spacing: 3px; text-transform: uppercase; color: var(--obi-accent); margin-bottom: 4px; }
 .dash-name { font-family: var(--obi-font-display); font-weight: 900; font-style: italic; font-size: clamp(34px, 5vw, 52px); line-height: 0.92; margin: 0; color: #fff; }

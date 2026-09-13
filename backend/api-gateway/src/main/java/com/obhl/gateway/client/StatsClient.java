@@ -26,4 +26,8 @@ public interface StatsClient {
 
     @GetMapping("/api/v1/players/by-email-season")
     PlayerDto getPlayerByEmailAndSeason(@RequestParam("email") String email, @RequestParam("seasonId") Long seasonId);
+
+    /** Every season row for one person, newest season first, matched case-insensitively. */
+    @GetMapping("/api/v1/players/history")
+    List<PlayerDto> getPlayerHistoryByEmail(@RequestParam("email") String email);
 }

@@ -19,6 +19,30 @@ public class PlayerDto {
     private Boolean isActive;
     private Integer skillRating;
 
+    // Profile-card fields (read through the internal key, so the Privileged view is
+    // what arrives). Anything not listed here is dropped by Jackson on the way in.
+    private String shoots;
+    private java.time.LocalDate birthDate;
+    private String hometown;
+    private Boolean isVeteran;
+    private Boolean isGm;
+    private Boolean twoGoalLimit;
+
+    /**
+     * jerseyNumber is a String on this DTO for historical reasons (Jackson coerces the
+     * JSON integer). This is the one place that turns it back into a number.
+     */
+    public Integer jerseyNumberAsInt() {
+        if (jerseyNumber == null || jerseyNumber.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.valueOf(jerseyNumber.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
     public Long getId() {
         return id;
     }

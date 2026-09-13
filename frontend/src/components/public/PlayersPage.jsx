@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useSeason } from '../../contexts/SeasonContext';
 import { resolveTeamColor } from '../../constants/teamColors';
 import SeasonSelector from '../common/SeasonSelector';
+import PlayerProfileCard from '../common/PlayerProfileCard';
 import heroBg from '../../assets/images/buzzard-full.jpg';
 import './PlayersPage.css';
 
@@ -13,6 +14,9 @@ function PlayersPage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    // Which player's profile card is open, if any. The card fetches its own data through the
+    // gateway; this list stays on /stats-api for the roster itself.
+    const [openPlayerId, setOpenPlayerId] = useState(null);
 
     // Always open on the active season (the selection is app-global and otherwise sticks).
     useEffect(() => { resetToActiveSeason(); }, [resetToActiveSeason]);
@@ -197,7 +201,15 @@ function PlayersPage() {
                             <div className="obi-players-msg">No players match your search.</div>
                         ) : (
                             sorted.map(player => (
-                                <div key={player.id} className="obi-prow">
+                                <div
+                                    key={player.id}
+                                    className="obi-prow obi-prow-clickable"
+                                    role="button"
+                                    tabIndex={0}
+                                    aria-label={`${player.firstName} ${player.lastName} — open profile`}
+                                    onClick={() => setOpenPlayerId(player.id)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpenPlayerId(player.id); } }}
+                                >
                                     <span className="obi-pcol-num">{player.jerseyNumber ?? '—'}</span>
                                     <span className="obi-pcol-name">
                                         {player.firstName} {player.lastName}
@@ -217,6 +229,10 @@ function PlayersPage() {
                     </div>
                 </div>
             </section>
+
+            {openPlayerId != null && (
+                <PlayerProfileCard playerId={openPlayerId} onClose={() => setOpenPlayerId(null)} />
+            )}
         </div>
     );
 }

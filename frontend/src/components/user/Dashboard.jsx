@@ -6,6 +6,7 @@ import { useCurrentTournament } from '../tournament/tournamentData';
 import { resolveTeamColor, textOn } from '../../constants/teamColors';
 import api from '../../services/api';
 import SectionTip from '../common/SectionTip';
+import PlayerProfileCard from '../common/PlayerProfileCard';
 import GMTeam from '../gm/GMTeam';
 import GoalieStatsPanel from '../goalie/GoalieStatsPanel';
 import ChickenLicksSection from './chickenLicks/ChickenLicksSection';
@@ -77,6 +78,7 @@ function Dashboard() {
     const isAdmin = roles.includes('ADMIN');
 
     const [dash, setDash] = useState(null);
+    const [profileOpen, setProfileOpen] = useState(false);
     const [teams, setTeams] = useState([]);
     const [pending, setPending] = useState([]);
     const [myShifts, setMyShifts] = useState([]);
@@ -285,10 +287,32 @@ function Dashboard() {
         <div className="dash">
             {/* Welcome banner */}
             <section className="dash-banner">
-                <span className="dash-avatar" style={{ background: teamColor, color: textOn(teamColor) }}>{initials}</span>
+                {/* The avatar and name open the player's own profile card — the "My Profile"
+                    route. Only a real button when there is a player row to open. */}
+                {dash?.playerId ? (
+                    <button
+                        type="button"
+                        className={`dash-avatar dash-avatar-btn ${dash.avatarUrl ? 'has-photo' : ''}`}
+                        style={dash.avatarUrl ? undefined : { background: teamColor, color: textOn(teamColor) }}
+                        onClick={() => setProfileOpen(true)}
+                        title="View my profile"
+                        aria-label="View my profile"
+                    >
+                        {dash.avatarUrl
+                            ? <img className="dash-avatar-img" src={dash.avatarUrl} alt="" />
+                            : initials}
+                    </button>
+                ) : (
+                    <span className="dash-avatar" style={{ background: teamColor, color: textOn(teamColor) }}>{initials}</span>
+                )}
                 <div className="dash-banner-id">
                     <div className="dash-eyebrow">Welcome back</div>
                     <h1 className="dash-name">{fullName}</h1>
+                    {dash?.playerId && (
+                        <button type="button" className="dash-profile-link" onClick={() => setProfileOpen(true)}>
+                            View my profile ›
+                        </button>
+                    )}
                     {team && (
                         <div className="dash-meta">
                             <Link to={`/teams/${team.id}`} className="dash-team-link">{team.name}</Link>
@@ -756,6 +780,17 @@ function Dashboard() {
 
             {/* ── CHICKEN LICKS ── */}
             <ChickenLicksSection seasonId={selectedSeasonId} openOrders={clOrders} onRefresh={loadChickenLicks} />
+
+            {profileOpen && dash?.playerId && (
+                <PlayerProfileCard
+                    playerId={dash.playerId}
+                    onClose={() => {
+                        setProfileOpen(false);
+                        // The card may have changed the avatar preference or photo; re-pull the banner data.
+                        api.getPlayerDashboard().then(setDash).catch(() => {});
+                    }}
+                />
+            )}
         </div>
     );
 }
