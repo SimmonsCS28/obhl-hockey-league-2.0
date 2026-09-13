@@ -71,6 +71,7 @@ public class PlayerProfileService {
     private final LeagueClient leagueClient;
     private final HighlightStorageService storage;
     private final ProfilePhotoProcessor photoProcessor;
+    private final PlayerRowSyncService rowSync;
     private final String apiPrefix;
 
     public PlayerProfileService(PlayerProfileRepository profileRepository,
@@ -80,6 +81,7 @@ public class PlayerProfileService {
             LeagueClient leagueClient,
             HighlightStorageService storage,
             ProfilePhotoProcessor photoProcessor,
+            PlayerRowSyncService rowSync,
             @Value("${api.v1.prefix}") String apiPrefix) {
         this.profileRepository = profileRepository;
         this.userRepository = userRepository;
@@ -88,6 +90,7 @@ public class PlayerProfileService {
         this.leagueClient = leagueClient;
         this.storage = storage;
         this.photoProcessor = photoProcessor;
+        this.rowSync = rowSync;
         this.apiPrefix = apiPrefix;
     }
 
@@ -167,7 +170,67 @@ public class PlayerProfileService {
         profile.setUsePhotoAvatar(Boolean.TRUE.equals(dto.getUsePhotoAvatar()));
         linkUser(profile, ctx.user);
 
-        return ownerView(ctx, profileRepository.save(profile));
+        PlayerProfile saved = profileRepository.save(profile);
+        // The admin Players page reads the season rows, not the profile — keep them in step.
+        rowSync.fanOut(ctx.rows, saved.getBirthDate(), saved.getHometown(), saved.getShoots());
+        return ownerView(ctx, saved);
+    }
+
+    /**
+     * The reverse direction: an admin edited birthDate / hometown / shoots on one season row
+     * through the proxy. Those are person-level facts, so the profile takes them (it is what
+     * the card shows, and it would otherwise silently win over the admin's edit), and the
+     * person's OTHER season rows get the same values. Only keys present in the edit move;
+     * an admin changing just the jersey number touches nothing here.
+     */
+    @Transactional
+    public void absorbRowEdit(Long playerId, Map<String, Object> updates) {
+        boolean hasBirth = updates.containsKey("birthDate");
+        boolean hasHometown = updates.containsKey("hometown");
+        boolean hasShoots = updates.containsKey("shoots");
+        if (!hasBirth && !hasHometown && !hasShoots) {
+            return;
+        }
+        PlayerDto row;
+        try {
+            row = fetchRow(playerId);
+        } catch (ResponseStatusException e) {
+            return;
+        }
+        String emailLower = normalizeEmail(row.getEmail());
+        if (emailLower == null || !hasRealEmail(row)) {
+            return;
+        }
+        PlayerProfile profile = profileRepository.findByEmailLower(emailLower)
+                .orElseGet(() -> seedFrom(emailLower, row));
+        if (hasBirth) {
+            profile.setBirthDate(parseDate(updates.get("birthDate")));
+        }
+        if (hasHometown) {
+            profile.setHometown(blankToNull(asString(updates.get("hometown"))));
+        }
+        if (hasShoots) {
+            profile.setShoots(normalizeShoots(asString(updates.get("shoots"))));
+        }
+        PlayerProfile saved = profileRepository.save(profile);
+        rowSync.fanOut(fetchHistory(row.getEmail()), saved.getBirthDate(), saved.getHometown(), saved.getShoots(),
+                playerId);
+    }
+
+    private static LocalDate parseDate(Object value) {
+        String s = blankToNull(asString(value));
+        if (s == null) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(s);
+        } catch (RuntimeException e) {
+            return null;
+        }
+    }
+
+    private static String asString(Object value) {
+        return value == null ? null : String.valueOf(value);
     }
 
     @Transactional

@@ -20,11 +20,20 @@ import org.springframework.web.client.RestTemplate;
 
 import jakarta.servlet.http.HttpServletRequest;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.obhl.gateway.service.PlayerProfileService;
+
 @RestController
 @RequestMapping("${api.v1.prefix}/players")
 public class PlayerProxyController {
 
+        private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(PlayerProxyController.class);
+        private static final java.util.regex.Pattern SINGLE_ROW = java.util.regex.Pattern.compile("/players/(\\d+)/?$");
+
         private final RestTemplate restTemplate;
+        private final PlayerProfileService profileService;
+        private final ObjectMapper objectMapper;
 
         @Value("${stats.service.url:http://localhost:8003}")
         private String statsServiceUrl;
@@ -32,11 +41,13 @@ public class PlayerProxyController {
         @Value("${api.v1.prefix}")
         private String apiV1Prefix;
 
-        public PlayerProxyController() {
+        public PlayerProxyController(PlayerProfileService profileService, ObjectMapper objectMapper) {
                 // Use HttpComponentsClientHttpRequestFactory to support PATCH method
                 // Java's default HttpURLConnection doesn't support PATCH
                 this.restTemplate = new RestTemplate(
                                 new org.springframework.http.client.HttpComponentsClientHttpRequestFactory());
+                this.profileService = profileService;
+                this.objectMapper = objectMapper;
         }
 
         /**
@@ -73,6 +84,14 @@ public class PlayerProxyController {
                                         entity,
                                         String.class);
 
+                        // An admin editing a single row's birth date / hometown / shoots must reach the
+                        // person-level profile too, or the card keeps showing the old value. Done after
+                        // the proxied write succeeded, and never allowed to fail the admin's request.
+                        if (response.getStatusCode().is2xxSuccessful() && body != null
+                                        && ("PATCH".equals(request.getMethod()) || "PUT".equals(request.getMethod()))) {
+                                writeBackToProfile(path, body);
+                        }
+
                         return ResponseEntity
                                         .status(response.getStatusCode())
                                         .headers(response.getHeaders())
@@ -87,6 +106,20 @@ public class PlayerProxyController {
                                         .status(HttpStatus.INTERNAL_SERVER_ERROR)
                                         .body(Map.of("error", "Failed to proxy request to Stats Service", "message",
                                                         e.getMessage()));
+                }
+        }
+
+        private void writeBackToProfile(String path, String body) {
+                java.util.regex.Matcher m = SINGLE_ROW.matcher(path);
+                if (!m.find()) {
+                        return;
+                }
+                try {
+                        Map<String, Object> updates = objectMapper.readValue(body, new TypeReference<Map<String, Object>>() {
+                        });
+                        profileService.absorbRowEdit(Long.valueOf(m.group(1)), updates);
+                } catch (Exception e) {
+                        log.warn("Profile write-back after editing players row {} failed: {}", m.group(1), e.getMessage());
                 }
         }
 }

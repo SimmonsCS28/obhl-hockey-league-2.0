@@ -54,13 +54,14 @@ class PlayerProfileServiceTest {
     @Mock private LeagueClient leagueClient;
     @Mock private HighlightStorageService storage;
     @Mock private ProfilePhotoProcessor photoProcessor;
+    @Mock private PlayerRowSyncService rowSync;
 
     private PlayerProfileService service;
 
     @BeforeEach
     void setUp() {
         service = new PlayerProfileService(profileRepository, userRepository, teamRepository,
-                statsClient, leagueClient, storage, photoProcessor, "/api/v1");
+                statsClient, leagueClient, storage, photoProcessor, rowSync, "/api/v1");
     }
 
     private static PlayerDto row(long id, String email, long seasonId, Long teamId, String jersey) {
@@ -219,6 +220,39 @@ class PlayerProfileServiceTest {
         assertTrue(view.isUsePhotoAvatar());
         verify(profileRepository).save(org.mockito.ArgumentMatchers.argThat(p ->
                 "marco@example.com".equals(p.getEmailLower()) && Long.valueOf(9L).equals(p.getUserId())));
+        // the admin Players page reads the rows, so the save fans the three row fields out
+        verify(rowSync).fanOut(eq(List.of(newest)), eq(LocalDate.now().minusYears(40)), eq("Sun Prairie, WI"), eq("R"));
+    }
+
+    @Test
+    void adminRowEditWritesBackToProfileAndSiblingsOnlyForPresentKeys() {
+        PlayerDto edited = row(300L, "marco@example.com", 15L, 1L, "12");
+        PlayerDto older = row(200L, "marco@example.com", 14L, 2L, "7");
+        when(statsClient.getPlayer(300L)).thenReturn(edited);
+        when(statsClient.getPlayerHistoryByEmail("marco@example.com")).thenReturn(List.of(edited, older));
+        PlayerProfile existing = new PlayerProfile("marco@example.com");
+        existing.setHometown("Old Town");
+        existing.setShoots("L");
+        when(profileRepository.findByEmailLower("marco@example.com")).thenReturn(Optional.of(existing));
+        when(profileRepository.save(any(PlayerProfile.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        java.util.Map<String, Object> updates = new java.util.HashMap<>();
+        updates.put("hometown", "  Windsor, ON ");
+        updates.put("birthDate", "1984-03-14");
+        updates.put("jerseyNumber", 44);
+        service.absorbRowEdit(300L, updates);
+
+        assertEquals("Windsor, ON", existing.getHometown());
+        assertEquals(LocalDate.of(1984, 3, 14), existing.getBirthDate());
+        assertEquals("L", existing.getShoots());   // not in the edit → untouched
+        verify(rowSync).fanOut(eq(List.of(edited, older)), eq(LocalDate.of(1984, 3, 14)), eq("Windsor, ON"), eq("L"), eq(300L));
+    }
+
+    @Test
+    void adminRowEditWithoutProfileFieldsIsANoOp() {
+        service.absorbRowEdit(300L, java.util.Map.of("jerseyNumber", 44, "teamId", 2));
+        verify(statsClient, never()).getPlayer(any());
+        verify(profileRepository, never()).save(any());
     }
 
     @Test

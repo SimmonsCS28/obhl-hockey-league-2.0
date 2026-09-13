@@ -295,11 +295,13 @@ build. Full detail lives in the plan file this doc was written from.
   first. Backfill one row per `lower(email)` taking, per column, the newest non-null
   value across that person's season rows (drop the `'N/A'` shoots sentinel); link
   `user_id` by `lower(users.email)` where the user is active.
-- `players.birth_date / hometown / shoots / height_inches / weight_lbs` become
-  **legacy fallback**: the card reads `COALESCE(profile.x, seasonRow.x)`; writes go to
-  the profile only. Admin `PlayerManagement` keeps writing the legacy column (document,
-  don't fix in v1). `height_inches`/`weight_lbs` aren't even mapped in the stats
-  `Player` entity — profile-only.
+- `players.birth_date / hometown / shoots` stay on the season rows but are kept **in
+  sync both ways** (post-ship fix): a profile save fans those three fields out to every
+  row the person has (`PlayerRowSyncService`, internal-key PATCH), and an admin edit of a
+  row through `PlayerProxyController` writes back to the profile and the sibling rows.
+  The card still reads `COALESCE(profile.x, seasonRow.x)`. Migration 065 was the one-time
+  catch-up. `height_inches`/`weight_lbs` aren't mapped in the stats `Player` entity —
+  profile-only.
 - With this, **no changes to `DraftService`, `TournamentDraftService`, or the goalie
   import** — new rows carry the email; the card resolves the profile through it.
 
