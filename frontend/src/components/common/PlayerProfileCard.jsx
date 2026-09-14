@@ -120,6 +120,7 @@ export default function PlayerProfileCard({ playerId, onClose }) {
     const [mode, setMode] = useState('read');    // read | edit
     const [confirmRemove, setConfirmRemove] = useState(false);
     const [confirmDiscard, setConfirmDiscard] = useState(false);
+    const [lightbox, setLightbox] = useState(false); // enlarged photo, read mode only
 
     // edit mode
     const [profile, setProfile] = useState(null);
@@ -160,13 +161,19 @@ export default function PlayerProfileCard({ playerId, onClose }) {
     const modeRef = useRef(mode);
     const dirtyRef = useRef(false);
     const pendingRef = useRef(false);
+    const lightboxRef = useRef(false);
     const onCloseRef = useRef(onClose);
     useEffect(() => { onCloseRef.current = onClose; });
+    useEffect(() => { lightboxRef.current = lightbox; }, [lightbox]);
 
     const dirty = useMemo(() => JSON.stringify(form) !== JSON.stringify(initialForm), [form, initialForm]);
     useEffect(() => { modeRef.current = mode; dirtyRef.current = dirty; pendingRef.current = !!pending; }, [mode, dirty, pending]);
 
     const requestClose = useCallback(() => {
+        if (lightboxRef.current) {
+            setLightbox(false); // Escape steps out of the enlarged photo, not the whole card
+            return;
+        }
         if (modeRef.current === 'edit' && (dirtyRef.current || pendingRef.current)) {
             setConfirmDiscard(true);
             return;
@@ -494,7 +501,16 @@ export default function PlayerProfileCard({ playerId, onClose }) {
                                 />
                                 <div className="obi-pcard-identity-inner">
                                     {card.photoUrl ? (
-                                        <img className="obi-pcard-avatar" src={card.photoUrl} alt="" />
+                                        <button
+                                            type="button"
+                                            className="obi-pcard-avatar-btn"
+                                            onClick={() => setLightbox(true)}
+                                            title="View larger"
+                                            aria-label={`View ${fullName}'s photo larger`}
+                                        >
+                                            <img className="obi-pcard-avatar" src={card.photoUrl} alt="" />
+                                            <span className="obi-pcard-avatar-zoom" aria-hidden="true">⤢</span>
+                                        </button>
                                     ) : (
                                         <div className="obi-pcard-avatar obi-pcard-initials" style={{ background: avatarBg, color: textOn(avatarBg) }}>{initials}</div>
                                     )}
@@ -798,6 +814,28 @@ export default function PlayerProfileCard({ playerId, onClose }) {
                                 disabled={!dirty || anyError || saving}
                             >{saving ? 'Saving…' : 'Save'}</button>
                         </div>
+                    </div>
+                )}
+
+                {lightbox && card?.photoUrl && (
+                    <div
+                        className="obi-pcard-lightbox"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={`${fullName} — photo`}
+                        onClick={() => setLightbox(false)}
+                    >
+                        <img
+                            className="obi-pcard-lightbox-img"
+                            src={card.photoUrl}
+                            alt={`${fullName}`}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                        <div className="obi-pcard-lightbox-caption">
+                            <span className="obi-pcard-lightbox-name">{fullName}</span>
+                            <span className="obi-pcard-lightbox-hint">Click anywhere or press Esc to close</span>
+                        </div>
+                        <button type="button" className="obi-pcard-lightbox-x" onClick={() => setLightbox(false)} aria-label="Close enlarged photo">×</button>
                     </div>
                 )}
 
