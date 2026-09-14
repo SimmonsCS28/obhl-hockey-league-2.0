@@ -151,7 +151,32 @@ public class PlayerProfileService {
 
     @Transactional
     public PlayerProfileDTO updateOwnProfile(Authentication auth, PlayerProfileUpdateDTO dto) {
-        OwnerContext ctx = requireOwner(auth);
+        return applyUpdate(requireOwner(auth), dto, true);
+    }
+
+    // ------------------------------------------------------------------ admin (any player)
+
+    @Transactional(readOnly = true)
+    public PlayerProfileDTO getProfileForRow(Long playerId) {
+        OwnerContext ctx = contextForRow(playerId);
+        return ownerView(ctx, ctx.profile);
+    }
+
+    /**
+     * Admin edit of someone else's details. The dashboard-avatar preference is NOT
+     * touched — that is the player's own choice about how they appear, not the admin's.
+     */
+    @Transactional
+    public PlayerProfileDTO updateProfileForRow(Long playerId, PlayerProfileUpdateDTO dto) {
+        return applyUpdate(contextForRow(playerId), dto, false);
+    }
+
+    @Transactional
+    public PlayerProfileDTO uploadPhotoForRow(Long playerId, MultipartFile file) {
+        return applyPhoto(contextForRow(playerId), file);
+    }
+
+    private PlayerProfileDTO applyUpdate(OwnerContext ctx, PlayerProfileUpdateDTO dto, boolean allowAvatarPreference) {
         PlayerProfile profile = ctx.profile;
 
         LocalDate birthDate = dto.getBirthDate();
@@ -167,7 +192,9 @@ public class PlayerProfileService {
         profile.setHeightInches(dto.getHeightInches());
         profile.setWeightLbs(dto.getWeightLbs());
         profile.setShoots(normalizeShoots(dto.getShoots()));
-        profile.setUsePhotoAvatar(Boolean.TRUE.equals(dto.getUsePhotoAvatar()));
+        if (allowAvatarPreference) {
+            profile.setUsePhotoAvatar(Boolean.TRUE.equals(dto.getUsePhotoAvatar()));
+        }
         linkUser(profile, ctx.user);
 
         PlayerProfile saved = profileRepository.save(profile);
@@ -235,7 +262,10 @@ public class PlayerProfileService {
 
     @Transactional
     public PlayerProfileDTO uploadOwnPhoto(Authentication auth, MultipartFile file) {
-        OwnerContext ctx = requireOwner(auth);
+        return applyPhoto(requireOwner(auth), file);
+    }
+
+    private PlayerProfileDTO applyPhoto(OwnerContext ctx, MultipartFile file) {
         PlayerProfile profile = ctx.profile;
 
         byte[] jpeg = photoProcessor.process(file);
@@ -272,11 +302,37 @@ public class PlayerProfileService {
 
     // ------------------------------------------------------------------ resolution
 
+    /** The person behind a request: their account (null when an admin acts on their behalf), season rows, profile. */
     private static final class OwnerContext {
         User user;
         List<PlayerDto> rows;
         PlayerProfile profile;
         Long activeSeasonId;
+    }
+
+    /**
+     * The admin path: the person is whoever this season row belongs to. Rows with a
+     * placeholder email (tournament walk-ons) have no person-level identity to attach a
+     * profile to, so they are refused rather than given an orphan profile.
+     */
+    private OwnerContext contextForRow(Long playerId) {
+        PlayerDto row = fetchRow(playerId);
+        String emailLower = normalizeEmail(row.getEmail());
+        if (emailLower == null || !hasRealEmail(row)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "This player has no email on file, so there is no profile to edit.");
+        }
+        List<PlayerDto> rows = fetchHistory(row.getEmail());
+        if (rows.isEmpty()) {
+            rows = List.of(row);
+        }
+        OwnerContext ctx = new OwnerContext();
+        ctx.user = userRepository.findByEmailIgnoreCase(row.getEmail()).filter(User::getIsActive).orElse(null);
+        ctx.rows = rows;
+        ctx.activeSeasonId = activeSeasonId();
+        List<PlayerDto> seedRows = rows;
+        ctx.profile = profileRepository.findByEmailLower(emailLower).orElseGet(() -> seedFrom(emailLower, seedRows.get(0)));
+        return ctx;
     }
 
     /**

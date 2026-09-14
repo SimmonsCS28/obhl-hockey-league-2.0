@@ -11,8 +11,10 @@ import './PlayerProfileCard.css';
  * The player profile card: one modal, two modes.
  *
  * Read mode is public and opens from any player row (Players page, team roster, the
- * dashboard banner). Edit mode is reachable only when the server says the viewer IS this
- * player (card.isSelf) — the client never decides ownership. Everything above the divider
+ * dashboard banner). Edit mode is reachable when the server says the viewer IS this
+ * player (card.isSelf), or when the viewer is an ADMIN editing on the player's behalf —
+ * the admin path uses the /players/{id}/profile endpoints, which the server gates. The
+ * dashboard-avatar toggle is only offered to the player themself. Everything above the divider
  * is "this season" (team, #, position, from the row that was clicked); everything below is
  * "this person" and survives the draft.
  *
@@ -218,13 +220,30 @@ export default function PlayerProfileCard({ playerId, onClose }) {
     useEffect(() => () => { pendingDecoded?.release?.(); }, [pendingDecoded]);
 
     // ── edit mode ──
+    // Admin editing someone else's card goes through the /players/{id}/profile endpoints;
+    // the player's own card uses /user/player-profile. Same DTOs either way.
+    const editingAsAdmin = !!card && !card.isSelf && isAdmin;
+    const profileApi = editingAsAdmin
+        ? {
+            get: () => api.adminGetPlayerProfile(playerId),
+            update: (body) => api.adminUpdatePlayerProfile(playerId, body),
+            upload: (blob, onProgress) => api.adminUploadPlayerPhoto(playerId, blob, onProgress),
+            removePhoto: () => api.adminDeletePlayerPhoto(playerId)
+        }
+        : {
+            get: () => api.getMyPlayerProfile(),
+            update: (body) => api.updateMyPlayerProfile(body),
+            upload: (blob, onProgress) => api.uploadMyPlayerPhoto(blob, onProgress),
+            removePhoto: () => api.deleteMyPlayerPhoto()
+        };
+
     const startEdit = async () => {
         setSaveError('');
         setFieldErrors({});
         setPhotoError('');
         setPhotoNotice('');
         try {
-            const p = await api.getMyPlayerProfile();
+            const p = await profileApi.get();
             setProfile(p);
             const f = formFromProfile(p);
             setForm(f);
@@ -264,7 +283,7 @@ export default function PlayerProfileCard({ playerId, onClose }) {
         setSaveError('');
         setFieldErrors({});
         try {
-            const updated = await api.updateMyPlayerProfile(payloadFromForm(form));
+            const updated = await profileApi.update(payloadFromForm(form));
             setProfile(updated);
             const f = formFromProfile(updated);
             setForm(f);
@@ -309,7 +328,7 @@ export default function PlayerProfileCard({ playerId, onClose }) {
         setUploadPct(0);
         try {
             const blob = await cropToBlob(pending.decoded, pending.geometry, pending.x, pending.y, FRAME);
-            const updated = await api.uploadMyPlayerPhoto(blob, setUploadPct);
+            const updated = await profileApi.upload(blob, setUploadPct);
             setProfile(updated);
             setPending(null);
             setPhotoNotice('✓ Photo saved — no need to hit Save.');
@@ -326,7 +345,7 @@ export default function PlayerProfileCard({ playerId, onClose }) {
         setPhotoBusy(true);
         setPhotoError('');
         try {
-            await api.deleteMyPlayerPhoto();
+            await profileApi.removePhoto();
             setProfile(prev => ({ ...prev, photoUrl: null }));
             setPhotoNotice('✓ Photo removed.');
         } catch (err) {
@@ -426,12 +445,14 @@ export default function PlayerProfileCard({ playerId, onClose }) {
                 className="obi-pcard"
                 role="dialog"
                 aria-modal="true"
-                aria-label={mode === 'edit' ? 'Edit my profile' : 'Player profile'}
+                aria-label={mode === 'edit' ? (editingAsAdmin ? 'Edit player profile' : 'Edit my profile') : 'Player profile'}
                 onClick={(e) => e.stopPropagation()}
                 ref={panelRef}
             >
                 <div className="obi-pcard-head">
-                    <span className="obi-pcard-eyebrow">{mode === 'edit' ? 'Edit my profile' : 'Player profile'}</span>
+                    <span className="obi-pcard-eyebrow">
+                        {mode === 'edit' ? (editingAsAdmin ? 'Edit profile · admin' : 'Edit my profile') : 'Player profile'}
+                    </span>
                     <button type="button" className="obi-pcard-x" onClick={requestClose} aria-label="Close">×</button>
                 </div>
 
@@ -581,7 +602,7 @@ export default function PlayerProfileCard({ playerId, onClose }) {
                             )}
                             <span className="obi-pcard-foot-spacer" />
                             <button type="button" className="obi-pcard-btn obi-pcard-btn-ghost" onClick={onClose}>Close</button>
-                            {card.isSelf && (
+                            {(card.isSelf || isAdmin) && (
                                 <button type="button" className="obi-pcard-btn obi-pcard-btn-primary" onClick={startEdit}>Edit Profile</button>
                             )}
                         </div>
@@ -661,11 +682,15 @@ export default function PlayerProfileCard({ playerId, onClose }) {
                                 <span className="obi-pcard-context-team"><span className="obi-pcard-dot" style={{ background: hasTeam ? teamColor : NEUTRAL_DOT }} />{hasTeam ? card.team.name : 'Free agent'}</span>
                                 <span className="obi-pcard-context-numpos">{numberAndPos}</span>
                             </div>
-                            <div className="obi-pcard-hint">Your name, team, and number are set by the league and your GM.</div>
+                            <div className="obi-pcard-hint">
+                                {editingAsAdmin
+                                    ? 'Name, team, and number are edited on the Players page, not here.'
+                                    : 'Your name, team, and number are set by the league and your GM.'}
+                            </div>
                         </div>
 
-                        {/* dashboard avatar preference — a profile setting, so it saves with the form */}
-                        <div className="obi-pcard-field">
+                        {/* dashboard avatar preference — the player's own choice, so admins don't see it */}
+                        {!editingAsAdmin && <div className="obi-pcard-field">
                             <span className="obi-pcard-label">Dashboard avatar</span>
                             <label className={`obi-pcard-toggle ${editPhotoUrl ? '' : 'is-muted'}`}>
                                 <input
@@ -684,7 +709,7 @@ export default function PlayerProfileCard({ playerId, onClose }) {
                                     </span>
                                 </span>
                             </label>
-                        </div>
+                        </div>}
 
                         {/* fields */}
                         <div className="obi-pcard-field">
@@ -698,7 +723,7 @@ export default function PlayerProfileCard({ playerId, onClose }) {
                                 max={todayMinusYears(16).toISOString().slice(0, 10)}
                                 min={todayMinusYears(100).toISOString().slice(0, 10)}
                             />
-                            <div className="obi-pcard-hint">Only your age is shown on your card.</div>
+                            <div className="obi-pcard-hint">{editingAsAdmin ? 'Only the age is shown on the card.' : 'Only your age is shown on your card.'}</div>
                             {shownErrors.birthDate && <div className="obi-pcard-field-error">{shownErrors.birthDate}</div>}
                         </div>
 
@@ -783,7 +808,9 @@ export default function PlayerProfileCard({ playerId, onClose }) {
                             <div className="obi-pcard-discard-sub">
                                 {pending
                                     ? "The photo you picked hasn't been saved yet, and neither have the details you typed."
-                                    : "Your photo is already saved. The details you just typed aren't."}
+                                    : editingAsAdmin
+                                        ? "The photo is already saved. The details you just typed aren't."
+                                        : "Your photo is already saved. The details you just typed aren't."}
                             </div>
                             <div className="obi-pcard-discard-actions">
                                 <button type="button" className="obi-pcard-btn obi-pcard-btn-primary" onClick={() => setConfirmDiscard(false)}>Keep editing</button>

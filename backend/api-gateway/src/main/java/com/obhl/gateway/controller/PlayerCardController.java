@@ -5,7 +5,21 @@ import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.HttpStatus;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import jakarta.validation.Valid;
+import com.obhl.gateway.dto.PlayerProfileDTO;
+import com.obhl.gateway.dto.PlayerProfileUpdateDTO;
+import com.obhl.gateway.service.ProfilePhotoProcessor;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -51,12 +65,50 @@ public class PlayerCardController {
         return ResponseEntity.ok(profileService.photoIndex());
     }
 
+    // ── Admin edit of any player's profile. Same service logic as the self-service path,
+    // resolved from the row instead of the JWT; the dashboard-avatar preference is excluded.
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/{playerId}/profile")
+    public ResponseEntity<PlayerProfileDTO> adminGetProfile(@PathVariable Long playerId) {
+        return ResponseEntity.ok(profileService.getProfileForRow(playerId));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping("/{playerId}/profile")
+    public ResponseEntity<PlayerProfileDTO> adminUpdateProfile(@PathVariable Long playerId,
+            @Valid @RequestBody PlayerProfileUpdateDTO dto) {
+        return ResponseEntity.ok(profileService.updateProfileForRow(playerId, dto));
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping(value = "/{playerId}/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<PlayerProfileDTO> adminUploadPhoto(@PathVariable Long playerId,
+            @RequestPart("file") MultipartFile file) {
+        return ResponseEntity.ok(profileService.uploadPhotoForRow(playerId, file));
+    }
+
     /** Moderation: remove a player's photo. Idempotent — 204 even if there was none. */
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{playerId}/photo")
     public ResponseEntity<Void> adminDeletePhoto(@PathVariable Long playerId) {
         profileService.adminDeletePhoto(playerId);
         return ResponseEntity.noContent().build();
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalid(MethodArgumentNotValidException ex) {
+        Map<String, String> fields = new java.util.LinkedHashMap<>();
+        for (FieldError fe : ex.getBindingResult().getFieldErrors()) {
+            fields.putIfAbsent(fe.getField(), fe.getDefaultMessage() == null ? "Invalid value." : fe.getDefaultMessage());
+        }
+        String first = fields.isEmpty() ? "Please check the form." : fields.values().iterator().next();
+        return ResponseEntity.badRequest().body(Map.of("error", first, "fields", fields));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, String>> handleTooLarge(MaxUploadSizeExceededException ex) {
+        return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(Map.of("error", ProfilePhotoProcessor.ERR_SIZE));
     }
 
     /** Same shape as HighlightController: the reason text under "error", which api.js reads. */

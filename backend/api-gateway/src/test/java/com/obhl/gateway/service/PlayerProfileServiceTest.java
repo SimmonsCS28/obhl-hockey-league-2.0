@@ -320,6 +320,35 @@ class PlayerProfileServiceTest {
     }
 
     @Test
+    void adminEditResolvesFromTheRowAndLeavesAvatarPreferenceAlone() {
+        PlayerDto edited = row(300L, "Marco@Example.com", 15L, 1L, "12");
+        when(statsClient.getPlayer(300L)).thenReturn(edited);
+        when(statsClient.getPlayerHistoryByEmail("Marco@Example.com")).thenReturn(List.of(edited));
+        when(leagueClient.getActiveSeason()).thenReturn(Map.of("id", 15L));
+        when(userRepository.findByEmailIgnoreCase("Marco@Example.com")).thenReturn(Optional.empty());
+        PlayerProfile existing = new PlayerProfile("marco@example.com");
+        existing.setUsePhotoAvatar(true);
+        when(profileRepository.findByEmailLower("marco@example.com")).thenReturn(Optional.of(existing));
+        when(profileRepository.save(any(PlayerProfile.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        var view = service.updateProfileForRow(300L,
+                new PlayerProfileUpdateDTO(null, "Windsor, ON", 72, 190, "L", false));
+
+        assertEquals("Windsor, ON", view.getHometown());
+        assertTrue(existing.getUsePhotoAvatar());   // admin cannot flip the player's own preference
+        assertNull(existing.getUserId());
+        verify(rowSync).fanOut(eq(List.of(edited)), eq(null), eq("Windsor, ON"), eq("L"));
+    }
+
+    @Test
+    void adminEditRefusesPlaceholderEmailRows() {
+        when(statsClient.getPlayer(300L)).thenReturn(row(300L, "noemail+300@obhl.invalid", 20L, null, null));
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class,
+                () -> service.getProfileForRow(300L));
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+    }
+
+    @Test
     void normalizersHandleLegacySentinels() {
         assertNull(PlayerProfileService.normalizeShoots("N/A"));
         assertEquals("L", PlayerProfileService.normalizeShoots(" l "));

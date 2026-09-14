@@ -607,7 +607,12 @@ function PlayerManagement() {
                                                 title="Open the profile card to review or remove this photo"
                                             >Yes</button>
                                         ) : (
-                                            <span className="pm-photo-no">No</span>
+                                            <button
+                                                type="button"
+                                                className="pm-photo-no"
+                                                onClick={() => setReviewPlayerId(player.id)}
+                                                title="Open the profile card to add a photo for this player"
+                                            >No</button>
                                         )}
                                     </td>
                                     <td className="actions">

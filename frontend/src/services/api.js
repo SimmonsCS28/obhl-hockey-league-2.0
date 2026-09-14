@@ -67,6 +67,43 @@ export const request = async (url, options = {}) => {
     }
 };
 
+
+// Multipart photo upload shared by the self-service and admin paths. Deliberately bypasses
+// request(): that helper forces Content-Type: application/json, and for FormData the header
+// must be left unset so the browser can add the multipart boundary. XHR for progress.
+const uploadPlayerPhotoTo = (url, blob, onProgress) => {
+    const formData = new FormData();
+    formData.append('file', blob, 'photo.jpg');
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', url);
+        const token = getAuthToken();
+        if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        xhr.upload.onprogress = (e) => {
+            if (onProgress && e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+        };
+        xhr.onload = () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                try { resolve(xhr.responseText ? JSON.parse(xhr.responseText) : {}); } catch { resolve({}); }
+                return;
+            }
+            if (xhr.status === 401) {
+                window.dispatchEvent(new Event('auth-error'));
+                reject(new Error('Your session has expired. Please log in again.'));
+                return;
+            }
+            let message = xhr.responseText;
+            try {
+                const parsed = JSON.parse(xhr.responseText);
+                message = parsed.error || parsed.message || message;
+            } catch { /* not JSON — use raw text */ }
+            reject(new Error(message || `Upload failed with status ${xhr.status}`));
+        };
+        xhr.onerror = () => reject(new Error('Upload failed — check your connection and try again.'));
+        xhr.send(formData);
+    });
+};
+
 // API client for backend services
 const api = {
     // ============================================
@@ -994,36 +1031,17 @@ const api = {
     // Multipart — same XHR shape as uploadHighlight, for the same reason (request() forces a
     // JSON Content-Type and would break the multipart boundary).
     uploadMyPlayerPhoto(blob, onProgress) {
-        const formData = new FormData();
-        formData.append('file', blob, 'photo.jpg');
-        return new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', `${API_BASE_URL}/user/player-profile/photo`);
-            const token = getAuthToken();
-            if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-            xhr.upload.onprogress = (e) => {
-                if (onProgress && e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
-            };
-            xhr.onload = () => {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    try { resolve(xhr.responseText ? JSON.parse(xhr.responseText) : {}); } catch { resolve({}); }
-                    return;
-                }
-                if (xhr.status === 401) {
-                    window.dispatchEvent(new Event('auth-error'));
-                    reject(new Error('Your session has expired. Please log in again.'));
-                    return;
-                }
-                let message = xhr.responseText;
-                try {
-                    const parsed = JSON.parse(xhr.responseText);
-                    message = parsed.error || parsed.message || message;
-                } catch { /* not JSON — use raw text */ }
-                reject(new Error(message || `Upload failed with status ${xhr.status}`));
-            };
-            xhr.onerror = () => reject(new Error('Upload failed — check your connection and try again.'));
-            xhr.send(formData);
-        });
+        return uploadPlayerPhotoTo(`${API_BASE_URL}/user/player-profile/photo`, blob, onProgress);
+    },
+    // ADMIN: edit any player's profile (same shape as the self-service calls, resolved from the row)
+    async adminGetPlayerProfile(playerId) {
+        return request(`/players/${playerId}/profile`);
+    },
+    async adminUpdatePlayerProfile(playerId, data) {
+        return request(`/players/${playerId}/profile`, { method: 'PUT', body: JSON.stringify(data) });
+    },
+    adminUploadPlayerPhoto(playerId, blob, onProgress) {
+        return uploadPlayerPhotoTo(`${API_BASE_URL}/players/${playerId}/photo`, blob, onProgress);
     },
     async deleteMyPlayerPhoto() {
         return request('/user/player-profile/photo', { method: 'DELETE' });
@@ -1163,6 +1181,9 @@ export const {
     uploadMyPlayerPhoto,
     deleteMyPlayerPhoto,
     getPlayerPhotoIndex,
+    adminGetPlayerProfile,
+    adminUpdatePlayerProfile,
+    adminUploadPlayerPhoto,
     adminDeletePlayerPhoto
 } = api;
 
