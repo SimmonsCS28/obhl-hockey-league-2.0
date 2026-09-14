@@ -90,7 +90,7 @@ public class PlayerProfileController {
 
     /**
      * The container rejects anything over spring.servlet.multipart.max-request-size
-     * (100 MB, sized for highlight videos) before the 5 MB photo check ever runs.
+     * (100 MB, sized for highlight videos) before the 10 MB photo check ever runs.
      * Say the limit that applies to THIS upload.
      */
     @ExceptionHandler(MaxUploadSizeExceededException.class)

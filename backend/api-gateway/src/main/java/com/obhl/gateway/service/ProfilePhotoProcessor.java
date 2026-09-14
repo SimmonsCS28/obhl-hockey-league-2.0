@@ -41,7 +41,7 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class ProfilePhotoProcessor {
 
-    public static final long MAX_UPLOAD_BYTES = 5L * 1024 * 1024;
+    public static final long MAX_UPLOAD_BYTES = 10L * 1024 * 1024;
     public static final int OUTPUT_SIZE = 512;
     public static final String OUTPUT_EXTENSION = ".jpg";
     public static final String OUTPUT_CONTENT_TYPE = "image/jpeg";
@@ -52,7 +52,7 @@ public class ProfilePhotoProcessor {
     private static final Set<String> ACCEPTED_TYPES = Set.of("image/jpeg", "image/png");
 
     public static final String ERR_TYPE = "JPG or PNG only.";
-    public static final String ERR_SIZE = "Keep it under 5 MB.";
+    public static final String ERR_SIZE = "Keep it under 10 MB.";
     public static final String ERR_DECODE = "That file doesn't look like an image.";
 
     public byte[] process(MultipartFile file) {

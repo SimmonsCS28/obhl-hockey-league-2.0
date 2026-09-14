@@ -131,7 +131,7 @@ discard.
 ### Photo editor (replaces the identity block's photo)
 - Shows the current photo, or the initials fallback.
 - Actions: **Upload photo** (no photo yet) / **Replace** + **Remove** (photo exists).
-- Accepted: JPG or PNG, up to 5 MB. The client crops to a square and downsizes before
+- Accepted: JPG or PNG, up to 10 MB (raised from 5 MB post-ship). The client crops to a square and downsizes before
   upload (this also fixes sideways phone photos), so the user should see a preview of
   the square crop before it goes up. A simple center-crop preview is enough; a
   drag-to-reposition cropper is a nice-to-have, not required.
@@ -139,7 +139,7 @@ discard.
   of the Save button for the text fields. Make that clear ("Photo saved" toast or
   inline check) so the user doesn't think they still need to hit Save.
 - Photo errors to design copy for: wrong type ("JPG or PNG only"), too large ("Keep it
-  under 5 MB"), unreadable file ("That file doesn't look like an image").
+  under 10 MB"), unreadable file ("That file doesn't look like an image").
 
 ### Read-only context (greyed, not inputs)
 Name · team · # · position, shown faintly with a one-line hint:
@@ -194,7 +194,7 @@ Nothing else. No nickname, no bio, no favourite team, and — again — no ratin
 | Height | 4'0" – 8'0" (48–96 in) | "Enter a height between 4'0\" and 8'0\"." |
 | Weight | 80 – 400 lb | "Enter a weight between 80 and 400 lb." |
 | Shoots | Left or Right | (segmented control — can't be invalid) |
-| Photo | JPG/PNG, ≤ 5 MB, decodes | see photo editor above |
+| Photo | JPG/PNG, ≤ 10 MB, decodes | see photo editor above |
 
 Server-side errors come back as one message in the banner; field-level errors are
 shown inline under the field.
@@ -225,7 +225,7 @@ All through the API gateway.
 - **PUT `/api/v1/user/player-profile`** ← `{ birthDate, hometown, heightInches,
   weightLbs, shoots }` (full replace; null clears) → the owner view.
 - **POST `/api/v1/user/player-profile/photo`** — multipart `file` → the owner view
-  with the new `photoUrl`. 413 over 5 MB.
+  with the new `photoUrl`. 413 over 10 MB.
 - **DELETE `/api/v1/user/player-profile/photo`** → 204.
 - **DELETE `/api/v1/players/{playerId}/photo`** — ADMIN only, moderation → 204.
 - **GET `/api/v1/media/players/{key}`** — the photo bytes, public, cacheable forever

@@ -12,11 +12,11 @@
  */
 
 export const OUTPUT_SIZE = 512;
-export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 export const ACCEPTED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
 
 export const ERR_TYPE = 'JPG or PNG only.';
-export const ERR_SIZE = 'Keep it under 5 MB.';
+export const ERR_SIZE = 'Keep it under 10 MB.';
 export const ERR_DECODE = "That file doesn't look like an image.";
 
 /** Cheap checks before decoding. Returns an error string, or null when the file looks usable. */

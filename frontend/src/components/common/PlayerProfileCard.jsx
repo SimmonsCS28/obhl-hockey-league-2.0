@@ -668,7 +668,7 @@ export default function PlayerProfileCard({ playerId, onClose }) {
                                 <div className="obi-pcard-hint">
                                     {pending
                                         ? 'Drag the photo to line it up, then save it.'
-                                        : 'JPG or PNG, up to 5 MB. We square-crop it for you — drag the photo to line it up.'}
+                                        : 'JPG or PNG, up to 10 MB. We square-crop it for you — drag the photo to line it up.'}
                                 </div>
                                 {photoError && <div className="obi-pcard-photo-error">{photoError}</div>}
                                 {photoNotice && !photoError && <div className="obi-pcard-photo-ok">{photoNotice}</div>}
