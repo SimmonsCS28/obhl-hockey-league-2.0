@@ -343,6 +343,51 @@
     border-top: 1px solid rgba(157, 185, 205, 0.14);
 }
 
+/* Goalie career strip — sits above "Games You've Played" for the GOALIE tab only. */
+.dash-career {
+    margin-bottom: 26px;
+}
+
+.dash-career-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.dash-career-stat {
+    background: linear-gradient(160deg, var(--obi-bg-deep-card), #10141a);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.dash-career-value {
+    font-family: var(--obi-font-display);
+    font-weight: 900;
+    font-size: 26px;
+    color: #fff;
+    line-height: 1.1;
+}
+
+.dash-career-label {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    margin-top: 4px;
+}
+
+.dash-career-note {
+    margin-top: 10px;
+    margin-bottom: 0;
+}
+
 .dash-worked-alert {
     margin-bottom: 14px;
     background: rgba(246, 169, 28, 0.1);

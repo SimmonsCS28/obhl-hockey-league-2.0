@@ -31,6 +31,11 @@ function GoalieStatsPanel({ seasonId, canEdit }) {
     const [sort, setSort] = useState({ key: 'name', dir: 'asc' });
     const [selectedId, setSelectedId] = useState(null);
     const [savingRating, setSavingRating] = useState(false);
+    // Career (all league seasons) for the open goalie. Fetched on click, not for the whole
+    // grid — it's one game-service call per goalie.
+    const [career, setCareer] = useState(null);
+    const [careerLoading, setCareerLoading] = useState(false);
+    const [careerError, setCareerError] = useState(null);
 
     useEffect(() => {
         if (!seasonId) return;
@@ -79,6 +84,23 @@ function GoalieStatsPanel({ seasonId, canEdit }) {
     };
 
     const selected = selectedId != null ? goalies.find((g) => g.playerId === selectedId) : null;
+    const selectedUserId = selected?.userId ?? null;
+
+    useEffect(() => {
+        setCareer(null);
+        setCareerError(null);
+        if (selectedUserId == null) {
+            setCareerLoading(false);
+            return;
+        }
+        let cancelled = false;
+        setCareerLoading(true);
+        api.getGoalieCareer(selectedUserId)
+            .then((c) => { if (!cancelled) setCareer(c || null); })
+            .catch((e) => { if (!cancelled) setCareerError(e.message || 'Failed to load career stats'); })
+            .finally(() => { if (!cancelled) setCareerLoading(false); });
+        return () => { cancelled = true; };
+    }, [selectedUserId]);
 
     const applyRating = async (playerId, nextRating) => {
         setSavingRating(true);
@@ -127,6 +149,26 @@ function GoalieStatsPanel({ seasonId, canEdit }) {
                     <div className="gp-stat-tile">
                         <span className="gp-stat-value">{selected.gaa != null ? selected.gaa.toFixed(2) : '—'}</span>
                         <span className="gp-stat-label">Season GAA</span>
+                    </div>
+
+                    <div className="gp-stat-tile gp-career-tile">
+                        <span className="gp-stat-value">
+                            {career ? `${career.wins}-${career.losses}-${career.ties}` : '—'}
+                        </span>
+                        <span className="gp-stat-label">Career Record</span>
+                        <span className="gp-career-sub">
+                            {careerLoading ? 'Loading…'
+                                : career ? `${career.gp} GP · ${career.shutouts} SO`
+                                : selectedUserId == null ? 'No linked account' : 'Unavailable'}
+                        </span>
+                    </div>
+
+                    <div className="gp-stat-tile gp-career-tile">
+                        <span className="gp-stat-value">{career?.gaa != null ? career.gaa.toFixed(2) : '—'}</span>
+                        <span className="gp-stat-label">Career GAA</span>
+                        <span className="gp-career-sub">
+                            {career ? `${career.seasonsPlayed} season${career.seasonsPlayed === 1 ? '' : 's'}` : ' '}
+                        </span>
                     </div>
 
                     <div className="gp-stat-tile gp-rating-tile">
@@ -195,6 +237,50 @@ function GoalieStatsPanel({ seasonId, canEdit }) {
                         );
                     })}
                 </div>
+
+                <div className="gp-games-heading gp-career-heading">Career by Season</div>
+                <div className="gp-career-note">Regular season and playoff games only — C League Classic games aren&rsquo;t counted.</div>
+                {careerError ? (
+                    <div className="gp-empty gp-empty-error">{careerError}</div>
+                ) : careerLoading ? (
+                    <div className="gp-empty">Loading career&hellip;</div>
+                ) : selectedUserId == null ? (
+                    <div className="gp-empty">This goalie has no linked account, so there is no game history to total.</div>
+                ) : !career || (career.seasons || []).length === 0 ? (
+                    <div className="gp-empty">No completed league games yet.</div>
+                ) : (
+                    <div className="gp-career-table-wrap">
+                        <table className="gp-career-table">
+                            <thead>
+                                <tr>
+                                    <th>Season</th>
+                                    <th>GP</th>
+                                    <th>W-L-T</th>
+                                    <th>SO</th>
+                                    <th>GAA</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {career.seasons.map((s) => (
+                                    <tr key={s.seasonId} className={Number(s.seasonId) === Number(seasonId) ? 'is-current' : ''}>
+                                        <td className="gp-career-season">{s.seasonName || `Season ${s.seasonId}`}</td>
+                                        <td>{s.gp}</td>
+                                        <td>{s.wins}-{s.losses}-{s.ties}</td>
+                                        <td>{s.shutouts}</td>
+                                        <td>{s.gaa != null ? s.gaa.toFixed(2) : '—'}</td>
+                                    </tr>
+                                ))}
+                                <tr className="gp-career-total">
+                                    <td className="gp-career-season">Career</td>
+                                    <td>{career.gp}</td>
+                                    <td>{career.wins}-{career.losses}-{career.ties}</td>
+                                    <td>{career.shutouts}</td>
+                                    <td>{career.gaa != null ? career.gaa.toFixed(2) : '—'}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                )}
             </div>
         );
     }

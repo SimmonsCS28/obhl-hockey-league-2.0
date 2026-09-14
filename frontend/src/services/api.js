@@ -680,6 +680,16 @@ const api = {
         return request(`/goalies/performance?seasonId=${seasonId}`);
     },
 
+    // Career W-L-T / GAA across every league season (regular season + playoffs, no
+    // tournament games). Keyed by user id — the same key games.goalie1Id/goalie2Id use.
+    async getGoalieCareer(userId) {
+        return request(`/goalies/${userId}/career`);
+    },
+
+    async getMyGoalieCareer() {
+        return request('/goalies/me/career');
+    },
+
     async updateGoalieRating(playerId, skillRating) {
         // skillRating: integer 1-10 for skaters, 0-10 for goalies, or null to clear
         return request(`/gm/players/${playerId}/skill`, {

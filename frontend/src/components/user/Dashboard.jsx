@@ -90,6 +90,7 @@ function Dashboard() {
     const [activeRole, setActiveRole] = useState(officialRoles[0] || null);
     const [openSlotsByRole, setOpenSlotsByRole] = useState({}); // { REF: [...], SCOREKEEPER: [...] }
     const [goalieWeeks, setGoalieWeeks] = useState([]);          // for GOALIE
+    const [goalieCareer, setGoalieCareer] = useState(null);       // GOALIE: W-L-T / GAA across every league season
     const [seasonGames, setSeasonGames] = useState([]);           // every game this season, for shift history
     const [showAllWorked, setShowAllWorked] = useState(false);
     const [busy, setBusy] = useState(null);
@@ -142,6 +143,7 @@ function Dashboard() {
         setOpenSlotsByRole(Object.fromEntries(entries));
         if (officialRoles.includes('GOALIE')) {
             api.getGoalieAvailability(selectedSeasonId).then(setGoalieWeeks).catch(() => setGoalieWeeks([]));
+            api.getMyGoalieCareer().then(c => setGoalieCareer(c || null)).catch(() => setGoalieCareer(null));
         }
         // Shift history reads the season's games rather than the assignment rows: shifts claimed
         // before the coordinator flow existed, or handed out directly by an admin, have no
@@ -651,6 +653,44 @@ function Dashboard() {
                         {/* Everything already played in this role — and, for scorekeepers, the way
                             back into Live Score Entry for a game nobody finalized. */}
                         <div className="dash-worked">
+                            {activeRole === 'GOALIE' && goalieCareer && (() => {
+                                const thisSeason = (goalieCareer.seasons || [])
+                                    .find(s => Number(s.seasonId) === Number(selectedSeasonId));
+                                const fmtGaa = (v) => (v != null ? v.toFixed(2) : '—');
+                                return (
+                                    <div className="dash-career">
+                                        <div className="dash-col-title">Your Career in Net</div>
+                                        <div className="dash-career-strip">
+                                            <div className="dash-career-stat">
+                                                <span className="dash-career-value">
+                                                    {goalieCareer.wins}-{goalieCareer.losses}-{goalieCareer.ties}
+                                                </span>
+                                                <span className="dash-career-label">Career Record</span>
+                                            </div>
+                                            <div className="dash-career-stat">
+                                                <span className="dash-career-value">{fmtGaa(goalieCareer.gaa)}</span>
+                                                <span className="dash-career-label">Career GAA</span>
+                                            </div>
+                                            <div className="dash-career-stat">
+                                                <span className="dash-career-value">{goalieCareer.gp}</span>
+                                                <span className="dash-career-label">Games Played</span>
+                                            </div>
+                                            <div className="dash-career-stat">
+                                                <span className="dash-career-value">{goalieCareer.shutouts}</span>
+                                                <span className="dash-career-label">Shutouts</span>
+                                            </div>
+                                        </div>
+                                        <p className="dash-col-note dash-career-note">
+                                            {thisSeason
+                                                ? `This season: ${thisSeason.wins}-${thisSeason.losses}-${thisSeason.ties} · ${fmtGaa(thisSeason.gaa)} GAA`
+                                                : 'No completed games yet this season'}
+                                            {goalieCareer.seasonsPlayed > 0 && ` · ${goalieCareer.seasonsPlayed} season${goalieCareer.seasonsPlayed === 1 ? '' : 's'} in net`}
+                                            {' · regular season and playoffs only'}
+                                        </p>
+                                    </div>
+                                );
+                            })()}
+
                             <div className="dash-col-title">
                                 {activeRole === 'GOALIE' ? 'Games You’ve Played' : 'Games You’ve Worked'}
                             </div>
