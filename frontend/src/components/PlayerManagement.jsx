@@ -634,17 +634,17 @@ function PlayerManagement() {
             </div>
 
             {showModal && (
-                <div className="modal-overlay" onClick={handleCloseModal}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h3>{editingPlayer ? 'Edit Player' : 'Add New Player'}</h3>
-                            <button onClick={handleCloseModal} className="modal-close">&times;</button>
+                <div className="pmd-overlay" onClick={handleCloseModal}>
+                    <div className="pmd-card" onClick={(e) => e.stopPropagation()}>
+                        <div className="pmd-header">
+                            <h3 className="pmd-title">{editingPlayer ? 'Edit Player' : 'Add New Player'}</h3>
+                            <button onClick={handleCloseModal} className="pmd-close">&times;</button>
                         </div>
-                        <form onSubmit={handleSubmit} className="player-form">
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>Season</label>
-                                    <select
+                        <form onSubmit={handleSubmit} className="pmd-body">
+                            <div className="pmd-row">
+                                <div className="pmd-field">
+                                    <label className="pmd-label">Season</label>
+                                    <select className="pmd-select"
                                         value={formData.seasonId}
                                         onChange={(e) => setFormData({ ...formData, seasonId: e.target.value })}
                                         required
@@ -657,9 +657,9 @@ function PlayerManagement() {
                                         ))}
                                     </select>
                                 </div>
-                                <div className="form-group">
-                                    <label>Skill Rating ({formData.position === 'G' ? '0-10' : '1-10'})</label>
-                                    <input
+                                <div className="pmd-field">
+                                    <label className="pmd-label">Skill Rating ({formData.position === 'G' ? '0-10' : '1-10'})</label>
+                                    <input className="pmd-input"
                                         type="number"
                                         value={formData.skillRating}
                                         onChange={(e) => setFormData({ ...formData, skillRating: e.target.value })}
@@ -670,9 +670,9 @@ function PlayerManagement() {
                                 </div>
                             </div>
 
-                            <div className="form-group">
-                                <label>Email</label>
-                                <input
+                            <div className="pmd-field">
+                                <label className="pmd-label">Email</label>
+                                <input className="pmd-input"
                                     type="email"
                                     value={formData.email}
                                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -681,19 +681,19 @@ function PlayerManagement() {
                                 />
                             </div>
 
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>First Name</label>
-                                    <input
+                            <div className="pmd-row">
+                                <div className="pmd-field">
+                                    <label className="pmd-label">First Name</label>
+                                    <input className="pmd-input"
                                         type="text"
                                         value={formData.firstName}
                                         onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                                         required
                                     />
                                 </div>
-                                <div className="form-group">
-                                    <label>Last Name</label>
-                                    <input
+                                <div className="pmd-field">
+                                    <label className="pmd-label">Last Name</label>
+                                    <input className="pmd-input"
                                         type="text"
                                         value={formData.lastName}
                                         onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
@@ -702,12 +702,12 @@ function PlayerManagement() {
                                 </div>
                             </div>
 
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <div className="label-with-filter">
-                                        <label>Team</label>
-                                        <label className="checkbox-filter">
-                                            <input
+                            <div className="pmd-row">
+                                <div className="pmd-field">
+                                    <div className="pmd-label-row">
+                                        <label className="pmd-label">Team</label>
+                                        <label className="pmd-check pmd-check--inline">
+                                            <input className="pmd-checkbox"
                                                 type="checkbox"
                                                 checked={activeTeamsOnly}
                                                 onChange={(e) => setActiveTeamsOnly(e.target.checked)}
@@ -715,7 +715,7 @@ function PlayerManagement() {
                                             Active teams only
                                         </label>
                                     </div>
-                                    <select
+                                    <select className="pmd-select"
                                         value={formData.teamId}
                                         onChange={(e) => setFormData({ ...formData, teamId: e.target.value })}
                                     >
@@ -727,9 +727,9 @@ function PlayerManagement() {
                                         ))}
                                     </select>
                                 </div>
-                                <div className="form-group">
-                                    <label>Jersey Number</label>
-                                    <input
+                                <div className="pmd-field">
+                                    <label className="pmd-label">Jersey Number</label>
+                                    <input className="pmd-input"
                                         type="number"
                                         value={formData.jerseyNumber}
                                         onChange={(e) => setFormData({ ...formData, jerseyNumber: e.target.value })}
@@ -740,10 +740,10 @@ function PlayerManagement() {
                                 </div>
                             </div>
 
-                            <div className="form-row">
-                                <div className="form-group">
-                                    <label>Position</label>
-                                    <select
+                            <div className="pmd-row">
+                                <div className="pmd-field">
+                                    <label className="pmd-label">Position</label>
+                                    <select className="pmd-select"
                                         value={formData.position}
                                         onChange={(e) => setFormData({ ...formData, position: e.target.value })}
                                         required
@@ -755,28 +755,28 @@ function PlayerManagement() {
                                 </div>
                             </div>
 
-                            <div className="form-group">
-                                <label>Birth Date</label>
-                                <input
+                            <div className="pmd-field">
+                                <label className="pmd-label">Birth Date</label>
+                                <input className="pmd-input"
                                     type="date"
                                     value={formData.birthDate}
                                     onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
                                 />
                             </div>
 
-                            <div className="form-group">
-                                <label>Hometown</label>
-                                <input
+                            <div className="pmd-field">
+                                <label className="pmd-label">Hometown</label>
+                                <input className="pmd-input"
                                     type="text"
                                     value={formData.hometown}
                                     onChange={(e) => setFormData({ ...formData, hometown: e.target.value })}
                                 />
                             </div>
 
-                            <div className="form-row">
-                                <div className="form-group checkbox-group">
-                                    <label>
-                                        <input
+                            <div className="pmd-row">
+                                <div className="pmd-field pmd-field--check">
+                                    <label className="pmd-check">
+                                        <input className="pmd-checkbox"
                                             type="checkbox"
                                             checked={formData.isVeteran}
                                             onChange={(e) => setFormData({ ...formData, isVeteran: e.target.checked })}
@@ -784,9 +784,9 @@ function PlayerManagement() {
                                         Veteran
                                     </label>
                                 </div>
-                                <div className="form-group checkbox-group">
-                                    <label>
-                                        <input
+                                <div className="pmd-field pmd-field--check">
+                                    <label className="pmd-check">
+                                        <input className="pmd-checkbox"
                                             type="checkbox"
                                             checked={formData.isActive}
                                             onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
@@ -800,9 +800,9 @@ function PlayerManagement() {
                             {!editingPlayer && (
                                 <>
                                     <hr className="pm-hr" />
-                                    <div className="form-group checkbox-group">
+                                    <div className="pmd-field pmd-field--check">
                                         <label className="pm-linked-label">
-                                            <input
+                                            <input className="pmd-checkbox"
                                                 type="checkbox"
                                                 checked={alsoCreateUser}
                                                 onChange={(e) => setAlsoCreateUser(e.target.checked)}
@@ -812,12 +812,12 @@ function PlayerManagement() {
                                     </div>
 
                                     {alsoCreateUser && (
-                                        <div className="linked-form-section">
-                                            <h4>User Account Details</h4>
+                                        <div className="pmd-panel">
+                                            <h4 className="pmd-panel-title">User Account Details</h4>
 
-                                            <div className="form-group">
-                                                <label>Username *</label>
-                                                <input
+                                            <div className="pmd-field">
+                                                <label className="pmd-label">Username *</label>
+                                                <input className="pmd-input"
                                                     type="text"
                                                     value={userData.username}
                                                     onChange={(e) => handleUserChange('username', e.target.value)}
@@ -825,9 +825,9 @@ function PlayerManagement() {
                                                 />
                                             </div>
 
-                                            <div className="form-group">
-                                                <label>Email * (defaults to player email)</label>
-                                                <input
+                                            <div className="pmd-field">
+                                                <label className="pmd-label">Email * (defaults to player email)</label>
+                                                <input className="pmd-input"
                                                     type="email"
                                                     value={userData.email || formData.email}
                                                     onChange={(e) => handleUserChange('email', e.target.value)}
@@ -835,26 +835,26 @@ function PlayerManagement() {
                                                 />
                                             </div>
 
-                                            <div className="form-group">
-                                                <label>Password *</label>
-                                                <input
+                                            <div className="pmd-field">
+                                                <label className="pmd-label">Password *</label>
+                                                <input className="pmd-input"
                                                     type="password"
                                                     value={userData.password}
                                                     onChange={(e) => handleUserChange('password', e.target.value)}
                                                     required
                                                 />
-                                                {userPasswordError && <div className="field-error">{userPasswordError}</div>}
-                                                <small className="field-hint">
+                                                {userPasswordError && <div className="pmd-field-error">{userPasswordError}</div>}
+                                                <small className="pmd-hint">
                                                     Min 8 characters, 1 uppercase, 1 special character, no spaces
                                                 </small>
                                             </div>
 
-                                            <div className="form-group">
-                                                <label>Roles * (Select at least one)</label>
+                                            <div className="pmd-field">
+                                                <label className="pmd-label">Roles * (Select at least one)</label>
                                                 <div className="roles-checkbox-grid">
                                                     {availableRoles.map(role => (
                                                         <label key={role.name} className="role-checkbox-item">
-                                                            <input
+                                                            <input className="pmd-checkbox"
                                                                 type="checkbox"
                                                                 checked={userData.roles.includes(role.name)}
                                                                 onChange={() => handleUserRoleToggle(role.name)}
@@ -885,9 +885,9 @@ function PlayerManagement() {
                                             ⚡ Create User from this Player
                                         </button>
                                     ) : (
-                                        <div className="linked-form-section">
+                                        <div className="pmd-panel">
                                             <div className="pm-linked-section-header">
-                                                <h4>User Account Details</h4>
+                                                <h4 className="pmd-panel-title">User Account Details</h4>
                                                 <button
                                                     type="button"
                                                     onClick={() => setAlsoCreateUser(false)}
@@ -895,9 +895,9 @@ function PlayerManagement() {
                                                 >×</button>
                                             </div>
 
-                                            <div className="form-group">
-                                                <label>Username *</label>
-                                                <input
+                                            <div className="pmd-field">
+                                                <label className="pmd-label">Username *</label>
+                                                <input className="pmd-input"
                                                     type="text"
                                                     value={userData.username}
                                                     onChange={(e) => handleUserChange('username', e.target.value)}
@@ -905,9 +905,9 @@ function PlayerManagement() {
                                                 />
                                             </div>
 
-                                            <div className="form-group">
-                                                <label>Email * (defaults to player email)</label>
-                                                <input
+                                            <div className="pmd-field">
+                                                <label className="pmd-label">Email * (defaults to player email)</label>
+                                                <input className="pmd-input"
                                                     type="email"
                                                     value={userData.email || formData.email}
                                                     onChange={(e) => handleUserChange('email', e.target.value)}
@@ -915,26 +915,26 @@ function PlayerManagement() {
                                                 />
                                             </div>
 
-                                            <div className="form-group">
-                                                <label>Password *</label>
-                                                <input
+                                            <div className="pmd-field">
+                                                <label className="pmd-label">Password *</label>
+                                                <input className="pmd-input"
                                                     type="password"
                                                     value={userData.password}
                                                     onChange={(e) => handleUserChange('password', e.target.value)}
                                                     required
                                                 />
-                                                {userPasswordError && <div className="field-error">{userPasswordError}</div>}
-                                                <small className="field-hint">
+                                                {userPasswordError && <div className="pmd-field-error">{userPasswordError}</div>}
+                                                <small className="pmd-hint">
                                                     Min 8 characters, 1 uppercase, 1 special character, no spaces
                                                 </small>
                                             </div>
 
-                                            <div className="form-group">
-                                                <label>Roles * (Select at least one)</label>
+                                            <div className="pmd-field">
+                                                <label className="pmd-label">Roles * (Select at least one)</label>
                                                 <div className="roles-checkbox-grid">
                                                     {availableRoles.map(role => (
                                                         <label key={role.name} className="role-checkbox-item">
-                                                            <input
+                                                            <input className="pmd-checkbox"
                                                                 type="checkbox"
                                                                 checked={userData.roles.includes(role.name)}
                                                                 onChange={() => handleUserRoleToggle(role.name)}
@@ -952,11 +952,11 @@ function PlayerManagement() {
                                 </>
                             )}
 
-                            <div className="form-actions">
-                                <button type="button" onClick={handleCloseModal} className="btn-secondary">
+                            <div className="pmd-footer">
+                                <button type="button" onClick={handleCloseModal} className="pmd-btn pmd-btn--ghost">
                                     Cancel
                                 </button>
-                                <button type="submit" className="btn-primary">
+                                <button type="submit" className="pmd-btn pmd-btn--primary">
                                     {editingPlayer ? (alsoCreateUser ? 'Update & Create User' : 'Update') : (alsoCreateUser ? 'Create Player & User' : 'Create')}
                                 </button>
                             </div>
@@ -966,21 +966,21 @@ function PlayerManagement() {
             )}
 
             {showDeleteModal && (
-                <div className="modal-overlay" onClick={cancelDelete}>
-                    <div className="modal-content delete-modal" onClick={(e) => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h3>Confirm Delete</h3>
-                            <button onClick={cancelDelete} className="modal-close">&times;</button>
+                <div className="pmd-overlay" onClick={cancelDelete}>
+                    <div className="pmd-card pmd-card--sm" onClick={(e) => e.stopPropagation()}>
+                        <div className="pmd-header">
+                            <h3 className="pmd-title">Confirm Delete</h3>
+                            <button onClick={cancelDelete} className="pmd-close">&times;</button>
                         </div>
-                        <div className="modal-body">
+                        <div className="pmd-body">
                             <p>Are you sure you want to delete this player?</p>
-                            <p className="warning-text">This action cannot be undone.</p>
+                            <p className="pmd-warning">This action cannot be undone.</p>
                         </div>
-                        <div className="form-actions">
-                            <button type="button" onClick={cancelDelete} className="btn-secondary">
+                        <div className="pmd-footer">
+                            <button type="button" onClick={cancelDelete} className="pmd-btn pmd-btn--ghost">
                                 Cancel
                             </button>
-                            <button type="button" onClick={confirmDelete} className="btn-delete">
+                            <button type="button" onClick={confirmDelete} className="pmd-btn pmd-btn--danger">
                                 Delete Player
                             </button>
                         </div>
