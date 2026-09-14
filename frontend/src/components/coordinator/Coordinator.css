@@ -880,7 +880,9 @@
 
 .cc-slot-actions {
     flex: none;
-    width: 196px;
+    /* A floor, not a fixed width: two-button rows keep their status chips aligned, while a
+       three-button row (Confirm · Reassign · Remove) grows instead of spilling over the chip. */
+    min-width: 196px;
     display: flex;
     justify-content: flex-end;
     gap: 8px;
