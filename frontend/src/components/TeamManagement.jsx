@@ -4,6 +4,12 @@ import { useSeason } from '../contexts/SeasonContext';
 import TeamDetails from './TeamDetails';
 import './TeamManagement.css';
 
+// Quote a CSV cell only when it needs it (commas, quotes, newlines).
+const csvCell = (value) => {
+    const s = value == null ? '' : String(value);
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+};
+
 function TeamManagement() {
     const { selectedSeasonId, isHistoricalView } = useSeason();
     const [teams, setTeams] = useState([]);
@@ -14,6 +20,7 @@ function TeamManagement() {
     const [teamToDelete, setTeamToDelete] = useState(null);
     const [editingTeam, setEditingTeam] = useState(null);
     const [selectedTeam, setSelectedTeam] = useState(null); // New state for details view
+    const [exporting, setExporting] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         abbreviation: '',
@@ -46,6 +53,64 @@ function TeamManagement() {
     const filteredTeams = selectedSeasonId
         ? teams.filter(team => team.seasonId === selectedSeasonId)
         : teams;
+
+    // One CSV row per active player on the teams currently shown, grouped by team.
+    const handleExportRosters = async () => {
+        if (exporting || filteredTeams.length === 0) return;
+        try {
+            setExporting(true);
+            // Teams are per-season rows, so fetch each season's players once rather
+            // than one request per team.
+            const seasonIds = [...new Set(filteredTeams.map(t => t.seasonId))];
+            const playerLists = await Promise.all(
+                seasonIds.map(seasonId => api.getPlayers({ seasonId, active: true }))
+            );
+            const playersByTeam = new Map();
+            playerLists.flat().forEach(p => {
+                if (p.teamId == null) return;
+                if (!playersByTeam.has(p.teamId)) playersByTeam.set(p.teamId, []);
+                playersByTeam.get(p.teamId).push(p);
+            });
+
+            const byName = (a, b) => a.name.localeCompare(b.name, undefined, { numeric: true });
+            const byPlayerName = (a, b) =>
+                (a.lastName || '').localeCompare(b.lastName || '') ||
+                (a.firstName || '').localeCompare(b.firstName || '');
+
+            const rows = [['Team Name', 'Player Name', 'Skill Rating', 'Position', 'Email'].join(',')];
+            [...filteredTeams].sort(byName).forEach(team => {
+                (playersByTeam.get(team.id) || []).sort(byPlayerName).forEach(p => {
+                    rows.push([
+                        team.name,
+                        `${p.firstName || ''} ${p.lastName || ''}`.trim(),
+                        p.skillRating,
+                        p.position,
+                        p.email
+                    ].map(csvCell).join(','));
+                });
+            });
+
+            const seasonName = selectedSeasonId
+                ? seasons.find(s => s.id === selectedSeasonId)?.name
+                : null;
+            const fileSeason = (seasonName || 'all-seasons').replace(/[^\w-]+/g, '_');
+            // BOM so Excel reads accented names as UTF-8 instead of mangling them.
+            const blob = new Blob([String.fromCharCode(0xFEFF) + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `OBHL_Rosters_${fileSeason}_${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('Error exporting rosters:', error);
+            alert('Failed to export rosters');
+        } finally {
+            setExporting(false);
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -199,6 +264,13 @@ function TeamManagement() {
             <div className="management-header">
                 <h2>Team Management</h2>
                 <div className="header-actions">
+                    <button
+                        onClick={handleExportRosters}
+                        className="btn-secondary"
+                        disabled={exporting || loading || filteredTeams.length === 0}
+                    >
+                        {exporting ? 'Exporting…' : 'Export Rosters'}
+                    </button>
                     {!isHistoricalView && (
                         <button onClick={() => setShowModal(true)} className="btn-primary">
                             + Add Team
