@@ -1,3 +1,24 @@
+/* Photo audit column + filter (Player Management) */
+.pm-photos-only {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.85rem; color: #b6c0c9; cursor: pointer; white-space: nowrap; user-select: none;
+}
+.pm-photos-only input { accent-color: #f6a91c; cursor: pointer; }
+.pm-photo-yes {
+    cursor: pointer;
+    background: rgba(127, 181, 154, 0.16) !important;
+    color: #7fb59a !important;
+    border: 1px solid rgba(127, 181, 154, 0.4) !important;
+    border-radius: 12px !important;
+    padding: 3px 12px !important;
+    font-size: 0.8rem !important;
+    font-weight: 700;
+    height: auto !important;
+    line-height: 1.3;
+}
+.pm-photo-yes:hover { background: rgba(127, 181, 154, 0.3) !important; }
+.pm-photo-no { color: #5e6872; font-size: 0.85rem; }
+
 /* Player Management — OBHL dark theme */
 
 .player-management {

@@ -1028,6 +1028,10 @@ const api = {
     async deleteMyPlayerPhoto() {
         return request('/user/player-profile/photo', { method: 'DELETE' });
     },
+    // ADMIN audit: { "<email lowercased>": "<photoUrl>" } for everyone with a photo
+    async getPlayerPhotoIndex() {
+        return request('/players/photos');
+    },
     // ADMIN moderation
     async adminDeletePlayerPhoto(playerId) {
         return request(`/players/${playerId}/photo`, { method: 'DELETE' });
@@ -1158,6 +1162,7 @@ export const {
     updateMyPlayerProfile,
     uploadMyPlayerPhoto,
     deleteMyPlayerPhoto,
+    getPlayerPhotoIndex,
     adminDeletePlayerPhoto
 } = api;
 

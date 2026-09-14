@@ -3,6 +3,7 @@ import * as api from '../services/api';
 import { getPlayerStatsBulk } from '../services/api';
 import { useSeason } from '../contexts/SeasonContext';
 import { FALLBACK_ROLES, toRoleOptions } from '../constants/roles';
+import PlayerProfileCard from './common/PlayerProfileCard';
 import './PlayerManagement.css';
 import './UserManagement.css';
 
@@ -13,6 +14,12 @@ function PlayerManagement() {
     const [teams, setTeams] = useState([]);
     const [seasons, setSeasons] = useState([]);
     const [playerStats, setPlayerStats] = useState({});  // Map of playerId -> stats
+    // Photo audit: lowercased email -> photo URL for everyone with an uploaded picture.
+    // Keyed by email, not player id, because the photo lives on the person-level profile
+    // and this page's rows are per-season.
+    const [photoByEmail, setPhotoByEmail] = useState({});
+    const [photosOnly, setPhotosOnly] = useState(false);
+    const [reviewPlayerId, setReviewPlayerId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -69,6 +76,7 @@ function PlayerManagement() {
             setPlayers(playersData);
             setTeams(teamsData);
             setSeasons(seasonsData);
+            fetchPhotoIndex();
 
             // Fetch stats for selected season
             if (selectedSeasonId) {
@@ -83,6 +91,19 @@ function PlayerManagement() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const fetchPhotoIndex = async () => {
+        try {
+            setPhotoByEmail(await api.getPlayerPhotoIndex());
+        } catch (error) {
+            console.error('Failed to load photo index:', error);
+        }
+    };
+
+    const hasPhoto = (player) => {
+        const key = (player.email || '').trim().toLowerCase();
+        return !!(key && photoByEmail[key]);
     };
 
     const fetchPlayerStats = async (seasonId) => {
@@ -113,13 +134,13 @@ function PlayerManagement() {
         return matchesActive && matchesSeason; // and move filteredTeams calculation after getTeamName just in case, though unrelated
     });
 
-    // Filter players by search query
-    const searchedPlayers = searchQuery.trim()
+    // Filter players by search query, then by the photo-audit toggle
+    const searchedPlayers = (searchQuery.trim()
         ? players.filter(p => {
             const full = `${p.firstName} ${p.lastName}`.toLowerCase();
             return full.includes(searchQuery.trim().toLowerCase());
           })
-        : players;
+        : players).filter(p => !photosOnly || hasPhoto(p));
 
     // Sort players
     const sortedPlayers = [...searchedPlayers].sort((a, b) => {
@@ -132,6 +153,11 @@ function PlayerManagement() {
         if (sortConfig.key === 'teamId') {
             aValue = getTeamName(a.teamId);
             bValue = getTeamName(b.teamId);
+        }
+
+        if (sortConfig.key === 'hasPhoto') {
+            aValue = hasPhoto(a) ? 1 : 0;
+            bValue = hasPhoto(b) ? 1 : 0;
         }
 
         // Handle stats fields
@@ -494,6 +520,14 @@ function PlayerManagement() {
                             >✕</button>
                         )}
                     </div>
+                    <label className="pm-photos-only" title="Show only players who have uploaded a profile photo">
+                        <input
+                            type="checkbox"
+                            checked={photosOnly}
+                            onChange={(e) => setPhotosOnly(e.target.checked)}
+                        />
+                        Photos only
+                    </label>
                     <button onClick={handleCopyEmails} className="btn-secondary">
                         📧 Copy All Emails
                     </button>
@@ -519,6 +553,7 @@ function PlayerManagement() {
                             <th onClick={() => requestSort('points')} className="sortable">P{getSortIcon('points')}</th>
                             <th onClick={() => requestSort('penaltyMinutes')} className="sortable">PM{getSortIcon('penaltyMinutes')}</th>
                             <th onClick={() => requestSort('isActive')} className="sortable">Status{getSortIcon('isActive')}</th>
+                            <th onClick={() => requestSort('hasPhoto')} className="sortable" title="Has the player uploaded a profile photo?">Photo{getSortIcon('hasPhoto')}</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -562,6 +597,18 @@ function PlayerManagement() {
                                         <span className={`status-badge ${player.isActive ? 'active' : 'inactive'}`}>
                                             {player.isActive ? 'Active' : 'Inactive'}
                                         </span>
+                                    </td>
+                                    <td>
+                                        {hasPhoto(player) ? (
+                                            <button
+                                                type="button"
+                                                className="pm-photo-yes"
+                                                onClick={() => setReviewPlayerId(player.id)}
+                                                title="Open the profile card to review or remove this photo"
+                                            >Yes</button>
+                                        ) : (
+                                            <span className="pm-photo-no">No</span>
+                                        )}
                                     </td>
                                     <td className="actions">
                                         {!isHistoricalView ? (
@@ -939,6 +986,16 @@ function PlayerManagement() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {reviewPlayerId != null && (
+                <PlayerProfileCard
+                    playerId={reviewPlayerId}
+                    onClose={() => {
+                        setReviewPlayerId(null);
+                        fetchPhotoIndex(); // the admin may have removed the photo from the card
+                    }}
+                />
             )}
         </div>
     );

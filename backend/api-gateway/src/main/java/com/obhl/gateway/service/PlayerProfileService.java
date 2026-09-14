@@ -356,6 +356,22 @@ public class PlayerProfileService {
     }
 
     /**
+     * Admin audit index: lowercased email -> photo URL, for every profile with a photo. The
+     * admin Players page joins this to its rows by email (it sees the privileged view, so
+     * emails are present) to show who has uploaded a picture.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, String> photoIndex() {
+        Map<String, String> out = new HashMap<>();
+        for (PlayerProfile p : profileRepository.findByPhotoKeyIsNotNull()) {
+            if (p.hasPhoto()) {
+                out.put(p.getEmailLower(), photoUrl(p));
+            }
+        }
+        return out;
+    }
+
+    /**
      * The URL a player's initials-avatar should show instead, or null. Only when the player
      * has a photo AND opted in — uploading a photo for the card never changes this on its own.
      */

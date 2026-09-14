@@ -40,6 +40,17 @@ public class PlayerCardController {
         return ResponseEntity.ok(profileService.getCard(playerId, auth));
     }
 
+    /**
+     * Moderation index: which people have a photo, keyed by lowercased email. Concrete
+     * mapping, so it wins over the proxy's /** like the other two routes here. ADMIN only —
+     * it is an email-keyed listing.
+     */
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/photos")
+    public ResponseEntity<Map<String, String>> photoIndex() {
+        return ResponseEntity.ok(profileService.photoIndex());
+    }
+
     /** Moderation: remove a player's photo. Idempotent — 204 even if there was none. */
     @PreAuthorize("hasRole('ADMIN')")
     @DeleteMapping("/{playerId}/photo")

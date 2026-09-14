@@ -12,4 +12,7 @@ public interface PlayerProfileRepository extends JpaRepository<PlayerProfile, Lo
 
     /** Callers must pass an already-lowercased, trimmed email — see PlayerProfileService.normalizeEmail. */
     Optional<PlayerProfile> findByEmailLower(String emailLower);
+
+    /** Every profile that currently has a photo — the admin audit index. */
+    java.util.List<PlayerProfile> findByPhotoKeyIsNotNull();
 }
