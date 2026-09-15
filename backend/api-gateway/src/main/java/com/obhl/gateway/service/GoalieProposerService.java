@@ -73,6 +73,9 @@ public class GoalieProposerService {
     private SeasonGoalieRepository seasonGoalieRepository;
 
     @Autowired
+    private NotificationOptOutService optOutService;
+
+    @Autowired
     private GoalieBenchNoticeRepository benchNoticeRepository;
 
     @Autowired
@@ -508,11 +511,14 @@ public class GoalieProposerService {
         Map<Long, User> usersById = userRepository.findAllById(
                         roster.stream().map(SeasonGoalie::getUserId).collect(Collectors.toList()))
                 .stream().collect(Collectors.toMap(User::getId, u -> u));
+        Map<Long, java.time.LocalDateTime> optedOut = optOutService.optedOutAtByUser(
+                com.obhl.gateway.model.NotificationOptOut.KIND_GOALIE_OPEN_SPOT);
         return roster.stream()
                 .map(sg -> new CoordinatorDto.SeasonGoalieView(
                         sg.getUserId(),
                         userName(usersById.get(sg.getUserId()), sg.getUserId()),
-                        Boolean.TRUE.equals(sg.getIsFulltime())))
+                        Boolean.TRUE.equals(sg.getIsFulltime()),
+                        optedOut.get(sg.getUserId())))
                 .sorted(Comparator.comparing(CoordinatorDto.SeasonGoalieView::getUserName))
                 .collect(Collectors.toList());
     }

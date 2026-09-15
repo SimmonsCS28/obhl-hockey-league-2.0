@@ -629,6 +629,36 @@ const api = {
         return request(`/coordinator/goalie/season-roster?seasonId=${seasonId}`);
     },
 
+    // Email the whole goalie pool about one open net (the console's Alert Pool button).
+    async alertGoaliePool(seasonId, gameId, slot) {
+        return request(`/coordinator/goalie/alert-pool?seasonId=${seasonId}&gameId=${gameId}&slot=${slot}`,
+            { method: 'POST' });
+    },
+
+    // Broadcast-email opt-outs (goalie open-spot alerts). The token pair backs the emailed
+    // unsubscribe link and needs no login; the "my" pair is the Account Settings toggle.
+    async getEmailAlertsByToken(u, k, t) {
+        return request(`/auth/email-alerts?u=${u}&k=${encodeURIComponent(k)}&t=${encodeURIComponent(t)}`);
+    },
+
+    async setEmailAlertsByToken(u, k, t, subscribed) {
+        return request('/auth/email-alerts', {
+            method: 'POST',
+            body: JSON.stringify({ u, k, t, subscribed })
+        });
+    },
+
+    async getMyEmailAlerts() {
+        return request('/email-alerts');
+    },
+
+    async setMyEmailAlert(kind, subscribed) {
+        return request('/email-alerts', {
+            method: 'PUT',
+            body: JSON.stringify({ kind, subscribed })
+        });
+    },
+
     // Send Email A (confirm-your-time) for the week's auto-proposed goalie slots.
     async sendGoalieConfirmations(seasonId, week) {
         return request(`/coordinator/goalie/send-confirmations?seasonId=${seasonId}&week=${week}`, { method: 'POST' });
@@ -1097,6 +1127,11 @@ export const {
     withdrawShift,
     autoProposeGoalies,
     getSeasonGoalieRoster,
+    alertGoaliePool,
+    getEmailAlertsByToken,
+    setEmailAlertsByToken,
+    getMyEmailAlerts,
+    setMyEmailAlert,
     sendGoalieConfirmations,
     swapGoalieSlots,
     simulateShiftResponse,

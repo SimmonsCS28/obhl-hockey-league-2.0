@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.obhl.gateway.dto.CoordinatorDto;
+import com.obhl.gateway.dto.NotificationPrefDto;
 import com.obhl.gateway.dto.GameResponseDTO;
 import com.obhl.gateway.dto.PlayerDto;
 import com.obhl.gateway.dto.TeamDto;
@@ -62,6 +63,9 @@ public class CoordinatorService {
 
     @Autowired
     private CoordinatorNotifyService coordinatorNotifyService;
+
+    @Autowired
+    private GoalieOpenSpotNotifyService openSpotNotifyService;
 
     @Autowired
     private SeasonGoalieRepository seasonGoalieRepository;
@@ -205,10 +209,20 @@ public class CoordinatorService {
             clearSlotColumn(a.getGameId(), a.getRole(), a.getSlot());
         }
 
+        // The pool hears about an open goalie net before the coordinator does, so the coordinator's
+        // notice can report it. Best-effort on its own: a failed broadcast must not cost the drop notice.
+        String poolNote = null;
+        try {
+            poolNote = GoalieOpenSpotNotifyService.poolNote(
+                    openSpotNotifyService.notifySpotOpened(a, GoalieOpenSpotNotifyService.Reason.DROPPED));
+        } catch (RuntimeException e) {
+            // The drop stands; the pool simply isn't told this time.
+        }
+
         boolean notified = false;
         try {
             coordinatorNotifyService.notifyDrop(a, userName(a.getUserId()),
-                    describeGame(gameProxyService.getGameById(a.getGameId())), wasPublished);
+                    describeGame(gameProxyService.getGameById(a.getGameId())), wasPublished, poolNote);
             notified = true;
         } catch (RuntimeException e) {
             // Best-effort: the drop stands regardless, and the console still shows the open slot.
@@ -216,6 +230,22 @@ public class CoordinatorService {
 
         assignmentRepository.deleteById(assignmentId);
         return new CoordinatorDto.WithdrawResult(true, true, notified);
+    }
+
+    /**
+     * Coordinator-initiated open-spot broadcast (the console's Alert Pool button). Only for a net
+     * nobody currently holds: a DECLINED row still counts as open, since the decline already put
+     * the slot back on the board.
+     */
+    public NotificationPrefDto.OpenSpotOutcome alertGoaliePool(Long seasonId, Long gameId, Integer slot,
+            Long actingUserId) {
+        int s = slot == null ? 1 : slot;
+        Optional<ShiftAssignment> existing = assignmentRepository.findByGameIdAndRoleAndSlot(gameId, "GOALIE", s);
+        if (existing.isPresent() && !ShiftAssignment.STATUS_DECLINED.equals(existing.get().getStatus())) {
+            throw new RuntimeException("That net isn't open — someone is already lined up for it");
+        }
+        return openSpotNotifyService.notifySpotOpened(seasonId, gameId, s, null,
+                GoalieOpenSpotNotifyService.Reason.MANUAL, actingUserId);
     }
 
     /**

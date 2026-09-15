@@ -14,4 +14,7 @@ public interface SeasonGoalieRepository extends JpaRepository<SeasonGoalie, Long
 
     /** The goalies the weekly auto-proposer schedules for a season. */
     List<SeasonGoalie> findBySeasonIdAndIsFulltimeTrue(Long seasonId);
+
+    /** Every season this person has been in the goalie pool — "is this person a goalie at all". */
+    List<SeasonGoalie> findByUserId(Long userId);
 }

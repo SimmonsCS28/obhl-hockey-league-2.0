@@ -1770,6 +1770,26 @@
     padding: 10px 6px;
 }
 
+/* Alert Pool reuses the Remove panel's layout but not its colour: it is loud, not destructive. */
+.cc-pool-alert {
+    background: rgba(44, 140, 148, 0.07);
+    border-top-color: rgba(44, 140, 148, 0.4);
+}
+
+.cc-pool-go {
+    color: #fff;
+    background: #2C8C94;
+    border: 1px solid #3aa3ac;
+    padding: 10px 16px;
+}
+
+/* Sits under the roster line in the picker; muted, because it is a hint about the person, not a
+   verdict on this game. */
+.cc-candidate-optout {
+    color: var(--obi-text-muted);
+    font-style: italic;
+}
+
 @media (max-width: 760px) {
     .cc-slot-inner {
         flex-wrap: wrap;

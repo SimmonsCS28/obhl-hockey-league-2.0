@@ -37,6 +37,12 @@ export default function AccountSettings() {
     const [confirmPassword, setConfirmPassword] = useState('');
     const [currentPassword, setCurrentPassword] = useState('');
     const [staffRoles, setStaffRoles] = useState([]);
+    // Broadcast-email opt-outs (goalie open-spot alerts). Saved on click, outside the password-
+    // gated form below: turning off an email is not a change worth re-authenticating for, and the
+    // emailed unsubscribe link already does it with no login at all.
+    const [emailAlerts, setEmailAlerts] = useState([]);
+    const [alertSaving, setAlertSaving] = useState(null); // kind currently saving
+    const [alertNote, setAlertNote] = useState('');
     const [showNewPassword, setShowNewPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -64,7 +70,25 @@ export default function AccountSettings() {
             }
         };
         loadProfile();
+        // Independent of the profile load: an empty list just hides the section.
+        api.getMyEmailAlerts().then((rows) => setEmailAlerts(rows || [])).catch(() => setEmailAlerts([]));
     }, []);
+
+    const toggleEmailAlert = async (pref) => {
+        setAlertSaving(pref.kind);
+        setAlertNote('');
+        try {
+            const rows = await api.setMyEmailAlert(pref.kind, !pref.subscribed);
+            setEmailAlerts(rows || []);
+            setAlertNote(!pref.subscribed
+                ? `Saved — you'll get ${pref.label.toLowerCase()} again.`
+                : `Saved — no more ${pref.label.toLowerCase()}.`);
+        } catch (err) {
+            setAlertNote(err.message || 'Could not save that. Try again.');
+        } finally {
+            setAlertSaving(null);
+        }
+    };
 
     const toggleStaffRole = (role) => {
         setError('');
@@ -285,6 +309,36 @@ export default function AccountSettings() {
                             );
                         })}
                     </div>
+
+                    {/* Email Alerts — only for people the broadcasts can reach (goalies today) */}
+                    {emailAlerts.length > 0 && (
+                        <>
+                            <div className="as-divider" />
+                            <h2 className="as-section-heading">Email Alerts</h2>
+                            <p className="as-section-hint">
+                                Saves as soon as you click — no password needed. Assignment and confirmation
+                                emails aren&apos;t affected by these.
+                            </p>
+                            <div className="as-role-cards">
+                                {emailAlerts.map((pref) => (
+                                    <button
+                                        type="button" key={pref.kind}
+                                        className={`as-role-card${pref.subscribed ? ' is-checked' : ''}`}
+                                        onClick={() => toggleEmailAlert(pref)}
+                                        disabled={alertSaving === pref.kind}
+                                        aria-pressed={pref.subscribed}
+                                    >
+                                        <span className="as-role-box" aria-hidden="true">{pref.subscribed ? '✓' : ''}</span>
+                                        <span className="as-role-text">
+                                            <span className="as-role-name">{pref.label}</span>
+                                            <span className="as-role-hint">{pref.description}</span>
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                            {alertNote && <div className="as-help">{alertNote}</div>}
+                        </>
+                    )}
 
                     {/* Confirm Changes */}
                     <div className="as-divider" />

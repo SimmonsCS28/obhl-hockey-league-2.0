@@ -157,6 +157,25 @@ public class CoordinatorController {
         return ResponseEntity.ok(goalieProposerService.getSeasonRoster(seasonId));
     }
 
+    /**
+     * Email the whole goalie pool about one open net, on demand. The automatic sends cover declines
+     * and drops; this covers everything else — a net that was never filled, or one the coordinator
+     * cleared themselves. Refuses a slot that isn't actually open so a mis-click can't broadcast
+     * a net somebody already holds.
+     */
+    @PostMapping("/goalie/alert-pool")
+    public ResponseEntity<?> alertGoaliePool(@RequestParam Long seasonId, @RequestParam Long gameId,
+            @RequestParam Integer slot, Authentication auth) {
+        if (!canActOn(auth, "GOALIE")) {
+            return forbidden("GOALIE");
+        }
+        try {
+            return ResponseEntity.ok(coordinatorService.alertGoaliePool(seasonId, gameId, slot, currentUserId(auth)));
+        } catch (RuntimeException e) {
+            return badRequest(e);
+        }
+    }
+
     /** Send Email A (confirm-your-time) for the week's auto-proposed goalie slots (AUTO_PROPOSED -> PROPOSED). */
     @PostMapping("/goalie/send-confirmations")
     public ResponseEntity<?> sendGoalieConfirmations(@RequestParam Long seasonId, @RequestParam Integer week,

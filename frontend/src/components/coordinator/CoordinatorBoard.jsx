@@ -528,6 +528,10 @@ function CoordinatorBoard({ role, onAlertCount }) {
         }
     };
 
+    // Manual open-net broadcast. Returns the outcome so the row can report who was told; errors
+    // propagate for the same reason — the row owns the feedback, not the page-level banner.
+    const handleAlertPool = (gameId, slot) => api.alertGoaliePool(seasonId, gameId, slot);
+
     // Dev-only: simulate the goalie's email confirm/decline so the flow is testable locally.
     const handleSimulate = async (assignmentId, action) => {
         setError('');
@@ -644,6 +648,7 @@ function CoordinatorBoard({ role, onAlertCount }) {
             onClear={handleClear}
             onSendOne={handleSendOne}
             onSimulate={handleSimulate}
+            onAlertPool={handleAlertPool}
             onSwap={handleSwap}
             onPublishMatchup={openMatchupPublish}
             slotsPerGame={slotsPerGame}
@@ -914,7 +919,7 @@ function pickPillStyle(isPick, teamColor) {
     return { border: `1px solid ${c}`, background: `color-mix(in srgb, ${c} 14%, transparent)` };
 }
 
-function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goaliePool, seasonRoster, staffTeams, staffUnavailable, weekFilter, openPicker, setOpenPicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, onSwap, onPublishMatchup, slotsPerGame }) {
+function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goaliePool, seasonRoster, staffTeams, staffUnavailable, weekFilter, openPicker, setOpenPicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, onAlertPool, onSwap, onPublishMatchup, slotsPerGame }) {
     const homeTeam = teamById(game.homeTeamId);
     const awayTeam = teamById(game.awayTeamId);
     const d = toChicago(game.gameDate);
@@ -986,6 +991,7 @@ function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goal
                         onClear={() => onClear(assignment?.id)}
                         onSendOne={() => onSendOne(game.id, s.slot, assignment?.userId)}
                         onSimulate={(action) => onSimulate(assignment?.id, action)}
+                        onAlertPool={() => onAlertPool(game.id, s.slot)}
                         isPickTeam={pickTeamId != null && pickTeamId === (s.slot === 1 ? game.homeTeamId : game.awayTeamId)}
                         pickTitle={pickTitle}
                         staff={staff}
@@ -1029,7 +1035,7 @@ function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goal
     );
 }
 
-function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, isPickTeam, pickTitle, staff, staffTeams, staffUnavailable, gameDayKey, gameTeamIds, role, goaliePool, seasonRoster, weekFilter }) {
+function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, onAlertPool, isPickTeam, pickTitle, staff, staffTeams, staffUnavailable, gameDayKey, gameTeamIds, role, goaliePool, seasonRoster, weekFilter }) {
     const status = assignment?.status ?? 'OPEN';
     const style = STATUS_STYLE[status] ?? STATUS_STYLE.OPEN;
     const playerName = assignment?.userName ?? null;
@@ -1060,9 +1066,30 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
         onClick: () => { setRemoveError(''); setRemoveName(playerName || ''); setConfirmingRemove(true); },
     };
 
+    // Emailing the whole pool is loud, so like Remove it expands an inline confirm. Only on nets
+    // nobody holds: a DECLINED row is open again (the decline already alerted the pool itself,
+    // which the confirm copy says), and anything else has a person attached.
+    const [poolPanel, setPoolPanel] = useState(null); // null | 'confirm' | 'sending' | {outcome} | {error}
+    const alertPoolAction = {
+        label: 'Alert Pool',
+        color: '#7fd1d8',
+        bg: 'rgba(44,140,148,0.12)',
+        border: 'rgba(44,140,148,0.45)',
+        onClick: () => setPoolPanel('confirm'),
+    };
+    const handleAlertPool = async () => {
+        setPoolPanel('sending');
+        try {
+            setPoolPanel({ outcome: await onAlertPool() });
+        } catch (e) {
+            setPoolPanel({ error: e.message || 'The alert could not be sent. Try again.' });
+        }
+    };
+
     const actions = [];
     if (status === 'OPEN') {
         actions.push({ label: 'Assign', color: '#0b0c0f', bg: 'var(--obi-accent)', border: 'var(--obi-accent)', onClick: onOpenPicker });
+        if (role === 'GOALIE') actions.push(alertPoolAction);
     } else if (status === 'SIGNED_UP') {
         actions.push({ label: 'Confirm', color: '#0b0c0f', bg: 'var(--obi-accent)', border: 'var(--obi-accent)', onClick: onConfirm });
         actions.push(reassignAction);
@@ -1076,6 +1103,7 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
         actions.push({ label: 'Clear', color: 'var(--obi-error)', bg: 'rgba(224,138,138,0.1)', border: 'rgba(224,138,138,0.3)', onClick: onClear });
     } else if (status === 'DECLINED') {
         actions.push(reassignAction);
+        if (role === 'GOALIE') actions.push(alertPoolAction);
     } else if (status === 'CONFIRMED') {
         actions.push(reassignAction);
         actions.push(removeAction);
@@ -1173,9 +1201,14 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
         const t = teamByUser.get(u.id);
         const resolved = !!t?.resolved;
         const conflict = resolved && gameTeamIds.some(id => id != null && id === t.teamId);
+        // An unsubscribe from open-spot alerts is the nearest thing to "I've stopped playing" a
+        // drifted-away sub ever sends, so it's shown here where the coordinator is choosing.
+        const optedOutAt = role === 'GOALIE'
+            ? (seasonRoster.find(r => r.userId === u.id)?.openSpotAlertsOptedOutAt ?? null)
+            : null;
         return {
             id: u.id, name, unavailable, sub, subColor,
-            resolved, conflict,
+            resolved, conflict, optedOutAt,
             teamName: t?.teamName || null,
             teamColor: t?.teamColor || null,
         };
@@ -1271,6 +1304,65 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
                     {meta.tone === 'bad' && !meta.expired && meta.reason === null && (
                         <span className="cc-slot-meta-reason is-empty">No reason given.</span>
                     )}
+                </div>
+            )}
+
+            {poolPanel && (
+                <div className="cc-remove-confirm cc-pool-alert">
+                    <div className="cc-remove-title">
+                        {poolPanel.outcome
+                            ? (poolPanel.outcome.sent > 0
+                                ? `Alerted ${plural(poolPanel.outcome.sent, 'goalie')}`
+                                : 'Nobody to alert')
+                            : poolPanel.error
+                                ? 'The alert was not sent'
+                                : `Email the goalie pool about the ${slotDef.label} net?`}
+                    </div>
+                    {poolPanel.error ? (
+                        <div className="cc-remove-error">{poolPanel.error}</div>
+                    ) : poolPanel.outcome ? (
+                        <div className="cc-remove-body">
+                            {poolPanel.outcome.sent > 0 && `${poolPanel.outcome.sentTo.join(', ')}. `}
+                            {[
+                                poolPanel.outcome.optedOut > 0 && `${poolPanel.outcome.optedOut} unsubscribed from these alerts`,
+                                poolPanel.outcome.unavailable > 0 && `${poolPanel.outcome.unavailable} unavailable this week`,
+                                poolPanel.outcome.alreadyOnGame > 0 && `${poolPanel.outcome.alreadyOnGame} already on this game`,
+                            ].filter(Boolean).join(' · ')}
+                            {poolPanel.outcome.sent === 0 && poolPanel.outcome.eligible === 0
+                                && !poolPanel.outcome.optedOut && !poolPanel.outcome.unavailable
+                                && ' The season goalie roster is empty — run the roster sync from User Management.'}
+                        </div>
+                    ) : (
+                        <div className="cc-remove-body">
+                            {poolPanel === 'sending'
+                                ? 'Sending…'
+                                : 'Everyone on this season\'s goalie roster — full-time and subs — gets one email asking them '
+                                    + 'to reply to you if they can take it. Skips anyone unavailable this week, anyone already on '
+                                    + 'this game, and anyone who unsubscribed.'
+                                    + (status === 'DECLINED' ? ' The decline itself already sent one of these, so this is a second nudge.' : '')}
+                        </div>
+                    )}
+                    <div className="cc-remove-actions">
+                        {(poolPanel.outcome || poolPanel.error) ? (
+                            <>
+                                <button type="button" className="cc-remove-alt" onClick={() => setPoolPanel(null)}>
+                                    {poolPanel.error ? 'Close' : 'Got It'}
+                                </button>
+                                {poolPanel.error && (
+                                    <button type="button" className="cc-pool-go" onClick={handleAlertPool}>Try Again</button>
+                                )}
+                            </>
+                        ) : (
+                            <>
+                                <button type="button" className="cc-pool-go" disabled={poolPanel === 'sending'} onClick={handleAlertPool}>
+                                    {poolPanel === 'sending' ? 'Sending…' : 'Send the Alert'}
+                                </button>
+                                <button type="button" className="cc-remove-keep" disabled={poolPanel === 'sending'} onClick={() => setPoolPanel(null)}>
+                                    Cancel
+                                </button>
+                            </>
+                        )}
+                    </div>
                 </div>
             )}
 
@@ -1410,6 +1502,11 @@ function CandidateButton({ c, line, onAssign }) {
                     : line?.skeleton
                         ? <span className="cc-candidate-skeleton" aria-label="Checking rosters" />
                         : <span className={`cc-candidate-sub is-${line?.tone}`}>{line?.text}</span>}
+                {c.optedOutAt && (
+                    <span className="cc-candidate-sub cc-candidate-optout">
+                        Unsubscribed from open-spot alerts {formatDateShort(parseUtc(c.optedOutAt))}
+                    </span>
+                )}
             </span>
         </button>
     );

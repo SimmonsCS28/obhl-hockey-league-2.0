@@ -148,6 +148,104 @@ public class EmailService {
     }
 
     /**
+     * Broadcast to the whole goalie pool when a net opens up — a goalie declined or dropped, or the
+     * coordinator asked for cover. Until this existed a goalie's only way to learn about an opening
+     * was to already be talking to the coordinator, which is the situation it replaces.
+     *
+     * <p>Goalies can't pick a slot up themselves (they are coordinator-assigned), so the call to
+     * action is a reply: {@code replyTo} is the coordinator, and the copy says so. With no
+     * coordinator address to hand, the honest instruction is to find them, not to hit reply.
+     *
+     * <p>This is the one message a subscriber can turn off, and it is the mail most likely to reach
+     * someone who quietly stopped playing — so it carries both a footer link and the
+     * {@code List-Unsubscribe} headers that let Gmail offer its own button. Every send here has
+     * {@code unsubscribeLink}; there is no variant without it.
+     *
+     * <p>{@code gameLine}, {@code matchupLine} and {@code whyLine} arrive pre-escaped.
+     *
+     * @return whether Resend accepted the message; the caller counts deliveries for the console.
+     */
+    public boolean sendGoalieOpenSpotEmail(String toEmail, String name, String shortDate, String gameLine,
+            String matchupLine, String whyLine, String coordinatorName, String coordinatorEmail,
+            String availabilityLink, String unsubscribeLink, String oneClickUnsubscribeUrl) {
+        String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";
+        String subject = "OBHL goalie needed"
+                + (shortDate != null && !shortDate.isBlank() ? (" — " + shortDate) : "")
+                + (matchupLine != null && !matchupLine.isBlank() ? (" · " + stripTags(matchupLine)) : "");
+
+        boolean canReply = coordinatorEmail != null && !coordinatorEmail.isBlank();
+        String who = (coordinatorName != null && !coordinatorName.isBlank())
+                ? coordinatorName : "the goalie coordinator";
+        String cta = canReply
+                ? "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#1a1d21;margin:0 0 14px;\">"
+                        + "<strong>Can you take it?</strong> Just reply to this email — it goes straight to " + who
+                        + " (<a href=\"mailto:" + coordinatorEmail + "\" style=\"color:#1a5fb4;\">" + coordinatorEmail
+                        + "</a>). First to reply usually gets it; " + who.substring(0, 1).toUpperCase() + who.substring(1)
+                        + " will confirm with you either way.</p>"
+                : "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#1a1d21;margin:0 0 14px;\">"
+                        + "<strong>Can you take it?</strong> Let the goalie coordinator know — this address isn't monitored.</p>";
+        String availability = (availabilityLink != null && !availabilityLink.isBlank())
+                ? "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#41474e;margin:0 0 18px;\">"
+                        + "Not this time? Nothing to do. You can also keep your weekly availability up to date "
+                        + "<a href=\"" + availabilityLink + "\" style=\"color:#1a5fb4;\">on the site</a> so these only "
+                        + "reach you for weeks you can play.</p>"
+                : "";
+
+        String html = "<div style=\"max-width:600px;margin:0 auto;padding:0 8px;\">"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 16px;\">"
+                + greeting + "</p>"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\""
+                + " style=\"max-width:600px;width:100%;border-collapse:collapse;background:#e8f3f4;"
+                + "border:1px solid #b9dcdf;border-radius:8px;margin:0 0 20px;\">"
+                + "<tr>"
+                + "<td width=\"4\" style=\"background-color:#2C8C94;font-size:0;line-height:1px;\">&nbsp;</td>"
+                + "<td style=\"padding:18px 20px;\">"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1.2px;"
+                + "text-transform:uppercase;color:#1f6d74;padding-bottom:7px;\">Open goalie spot</div>"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:20px;font-weight:bold;line-height:1.25;"
+                + "color:#1a1d21;\">" + gameLine + "</div>"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#41474e;padding-top:5px;\">"
+                + matchupLine + "</div>"
+                + "<div style=\"height:1px;background:#b9dcdf;font-size:0;line-height:1px;margin:14px 0;\">&nbsp;</div>"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.45;color:#1a1d21;\">"
+                + whyLine + "</div>"
+                + "</td></tr></table>"
+                + cta
+                + availability
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 22px;\">"
+                + "Thanks,<br>Old Buzzard Hockey League</p>"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#6b7480;margin:0;"
+                + "border-top:1px solid #e3e6ea;padding-top:12px;\">"
+                + "You're getting this because you're in the OBHL goalie pool. Not playing any more, or just don't want "
+                + "these? <a href=\"" + unsubscribeLink + "\" style=\"color:#1a5fb4;\">Unsubscribe from open-spot alerts</a> "
+                + "— one click, no login. Your regular assignment emails are unaffected.</p>"
+                + "</div>";
+
+        Map<String, String> headers = new java.util.HashMap<>();
+        headers.put("List-Unsubscribe", "<" + oneClickUnsubscribeUrl + ">");
+        headers.put("List-Unsubscribe-Post", "List-Unsubscribe=One-Click");
+        return send(toEmail, subject, html, canReply ? coordinatorEmail : null, headers);
+    }
+
+    /**
+     * "The goalie pool has been alerted (14 sent)" under a decline or drop notice, so the coordinator
+     * knows whether to press Alert Pool themselves. Null for roles with no broadcast, and for sends
+     * that never happened, so the paragraph is simply absent rather than claiming nothing was done.
+     */
+    private static String poolNoteBlock(String poolNote) {
+        if (poolNote == null || poolNote.isBlank()) {
+            return "";
+        }
+        return "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1f6d74;margin:0 0 14px;\">"
+                + poolNote + "</p>";
+    }
+
+    /** Subject lines can't carry markup; the matchup line is otherwise reused as-is. */
+    private static String stripTags(String html) {
+        return html.replaceAll("<[^>]*>", "").replace("&middot;", "·").replace("&amp;", "&");
+    }
+
+    /**
      * Final assignment for a referee or scorekeeper, sent on publish. Informational — no confirm or
      * decline links, because by this point they've already agreed.
      *
@@ -286,7 +384,8 @@ public class EmailService {
      * person to find out what happened, which is the situation this replaces.
      */
     public void sendDeclineNoticeEmail(String toEmail, String coordinatorName, String whoDeclined,
-            String roleLabel, String gameDescription, String reason, String consoleLink, String replyTo) {
+            String roleLabel, String gameDescription, String reason, String consoleLink, String replyTo,
+            String poolNote) {
         String greeting = (coordinatorName != null && !coordinatorName.isBlank())
                 ? ("Hi " + coordinatorName + ",") : "Hi,";
         String subject = whoDeclined + " declined a " + roleLabel + " shift — " + gameDescription;
@@ -312,6 +411,7 @@ public class EmailService {
                 + gameDescription + "</div>"
                 + "</td></tr></table>"
                 + reasonBlock
+                + poolNoteBlock(poolNote)
                 + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 14px;\">"
                 + "The slot is waiting for a replacement: <a href=\"" + consoleLink
                 + "\" style=\"color:#1a5fb4;\">open the coordinator console</a>.</p>"
@@ -333,7 +433,7 @@ public class EmailService {
      */
     public void sendShiftDroppedEmail(String toEmail, String coordinatorName, String whoDropped,
             String roleLabel, String gameDescription, boolean wasPublished, String consoleLink,
-            String replyTo) {
+            String replyTo, String poolNote) {
         String greeting = (coordinatorName != null && !coordinatorName.isBlank())
                 ? ("Hi " + coordinatorName + ",") : "Hi,";
         String subject = whoDropped + " dropped a confirmed " + roleLabel + " shift — " + gameDescription;
@@ -361,6 +461,7 @@ public class EmailService {
                 + "</td></tr></table>"
                 + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 14px;\">"
                 + impact + "</p>"
+                + poolNoteBlock(poolNote)
                 + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 14px;\">"
                 + "<a href=\"" + consoleLink + "\" style=\"color:#1a5fb4;\">Open the coordinator console</a> to fill the slot.</p>"
                 + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0;\">"
@@ -437,6 +538,16 @@ public class EmailService {
      *         the game but never told" is a state the coordinator has to chase down by phone.
      */
     private boolean send(String toEmail, String subject, String html, String replyTo) {
+        return send(toEmail, subject, html, replyTo, null);
+    }
+
+    /**
+     * {@code headers} are extra SMTP headers Resend passes through verbatim — used for
+     * {@code List-Unsubscribe} on broadcast mail, which is what makes Gmail show its own
+     * unsubscribe button instead of relying on the recipient finding ours in the footer.
+     */
+    private boolean send(String toEmail, String subject, String html, String replyTo,
+            Map<String, String> extraHeaders) {
         if (resendApiKey == null || resendApiKey.isBlank()) {
             logger.warn("RESEND_API_KEY is not configured; skipping email send to {}", toEmail);
             return false;
@@ -455,6 +566,9 @@ public class EmailService {
         body.put("html", html);
         if (reply != null && !reply.isBlank()) {
             body.put("reply_to", reply);
+        }
+        if (extraHeaders != null && !extraHeaders.isEmpty()) {
+            body.put("headers", extraHeaders);
         }
 
         try {

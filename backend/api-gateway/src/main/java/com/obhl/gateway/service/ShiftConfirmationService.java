@@ -44,6 +44,9 @@ public class ShiftConfirmationService {
     @Autowired
     private CoordinatorNotifyService coordinatorNotifyService;
 
+    @Autowired
+    private GoalieOpenSpotNotifyService openSpotNotifyService;
+
     private static final DateTimeFormatter GAME_FMT = DateTimeFormatter.ofPattern("EEE MMM d, h:mm a");
     private static final ZoneId LEAGUE_TZ = ZoneId.of("America/Chicago");
 
@@ -117,11 +120,24 @@ public class ShiftConfirmationService {
         a.setTokenExpiresAt(null);
         assignmentRepository.save(a);
 
+        // A declined goalie net goes out to the whole pool first, so the coordinator's own notice can
+        // say it already happened. Best-effort and separate from the notice below: a pool send that
+        // fails must not cost the coordinator their decline email.
+        String poolNote = null;
+        if (declined) {
+            try {
+                poolNote = GoalieOpenSpotNotifyService.poolNote(
+                        openSpotNotifyService.notifySpotOpened(a, GoalieOpenSpotNotifyService.Reason.DECLINED));
+            } catch (RuntimeException e) {
+                // The decline is already persisted; the pool simply isn't told this time.
+            }
+        }
+
         // A decline needs the coordinator to act, so it notifies by default. A confirm doesn't, so it
         // only goes out to coordinators who explicitly asked for confirmations.
         try {
             if (declined) {
-                coordinatorNotifyService.notifyDecline(a, userName(a.getUserId()), describeGame(a));
+                coordinatorNotifyService.notifyDecline(a, userName(a.getUserId()), describeGame(a), poolNote);
             } else {
                 coordinatorNotifyService.notifyConfirm(a, userName(a.getUserId()), describeGame(a));
             }

@@ -52,8 +52,13 @@ public class CoordinatorNotifyService {
     @Value("${app.frontend.url:https://oldbuzzardhockey.com}")
     private String frontendUrl;
 
-    /** Someone turned down a shift they had not yet agreed to. Opt-out via preferences; on by default. */
-    public void notifyDecline(ShiftAssignment a, String whoDeclined, String gameDescription) {
+    /**
+     * Someone turned down a shift they had not yet agreed to. Opt-out via preferences; on by default.
+     *
+     * @param poolNote what {@link GoalieOpenSpotNotifyService} already did about it, or null — so
+     *                 the coordinator knows whether the pool has been told before they act.
+     */
+    public void notifyDecline(ShiftAssignment a, String whoDeclined, String gameDescription, String poolNote) {
         for (User c : recipientsFor(a)) {
             CoordinatorNotificationPref p = prefFor(c.getId(), a.getRole());
             if (p != null && Boolean.FALSE.equals(p.getNotifyOnDecline())) {
@@ -61,7 +66,7 @@ public class CoordinatorNotifyService {
             }
             emailService.sendDeclineNoticeEmail(addressFor(c, p), firstName(c), whoDeclined,
                     roleLabel(a.getRole()), gameDescription, a.getDeclineReason(), consoleLink(),
-                    replyToFor(a));
+                    replyToFor(a), poolNote);
         }
     }
 
@@ -82,13 +87,14 @@ public class CoordinatorNotifyService {
      * published, that person's name was on the public schedule until a moment ago, so the coordinator
      * has to both find a replacement and republish the matchup.
      */
-    public void notifyDrop(ShiftAssignment a, String whoDropped, String gameDescription, boolean wasPublished) {
+    public void notifyDrop(ShiftAssignment a, String whoDropped, String gameDescription, boolean wasPublished,
+            String poolNote) {
         for (User c : recipientsFor(a)) {
             // No preference check: this one cannot be switched off, so there is no column for it.
             // A silent drop means somebody does not turn up to a game that may already be public.
             emailService.sendShiftDroppedEmail(addressFor(c, prefFor(c.getId(), a.getRole())), firstName(c),
                     whoDropped, roleLabel(a.getRole()), gameDescription, wasPublished, consoleLink(),
-                    replyToFor(a));
+                    replyToFor(a), poolNote);
         }
     }
 

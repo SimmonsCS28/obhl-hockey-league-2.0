@@ -189,6 +189,11 @@ public class CoordinatorDto {
         private Long userId;
         private String userName;
         private boolean fulltime;
+        /**
+         * When they unsubscribed from open-spot alerts, or null. Surfaced because an unsubscribe is
+         * the closest thing to "I've stopped playing" a drifted-away substitute ever sends.
+         */
+        private java.time.LocalDateTime openSpotAlertsOptedOutAt;
     }
 
     /** A full-time goalie the auto-proposer chose to sit out this week, with the reason. */
