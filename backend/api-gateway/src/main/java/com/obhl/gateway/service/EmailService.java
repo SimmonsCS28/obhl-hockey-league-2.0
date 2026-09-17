@@ -422,6 +422,176 @@ public class EmailService {
         send(toEmail, subject, html, replyTo);
     }
 
+    // ---- staff pay (end-of-season referee / scorekeeper totals) ----
+
+    /**
+     * Asks a referee or scorekeeper to confirm their season totals before the rink is invoiced.
+     * The two numbers they are being asked about come first; the game list underneath is the
+     * evidence. Both buttons are plain links (no login) carrying a single-use token.
+     *
+     * <p>{@code replyTo} must be the admin who finalized: the dispute copy tells the person to
+     * reply with what is wrong, and that reply has to land with someone who can fix it.
+     *
+     * @return whether the message was handed to Resend, so the caller can record it as sent
+     */
+    public boolean sendStaffPayConfirmEmail(String toEmail, String name, String roleLabel, String seasonName,
+            int games, int soloGames, String totalFormatted, String gameRowsHtml,
+            String confirmLink, String disputeLink, String adminName, String replyTo) {
+        String greeting = (name != null && !name.isBlank()) ? ("Hi " + name + ",") : "Hi,";
+        String subject = "OBHL " + seasonName + " — please confirm your " + roleLabel.toLowerCase() + " pay total";
+        String gamesLine = games + (games == 1 ? " game" : " games");
+        String soloLine = soloGames > 0
+                ? "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#41474e;padding-top:4px;\">"
+                        + "includes " + soloGames + (soloGames == 1 ? " game" : " games")
+                        + " you worked alone, paid double (counted twice above)</div>"
+                : "";
+        String who = (adminName != null && !adminName.isBlank()) ? adminName : "the league";
+
+        String html = "<div style=\"max-width:600px;margin:0 auto;padding:0 8px;\">"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 16px;\">"
+                + greeting + "</p>"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 16px;\">"
+                + "Before we send the " + seasonName + " pay sheet to the rink, please check the "
+                + roleLabel.toLowerCase() + " games we have on record for you.</p>"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\""
+                + " style=\"max-width:600px;width:100%;border-collapse:collapse;background:#e8f3f4;"
+                + "border:1px solid #b9dcdf;border-radius:8px;margin:0 0 18px;\">"
+                + "<tr><td width=\"4\" style=\"background-color:#2C8C94;font-size:0;line-height:1px;\">&nbsp;</td>"
+                + "<td style=\"padding:16px 20px;\">"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1.2px;"
+                + "text-transform:uppercase;color:#2C8C94;padding-bottom:6px;\">Your " + roleLabel.toLowerCase() + " total</div>"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:bold;line-height:1.25;"
+                + "color:#1a1d21;\">" + gamesLine + " &middot; " + totalFormatted + "</div>"
+                + soloLine
+                + "</td></tr></table>"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\""
+                + " style=\"max-width:600px;width:100%;border-collapse:collapse;margin:0 0 20px;\">"
+                + "<tr>"
+                + "<td style=\"font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1px;"
+                + "text-transform:uppercase;color:#6b7480;padding:0 8px 6px 0;border-bottom:1px solid #e3e6ea;\">Date</td>"
+                + "<td style=\"font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1px;"
+                + "text-transform:uppercase;color:#6b7480;padding:0 8px 6px;border-bottom:1px solid #e3e6ea;\">Game</td>"
+                + "<td style=\"font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1px;"
+                + "text-transform:uppercase;color:#6b7480;padding:0 0 6px 8px;border-bottom:1px solid #e3e6ea;\"></td>"
+                + "</tr>"
+                + gameRowsHtml
+                + "</table>"
+                + "<table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin:0 0 20px;\">"
+                + "<tr>"
+                + "<td style=\"padding:0 10px 0 0;\"><a href=\"" + confirmLink + "\" style=\"display:inline-block;"
+                + "font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#ffffff;background:#2E8B57;"
+                + "padding:11px 22px;border-radius:6px;text-decoration:none;\">Looks right &mdash; confirm</a></td>"
+                + "<td><a href=\"" + disputeLink + "\" style=\"display:inline-block;"
+                + "font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;color:#B3261E;background:#ffffff;"
+                + "border:1px solid #B3261E;padding:10px 22px;border-radius:6px;text-decoration:none;\">Something's off</a></td>"
+                + "</tr></table>"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 14px;\">"
+                + "If a game is missing, listed twice, or the rate is wrong, click <strong>Something's off</strong> and "
+                + "then reply to this email with what needs fixing. Replies go straight to " + who
+                + ", who will correct the record and send you an updated total.</p>"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.5;color:#6b7480;margin:0 0 14px;"
+                + "padding-top:12px;border-top:1px solid #e3e6ea;\">"
+                + "These links work once and expire in 7 days. Rates: $20 no training &middot; $30 OBHL clinic &middot; "
+                + "$40 USA Hockey certified &middot; scorekeeping $15. A ref who works a game alone is paid double for it.</p>"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0;\">"
+                + "Thanks,<br>Old Buzzard Hockey League</p>"
+                + "</div>";
+
+        return send(toEmail, subject, html, replyTo);
+    }
+
+    /** One row of the game table in {@link #sendStaffPayConfirmEmail}. Callers pre-escape. */
+    public static String staffPayGameRow(String dateLabel, String matchup, boolean solo) {
+        String cell = "font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.4;color:#1a1d21;"
+                + "padding:7px 8px 7px 0;border-bottom:1px solid #eef0f2;";
+        String tag = solo
+                ? "<span style=\"font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;color:#8a5a00;"
+                        + "background:#fff3d6;border-radius:4px;padding:2px 6px;white-space:nowrap;\">solo &middot; x2</span>"
+                : "";
+        return "<tr>"
+                + "<td style=\"" + cell + "white-space:nowrap;\">" + dateLabel + "</td>"
+                + "<td style=\"" + cell + "padding-left:8px;\">" + matchup + "</td>"
+                + "<td style=\"" + cell + "padding-left:8px;padding-right:0;text-align:right;\">" + tag + "</td>"
+                + "</tr>";
+    }
+
+    /** Tells the admin who finalized that someone disputed their totals, with whatever they wrote. */
+    public void sendStaffPayDisputeNoticeEmail(String toEmail, String adminName, String whoDisputed,
+            String roleLabel, String seasonName, String totalsLine, String note, String adminLink) {
+        String greeting = (adminName != null && !adminName.isBlank()) ? ("Hi " + adminName + ",") : "Hi,";
+        String subject = whoDisputed + " disputed their " + roleLabel.toLowerCase() + " pay total — " + seasonName;
+        String noteBlock = (note != null && !note.isBlank())
+                ? "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;"
+                        + "color:#1a1d21;margin:0 0 14px;\">They wrote: &ldquo;" + note + "&rdquo;</p>"
+                : "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;"
+                        + "color:#6b7480;margin:0 0 14px;\">They didn't add a note — check your inbox for a reply to the "
+                        + "confirmation email.</p>";
+
+        String html = "<div style=\"max-width:600px;margin:0 auto;padding:0 8px;\">"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 16px;\">"
+                + greeting + "</p>"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\""
+                + " style=\"max-width:600px;width:100%;border-collapse:collapse;background:#fdecea;"
+                + "border:1px solid #f0c4bf;border-radius:8px;margin:0 0 18px;\">"
+                + "<tr><td width=\"4\" style=\"background-color:#B3261E;font-size:0;line-height:1px;\">&nbsp;</td>"
+                + "<td style=\"padding:16px 20px;\">"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1.2px;"
+                + "text-transform:uppercase;color:#B3261E;padding-bottom:6px;\">Pay total disputed</div>"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:bold;line-height:1.3;"
+                + "color:#1a1d21;\">" + whoDisputed + " &middot; " + roleLabel + "</div>"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#41474e;padding-top:4px;\">"
+                + totalsLine + "</div>"
+                + "</td></tr></table>"
+                + noteBlock
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 14px;\">"
+                + "Fix the assignments, re-finalize the season and resend their confirmation from "
+                + "<a href=\"" + adminLink + "\" style=\"color:#1a5fb4;\">Staff Pay</a>. The rink report stays locked until "
+                + "every total is confirmed.</p>"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0;\">"
+                + "Thanks,<br>Old Buzzard Hockey League</p>"
+                + "</div>";
+
+        send(toEmail, subject, html, null);
+    }
+
+    /**
+     * Sends the finished pay workbook to the rink's finance contact. The body is short on
+     * purpose: the attachment is the deliverable, and the totals line is there so the recipient
+     * can see at a glance whether the file is worth opening.
+     */
+    public boolean sendStaffPayReportEmail(String toEmail, String seasonName, String senderName,
+            String summaryLine, String filename, byte[] xlsx, String replyTo) {
+        String subject = "OBHL " + seasonName + " — referee and scorekeeper pay sheet";
+        String from = (senderName != null && !senderName.isBlank()) ? senderName : "the OBHL";
+
+        String html = "<div style=\"max-width:600px;margin:0 auto;padding:0 8px;\">"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 16px;\">"
+                + "Hi,</p>"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 16px;\">"
+                + "Attached is the OBHL referee and scorekeeper pay sheet for <strong>" + seasonName + "</strong>, "
+                + "in the usual layout. Every total in it has been confirmed by the person it's for.</p>"
+                + "<table role=\"presentation\" width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\""
+                + " style=\"max-width:600px;width:100%;border-collapse:collapse;background:#f1f8f4;"
+                + "border:1px solid #cfe6da;border-radius:8px;margin:0 0 18px;\">"
+                + "<tr><td width=\"4\" style=\"background-color:#2E8B57;font-size:0;line-height:1px;\">&nbsp;</td>"
+                + "<td style=\"padding:16px 20px;\">"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:1.2px;"
+                + "text-transform:uppercase;color:#2E8B57;padding-bottom:6px;\">" + seasonName + "</div>"
+                + "<div style=\"font-family:Arial,Helvetica,sans-serif;font-size:16px;font-weight:bold;line-height:1.3;"
+                + "color:#1a1d21;\">" + summaryLine + "</div>"
+                + "</td></tr></table>"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0 0 14px;\">"
+                + "Questions about any line can go straight back to " + from + " by replying to this email.</p>"
+                + "<p style=\"font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;color:#1a1d21;margin:0;\">"
+                + "Thanks,<br>Old Buzzard Hockey League</p>"
+                + "</div>";
+
+        java.util.List<Map<String, String>> attachments = java.util.List.of(Map.of(
+                "filename", filename,
+                "content", java.util.Base64.getEncoder().encodeToString(xlsx)));
+        return send(toEmail, subject, html, replyTo, attachments);
+    }
+
     private boolean send(String toEmail, String subject, String html) {
         return send(toEmail, subject, html, null);
     }
@@ -437,6 +607,15 @@ public class EmailService {
      *         the game but never told" is a state the coordinator has to chase down by phone.
      */
     private boolean send(String toEmail, String subject, String html, String replyTo) {
+        return send(toEmail, subject, html, replyTo, null);
+    }
+
+    /**
+     * {@code attachments} is Resend's own shape — {@code [{filename, content}]} with the content
+     * base64-encoded — passed through as-is. Null for the ordinary messages.
+     */
+    private boolean send(String toEmail, String subject, String html, String replyTo,
+            java.util.List<Map<String, String>> attachments) {
         if (resendApiKey == null || resendApiKey.isBlank()) {
             logger.warn("RESEND_API_KEY is not configured; skipping email send to {}", toEmail);
             return false;
@@ -455,6 +634,9 @@ public class EmailService {
         body.put("html", html);
         if (reply != null && !reply.isBlank()) {
             body.put("reply_to", reply);
+        }
+        if (attachments != null && !attachments.isEmpty()) {
+            body.put("attachments", attachments);
         }
 
         try {

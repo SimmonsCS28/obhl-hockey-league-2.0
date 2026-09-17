@@ -1053,6 +1053,82 @@ const api = {
     // ADMIN moderation
     async adminDeletePlayerPhoto(playerId) {
         return request(`/players/${playerId}/photo`, { method: 'DELETE' });
+    },
+
+    // ============================================
+    // STAFF PAY (admin) — referee / scorekeeper season pay
+    // ============================================
+    async getStaffPayRates(seasonId) {
+        return request(`/admin/staff-pay/rates${seasonId ? `?seasonId=${seasonId}` : ''}`);
+    },
+    async saveStaffPayRate({ userId, role, rateCents }) {
+        return request('/admin/staff-pay/rates', {
+            method: 'PUT',
+            body: JSON.stringify({ userId, role, rateCents })
+        });
+    },
+    async getStaffPaySummary(seasonId) {
+        return request(`/admin/staff-pay/${seasonId}`);
+    },
+    async finalizeStaffPay(seasonId) {
+        return request(`/admin/staff-pay/${seasonId}/finalize`, { method: 'POST' });
+    },
+    async sendStaffPayConfirmations(seasonId) {
+        return request(`/admin/staff-pay/${seasonId}/send-confirmations`, { method: 'POST' });
+    },
+    async resendStaffPayLine(lineId) {
+        return request(`/admin/staff-pay/lines/${lineId}/resend`, { method: 'POST' });
+    },
+    async adminConfirmStaffPayLine(lineId) {
+        return request(`/admin/staff-pay/lines/${lineId}/admin-confirm`, { method: 'POST' });
+    },
+    async sendStaffPayReport(seasonId, toEmail, saveAsDefault) {
+        return request(`/admin/staff-pay/${seasonId}/send-report`, {
+            method: 'POST',
+            body: JSON.stringify({ toEmail, saveAsDefault })
+        });
+    },
+    async getFinanceReportEmail() {
+        return request('/admin/staff-pay/settings/finance-email');
+    },
+    async setFinanceReportEmail(value) {
+        return request('/admin/staff-pay/settings/finance-email', {
+            method: 'PUT',
+            body: JSON.stringify({ value })
+        });
+    },
+    // The workbook is binary, so this can't go through request(), which JSON-parses every
+    // response. Resolves to { blob, filename } for the caller to hand to an anchor download.
+    async downloadStaffPayReport(seasonId) {
+        const response = await fetch(`${API_BASE_URL}/admin/staff-pay/${seasonId}/report.xlsx`, {
+            headers: getAuthHeaders()
+        });
+        if (response.status === 401) {
+            window.dispatchEvent(new Event('auth-error'));
+            throw new Error('Your session has expired. Please log in again.');
+        }
+        if (!response.ok) {
+            let message = `Download failed with status ${response.status}`;
+            try {
+                const parsed = await response.json();
+                message = parsed.error || parsed.message || message;
+            } catch { /* not JSON */ }
+            throw new Error(message);
+        }
+        const disposition = response.headers.get('Content-Disposition') || '';
+        const match = disposition.match(/filename="?([^";]+)"?/);
+        return { blob: await response.blob(), filename: match ? match[1] : `OBHL_Staff_Pay_${seasonId}.xlsx` };
+    },
+
+    // Public, token-based (emailed "confirm your pay total" links)
+    async getPayLineByToken(id, token) {
+        return request(`/auth/pay-confirm?id=${id}&token=${encodeURIComponent(token)}`);
+    },
+    async respondToPayLineByToken(id, token, action, note) {
+        return request('/auth/pay-confirm', {
+            method: 'POST',
+            body: JSON.stringify({ id, token, action, note })
+        });
     }
 };
 
@@ -1114,6 +1190,8 @@ export const {
     respondToShift,
     getShiftByToken,
     respondToShiftByToken,
+    getPayLineByToken,
+    respondToPayLineByToken,
     getMyStaffAvailability,
     markStaffUnavailable,
     removeStaffUnavailable,

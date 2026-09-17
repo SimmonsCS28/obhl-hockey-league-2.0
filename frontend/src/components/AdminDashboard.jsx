@@ -1,6 +1,7 @@
 import { useSearchParams } from 'react-router-dom';
 import AdminOverview from './admin/AdminOverview';
 import AdminAssignments from './admin/AdminAssignments';
+import StaffPayAdmin from './admin/StaffPayAdmin';
 import AdminStandings from './admin/AdminStandings';
 import GameManagementAdmin from './admin/GameManagementAdmin';
 import AdminLayout from './AdminLayout';
@@ -35,6 +36,7 @@ function AdminDashboard() {
             {activeTab === 'seasons' && <SeasonManagement />}
             {activeTab === 'draft' && <DraftDashboard />}
             {activeTab === 'users' && <UserManagement />}
+            {activeTab === 'staffpay' && <StaffPayAdmin />}
             {activeTab === 'announcements' && <AnnouncementsManagement />}
             {activeTab === 'highlights' && <HighlightsManagement />}
             {activeTab === 'rules' && <LeagueRulesAdmin />}

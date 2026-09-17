@@ -37,6 +37,7 @@ import ChangePassword from './pages/ChangePassword';
 import AccountSettings from './pages/AccountSettings';
 import CoordinatorDashboard from './components/coordinator/CoordinatorDashboard';
 import ConfirmShift from './components/ConfirmShift';
+import PayConfirm from './components/PayConfirm';
 
 // New Staff Components
 import GoalieLayout from './components/GoalieLayout';
@@ -88,6 +89,7 @@ const router = createBrowserRouter([
       { path: "forgot-password", element: <ForgotPassword /> },
       { path: "reset-password", element: <ResetPassword /> },
       { path: "shift-confirm", element: <ConfirmShift /> },
+      { path: "pay-confirm", element: <PayConfirm /> },
 
       // Legacy Routes - Redirect to unified signup
       { path: "referee/signup", element: <Signup /> },

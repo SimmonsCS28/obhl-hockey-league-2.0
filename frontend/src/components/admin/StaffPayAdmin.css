@@ -1,0 +1,475 @@
+/* Admin → Staff Pay. All classes prefixed obi-pay- (no CSS scoping in this codebase). */
+
+.obi-pay {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    font-family: var(--obi-font-body);
+    color: var(--obi-text);
+}
+
+.obi-pay-empty {
+    padding: 48px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--obi-text-muted);
+}
+
+.obi-pay-muted { color: var(--obi-text-muted); }
+.obi-pay-small { font-size: 12px; }
+.obi-pay-money { font-variant-numeric: tabular-nums; font-weight: 700; }
+
+/* Banners */
+.obi-pay-banners:empty { display: none; }
+.obi-pay-banners { position: sticky; top: 8px; z-index: 5; }
+.obi-pay-banner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 13px;
+    border-radius: 8px;
+    padding: 10px 14px;
+}
+.obi-pay-banner--ok {
+    background: rgba(127, 181, 154, 0.12);
+    border: 1px solid rgba(127, 181, 154, 0.32);
+}
+.obi-pay-banner--error {
+    background: rgba(224, 138, 138, 0.12);
+    border: 1px solid rgba(224, 138, 138, 0.35);
+    color: var(--obi-error);
+}
+.obi-pay-banner-x {
+    flex-shrink: 0;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: inherit;
+    font-size: 18px;
+    line-height: 1;
+}
+
+/* Progress strip */
+.obi-pay-steps {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 18px;
+    margin: 0;
+    padding: 12px 16px;
+    list-style: none;
+    background: var(--obi-bg-card);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 12px;
+}
+.obi-pay-step {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+}
+.obi-pay-step.is-done { color: var(--obi-success); }
+.obi-pay-step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    font-size: 11px;
+}
+.obi-pay-step.is-done .obi-pay-step-num {
+    background: var(--obi-success);
+    border-color: var(--obi-success);
+    color: #0b0c0f;
+}
+
+/* Cards */
+.obi-pay-card {
+    background: var(--obi-bg-card);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 12px;
+    padding: 18px 20px 20px;
+}
+.obi-pay-card-hd {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+.obi-pay-card-hd h3 {
+    margin: 0 0 4px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: 0.3px;
+}
+.obi-pay-card-hd p {
+    margin: 0;
+    max-width: 640px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--obi-text-secondary);
+}
+.obi-pay-card-hd p a { color: var(--obi-icy); }
+.obi-pay-card-actions,
+.obi-pay-card-tools {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Buttons */
+.obi-pay-btn {
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    transition: opacity 0.15s, transform 0.1s;
+    white-space: nowrap;
+}
+.obi-pay-btn:hover:not(:disabled) { transform: translateY(-1px); }
+.obi-pay-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.obi-pay-btn--primary {
+    color: #0b0c0f;
+    background: var(--obi-accent);
+    border-color: var(--obi-accent);
+}
+.obi-pay-btn--ghost {
+    color: var(--obi-text-secondary);
+    background: transparent;
+    border-color: var(--obi-card-border);
+}
+.obi-pay-btn--ghost:hover:not(:disabled) { color: #fff; background: rgba(157, 185, 205, 0.08); }
+
+.obi-pay-mini {
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-secondary);
+    background: transparent;
+    border: 1px solid var(--obi-card-border);
+    border-radius: 6px;
+    padding: 4px 8px;
+    white-space: nowrap;
+}
+.obi-pay-mini:hover:not(:disabled) { color: #fff; border-color: var(--obi-icy); }
+.obi-pay-mini:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.obi-pay-linklike {
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    color: var(--obi-text);
+    text-decoration: underline dotted rgba(157, 185, 205, 0.5);
+    text-underline-offset: 3px;
+}
+.obi-pay-linklike:hover { color: var(--obi-accent); }
+
+/* Segmented filter + search */
+.obi-pay-seg {
+    display: inline-flex;
+    border: 1px solid var(--obi-card-border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+.obi-pay-seg button {
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    background: transparent;
+    border: none;
+    padding: 7px 11px;
+}
+.obi-pay-seg button + button { border-left: 1px solid var(--obi-card-border); }
+.obi-pay-seg button.is-active { color: #0b0c0f; background: var(--obi-accent); }
+
+.obi-pay-search,
+.obi-pay-input {
+    background: #0e1116;
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    border-radius: 7px;
+    padding: 7px 10px;
+    color: var(--obi-text);
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+}
+.obi-pay-search:focus,
+.obi-pay-input:focus,
+.obi-pay-rate-input:focus { outline: none; border-color: var(--obi-accent); }
+
+/* Callouts */
+.obi-pay-callout {
+    font-size: 13px;
+    line-height: 1.5;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+}
+.obi-pay-callout--error {
+    background: rgba(224, 138, 138, 0.12);
+    border: 1px solid rgba(224, 138, 138, 0.35);
+    color: var(--obi-error);
+}
+.obi-pay-callout--warn {
+    background: rgba(232, 194, 106, 0.1);
+    border: 1px solid rgba(232, 194, 106, 0.35);
+    color: var(--obi-warning);
+}
+.obi-pay-callout--ok {
+    background: rgba(127, 181, 154, 0.12);
+    border: 1px solid rgba(127, 181, 154, 0.32);
+    color: var(--obi-success);
+}
+
+/* Tags */
+.obi-pay-tag {
+    display: inline-block;
+    margin-left: 8px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--obi-accent);
+    border: 1px solid rgba(246, 169, 28, 0.4);
+    border-radius: 999px;
+    padding: 2px 7px;
+    vertical-align: middle;
+    white-space: nowrap;
+}
+.obi-pay-tag--warn { color: var(--obi-warning); border-color: rgba(232, 194, 106, 0.4); }
+.obi-pay-tag--error { color: var(--obi-error); border-color: rgba(224, 138, 138, 0.45); }
+
+/* Rates */
+.obi-pay-rate-group { margin-top: 10px; }
+/* Header and rows share one grid so the games column lines up whether the rate editor
+   holds three chips (refs) or one (scorekeepers). */
+.obi-pay-rate-group-hd,
+.obi-pay-rate-row {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) minmax(150px, 0.7fr) 300px;
+    align-items: center;
+    gap: 12px;
+}
+.obi-pay-rate-group-hd span:last-child { text-align: right; }
+.obi-pay-rate-group-hd {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    padding: 10px 0 6px;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.18);
+}
+.obi-pay-rate-empty {
+    padding: 14px 0;
+    font-size: 13px;
+    color: var(--obi-text-muted);
+}
+.obi-pay-rate-row {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.07);
+    font-size: 13.5px;
+}
+.obi-pay-rate-row.is-missing { background: rgba(224, 138, 138, 0.05); }
+.obi-pay-rate-games { color: var(--obi-text-secondary); }
+.obi-pay-rate-edit {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    justify-content: flex-end;
+}
+.obi-pay-chip { padding: 5px 10px; font-size: 12px; letter-spacing: 0.5px; }
+.obi-pay-chip:disabled { opacity: 0.5; cursor: not-allowed; }
+.obi-pay-rate-input-wrap {
+    display: inline-flex;
+    align-items: center;
+    background: #0e1116;
+    border: 1px solid rgba(157, 185, 205, 0.22);
+    border-radius: 7px;
+    padding: 0 8px;
+}
+.obi-pay-rate-dollar { color: var(--obi-text-muted); font-size: 13px; }
+.obi-pay-rate-input {
+    width: 56px;
+    padding: 6px 4px;
+    background: transparent;
+    border: none;
+    color: var(--obi-text);
+    font-family: var(--obi-font-body);
+    font-size: 13px;
+}
+
+/* Live totals (pre-finalize) */
+.obi-pay-live {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+}
+.obi-pay-table-hd,
+.obi-pay-table-row {
+    display: grid;
+    grid-template-columns: 1.6fr 0.9fr 0.6fr 0.7fr;
+    gap: 10px;
+    padding: 8px 0;
+    font-size: 13.5px;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.07);
+}
+.obi-pay-table-hd {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    border-bottom: 1px solid rgba(157, 185, 205, 0.18);
+}
+.obi-pay-table-hd span:nth-child(n+2),
+.obi-pay-table-row span:nth-child(n+2) { text-align: right; }
+.obi-pay-table-row.is-missing { color: var(--obi-error); }
+.obi-pay-table-total { border-bottom: none; font-weight: 700; }
+
+/* Finalized lines */
+.obi-pay-counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    margin-bottom: 12px;
+    font-size: 13px;
+    color: var(--obi-text-secondary);
+}
+.obi-pay-count b { color: var(--obi-text); }
+.obi-pay-count.is-bad b { color: var(--obi-error); }
+.obi-pay-count--total { margin-left: auto; }
+
+.obi-pay-line-hd,
+.obi-pay-line {
+    display: grid;
+    grid-template-columns: 2fr 0.9fr 0.6fr 0.7fr 1.6fr auto;
+    gap: 10px;
+    align-items: center;
+    padding: 9px 0;
+    font-size: 13.5px;
+}
+.obi-pay-line-hd {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    border-bottom: 1px solid rgba(157, 185, 205, 0.18);
+}
+.obi-pay-line-wrap { border-bottom: 1px solid rgba(157, 185, 205, 0.07); }
+.obi-pay-line.is-stale { background: rgba(232, 194, 106, 0.05); }
+.obi-pay-line-actions { display: inline-flex; gap: 6px; justify-content: flex-end; }
+
+.obi-pay-status {
+    display: inline-block;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 10.5px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    border-radius: 999px;
+    padding: 3px 9px;
+    border: 1px solid var(--obi-card-border);
+    color: var(--obi-text-secondary);
+}
+.obi-pay-status--confirmed,
+.obi-pay-status--admin_confirmed { color: var(--obi-success); border-color: rgba(127, 181, 154, 0.4); }
+.obi-pay-status--disputed { color: var(--obi-error); border-color: rgba(224, 138, 138, 0.45); }
+.obi-pay-status--pending { color: var(--obi-warning); border-color: rgba(232, 194, 106, 0.4); }
+
+.obi-pay-dispute {
+    padding: 0 0 10px;
+    font-size: 13px;
+    color: var(--obi-error);
+}
+.obi-pay-games {
+    margin: 0 0 10px;
+    padding: 8px 12px;
+    list-style: none;
+    background: var(--obi-bg-elevated);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 8px;
+    font-size: 13px;
+}
+.obi-pay-games li {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 4px 0;
+}
+.obi-pay-games-date { min-width: 150px; color: var(--obi-text-secondary); }
+
+/* Report / send */
+.obi-pay-send { margin-top: 6px; }
+.obi-pay-label {
+    display: block;
+    margin-bottom: 6px;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 11.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+}
+.obi-pay-send-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.obi-pay-send-row .obi-pay-input { flex: 1; min-width: 220px; }
+.obi-pay-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    font-size: 13px;
+    color: var(--obi-text-secondary);
+}
+.obi-pay-send code {
+    font-size: 12px;
+    color: var(--obi-icy);
+}
+
+@media (max-width: 900px) {
+    .obi-pay-rate-row { grid-template-columns: 1fr; gap: 6px; }
+    .obi-pay-rate-group-hd span:not(:first-child) { display: none; }
+    .obi-pay-rate-edit { justify-content: flex-start; }
+    .obi-pay-line-hd { display: none; }
+    .obi-pay-line {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px 10px;
+    }
+    .obi-pay-line-name { grid-column: 1 / -1; }
+    .obi-pay-line-actions { grid-column: 1 / -1; justify-content: flex-start; }
+    .obi-pay-count--total { margin-left: 0; }
+}

@@ -23,6 +23,7 @@ const NAV = [
     { id: 'draft', label: 'Draft Tool' },
     { group: 'People' },
     { id: 'users', label: 'Users & Roles' },
+    { id: 'staffpay', label: 'Staff Pay' },
     { id: 'announcements', label: 'Announcements' },
     { id: 'highlights', label: 'Highlights' },
     { id: 'rules', label: 'Rules Editor' },
@@ -87,6 +88,7 @@ function AdminLayout({ children, activeTab }) {
         : activeItem?.id === 'livescore' ? 'Live game scoring'
         : activeItem?.id === 'gamemgmt' ? 'Box-score editor for completed games'
         : activeItem?.id === 'assignments' ? 'Assign goalies, referees and scorekeepers'
+        : activeItem?.id === 'staffpay' ? 'Referee and scorekeeper pay for the season'
         : activeItem?.id === 'tournament' ? 'Configure the annual tournament'
         : activeItem?.id === 'tournament-draft' ? 'Build the Classic rosters'
         : activeItem?.id === 'tournament-schedule' ? 'Generate the weekend fixture list'

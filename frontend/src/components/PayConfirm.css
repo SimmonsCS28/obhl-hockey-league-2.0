@@ -1,0 +1,82 @@
+/* Pay-total confirmation page. Extends ConfirmShift.css (cs-*) with a game table. */
+
+.pc-card {
+    max-width: 520px;
+}
+
+.pc-games {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 1.25rem;
+    font-size: 0.88rem;
+}
+
+.pc-games th {
+    text-align: left;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    padding: 0 0.5rem 0.4rem 0;
+    border-bottom: 1px solid var(--obi-card-border);
+}
+
+.pc-games td {
+    padding: 0.45rem 0.5rem 0.45rem 0;
+    border-bottom: 1px solid rgba(157, 185, 205, 0.1);
+    color: var(--obi-text);
+    vertical-align: top;
+}
+
+.pc-games-date {
+    white-space: nowrap;
+    color: var(--obi-text-secondary);
+}
+
+.pc-games-tag {
+    text-align: right;
+    padding-right: 0 !important;
+}
+
+.pc-games-empty {
+    color: var(--obi-text-muted);
+    text-align: center;
+}
+
+.pc-solo {
+    display: inline-block;
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 0.66rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--obi-accent);
+    border: 1px solid rgba(255, 191, 63, 0.4);
+    border-radius: 999px;
+    padding: 2px 8px;
+    white-space: nowrap;
+}
+
+.cs-detail-status--disputed {
+    color: var(--obi-error);
+    border-color: rgba(224, 138, 138, 0.4);
+}
+
+.cs-detail-status--admin_confirmed {
+    color: var(--obi-success);
+    border-color: rgba(127, 181, 154, 0.4);
+}
+
+.pc-dispute-help {
+    margin: 0;
+    font-size: 0.88rem;
+    line-height: 1.45;
+    color: var(--obi-text-secondary);
+}
+
+.pc-note {
+    resize: vertical;
+    min-height: 4.5rem;
+}
