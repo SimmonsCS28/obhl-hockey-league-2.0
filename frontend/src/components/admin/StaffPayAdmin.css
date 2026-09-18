@@ -367,14 +367,25 @@
 .obi-pay-count.is-bad b { color: var(--obi-error); }
 .obi-pay-count--total { margin-left: auto; }
 
+/* Fixed widths for every column except the name, so rows with action buttons and rows
+   without (confirmed) line up instead of each re-flowing around an auto-width column. */
 .obi-pay-line-hd,
 .obi-pay-line {
     display: grid;
-    grid-template-columns: 2fr 0.9fr 0.6fr 0.7fr 1.6fr auto;
+    grid-template-columns: minmax(180px, 1fr) 110px 64px 80px minmax(200px, 300px) 210px;
     gap: 10px;
     align-items: center;
     padding: 9px 0;
     font-size: 13.5px;
+}
+.obi-pay-line-hd span:nth-child(2),
+.obi-pay-line-hd span:nth-child(3),
+.obi-pay-line-hd span:nth-child(4),
+.obi-pay-line > span:nth-child(2),
+.obi-pay-line > span:nth-child(3),
+.obi-pay-line > span:nth-child(4) {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
 }
 .obi-pay-line-hd {
     font-family: var(--obi-font-display);
@@ -385,9 +396,14 @@
     color: var(--obi-text-muted);
     border-bottom: 1px solid rgba(157, 185, 205, 0.18);
 }
+/* Between the stacked mobile layout and a wide desktop the fixed columns can exceed the card;
+   scroll the table sideways rather than pushing the action buttons out of reach. */
+.obi-pay-lines { overflow-x: auto; }
+.obi-pay-line-hd,
+.obi-pay-line-wrap { min-width: 900px; }
 .obi-pay-line-wrap { border-bottom: 1px solid rgba(157, 185, 205, 0.07); }
 .obi-pay-line.is-stale { background: rgba(232, 194, 106, 0.05); }
-.obi-pay-line-actions { display: inline-flex; gap: 6px; justify-content: flex-end; }
+.obi-pay-line-actions { display: inline-flex; gap: 6px; justify-content: flex-end; min-height: 1px; }
 
 .obi-pay-status {
     display: inline-block;
@@ -469,7 +485,12 @@
         grid-template-columns: 1fr 1fr;
         gap: 6px 10px;
     }
+    .obi-pay-line-hd,
+    .obi-pay-line-wrap { min-width: 0; }
     .obi-pay-line-name { grid-column: 1 / -1; }
+    .obi-pay-line > span:nth-child(2),
+    .obi-pay-line > span:nth-child(3),
+    .obi-pay-line > span:nth-child(4) { text-align: left; }
     .obi-pay-line-actions { grid-column: 1 / -1; justify-content: flex-start; }
     .obi-pay-count--total { margin-left: 0; }
 }
