@@ -5,9 +5,8 @@ import PlayoffBracket from './PlayoffBracket';
 import { resolveTeamColor } from '../constants/teamColors';
 import { earliestUpcomingWeek } from '../utils/currentWeek';
 import heroBg from '../assets/images/buzzard-full.jpg';
+import { parseGameDate, fmtGameDate, fmtGameTime } from '../utils/gameTime';
 import './SchedulePage.css';
-
-const parseGameDate = (s) => new Date(s.endsWith('Z') ? s : s + 'Z');
 
 const ROUND_LABELS = { QUARTERFINAL: 'Quarterfinal', SEMIFINAL: 'Semifinal', FINAL: 'Championship' };
 
@@ -123,9 +122,8 @@ const SchedulePage = () => {
     const weekRange = (wkGames) => {
         const dates = wkGames.map(g => parseGameDate(g.gameDate)).sort((a, b) => a - b);
         if (dates.length === 0) return '';
-        const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        const first = fmt(dates[0]);
-        const last = fmt(dates[dates.length - 1]);
+        const first = fmtGameDate(dates[0]);
+        const last = fmtGameDate(dates[dates.length - 1]);
         return first === last ? first : `${first} – ${last}`;
     };
 
@@ -175,10 +173,9 @@ const SchedulePage = () => {
     const renderGameRow = (game) => {
         const done = game.status === 'completed';
         const live = game.status === 'in_progress';
-        const d = parseGameDate(game.gameDate);
-        const day = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
-        const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        const day = fmtGameDate(game.gameDate, { weekday: 'short' }).toUpperCase();
+        const date = fmtGameDate(game.gameDate);
+        const time = fmtGameTime(game.gameDate);
         const homeWin = done && game.homeScore > game.awayScore;
         const awayWin = done && game.awayScore > game.homeScore;
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import { fmtGameDate, fmtGameTime } from '../../utils/gameTime';
 import '../admin/StaffSchedule.css'; // Reuse styles
 
 function RefereeSchedulePage() {
@@ -138,7 +139,6 @@ function RefereeSchedulePage() {
                             </thead>
                             <tbody>
                                 {filteredGames.map((game, index) => {
-                                    const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
                                     const previousGame = index > 0 ? filteredGames[index - 1] : null;
                                     const isNewWeek = previousGame && previousGame.week !== game.week;
 
@@ -148,7 +148,7 @@ function RefereeSchedulePage() {
                                     return (
                                         <tr key={game.id} className={isNewWeek ? 'week-separator' : ''}>
                                             <td>Week {game.week}</td>
-                                            <td>{gameDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} {gameDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</td>
+                                            <td>{fmtGameDate(game.gameDate)} {fmtGameTime(game.gameDate)}</td>
                                             <td>
                                                 <span className="team-badge" style={{ backgroundColor: getValidColor(getTeamById(game.homeTeamId)?.teamColor), color: getTextColor(getTeamById(game.homeTeamId)?.teamColor) }}>
                                                     {getTeamById(game.homeTeamId)?.name || `Team ${game.homeTeamId}`}

@@ -3,8 +3,7 @@
 // season) so the two stay in sync. Returns exactly four { value, label, sub } cards:
 // Teams · Skaters · Nights per Week · Progress.
 
-// Game dates come back UTC-ish without a trailing Z on some rows; normalize before Date().
-const parseGameDate = (s) => new Date(s.endsWith('Z') ? s : s + 'Z');
+import { parseGameDate, fmtGameDate, gameDayIndex } from './gameTime';
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTHS = [
@@ -69,7 +68,7 @@ export function computeSeasonStats(season, teams = [], players = [], games = [])
 
     // --- Nights per week (distinct weekdays among regular-season games) ---
     const regular = games.filter((g) => g.gameType !== 'PLAYOFF' && g.gameDate);
-    const weekdayIdxs = [...new Set(regular.map((g) => parseGameDate(g.gameDate).getDay()))].sort((a, b) => a - b);
+    const weekdayIdxs = [...new Set(regular.map((g) => gameDayIndex(g.gameDate)))].sort((a, b) => a - b);
     const nightCount = weekdayIdxs.length;
     const nightNames = weekdayIdxs.map((i) => WEEKDAYS[i]);
     const nightsSub = nightCount === 0
@@ -87,7 +86,7 @@ export function computeSeasonStats(season, teams = [], players = [], games = [])
         .filter((g) => g.gameType === 'PLAYOFF' && g.gameDate)
         .sort((a, b) => parseGameDate(a.gameDate) - parseGameDate(b.gameDate));
     const playoffDate = playoffs.length
-        ? parseGameDate(playoffs[0].gameDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        ? fmtGameDate(playoffs[0].gameDate)
         : null;
 
     let progress;

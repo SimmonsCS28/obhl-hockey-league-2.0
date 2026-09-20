@@ -22,6 +22,20 @@ public class CoordinatorDto {
         private String role;   // GOALIE | REF
         private Integer slot;  // 1 or 2
         private Long userId;   // staff member being proposed
+        /**
+         * true = stage the pick as AUTO_PROPOSED without emailing anyone, exactly like the
+         * auto-proposer does; the email goes out later with "Send Confirmation Emails". Lets the
+         * coordinator shuffle a week's matchups first. null/false = propose and email now.
+         */
+        private Boolean draft;
+
+        public ProposeRequest(Long gameId, Long seasonId, String role, Integer slot, Long userId) {
+            this(gameId, seasonId, role, slot, userId, null);
+        }
+
+        public boolean wantsDraft() {
+            return Boolean.TRUE.equals(draft);
+        }
     }
 
     /** Admin direct-assign override: writes a slot as already CONFIRMED + published. */

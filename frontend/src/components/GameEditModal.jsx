@@ -1,26 +1,19 @@
 import { useState } from 'react';
+import { toCentralInputParts, fromCentralInputParts } from '../utils/gameTime';
 import './GameEditModal.css';
 
 const GameEditModal = ({ game, teams, onClose, onSave, onDelete, onRevertToScheduled }) => {
-    // Helper function to convert UTC date to local datetime-local format
-    const toLocalDateTimeString = (utcDateString) => {
+    // The datetime-local input is edited in Central, whatever zone the admin's laptop is in.
+    const toCentralDateTimeString = (utcDateString) => {
         if (!utcDateString) return '';
-        // Ensure the date string has 'Z' suffix to be treated as UTC
-        const dateStr = utcDateString.endsWith('Z') ? utcDateString : utcDateString + 'Z';
-        const date = new Date(dateStr);
-        // Get local date/time components
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
+        const { date, time } = toCentralInputParts(utcDateString);
+        return `${date}T${time}`;
     };
 
     const [formData, setFormData] = useState({
         homeTeamId: game?.homeTeamId || '',
         awayTeamId: game?.awayTeamId || '',
-        gameDate: toLocalDateTimeString(game?.gameDate),
+        gameDate: toCentralDateTimeString(game?.gameDate),
         rink: game?.rink || 'Tubbs',
         week: game?.week || 1
     });
@@ -28,11 +21,9 @@ const GameEditModal = ({ game, teams, onClose, onSave, onDelete, onRevertToSched
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // Convert datetime-local to ISO format and remove trailing 'Z' for Spring Boot compatibility
-        let gameDateTime = new Date(formData.gameDate).toISOString();
-        if (gameDateTime.endsWith('Z')) {
-            gameDateTime = gameDateTime.slice(0, -1);
-        }
+        // Central wall clock -> UTC ISO without 'Z', which is what the game-service stores.
+        const [datePart, timePart] = formData.gameDate.split('T');
+        const gameDateTime = fromCentralInputParts(datePart, timePart);
 
         const gameData = {
             ...formData,

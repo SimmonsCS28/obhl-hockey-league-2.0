@@ -23,6 +23,8 @@ export const GOALIE_STATUS_STYLE = {
 
 // Status-colored <select> treatment for the Admin table (background + border reflect status).
 export const GOALIE_SELECT_STYLE = {
+    // Staged (AUTO_PROPOSED) — filled in but nobody emailed yet; dashed so it reads as a draft.
+    STAGED: { background: 'rgba(246,169,28,0.08)', border: '1px dashed rgba(246,169,28,0.7)' },
     // "Awaiting Player" — coordinator emailed, goalie hasn't confirmed.
     PENDING: { background: 'rgba(246,169,28,0.16)', border: '1px solid rgba(246,169,28,0.55)' },
     CONFIRMED: { background: 'rgba(127,181,154,0.16)', border: '1px solid rgba(127,181,154,0.5)' },

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { parseGameDate, fmtGameDateTime } from '../utils/gameTime';
 import './ScorekeeperDashboard.css';
 
 function ScorekeeperDashboard() {
@@ -66,7 +67,7 @@ function ScorekeeperDashboard() {
         // Find current or next week
         for (const week of Object.keys(gamesByWeek).sort((a, b) => a - b)) {
             const weekGames = gamesByWeek[week];
-            const latestGameInWeek = new Date(Math.max(...weekGames.map(g => new Date(g.gameDate))));
+            const latestGameInWeek = new Date(Math.max(...weekGames.map(g => parseGameDate(g.gameDate))));
 
             if (latestGameInWeek >= now) {
                 return parseInt(week);
@@ -113,16 +114,13 @@ function ScorekeeperDashboard() {
         navigate(`/scorekeeper/game/${game.id}`);
     };
 
-    const formatGameTime = (gameDate) => {
-        const date = new Date(gameDate.endsWith('Z') ? gameDate : gameDate + 'Z');
-        return date.toLocaleString('en-US', {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit'
-        });
-    };
+    const formatGameTime = (gameDate) => fmtGameDateTime(gameDate, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+    });
 
     if (loading) {
         return (

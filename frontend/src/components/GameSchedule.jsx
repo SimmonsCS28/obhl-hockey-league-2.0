@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { fmtGameDate, fmtGameTime, fmtGameDateTime, gameDayIndex } from '../utils/gameTime';
 import './GameSchedule.css';
 
 // Color helper functions
@@ -41,18 +42,13 @@ function GameSchedule({ games, onSelectGame }) {
         ? games
         : games.filter(g => g.status === filter);
 
-    const formatDate = (dateString) => {
-        // Normalize to UTC if needed
-        const normalizedDate = dateString.endsWith('Z') ? dateString : dateString + 'Z';
-        const date = new Date(normalizedDate);
-        return date.toLocaleDateString('en-US', {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit'
-        });
-    };
+    const formatDate = (dateString) => fmtGameDateTime(dateString, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+    });
 
     return (
         <div className="game-schedule">
@@ -106,10 +102,9 @@ function GameSchedule({ games, onSelectGame }) {
                             {filteredGames.map((game, index) => {
                                 const homeColor = getValidColor(game.homeTeamColor);
                                 const awayColor = getValidColor(game.awayTeamColor);
-                                const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
-                                const dayOfWeek = gameDate.getDay();
+                                const dayOfWeek = gameDayIndex(game.gameDate);
                                 const isNotFriday = dayOfWeek !== 5;
-                                const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
+                                const dayName = fmtGameDate(game.gameDate, { weekday: 'long' });
                                 const isCompleted = game.status === 'completed';
 
                                 // Check if this is the first game of a new week
@@ -129,17 +124,14 @@ function GameSchedule({ games, onSelectGame }) {
                                             <span className="day-warning" title={isNotFriday ? `Game on ${dayName}` : ''}>
                                                 {isNotFriday ? '⚠️' : ''}
                                             </span>
-                                            {gameDate.toLocaleDateString('en-US', {
+                                            {fmtGameDate(game.gameDate, {
                                                 weekday: 'short',
                                                 month: 'short',
                                                 day: 'numeric'
                                             })}
                                         </td>
                                         <td className="time-col">
-                                            {gameDate.toLocaleTimeString('en-US', {
-                                                hour: 'numeric',
-                                                minute: '2-digit'
-                                            })}
+                                            {fmtGameTime(game.gameDate)}
                                         </td>
                                         <td
                                             className="team-cell"

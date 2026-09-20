@@ -3,6 +3,7 @@ import tournamentApi from '../../../services/tournamentApi';
 import { request } from '../../../services/api';
 import { parseSlotWorkbook } from './slotParser';
 import { describeBreakdown, summarizeFormat } from './tournamentFormat';
+import { fmtGameDateTime } from '../../../utils/gameTime';
 import './TournamentDraft.css';
 import './TournamentAdmin.css';
 
@@ -220,7 +221,7 @@ function TournamentScheduleAdmin() {
                                     <span>{g.tournamentStage}</span>
                                     <span className="obi-tdraft-dim">
                                         {g.gameDate
-                                            ? new Date(g.gameDate).toLocaleString('en-US',
+                                            ? fmtGameDateTime(g.gameDate,
                                                 { weekday: 'short', hour: 'numeric', minute: '2-digit' })
                                             : 'no slot'}
                                     </span>

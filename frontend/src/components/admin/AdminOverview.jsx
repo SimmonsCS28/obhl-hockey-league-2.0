@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSeason } from '../../contexts/SeasonContext';
 import { resolveTeamColor } from '../../constants/teamColors';
 import api from '../../services/api';
+import { fmtGameDate, fmtGameTime } from '../../utils/gameTime';
 import './AdminOverview.css';
 
 function AdminOverview() {
@@ -100,21 +101,10 @@ function AdminOverview() {
         }] : []),
     ];
 
-    const formatGameDate = (dateString) => {
-        if (!dateString) return '—';
-        try {
-            const d = new Date(dateString.endsWith('Z') ? dateString : dateString + 'Z');
-            return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-        } catch { return '—'; }
-    };
+    const formatGameDate = (dateString) =>
+        fmtGameDate(dateString, { weekday: 'short', month: 'short', day: 'numeric' }) || '—';
 
-    const formatGameTime = (dateString) => {
-        if (!dateString) return '';
-        try {
-            const d = new Date(dateString.endsWith('Z') ? dateString : dateString + 'Z');
-            return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        } catch { return ''; }
-    };
+    const formatGameTime = (dateString) => fmtGameTime(dateString);
 
     if (loading) {
         return <div className="obi-ov-loading">Loading overview…</div>;

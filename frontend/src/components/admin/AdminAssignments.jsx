@@ -11,6 +11,7 @@ import {
 } from '../coordinator/goalieProposerStatus';
 import api from '../../services/api';
 import { rankTeams, goaliePickTeamId } from '../../utils/goaliePick';
+import { fmtGameDate, fmtGameTime } from '../../utils/gameTime';
 import './AdminAssignments.css';
 
 function displayName(user) {
@@ -59,17 +60,27 @@ function pickPillStyle(isPick, teamColor) {
     return { border: `1px solid ${teamColor}`, background: `color-mix(in srgb, ${teamColor} 14%, transparent)` };
 }
 
-// Design select styling: PENDING (awaiting), CONFIRMED, DECLINED, or UNASSIGNED (needs attention).
-// A pre-filled name with no coordinator row reads as CONFIRMED; an empty slot reads as UNASSIGNED.
+// Design select styling: STAGED (not emailed yet), PENDING (awaiting), CONFIRMED, DECLINED, or
+// UNASSIGNED (needs attention). A pre-filled name with no coordinator row reads as CONFIRMED; an
+// empty slot reads as UNASSIGNED.
 function goalieSelectStatus(assignment, hasName) {
     if (assignment) {
         if (assignment.status === 'CONFIRMED') return 'CONFIRMED';
         if (assignment.status === 'DECLINED') return 'DECLINED';
-        // AUTO_PROPOSED, PROPOSED, SIGNED_UP all read as "pending / awaiting".
+        // Staged by the auto-proposer or by hand — nobody has been emailed for this slot yet.
+        if (assignment.status === 'AUTO_PROPOSED') return 'STAGED';
+        // PROPOSED, SIGNED_UP read as "pending / awaiting".
         return 'PENDING';
     }
     return hasName ? 'CONFIRMED' : 'UNASSIGNED';
 }
+
+const GOALIE_SELECT_TITLE = {
+    STAGED: 'Proposed — not emailed yet. Use "Send Confirmation Emails" when the week looks right.',
+    PENDING: 'Emailed — awaiting the goalie\'s reply.',
+    CONFIRMED: 'Confirmed.',
+    DECLINED: 'Declined — needs a replacement.',
+};
 
 function AdminAssignments() {
     const { selectedSeasonId } = useSeason();
@@ -175,7 +186,8 @@ function AdminAssignments() {
     );
 
     // Goalie select change routes through the coordinator lifecycle (not admin direct-assign):
-    // picking a name proposes it as pending (awaiting the goalie's confirmation); clearing withdraws.
+    // picking a name only STAGES it (AUTO_PROPOSED, no email) so the week can be shuffled first —
+    // the proposer bar's "Send Confirmation Emails" is what emails them. Clearing withdraws.
     const handleGoalieChange = useCallback(async (gameId, slot, value) => {
         setErrors(prev => { const n = { ...prev }; delete n[gameId]; return n; });
         setSaving(prev => ({ ...prev, [gameId]: true }));
@@ -189,7 +201,9 @@ function AdminAssignments() {
                     await api.adminAssignShift({ gameId, role: 'GOALIE', slot, userId: null });
                 }
             } else {
-                await api.proposeShift({ gameId, seasonId: selectedSeasonId, role: 'GOALIE', slot, userId: Number(value) });
+                await api.proposeShift({
+                    gameId, seasonId: selectedSeasonId, role: 'GOALIE', slot, userId: Number(value), draft: true,
+                });
             }
             await reloadGoalieAssignments();
         } catch (err) {
@@ -314,11 +328,8 @@ function AdminAssignments() {
 
     const formatGameDate = (dateString) => {
         if (!dateString) return '—';
-        try {
-            const d = new Date(dateString.endsWith('Z') ? dateString : dateString + 'Z');
-            return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) +
-                ' ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        } catch { return '—'; }
+        return fmtGameDate(dateString, { weekday: 'short', month: 'short', day: 'numeric' }) +
+            ' ' + fmtGameTime(dateString);
     };
 
     // Goalie auto-proposer: only for a single, non-past week.
@@ -498,6 +509,7 @@ function AdminAssignments() {
                                             <select
                                                 className="obi-asgn-select obi-asgn-select--goalie"
                                                 style={GOALIE_SELECT_STYLE[statusKey]}
+                                                title={GOALIE_SELECT_TITLE[statusKey]}
                                                 value={value}
                                                 onChange={e => handleGoalieChange(game.id, slot, e.target.value)}
                                             >

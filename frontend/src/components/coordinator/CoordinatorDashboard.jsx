@@ -155,8 +155,10 @@ function CoordinatorDashboard() {
                             <div className="cc-banner-title" style={{ fontSize: 'clamp(28px, 4vw, 40px)', margin: '6px 0 8px' }}>Scheduling</div>
                             <p className="cc-banner-sub" style={{ margin: 0, maxWidth: 700 }}>
                                 Assign players to each game&apos;s open slots, confirm self sign-ups, and track who&apos;s confirmed.
-                                Assigning sends an email and shows pending until the player accepts.
-                                Confirmed slots publish to live score entry and game management.
+                                {activeRole === 'GOALIE'
+                                    ? ' Goalie picks are staged until you Send Confirmation Emails, so you can shuffle the week first; each goalie shows pending until they accept.'
+                                    : ' Assigning sends an email and shows pending until the player accepts.'}
+                                {' '}Confirmed slots publish to live score entry and game management.
                             </p>
                         </div>
                         <CoordinatorBoard key={activeRole} role={activeRole} onAlertCount={handleAlertCount} />

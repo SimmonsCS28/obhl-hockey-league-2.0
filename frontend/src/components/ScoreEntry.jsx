@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import api from '../services/api';
+import { fmtGameDateTime } from '../utils/gameTime';
 import './ScoreEntry.css';
 
 function ScoreEntry({ game, onBack, onScoreUpdated }) {
@@ -56,7 +57,7 @@ function ScoreEntry({ game, onBack, onScoreUpdated }) {
             <div className="game-info">
                 <div className="game-info-header">
                     <span className="game-date">
-                        {new Date(game.gameDate).toLocaleDateString('en-US', {
+                        {fmtGameDateTime(game.gameDate, {
                             weekday: 'long',
                             month: 'long',
                             day: 'numeric',

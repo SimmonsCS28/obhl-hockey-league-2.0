@@ -4,14 +4,11 @@ import { resolveTeamColor } from '../../constants/teamColors';
 import SeasonOverviewCards from '../common/SeasonOverviewCards';
 import WeeklyHighlight from './WeeklyHighlight';
 import bannerImg from '../../assets/images/buzzard-banner.png';
+import { parseGameDate, fmtGameDate, fmtGameTime } from '../../utils/gameTime';
 import './Home.css';
 
-const parseGameDate = (s) => new Date(s.endsWith('Z') ? s : s + 'Z');
-
-const fmtWhen = (s) => {
-    const d = parseGameDate(s);
-    return `${d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} · ${d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`;
-};
+const fmtWhen = (s) =>
+    `${fmtGameDate(s, { weekday: 'short', month: 'short', day: 'numeric' })} · ${fmtGameTime(s)}`;
 
 const fmtAnnDate = (s) => {
     if (!s) return '';

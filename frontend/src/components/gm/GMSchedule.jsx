@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import { fmtGameDate, fmtGameTime } from '../../utils/gameTime';
 import './GMSchedule.css';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
@@ -131,7 +132,6 @@ function GMSchedule() {
                         </thead>
                         <tbody>
                             {filteredGames.map(game => {
-                                const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
                                 const isHomeGame = game.homeTeamId === resolvedTeamId;
                                 const opponentId = isHomeGame ? game.awayTeamId : game.homeTeamId;
                                 const opponentName = isHomeGame ? game.awayTeamName : game.homeTeamName;
@@ -141,8 +141,8 @@ function GMSchedule() {
                                 return (
                                     <tr key={game.id}>
                                         <td className="week-col">Week {game.week}</td>
-                                        <td>{gameDate.toLocaleDateString()}</td>
-                                        <td>{gameDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                                        <td>{fmtGameDate(game.gameDate, { month: 'numeric', day: 'numeric', year: 'numeric' })}</td>
+                                        <td>{fmtGameTime(game.gameDate)}</td>
                                         <td
                                             className="opponent-cell"
                                             style={{

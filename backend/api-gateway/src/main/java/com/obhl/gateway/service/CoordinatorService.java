@@ -90,7 +90,13 @@ public class CoordinatorService {
                 .collect(Collectors.toList());
     }
 
-    /** Propose (or re-propose) a staff member for a game slot; notifies them. */
+    /**
+     * Propose (or re-propose) a staff member for a game slot; notifies them. With {@code draft} set
+     * the pick is only staged (AUTO_PROPOSED, no token, no email) so the coordinator can keep
+     * rearranging the week; {@link GoalieProposerService#sendConfirmations} turns staged rows into
+     * real proposals later. Staging a person who already holds the slot as a real proposal is a
+     * no-op rather than a downgrade — their emailed confirm link must keep working.
+     */
     @Transactional
     public CoordinatorDto.AssignmentView propose(CoordinatorDto.ProposeRequest req, Long coordinatorUserId) {
         String role = normalizeRole(req.getRole());
@@ -116,6 +122,12 @@ public class CoordinatorService {
         boolean wasPublished = existing.map(x -> Boolean.TRUE.equals(x.getPublished())).orElse(false);
         boolean occupantChanged = previousUserId != null && !previousUserId.equals(req.getUserId());
 
+        if (req.wantsDraft() && existing.isPresent() && !occupantChanged
+                && !ShiftAssignment.STATUS_AUTO_PROPOSED.equals(existing.get().getStatus())
+                && !ShiftAssignment.STATUS_DECLINED.equals(existing.get().getStatus())) {
+            return toView(existing.get(), game);
+        }
+
         ShiftAssignment a = existing.orElseGet(ShiftAssignment::new);
         a.setGameId(req.getGameId());
         // Always the game's own season, never the client-supplied one — a stale/mismatched
@@ -125,16 +137,23 @@ public class CoordinatorService {
         a.setRole(role);
         a.setSlot(slot);
         a.setUserId(req.getUserId());
-        a.setStatus(ShiftAssignment.STATUS_PROPOSED);
+        a.setStatus(req.wantsDraft() ? ShiftAssignment.STATUS_AUTO_PROPOSED : ShiftAssignment.STATUS_PROPOSED);
         a.setPublished(false);
         a.setDeclineReason(null);
         a.setRespondedAt(null);
         a.setAssignedBy(coordinatorUserId);
 
-        // Tokenized confirm link (mirrors the password-reset pattern).
-        String rawToken = java.util.UUID.randomUUID().toString() + java.util.UUID.randomUUID().toString();
-        a.setConfirmTokenHash(passwordEncoder.encode(rawToken));
-        a.setTokenExpiresAt(LocalDateTime.now().plusDays(TOKEN_TTL_DAYS));
+        // Tokenized confirm link (mirrors the password-reset pattern). A staged pick gets none —
+        // the token is minted when the confirmation email actually goes out.
+        String rawToken = null;
+        if (req.wantsDraft()) {
+            a.setConfirmTokenHash(null);
+            a.setTokenExpiresAt(null);
+        } else {
+            rawToken = java.util.UUID.randomUUID().toString() + java.util.UUID.randomUUID().toString();
+            a.setConfirmTokenHash(passwordEncoder.encode(rawToken));
+            a.setTokenExpiresAt(LocalDateTime.now().plusDays(TOKEN_TTL_DAYS));
+        }
 
         a = assignmentRepository.save(a);
 
@@ -145,7 +164,9 @@ public class CoordinatorService {
             sendCancellation(previousUserId, role, slot, game, coordinatorUserId);
         }
 
-        notify(a, game, rawToken);
+        if (!req.wantsDraft()) {
+            notify(a, game, rawToken);
+        }
         return toView(a, game);
     }
 

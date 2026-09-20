@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { fmtGameDate, fmtGameTime } from '../utils/gameTime';
 import './PlayoffBracket.css';
 
 const gameHref = (game) => {
@@ -85,9 +86,7 @@ const PlayoffBracket = ({ games, teams }) => {
         const homeWin = isCompleted && game.homeScore > game.awayScore;
         const awayWin = isCompleted && game.awayScore > game.homeScore;
 
-        const gameDate = game.gameDate
-            ? new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z')
-            : null;
+        const gameDate = game.gameDate || null;
 
         const roundLabel = game.playoffRound === 'QUARTERFINAL' ? 'QF' :
             game.playoffRound === 'SEMIFINAL' ? 'SF' : '🏆';
@@ -109,9 +108,9 @@ const PlayoffBracket = ({ games, teams }) => {
                     <span className="bracket-round-label">{roundLabel} #{game.bracketPosition}</span>
                     {gameDate && (
                         <span className="bracket-game-date">
-                            {gameDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                            {fmtGameDate(gameDate)}
                             {' · '}
-                            {gameDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                            {fmtGameTime(gameDate)}
                             {game.rink ? ` · ${game.rink}` : ''}
                         </span>
                     )}

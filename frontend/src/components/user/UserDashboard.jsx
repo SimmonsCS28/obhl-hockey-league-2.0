@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
 import PendingShifts from './PendingShifts';
+import { fmtGameDate, fmtGameTime } from '../../utils/gameTime';
 import './UserDashboard.css';
 
 const UserDashboard = () => {
@@ -143,20 +144,15 @@ const UserDashboard = () => {
         return teams.find(t => t.name === name);
     };
 
+    // The shift DTO splits the UTC instant into a date + time; rejoin them so both render in Central.
     const formatGameTime = (dateStr, timeStr) => {
         if (!dateStr || !timeStr) return '-';
-
-        try {
-            // Append Z to force UTC interpretation, allowing proper conversion to local/CST
-            const utcDate = new Date(`${dateStr}T${timeStr}Z`);
-            return utcDate.toLocaleTimeString('en-US', {
-                hour: 'numeric',
-                minute: '2-digit',
-                timeZone: 'America/Chicago' // Force Chicago time display
-            });
-        } catch (e) {
-            return timeStr;
-        }
+        return fmtGameTime(`${dateStr}T${timeStr}`) || timeStr;
+    };
+    const formatGameDate = (dateStr, timeStr) => {
+        if (!dateStr) return '-';
+        return fmtGameDate(timeStr ? `${dateStr}T${timeStr}` : dateStr,
+            { month: 'numeric', day: 'numeric', year: 'numeric' }) || dateStr;
     };
 
     return (
@@ -264,7 +260,7 @@ const UserDashboard = () => {
 
                                         return (
                                             <tr key={index}>
-                                                <td>{new Date(shift.gameDate).toLocaleDateString()}</td>
+                                                <td>{formatGameDate(shift.gameDate, shift.gameTime)}</td>
                                                 <td>{formatGameTime(shift.gameDate, shift.gameTime)}</td>
                                                 <td>
                                                     <span className={`role-badge ${shift.role.toLowerCase()}`}>

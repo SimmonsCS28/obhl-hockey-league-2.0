@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import { fmtGameDate, fmtGameTime } from '../../utils/gameTime';
 import './ShiftSignup.css';
 
 const GoalieShiftSignup = () => {
@@ -279,11 +280,13 @@ const GoalieShiftSignup = () => {
                                 {myAssignments.map((assignment, idx) => (
                                     <tr key={idx}>
                                         <td>
-                                            {new Date(assignment.gameDate.endsWith('Z') ? assignment.gameDate : assignment.gameDate + 'Z').toLocaleDateString('en-US', {
+                                            {/* The legacy shift DTO splits the UTC instant into a date + time;
+                                                rejoin them so both render on the Central calendar. */}
+                                            {fmtGameDate(`${assignment.gameDate}T${assignment.gameTime}`, {
                                                 weekday: 'short', month: 'short', day: 'numeric'
                                             })}
                                         </td>
-                                        <td>{assignment.gameTime}</td>
+                                        <td>{fmtGameTime(`${assignment.gameDate}T${assignment.gameTime}`)}</td>
                                         <td>{assignment.homeTeam} vs {assignment.awayTeam}</td>
                                         <td>{assignment.role}</td>
                                     </tr>

@@ -2,6 +2,7 @@ import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import { parseGameDate, fmtGameDate, fmtGameTime } from '../../utils/gameTime';
 import TeamBadge from '../common/TeamBadge';
 import './GMDashboard.css';
 
@@ -73,8 +74,8 @@ function GMDashboard() {
             );
             const now = new Date();
             const upcomingGames = gamesRes.data
-                .filter(g => new Date(g.gameDate.endsWith('Z') ? g.gameDate : g.gameDate + 'Z') > now)
-                .sort((a, b) => new Date(a.gameDate).getTime() - new Date(b.gameDate).getTime());
+                .filter(g => parseGameDate(g.gameDate) > now)
+                .sort((a, b) => parseGameDate(a.gameDate) - parseGameDate(b.gameDate));
 
             if (upcomingGames.length > 0) {
                 setNextGame(upcomingGames[0]);
@@ -233,13 +234,13 @@ function GMDashboard() {
                             <div className="game-detail">
                                 <span className="label">Date:</span>
                                 <span className="value">
-                                    {new Date(nextGame.gameDate.endsWith('Z') ? nextGame.gameDate : nextGame.gameDate + 'Z').toLocaleDateString()}
+                                    {fmtGameDate(nextGame.gameDate, { month: 'numeric', day: 'numeric', year: 'numeric' })}
                                 </span>
                             </div>
                             <div className="game-detail">
                                 <span className="label">Time:</span>
                                 <span className="value">
-                                    {new Date(nextGame.gameDate.endsWith('Z') ? nextGame.gameDate : nextGame.gameDate + 'Z').toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    {fmtGameTime(nextGame.gameDate)}
                                 </span>
                             </div>
                             <div className="game-detail">

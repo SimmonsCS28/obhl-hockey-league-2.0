@@ -2,6 +2,9 @@ import axios from 'axios';
 import { useEffect, useRef, useState } from 'react';
 import GameEditModal from './GameEditModal';
 import { sortByStandings } from '../utils/standings';
+import {
+    parseGameDate, fmtGameDate, fmtGameTime, gameDayIndex, toCentralInputParts, fromCentralInputParts,
+} from '../utils/gameTime';
 import './ScheduleManager.css';
 
 const API_BASE_URL = '/api/v1';
@@ -332,13 +335,12 @@ const ScheduleManager = () => {
         // Sort games by date and week
         const sortedGames = [...games].sort((a, b) => {
             if (a.week !== b.week) return a.week - b.week;
-            return new Date(a.gameDate).getTime() - new Date(b.gameDate).getTime();
+            return parseGameDate(a.gameDate) - parseGameDate(b.gameDate);
         });
 
         sortedGames.forEach(game => {
-            const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
-            const date = gameDate.toLocaleDateString();
-            const time = gameDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const date = fmtGameDate(game.gameDate, { month: 'numeric', day: 'numeric', year: 'numeric' });
+            const time = fmtGameTime(game.gameDate);
 
             const homeTeam = teams.find(t => t.id === game.homeTeamId)?.name || 'Unknown';
             const awayTeam = teams.find(t => t.id === game.awayTeamId)?.name || 'Unknown';
@@ -507,25 +509,14 @@ const ScheduleManager = () => {
     };
 
     // ── Inline editing (design's per-week editor) ──────────────────────────
-    // Split a stored (UTC, no-Z) gameDate into local date + time parts for the
-    // two inline inputs, mirroring GameEditModal's toLocalDateTimeString.
-    const toLocalParts = (utcDateString) => {
-        if (!utcDateString) return { date: '', time: '' };
-        const s = utcDateString.endsWith('Z') ? utcDateString : utcDateString + 'Z';
-        const d = new Date(s);
-        const p = (n) => String(n).padStart(2, '0');
-        return {
-            date: `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`,
-            time: `${p(d.getHours())}:${p(d.getMinutes())}`
-        };
-    };
+    // Split a stored (UTC, no-Z) gameDate into Central date + time parts for the two inline
+    // inputs — the rink's clock, not the admin's laptop's. Mirrors GameEditModal.
+    const toLocalParts = (utcDateString) => toCentralInputParts(utcDateString);
 
-    // Recombine local date + time back to the stored ISO (no trailing Z),
-    // matching GameEditModal's handleSubmit conversion.
+    // Recombine Central date + time back to the stored ISO (no trailing Z).
     const partsToStored = (date, time) => {
         if (!date || !time) return null;
-        let iso = new Date(`${date}T${time}`).toISOString();
-        return iso.endsWith('Z') ? iso.slice(0, -1) : iso;
+        return fromCentralInputParts(date, time);
     };
 
     // Apply a field patch to a game, updating local state + pending changes
@@ -1206,10 +1197,9 @@ const ScheduleManager = () => {
                                         {gamesByWeek[week].map(game => {
                                             const homeTeam = getTeamById(game.homeTeamId);
                                             const awayTeam = getTeamById(game.awayTeamId);
-                                            const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
-                                            const dayOfWeek = gameDate.getDay();
+                                            const dayOfWeek = gameDayIndex(game.gameDate);
                                             const isNotFriday = dayOfWeek !== 5;
-                                            const dayName = gameDate.toLocaleDateString('en-US', { weekday: 'long' });
+                                            const dayName = fmtGameDate(game.gameDate, { weekday: 'long' });
 
                                             const homeBg = getValidColor(homeTeam?.teamColor);
                                             const awayBg = getValidColor(awayTeam?.teamColor);
@@ -1228,8 +1218,8 @@ const ScheduleManager = () => {
                                                     <div className="game-time">
                                                         {game.homeTeamId && game.awayTeamId ? (
                                                             <>
-                                                                {gameDate.toLocaleDateString()} {' '}
-                                                                {gameDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                {fmtGameDate(game.gameDate, { month: 'numeric', day: 'numeric', year: 'numeric' })} {' '}
+                                                                {fmtGameTime(game.gameDate)}
                                                             </>
                                                         ) : (
                                                             <span className="placeholder">Click to set date/time</span>

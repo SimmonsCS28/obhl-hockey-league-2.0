@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api';
 import { resolveTeamColor } from '../../constants/teamColors';
+import { fmtGameDate } from '../../utils/gameTime';
 import './GoalieStatsPanel.css';
 
 const SORT_DEFAULT_DIR = { name: 'asc', gaa: 'asc', rating: 'desc' };
@@ -217,7 +218,7 @@ function GoalieStatsPanel({ seasonId, canEdit }) {
                         return (
                             <div className="gp-game-row" key={g.gameId}>
                                 <span className="gp-game-date">
-                                    {g.date ? new Date(g.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) : ''}
+                                    {fmtGameDate(g.date)}
                                 </span>
                                 <span className="gp-game-team">
                                     <span className="gp-team-dot" style={{ background: resolveTeamColor(team?.teamColor) }} />

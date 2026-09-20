@@ -4,6 +4,7 @@ import * as api from '../../services/api';
 import { resolveTeamColor } from '../../constants/teamColors';
 import { sortByStandings, ordinal } from '../../utils/standings';
 import PlayerProfileCard from '../common/PlayerProfileCard';
+import { parseGameDate, fmtGameDate, fmtGameTime } from '../../utils/gameTime';
 import './TeamRosterPage.css';
 
 const posLabel = (pos) => {
@@ -13,8 +14,6 @@ const posLabel = (pos) => {
     if (['C', 'LW', 'RW', 'F'].includes(p)) return 'Forward';
     return pos || '—';
 };
-
-const parseGameDate = (s) => new Date(s.endsWith('Z') ? s : s + 'Z');
 
 function TeamRosterPage() {
     const { teamId } = useParams();
@@ -114,10 +113,9 @@ function TeamRosterPage() {
     const renderGameRow = (game) => {
         const done = game.status === 'completed';
         const isHome = game.homeTeamId === parseInt(teamId);
-        const d = parseGameDate(game.gameDate);
-        const day = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
-        const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-        const time = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        const day = fmtGameDate(game.gameDate, { weekday: 'short' }).toUpperCase();
+        const date = fmtGameDate(game.gameDate);
+        const time = fmtGameTime(game.gameDate);
         const homeWin = done && game.homeScore > game.awayScore;
         const awayWin = done && game.awayScore > game.homeScore;
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import api from '../../services/api';
+import { fmtGameDate, fmtGameTime } from '../../utils/gameTime';
 import './ShiftSignup.css';
 
 const RefereeShiftSignup = () => {
@@ -188,7 +189,6 @@ const RefereeShiftSignup = () => {
                         </thead>
                         <tbody>
                             {games.map(game => {
-                                const gameDate = new Date(game.gameDate.endsWith('Z') ? game.gameDate : game.gameDate + 'Z');
                                 const ref1 = getUserById(game.referee1Id);
                                 const ref2 = getUserById(game.referee2Id);
 
@@ -196,7 +196,7 @@ const RefereeShiftSignup = () => {
                                     <tr key={game.id}>
                                         <td>Week {game.week}</td>
                                         <td>
-                                            {gameDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} {gameDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                                            {fmtGameDate(game.gameDate)} {fmtGameTime(game.gameDate)}
                                         </td>
                                         <td>
                                             <span

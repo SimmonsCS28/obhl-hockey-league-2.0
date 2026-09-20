@@ -384,11 +384,16 @@ function CoordinatorBoard({ role, onAlertCount }) {
     const assignmentFor = (gameId, slot) =>
         assignments.find(a => a.gameId === gameId && a.slot === slot);
 
+    // Goalie picks are only staged (AUTO_PROPOSED, no email) so the week can be shuffled first —
+    // the email goes out with "Send Confirmation Emails" / the row's Send Confirmation. Picking a
+    // goalie used to email them on the spot, so a swap done before the bulk send left the goalie
+    // holding a confirmation for one game while the week card still showed them in the other.
+    // Refs and scorekeepers have no staging step and are proposed (and emailed) immediately.
     const handleAssign = async (gameId, slot, userId) => {
         setError('');
         setOpenPicker(null);
         try {
-            await api.proposeShift({ gameId, seasonId, role, slot, userId });
+            await api.proposeShift({ gameId, seasonId, role, slot, userId, draft: role === 'GOALIE' });
             await reloadAssignments();
         } catch (e) {
             setError(e.message || 'Failed to assign');
@@ -1137,7 +1142,10 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
     const pickerTitle = (() => {
         const verb = status === 'OPEN' ? 'Assign' : 'Reassign';
         const who = role === 'GOALIE' ? `${slotDef.label} goalie` : role === 'REF' ? `Ref ${slotDef.slot}` : 'scorekeeper';
-        return `${verb} ${who} — they'll get an email to confirm`;
+        // Goalies are staged, not emailed, until the coordinator sends the week's confirmations.
+        return role === 'GOALIE'
+            ? `${verb} ${who} — nothing is emailed until you Send Confirmation`
+            : `${verb} ${who} — they'll get an email to confirm`;
     })();
 
     // Candidates: only goalies who explicitly marked themselves UNAVAILABLE are disabled. A goalie
