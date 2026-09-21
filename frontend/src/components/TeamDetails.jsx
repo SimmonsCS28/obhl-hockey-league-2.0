@@ -37,8 +37,11 @@ function TeamDetails({ team: propTeam, onBack }) {
                     setTeam(currentTeam);
                 }
 
+                // No active filter on the roster: once a season is finished its skaters are
+                // deactivated, so filtering here left every archived team's roster empty.
+                // The season+team scope is enough to isolate the right rows.
                 const [teamPlayers, unassignedPlayers] = await Promise.all([
-                    api.getPlayers({ teamId: targetId, active: true, seasonId: currentTeam.seasonId }),
+                    api.getPlayers({ teamId: targetId, seasonId: currentTeam.seasonId }),
                     api.getPlayers({ unassigned: true, active: true, seasonId: currentTeam.seasonId })
                 ]);
 
