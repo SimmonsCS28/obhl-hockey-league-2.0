@@ -14,7 +14,9 @@ import './Coordinator.css';
 function CoordinatorDashboard() {
     const { hasRole, isAdmin } = useAuth();
     const { selectedSeasonId } = useSeason();
-    const seasonId = selectedSeasonId ?? 13;
+    // null until SeasonContext has resolved the active season. Don't fall back to a hardcoded id:
+    // on a hard refresh that fired a load for an old season which could land after the real one.
+    const seasonId = selectedSeasonId;
 
     const canGoalie = isAdmin || hasRole('GOALIE_COORDINATOR');
     const canRef = isAdmin || hasRole('REF_COORDINATOR');
@@ -50,14 +52,18 @@ function CoordinatorDashboard() {
             // its value is the fresher one if a confirm landed while this was still in flight.
             setAlertCounts(prev => ({ ...results, ...prev }));
         };
-        if (roleTabs.length) loadAlerts();
+        if (roleTabs.length && seasonId != null) loadAlerts();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+    }, [seasonId]);
 
     // The active board owns its own count once it has loaded — see CoordinatorBoard.
     const handleAlertCount = useCallback((role, count) => {
         setAlertCounts(prev => (prev[role] === count ? prev : { ...prev, [role]: count }));
     }, []);
+
+    if (seasonId == null) {
+        return <div className="cc-page"><div className="cc-loading">Loading…</div></div>;
+    }
 
     if (roleTabs.length === 0) {
         return (

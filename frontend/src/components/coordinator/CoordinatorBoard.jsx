@@ -275,7 +275,8 @@ function formatWeekRange(dates) {
 
 function CoordinatorBoard({ role, onAlertCount }) {
     const { selectedSeasonId } = useSeason();
-    const seasonId = selectedSeasonId ?? 13;
+    // Only mounted once the season is known (see CoordinatorDashboard).
+    const seasonId = selectedSeasonId;
 
     const [games, setGames] = useState([]);
     const [teams, setTeams] = useState([]);

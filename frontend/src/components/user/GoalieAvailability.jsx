@@ -76,7 +76,9 @@ function getWeekLabel(start) {
 const GoalieAvailability = () => {
     const navigate = useNavigate();
     const { selectedSeasonId } = useSeason();
-    const seasonId = selectedSeasonId ?? 13;
+    // null until SeasonContext resolves the active season — never guess, or a refresh would load
+    // (and let the goalie mark availability on) an old season.
+    const seasonId = selectedSeasonId;
 
     const [weeks, setWeeks] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -85,10 +87,13 @@ const GoalieAvailability = () => {
     const [pending, setPending] = useState(new Set());
 
     useEffect(() => {
+        if (seasonId == null) return;
+        let stale = false;
         api.getGoalieAvailability(seasonId)
-            .then(setWeeks)
-            .catch(() => setError('Failed to load availability.'))
-            .finally(() => setLoading(false));
+            .then(data => { if (!stale) setWeeks(data); })
+            .catch(() => { if (!stale) setError('Failed to load availability.'); })
+            .finally(() => { if (!stale) setLoading(false); });
+        return () => { stale = true; };
     }, [seasonId]);
 
     const toggleStatus = async (week, next) => {
