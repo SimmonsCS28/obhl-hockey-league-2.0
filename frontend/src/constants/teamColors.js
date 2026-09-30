@@ -18,6 +18,7 @@ const TEAM_COLOR_MAP = {
     'Gold': '#FFD700',
     'Purple': '#800080',
     'Navy': '#000080',
+    'Teal': '#008080',
 };
 
 // Resolve a stored team color (name or hex) to a usable CSS color.

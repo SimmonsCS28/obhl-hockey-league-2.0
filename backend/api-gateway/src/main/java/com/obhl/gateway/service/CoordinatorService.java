@@ -1009,7 +1009,7 @@ public class CoordinatorService {
             Map.entry("Maroon", "#800000"), Map.entry("Gray", "#808080"), Map.entry("Grey", "#808080"),
             Map.entry("Lt. Blu", "#ADD8E6"), Map.entry("Lt. Blue", "#ADD8E6"), Map.entry("Tan", "#D2B48C"),
             Map.entry("White", "#FFFFFF"), Map.entry("Yellow", "#FFD700"), Map.entry("Gold", "#FFD700"),
-            Map.entry("Purple", "#800080"), Map.entry("Navy", "#000080"));
+            Map.entry("Purple", "#800080"), Map.entry("Navy", "#000080"), Map.entry("Teal", "#008080"));
 
     private static final String SCHED_WRAPPER = """
 <table id="week-schedule-block" role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:600px;width:100%;margin:16px auto 0 auto;border-collapse:collapse;">
