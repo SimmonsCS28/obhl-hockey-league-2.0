@@ -44,6 +44,9 @@ public class ShiftConfirmationService {
     @Autowired
     private CoordinatorNotifyService coordinatorNotifyService;
 
+    @Autowired
+    private StaffAvailabilityService staffAvailabilityService;
+
     private static final DateTimeFormatter GAME_FMT = DateTimeFormatter.ofPattern("EEE MMM d, h:mm a");
     private static final ZoneId LEAGUE_TZ = ZoneId.of("America/Chicago");
 
@@ -116,6 +119,14 @@ public class ShiftConfirmationService {
         a.setConfirmTokenHash(null);
         a.setTokenExpiresAt(null);
         assignmentRepository.save(a);
+
+        if (declined) {
+            try {
+                staffAvailabilityService.markUnavailableAfterDecline(a);
+            } catch (RuntimeException e) {
+                // Best-effort, in its own transaction: the decline stands either way.
+            }
+        }
 
         // A decline needs the coordinator to act, so it notifies by default. A confirm doesn't, so it
         // only goes out to coordinators who explicitly asked for confirmations.

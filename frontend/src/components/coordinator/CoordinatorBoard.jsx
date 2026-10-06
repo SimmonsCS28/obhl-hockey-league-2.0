@@ -343,6 +343,11 @@ function CoordinatorBoard({ role, onAlertCount }) {
             .catch(() => setStaffTeams([]));
     }, [seasonId, role]);
 
+    // A decline also marks the person unavailable server-side (their week for a goalie, the game's
+    // night for a ref/SK), so availability is refetched whenever a new decline shows up — otherwise
+    // the picker keeps offering them until a page refresh.
+    const declineKey = assignments.filter(a => a.status === 'DECLINED').map(a => a.id).sort().join(',');
+
     // Refs and scorekeepers mark individual dates they can't work (goalies mark whole weeks, handled
     // by the goalie pool above). This data was being collected and shown to nobody.
     useEffect(() => {
@@ -350,7 +355,7 @@ function CoordinatorBoard({ role, onAlertCount }) {
         api.getCoordinatorAvailability(role)
             .then(rows => setStaffUnavailable(new Set((rows || []).map(r => `${r.userId}|${r.date}`))))
             .catch(() => setStaffUnavailable(new Set()));
-    }, [role]);
+    }, [role, declineKey]);
 
     useEffect(() => {
         if (role !== 'GOALIE') { setSeasonRoster([]); return; }
@@ -364,7 +369,7 @@ function CoordinatorBoard({ role, onAlertCount }) {
         api.getCoordinatorGoalieAvailability(seasonId, parseInt(weekFilter))
             .then(data => setGoaliePool(data || []))
             .catch(() => setGoaliePool([]));
-    }, [role, seasonId, weekFilter]);
+    }, [role, seasonId, weekFilter, declineKey]);
 
     const reloadAssignments = async () => {
         const data = await api.getCoordinatorAssignments(seasonId, role);
@@ -1081,7 +1086,10 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
         actions.push(reassignAction);
         actions.push({ label: 'Clear', color: 'var(--obi-error)', bg: 'rgba(224,138,138,0.1)', border: 'rgba(224,138,138,0.3)', onClick: onClear });
     } else if (status === 'DECLINED') {
+        // Clearing drops the declined record and reopens the slot (self-signup board, auto-proposer)
+        // without picking a replacement. Silent: the decliner never committed, so no email goes out.
         actions.push(reassignAction);
+        actions.push({ label: 'Clear', color: 'var(--obi-error)', bg: 'rgba(224,138,138,0.1)', border: 'rgba(224,138,138,0.3)', onClick: onClear });
     } else if (status === 'CONFIRMED') {
         actions.push(reassignAction);
         actions.push(removeAction);

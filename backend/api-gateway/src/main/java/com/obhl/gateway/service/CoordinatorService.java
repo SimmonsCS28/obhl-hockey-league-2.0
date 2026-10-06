@@ -72,6 +72,9 @@ public class CoordinatorService {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private StaffAvailabilityService staffAvailabilityService;
+
     @Value("${app.frontend.url:https://oldbuzzardhockey.com}")
     private String frontendUrl;
 
@@ -547,6 +550,13 @@ public class CoordinatorService {
         a.setConfirmTokenHash(null);
         a.setTokenExpiresAt(null);
         a = assignmentRepository.save(a);
+        if (ShiftAssignment.STATUS_DECLINED.equals(a.getStatus())) {
+            try {
+                staffAvailabilityService.markUnavailableAfterDecline(a);
+            } catch (RuntimeException e) {
+                // Best-effort, as in a real decline.
+            }
+        }
         return toView(a, gameProxyService.getGameById(a.getGameId()));
     }
 
