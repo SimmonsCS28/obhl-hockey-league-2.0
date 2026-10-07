@@ -71,6 +71,12 @@ function chicagoDayKey(dateStr) {
     return toChicago(dateStr).toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
 }
 
+/** "Fri" for a goalie availability night ('YYYY-MM-DD', already league-local). */
+function nightWeekday(dayKey) {
+    const [y, m, d] = dayKey.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short' });
+}
+
 function formatGap(ms) {
     const mins = Math.round(ms / 60000);
     const h = Math.floor(mins / 60);
@@ -738,22 +744,28 @@ function CoordinatorBoard({ role, onAlertCount }) {
                     <div className="cc-goalie-pool-list">
                         {goaliePool.map(g => {
                             const avail = g.status === 'AVAILABLE';
+                            // Free some nights of the week but not others, e.g. "Out Fri".
+                            const partial = g.status === 'PARTIAL';
+                            const label = avail ? 'Available this week'
+                                : partial ? `Out ${(g.unavailableNights || []).map(nightWeekday).join(' & ')}`
+                                : 'Not available';
+                            const tone = avail ? 'var(--obi-success)' : partial ? 'var(--obi-accent)' : 'var(--obi-text-muted)';
                             return (
                                 <div
                                     key={g.userId}
                                     className="cc-goalie-chip"
-                                    style={{ border: `1px solid ${avail ? 'rgba(127,181,154,0.32)' : 'rgba(157,185,205,0.16)'}` }}
+                                    style={{ border: `1px solid ${avail ? 'rgba(127,181,154,0.32)' : partial ? 'rgba(246,169,28,0.32)' : 'rgba(157,185,205,0.16)'}` }}
                                 >
                                     <div
                                         className="cc-goalie-chip-dot"
-                                        style={{ background: avail ? 'var(--obi-success)' : 'rgba(157,185,205,0.18)', color: avail ? '#0b0c0f' : '#fff' }}
+                                        style={{ background: avail || partial ? tone : 'rgba(157,185,205,0.18)', color: avail || partial ? '#0b0c0f' : '#fff' }}
                                     >
                                         {initials(g.userName)}
                                     </div>
                                     <div>
                                         <div className="cc-goalie-chip-name">{g.userName}</div>
-                                        <div className="cc-goalie-chip-status" style={{ color: avail ? 'var(--obi-success)' : 'var(--obi-text-muted)' }}>
-                                            {avail ? 'Available this week' : 'Not available'}
+                                        <div className="cc-goalie-chip-status" style={{ color: tone }}>
+                                            {label}
                                         </div>
                                     </div>
                                 </div>
@@ -1157,13 +1169,12 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
             : `${verb} ${who} — they'll get an email to confirm`;
     })();
 
-    // Candidates: only goalies who explicitly marked themselves UNAVAILABLE are disabled. A goalie
-    // with unknown / not-set availability stays selectable — they can still be assigned and will get
-    // an email to confirm the time (people routinely just forget to mark the week).
-    const unavailableGoalieIds = new Set(
-        role === 'GOALIE' && weekFilter !== 'all'
-            ? goaliePool.filter(g => g.status === 'UNAVAILABLE').map(g => g.userId)
-            : []
+    // Candidates: only goalies who explicitly marked themselves UNAVAILABLE for this game's night are
+    // disabled. A goalie with unknown / not-set availability stays selectable — they can still be
+    // assigned and will get an email to confirm the time (people routinely just forget to mark it).
+    // Goalies mark per game night, so a goalie out Friday stays pickable for a Thursday game.
+    const goaliePoolByUser = new Map(
+        role === 'GOALIE' && weekFilter !== 'all' ? goaliePool.map(g => [g.userId, g]) : []
     );
 
     // Roster state per candidate. Three outcomes, and the difference that matters is between
@@ -1174,17 +1185,20 @@ function SlotRow({ slotDef, assignment, pickerOpen, onOpenPicker, onClosePicker,
 
     const candidates = staff.map(u => {
         const name = getName(u);
-        // Goalies mark whole weeks; refs and scorekeepers mark individual dates, so theirs is
-        // checked against this game's own night rather than the week it sits in.
+        // Everyone is checked against this game's own night, not the week it sits in.
+        const poolEntry = goaliePoolByUser.get(u.id) || null;
+        const outThisNight = !!poolEntry?.unavailableNights?.includes(gameDayKey);
+        const inThisNight = !!poolEntry?.availableNights?.includes(gameDayKey);
         const unavailable = role === 'GOALIE'
-            ? (weekFilter !== 'all' && unavailableGoalieIds.has(u.id))
+            ? outThisNight
             : staffUnavailable.has(`${u.id}|${gameDayKey}`);
-        const poolEntry = role === 'GOALIE' && weekFilter !== 'all' ? goaliePool.find(g => g.userId === u.id) : null;
         const sub = role === 'GOALIE'
-            ? (poolEntry ? (poolEntry.status === 'AVAILABLE' ? 'Available this week' : 'Not available') : 'Availability unknown')
+            ? (outThisNight ? (poolEntry.status === 'UNAVAILABLE' ? 'Not available' : 'Not available this night')
+                : inThisNight ? (poolEntry.status === 'AVAILABLE' ? 'Available this week' : 'Available this night')
+                : 'Availability unknown')
             : 'Not available this date';
         const subColor = role === 'GOALIE'
-            ? (poolEntry?.status === 'AVAILABLE' ? 'var(--obi-success)' : 'var(--obi-text-muted)')
+            ? (inThisNight ? 'var(--obi-success)' : 'var(--obi-text-muted)')
             : 'var(--obi-text-muted)';
 
         const t = teamByUser.get(u.id);

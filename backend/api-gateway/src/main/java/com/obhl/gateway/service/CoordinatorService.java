@@ -21,11 +21,9 @@ import com.obhl.gateway.dto.CoordinatorDto;
 import com.obhl.gateway.dto.GameResponseDTO;
 import com.obhl.gateway.dto.PlayerDto;
 import com.obhl.gateway.dto.TeamDto;
-import com.obhl.gateway.model.GoalieAvailability;
 import com.obhl.gateway.model.SeasonGoalie;
 import com.obhl.gateway.model.ShiftAssignment;
 import com.obhl.gateway.model.User;
-import com.obhl.gateway.repository.GoalieAvailabilityRepository;
 import com.obhl.gateway.repository.SeasonGoalieRepository;
 import com.obhl.gateway.repository.ShiftAssignmentRepository;
 import com.obhl.gateway.repository.UserRepository;
@@ -67,7 +65,7 @@ public class CoordinatorService {
     private SeasonGoalieRepository seasonGoalieRepository;
 
     @Autowired
-    private GoalieAvailabilityRepository goalieAvailabilityRepository;
+    private GoalieAvailabilityService goalieAvailabilityService;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -784,9 +782,12 @@ public class CoordinatorService {
                 .map(ShiftAssignment::getUserId)
                 .collect(Collectors.toSet());
 
-        Set<Long> unavailable = goalieAvailabilityRepository.findBySeasonIdAndWeek(seasonId, week).stream()
-                .filter(av -> GoalieAvailability.STATUS_UNAVAILABLE.equals(av.getStatus()))
-                .map(GoalieAvailability::getUserId)
+        // "You marked yourself unavailable" is only true of a goalie out on every night of the week;
+        // one free night of two means they could have played, so they get the ordinary notice.
+        Set<java.time.LocalDate> weekNights = goalieAvailabilityService.nightsOfWeek(seasonId, week);
+        Set<Long> unavailable = goalieAvailabilityService.unavailableNights(seasonId, week).entrySet().stream()
+                .filter(e -> !weekNights.isEmpty() && e.getValue().containsAll(weekNights))
+                .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
 
         // Rendered once: it is the same week for every recipient, and nobody is highlighted in it.

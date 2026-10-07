@@ -17,7 +17,8 @@ import com.obhl.gateway.repository.UserRepository;
 import com.obhl.gateway.service.GoalieAvailabilityService;
 
 /**
- * Self-service goalie weekly availability (v3). A goalie reads/sets their own availability;
+ * Self-service goalie availability, per game night (a week-level set covers all its nights).
+ * A goalie reads/sets their own availability;
  * the coordinator pool view lives on CoordinatorController.
  */
 @RestController
@@ -39,7 +40,11 @@ public class GoalieAvailabilityController {
     @PutMapping
     public ResponseEntity<?> setMine(@RequestBody GoalieAvailabilityDto.SetWeekRequest req, Authentication auth) {
         try {
-            availabilityService.setStatus(currentUserId(auth), req.getSeasonId(), req.getWeek(), req.getStatus());
+            if (req.getDate() != null) {
+                availabilityService.setNightStatus(currentUserId(auth), req.getSeasonId(), req.getDate(), req.getStatus());
+            } else {
+                availabilityService.setStatus(currentUserId(auth), req.getSeasonId(), req.getWeek(), req.getStatus());
+            }
             return ResponseEntity.ok(availabilityService.getForUser(currentUserId(auth), req.getSeasonId()));
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));

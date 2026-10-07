@@ -1,5 +1,6 @@
 package com.obhl.gateway.repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,7 +14,8 @@ public interface GoalieAvailabilityRepository extends JpaRepository<GoalieAvaila
 
     List<GoalieAvailability> findByUserIdAndSeasonId(Long userId, Long seasonId);
 
-    Optional<GoalieAvailability> findByUserIdAndSeasonIdAndWeek(Long userId, Long seasonId, Integer week);
+    Optional<GoalieAvailability> findByUserIdAndSeasonIdAndGameDate(Long userId, Long seasonId, LocalDate gameDate);
 
+    /** One row per game night that week — callers wanting a goalie's whole-week view must aggregate. */
     List<GoalieAvailability> findBySeasonIdAndWeek(Long seasonId, Integer week);
 }

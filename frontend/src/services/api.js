@@ -703,10 +703,19 @@ const api = {
         return request(`/goalie/availability?seasonId=${seasonId}`);
     },
 
+    // Sets every game night of the week at once.
     async setGoalieAvailability(seasonId, week, status) {
         return request('/goalie/availability', {
             method: 'PUT',
             body: JSON.stringify({ seasonId, week, status })
+        });
+    },
+
+    // Sets one game night (date = 'YYYY-MM-DD', league-local), for weeks with games on several nights.
+    async setGoalieNightAvailability(seasonId, date, status) {
+        return request('/goalie/availability', {
+            method: 'PUT',
+            body: JSON.stringify({ seasonId, date, status })
         });
     },
 
@@ -1184,6 +1193,7 @@ export const {
     dropSlotSignup,
     getGoalieAvailability,
     setGoalieAvailability,
+    setGoalieNightAvailability,
     getGoaliePerformance,
     updateGoalieRating,
     getPendingShifts,

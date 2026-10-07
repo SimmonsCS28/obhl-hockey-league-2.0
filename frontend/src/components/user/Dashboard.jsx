@@ -57,6 +57,8 @@ const toDate = (s) => {
 const fmtTime = (s) => { const d = toDate(s); return d ? d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: TZ }) : ''; };
 const fmtDay = (s) => { const d = toDate(s); return d ? d.toLocaleDateString('en-US', { weekday: 'short', timeZone: TZ }).toUpperCase() : ''; };
 const fmtDate = (s) => { const d = toDate(s); return d ? d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: TZ }) : ''; };
+// A goalie availability night: 'YYYY-MM-DD', already league-local, so no timezone shift. "Thu"
+const fmtNight = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short' }); };
 const fmtWhen = (s) => { const d = toDate(s); return d ? d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: TZ }) + ' · ' + fmtTime(s) : 'TBD'; };
 
 // A game stays on your list while you could still be scoring it, not just until face-off.
@@ -243,6 +245,12 @@ function Dashboard() {
     const setAvail = async (week, status) => {
         setBusy(week);
         try { const updated = await api.setGoalieAvailability(selectedSeasonId, week, status); setGoalieWeeks(updated); }
+        catch { /* ignore */ } finally { setBusy(null); }
+    };
+    // One night of a week with games on several nights.
+    const setNightAvail = async (date, status) => {
+        setBusy(date);
+        try { const updated = await api.setGoalieNightAvailability(selectedSeasonId, date, status); setGoalieWeeks(updated); }
         catch { /* ignore */ } finally { setBusy(null); }
     };
 
@@ -597,15 +605,30 @@ function Dashboard() {
                                         <div className="dash-col-title">My Availability</div>
                                         <p className="dash-col-note">Mark each week so the goalie coordinator can build balanced matchups. They schedule you — you don't claim shifts.</p>
                                         <div className="dash-week-list">
-                                            {upcomingGoalieWeeks.slice(0, 2).map(w => (
-                                                <div key={w.week} className="dash-week-row">
-                                                    <div className="dash-week-label">{w.status === 'AVAILABLE' ? 'Available' : w.status === 'UNAVAILABLE' ? 'Unavailable' : 'Not set'} · Week {w.week}</div>
-                                                    <div className="dash-week-btns">
-                                                        <button className={`dash-week-btn${w.status === 'AVAILABLE' ? ' is-avail' : ''}`} disabled={busy === w.week} onClick={() => setAvail(w.week, w.status === 'AVAILABLE' ? null : 'AVAILABLE')}>Available</button>
-                                                        <button className={`dash-week-btn${w.status === 'UNAVAILABLE' ? ' is-unavail' : ''}`} disabled={busy === w.week} onClick={() => setAvail(w.week, w.status === 'UNAVAILABLE' ? null : 'UNAVAILABLE')}>Unavailable</button>
+                                            {upcomingGoalieWeeks.slice(0, 2).flatMap(w => {
+                                                const statusWord = (s) => (s === 'AVAILABLE' ? 'Available' : s === 'UNAVAILABLE' ? 'Unavailable' : 'Not set');
+                                                // A week with games on several nights gets a row per night.
+                                                if ((w.nights || []).length > 1) {
+                                                    return w.nights.map(n => (
+                                                        <div key={n.date} className="dash-week-row">
+                                                            <div className="dash-week-label">{statusWord(n.status)} · Week {w.week} · {fmtNight(n.date)}</div>
+                                                            <div className="dash-week-btns">
+                                                                <button className={`dash-week-btn${n.status === 'AVAILABLE' ? ' is-avail' : ''}`} disabled={busy === n.date} onClick={() => setNightAvail(n.date, n.status === 'AVAILABLE' ? null : 'AVAILABLE')}>Available</button>
+                                                                <button className={`dash-week-btn${n.status === 'UNAVAILABLE' ? ' is-unavail' : ''}`} disabled={busy === n.date} onClick={() => setNightAvail(n.date, n.status === 'UNAVAILABLE' ? null : 'UNAVAILABLE')}>Unavailable</button>
+                                                            </div>
+                                                        </div>
+                                                    ));
+                                                }
+                                                return [(
+                                                    <div key={w.week} className="dash-week-row">
+                                                        <div className="dash-week-label">{statusWord(w.status)} · Week {w.week}</div>
+                                                        <div className="dash-week-btns">
+                                                            <button className={`dash-week-btn${w.status === 'AVAILABLE' ? ' is-avail' : ''}`} disabled={busy === w.week} onClick={() => setAvail(w.week, w.status === 'AVAILABLE' ? null : 'AVAILABLE')}>Available</button>
+                                                            <button className={`dash-week-btn${w.status === 'UNAVAILABLE' ? ' is-unavail' : ''}`} disabled={busy === w.week} onClick={() => setAvail(w.week, w.status === 'UNAVAILABLE' ? null : 'UNAVAILABLE')}>Unavailable</button>
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            ))}
+                                                )];
+                                            })}
                                         </div>
                                         <Link to="/user/goalie-availability" className="dash-deeplink">
                                             <span>Set availability for all weeks</span>

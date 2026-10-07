@@ -1,5 +1,6 @@
 package com.obhl.gateway.service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -9,6 +10,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,12 +20,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.obhl.gateway.dto.CoordinatorDto;
 import com.obhl.gateway.dto.GameResponseDTO;
 import com.obhl.gateway.dto.PlayerDto;
-import com.obhl.gateway.model.GoalieAvailability;
 import com.obhl.gateway.model.GoalieBenchNotice;
 import com.obhl.gateway.model.SeasonGoalie;
 import com.obhl.gateway.model.ShiftAssignment;
 import com.obhl.gateway.model.User;
-import com.obhl.gateway.repository.GoalieAvailabilityRepository;
 import com.obhl.gateway.repository.GoalieBenchNoticeRepository;
 import com.obhl.gateway.repository.SeasonGoalieRepository;
 import com.obhl.gateway.repository.ShiftAssignmentRepository;
@@ -36,6 +36,8 @@ import com.obhl.gateway.repository.UserRepository;
  * <p>Optimizer (ported from the standalone prototype, scratchpad/goalie_assign.py):
  * <ul>
  *   <li><b>HARD:</b> the two goalies in a game are at most one fuzzy tier apart.</li>
+ *   <li><b>HARD:</b> nobody is placed on a night they marked themselves unavailable. Availability
+ *       is per game night, so a goalie out Friday can still take a Thursday game the same week.</li>
  *   <li><b>Who plays</b> = fairness: sit whoever has the most games played so far.</li>
  *   <li><b>Who faces whom</b> = skill: pair goalies close in rating (global min-cost matching).</li>
  *   <li><b>Which game</b> = rotation: push each goalie away from any early/mid/late bucket they've
@@ -59,6 +61,7 @@ public class GoalieProposerService {
     private static final int W_NOTSHARE = 60;   // pair is tier-adjacent but shares no tier
     private static final int W_BUCKET = 8;      // per game of over-representation in a time bucket
     private static final int W_TEAM = 5;        // faces a team they played last week
+    private static final int W_OUT = 1_000_000; // placed on a night they marked unavailable (never wanted)
 
     private static final String EARLY = "EARLY";
     private static final String MID = "MID";
@@ -79,7 +82,7 @@ public class GoalieProposerService {
     private ShiftAssignmentRepository assignmentRepository;
 
     @Autowired
-    private GoalieAvailabilityRepository availabilityRepository;
+    private GoalieAvailabilityService availabilityService;
 
     @Autowired
     private UserRepository userRepository;
@@ -136,11 +139,8 @@ public class GoalieProposerService {
         Set<Long> unresolvedRating = new LinkedHashSet<>();
         Map<Long, Integer> skill = skillRatings(seasonId, fulltime, usersById, unresolvedRating);
 
-        // --- Availability: exclude only explicit UNAVAILABLE (locked decision) ---
-        Set<Long> unavailable = availabilityRepository.findBySeasonIdAndWeek(seasonId, week).stream()
-                .filter(a -> GoalieAvailability.STATUS_UNAVAILABLE.equals(a.getStatus()))
-                .map(GoalieAvailability::getUserId)
-                .collect(Collectors.toSet());
+        // --- Availability: exclude only explicit UNAVAILABLE (locked decision), per night ---
+        Map<Long, Set<LocalDate>> outNights = availabilityService.unavailableNights(seasonId, week);
 
         // --- Season history: games played, bucket counts, and last week's opponents ---
         History hist = buildHistory(allGames, week);
@@ -157,11 +157,11 @@ public class GoalieProposerService {
             }
         }
 
-        // --- Eligible pool ---
+        // --- Eligible pool: anyone free for at least one of the week's nights ---
         List<Long> pool = fulltime.stream()
                 .map(SeasonGoalie::getUserId)
                 .filter(usersById::containsKey)
-                .filter(uid -> !unavailable.contains(uid))
+                .filter(uid -> weekGames.stream().anyMatch(g -> canPlay(outNights, uid, g)))
                 .filter(uid -> !usedThisWeek.contains(uid))
                 .collect(Collectors.toList());
 
@@ -209,6 +209,9 @@ public class GoalieProposerService {
             Long best = null;
             int bestCost = Integer.MAX_VALUE;
             for (Long uid : playing) {
+                if (!canPlay(outNights, uid, g)) {
+                    continue;   // hard rule: out that night
+                }
                 int c = rotationCostFor(uid, g, bucketByGame, hist);
                 if (partnerRating != null) {
                     if (!tierCompatible(skill.getOrDefault(uid, 0), partnerRating)) {
@@ -222,7 +225,12 @@ public class GoalieProposerService {
                 }
             }
             if (best == null) {
-                best = playing.get(0);   // no tier-legal option; leave it to the human to swap
+                // No tier-legal option; take anyone free that night and leave it to the human to
+                // swap. Nobody free that night at all -> the slot stays open.
+                best = playing.stream().filter(uid -> canPlay(outNights, uid, g)).findFirst().orElse(null);
+                if (best == null) {
+                    continue;
+                }
                 bestCost = rotationCostFor(best, g, bucketByGame, hist);
             }
             playing.remove(best);
@@ -240,17 +248,23 @@ public class GoalieProposerService {
             List<GameResponseDTO> targetGames = openGames.subList(0, gamesFillable);
             List<Long> seated = new ArrayList<>(playing.subList(0, gamesFillable * GOALIE_SLOTS_PER_GAME));
 
-            List<long[]> pairs = bestPairing(seated, skill);
+            // Two goalies can only share a game on a night both are free.
+            BiPredicate<Long, Long> shareANight = (a, b) -> targetGames.stream()
+                    .anyMatch(g -> canPlay(outNights, a, g) && canPlay(outNights, b, g));
+            List<long[]> pairs = bestPairing(seated, skill, shareANight);
             for (long[] p : pairs) {
                 skillCost += pairSkillCost(skill.getOrDefault(p[0], 0), skill.getOrDefault(p[1], 0));
             }
 
-            List<Integer> order = bestGameOrder(pairs, targetGames, bucketByGame, hist);
+            List<Integer> order = bestGameOrder(pairs, targetGames, bucketByGame, hist, outNights);
             for (int pi = 0; pi < pairs.size(); pi++) {
                 GameResponseDTO g = targetGames.get(order.get(pi));
                 long[] pair = pairs.get(pi);
                 for (int k = 0; k < 2; k++) {
                     Long uid = pair[k];
+                    if (!canPlay(outNights, uid, g)) {
+                        continue;   // no legal night for this pair; leave the slot for the human
+                    }
                     rotationCost += rotationCostFor(uid, g, bucketByGame, hist);
                     persist(seasonId, g.getId(), k + 1, uid, coordinatorUserId, bySlot);
                     placements.add(placementFor(uid, usersById, skill, unresolvedRating, g,
@@ -321,10 +335,7 @@ public class GoalieProposerService {
         Set<Long> unresolvedRating = new LinkedHashSet<>();
         Map<Long, Integer> skill = skillRatings(seasonId, fulltime, usersById, unresolvedRating);
 
-        Set<Long> unavailable = availabilityRepository.findBySeasonIdAndWeek(seasonId, week).stream()
-                .filter(a -> GoalieAvailability.STATUS_UNAVAILABLE.equals(a.getStatus()))
-                .map(GoalieAvailability::getUserId)
-                .collect(Collectors.toSet());
+        Map<Long, Set<LocalDate>> outNights = availabilityService.unavailableNights(seasonId, week);
 
         List<GameResponseDTO> allGames = gameProxyService.getGamesBySeason(seasonId);
         History hist = buildHistory(allGames == null ? List.of() : allGames, week);
@@ -342,7 +353,7 @@ public class GoalieProposerService {
         List<Long> pool = fulltime.stream()
                 .map(SeasonGoalie::getUserId)
                 .filter(usersById::containsKey)
-                .filter(uid -> !unavailable.contains(uid))
+                .filter(uid -> weekGames.stream().anyMatch(g -> canPlay(outNights, uid, g)))
                 .filter(uid -> !usedThisWeek.contains(uid))
                 .collect(Collectors.toList());
 
@@ -361,12 +372,19 @@ public class GoalieProposerService {
         List<Long> bracketGoalies = new ArrayList<>(pool.subList(0, bracketNeeded));
         pool.subList(0, bracketNeeded).clear();
 
-        List<long[]> bracketPairs = bestPairing(bracketGoalies, skill);
+        BiPredicate<Long, Long> shareABracketNight = (a, b) -> openBracket.stream()
+                .anyMatch(g -> canPlay(outNights, a, g) && canPlay(outNights, b, g));
+        List<long[]> bracketPairs = bestPairing(bracketGoalies, skill, shareABracketNight);
+        List<Integer> bracketOrder = bestGameOrder(bracketPairs, openBracket, Map.of(), new History(), outNights);
         for (int i = 0; i < bracketPairs.size() && i < openBracket.size(); i++) {
-            GameResponseDTO g = openBracket.get(i);
+            GameResponseDTO g = openBracket.get(bracketOrder.get(i));
             long[] pair = bracketPairs.get(i);
             skillCost += pairSkillCost(skill.getOrDefault(pair[0], 0), skill.getOrDefault(pair[1], 0));
             for (int k = 0; k < 2; k++) {
+                if (!canPlay(outNights, pair[k], g)) {
+                    pool.add(pair[k]);   // out that night; back to the pool for a consolation game
+                    continue;
+                }
                 persist(seasonId, g.getId(), k + 1, pair[k], coordinatorUserId, bySlot);
                 placements.add(playoffPlacement(pair[k], usersById, skill, unresolvedRating, g, true));
                 filled++;
@@ -377,10 +395,14 @@ public class GoalieProposerService {
         pool.sort(Comparator.comparingInt((Long uid) -> hist.gamesPlayed.getOrDefault(uid, 0)));
         for (GameResponseDTO g : consolationGames) {
             for (int slot = 1; slot <= GOALIE_SLOTS_PER_GAME; slot++) {
-                if (bySlot.containsKey(g.getId() + ":" + slot) || pool.isEmpty()) {
+                if (bySlot.containsKey(g.getId() + ":" + slot)) {
                     continue;
                 }
-                Long uid = pool.remove(0);
+                Long uid = pool.stream().filter(u -> canPlay(outNights, u, g)).findFirst().orElse(null);
+                if (uid == null) {
+                    continue;
+                }
+                pool.remove(uid);
                 persist(seasonId, g.getId(), slot, uid, coordinatorUserId, bySlot);
                 placements.add(playoffPlacement(uid, usersById, skill, unresolvedRating, g, false));
                 filled++;
@@ -572,6 +594,12 @@ public class GoalieProposerService {
         return W_SKILL * diff * diff + (sharesTier(a, b) ? 0 : W_NOTSHARE);
     }
 
+    /** False when the goalie marked themselves out on the night this game falls on. */
+    private static boolean canPlay(Map<Long, Set<LocalDate>> outNights, Long uid, GameResponseDTO g) {
+        Set<LocalDate> out = outNights.get(uid);
+        return out == null || !out.contains(GoalieAvailabilityService.leagueNight(g.getGameDate()));
+    }
+
     // ---- rotation ----
 
     /** Rank the week's games by start time: earliest = EARLY, latest = LATE, the rest MID. */
@@ -645,28 +673,37 @@ public class GoalieProposerService {
 
     // ---- optimizers ----
 
-    private List<long[]> bestPairing(List<Long> goalies, Map<Long, Integer> skill) {
-        List<long[]> strict = searchPairing(goalies, skill, true);
-        return strict != null ? strict : searchPairing(goalies, skill, false);
+    /**
+     * Tier rule first, relaxed if it can't be met; the night rule ({@code together}) is relaxed only
+     * as a last resort, and any pair that still can't share a night is left unseated at placement.
+     */
+    private List<long[]> bestPairing(List<Long> goalies, Map<Long, Integer> skill, BiPredicate<Long, Long> together) {
+        List<long[]> strict = searchPairing(goalies, skill, true, together);
+        if (strict != null) {
+            return strict;
+        }
+        List<long[]> anyTier = searchPairing(goalies, skill, false, together);
+        return anyTier != null ? anyTier : searchPairing(goalies, skill, false, (a, b) -> true);
     }
 
     /**
      * Minimum-cost perfect matching over the seated goalies. Branch-and-bound brute force —
      * exact for the league's size (10–12 goalies); falls back to greedy beyond the guard rail.
      */
-    private List<long[]> searchPairing(List<Long> goalies, Map<Long, Integer> skill, boolean enforceTier) {
+    private List<long[]> searchPairing(List<Long> goalies, Map<Long, Integer> skill, boolean enforceTier,
+            BiPredicate<Long, Long> together) {
         if (goalies.size() > MAX_BRUTE_FORCE_GOALIES) {
-            return greedyPairing(goalies, skill, enforceTier);
+            return greedyPairing(goalies, skill, enforceTier, together);
         }
         List<long[]> best = new ArrayList<>();
         int[] bestCost = { Integer.MAX_VALUE };
         List<long[]> acc = new ArrayList<>();
-        pairRecurse(new ArrayList<>(goalies), skill, enforceTier, acc, 0, best, bestCost);
+        pairRecurse(new ArrayList<>(goalies), skill, enforceTier, together, acc, 0, best, bestCost);
         return bestCost[0] == Integer.MAX_VALUE ? null : best;
     }
 
     private void pairRecurse(List<Long> remaining, Map<Long, Integer> skill, boolean enforceTier,
-            List<long[]> acc, int cost, List<long[]> best, int[] bestCost) {
+            BiPredicate<Long, Long> together, List<long[]> acc, int cost, List<long[]> best, int[] bestCost) {
         if (cost >= bestCost[0]) {
             return;                     // prune
         }
@@ -681,19 +718,20 @@ public class GoalieProposerService {
             Long other = remaining.get(i);
             int ra = skill.getOrDefault(first, 0);
             int rb = skill.getOrDefault(other, 0);
-            if (enforceTier && !tierCompatible(ra, rb)) {
+            if ((enforceTier && !tierCompatible(ra, rb)) || !together.test(first, other)) {
                 continue;
             }
             List<Long> rest = new ArrayList<>(remaining);
             rest.remove(i);
             rest.remove(0);
             acc.add(new long[]{ first, other });
-            pairRecurse(rest, skill, enforceTier, acc, cost + pairSkillCost(ra, rb), best, bestCost);
+            pairRecurse(rest, skill, enforceTier, together, acc, cost + pairSkillCost(ra, rb), best, bestCost);
             acc.remove(acc.size() - 1);
         }
     }
 
-    private List<long[]> greedyPairing(List<Long> goalies, Map<Long, Integer> skill, boolean enforceTier) {
+    private List<long[]> greedyPairing(List<Long> goalies, Map<Long, Integer> skill, boolean enforceTier,
+            BiPredicate<Long, Long> together) {
         List<Long> rest = new ArrayList<>(goalies);
         rest.sort(Comparator.comparingInt(uid -> -skill.getOrDefault(uid, 0)));
         List<long[]> out = new ArrayList<>();
@@ -704,7 +742,7 @@ public class GoalieProposerService {
             for (int i = 0; i < rest.size(); i++) {
                 int ra = skill.getOrDefault(a, 0);
                 int rb = skill.getOrDefault(rest.get(i), 0);
-                if (enforceTier && !tierCompatible(ra, rb)) {
+                if ((enforceTier && !tierCompatible(ra, rb)) || !together.test(a, rest.get(i))) {
                     continue;
                 }
                 int c = pairSkillCost(ra, rb);
@@ -718,9 +756,13 @@ public class GoalieProposerService {
         return out;
     }
 
-    /** Assign pairs to games so total rotation cost is lowest. Returns pair index -> game index. */
+    /**
+     * Assign pairs to games so total rotation cost is lowest. Returns pair index -> game index. A
+     * goalie out on a game's night makes that placement cost {@link #W_OUT}, so it is only chosen
+     * when nothing legal exists (and is then skipped at placement, leaving the slot open).
+     */
     private List<Integer> bestGameOrder(List<long[]> pairs, List<GameResponseDTO> games,
-            Map<Long, String> bucketByGame, History hist) {
+            Map<Long, String> bucketByGame, History hist, Map<Long, Set<LocalDate>> outNights) {
         int n = Math.min(pairs.size(), games.size());
         List<Integer> identity = new ArrayList<>();
         for (int i = 0; i < n; i++) {
@@ -732,19 +774,19 @@ public class GoalieProposerService {
         List<Integer> best = new ArrayList<>(identity);
         int[] bestCost = { Integer.MAX_VALUE };
         permute(pairs, games, new ArrayList<>(), new boolean[n], n,
-                bucketByGame, hist, best, bestCost);
+                bucketByGame, hist, outNights, best, bestCost);
         return best;
     }
 
     private void permute(List<long[]> pairs, List<GameResponseDTO> games, List<Integer> acc,
             boolean[] used, int n, Map<Long, String> bucketByGame, History hist,
-            List<Integer> best, int[] bestCost) {
+            Map<Long, Set<LocalDate>> outNights, List<Integer> best, int[] bestCost) {
         if (acc.size() == n) {
             int cost = 0;
             for (int pi = 0; pi < n; pi++) {
                 GameResponseDTO g = games.get(acc.get(pi));
                 for (long uid : pairs.get(pi)) {
-                    cost += rotationCostFor(uid, g, bucketByGame, hist);
+                    cost += canPlay(outNights, uid, g) ? rotationCostFor(uid, g, bucketByGame, hist) : W_OUT;
                 }
             }
             if (cost < bestCost[0]) {
@@ -760,7 +802,7 @@ public class GoalieProposerService {
             }
             used[i] = true;
             acc.add(i);
-            permute(pairs, games, acc, used, n, bucketByGame, hist, best, bestCost);
+            permute(pairs, games, acc, used, n, bucketByGame, hist, outNights, best, bestCost);
             acc.remove(acc.size() - 1);
             used[i] = false;
         }

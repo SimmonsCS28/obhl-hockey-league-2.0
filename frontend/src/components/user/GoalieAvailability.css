@@ -262,6 +262,10 @@
 .ga-row--avail   { border-color: rgba(127, 181, 154, 0.28); }
 .ga-row--unavail { border-color: rgba(224, 138, 138, 0.26); }
 .ga-row--unset   { border-color: rgba(157, 185, 205, 0.16); }
+.ga-row--partial { border-color: rgba(246, 169, 28, 0.3); }
+
+/* A week with games on several nights stacks one toggle row per night under the week info. */
+.ga-row--split { align-items: flex-start; }
 
 .ga-row--current {
     box-shadow: inset 3px 0 0 var(--obi-accent);
@@ -306,6 +310,12 @@
     color: var(--obi-error);
     background: rgba(224, 138, 138, 0.14);
     border-color: rgba(224, 138, 138, 0.3);
+}
+
+.ga-tag--partial {
+    color: var(--obi-accent);
+    background: rgba(246, 169, 28, 0.12);
+    border-color: rgba(246, 169, 28, 0.32);
 }
 
 .ga-tag--unset {
@@ -370,6 +380,46 @@
     transform: none;
 }
 
+/* ── Per-night rows (split weeks) ── */
+.ga-nights {
+    flex: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ga-night {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+}
+
+.ga-night-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    min-width: 96px;
+}
+
+.ga-night-label {
+    font-family: var(--obi-font-display);
+    font-weight: 700;
+    font-size: 14px;
+    color: #fff;
+}
+
+.ga-night-games {
+    font-family: var(--obi-font-body);
+    font-size: 11.5px;
+    color: var(--obi-text-muted);
+}
+
+.ga-toggle--sm {
+    font-size: 11.5px;
+    padding: 8px 13px;
+}
+
 /* ── Loading / error ── */
 .ga-state {
     display: flex;
@@ -387,6 +437,9 @@
 @media (max-width: 760px) {
     .ga-row { flex-wrap: wrap; }
     .ga-row-btns { width: 100%; }
+    .ga-nights { width: 100%; }
+    .ga-night { flex-wrap: wrap; justify-content: flex-start; }
+    .ga-night-info { flex-direction: row; align-items: baseline; gap: 8px; }
 }
 
 @media (max-width: 540px) {

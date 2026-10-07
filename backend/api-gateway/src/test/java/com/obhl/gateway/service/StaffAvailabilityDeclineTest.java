@@ -33,8 +33,8 @@ import com.obhl.gateway.repository.StaffUnavailabilityRepository;
 import com.obhl.gateway.repository.UserRepository;
 
 /**
- * A decline becomes unavailability — the goalie's week, or the ref/scorekeeper's game night — unless
- * the person still holds another shift then, in which case the decline was about that game alone.
+ * A decline marks the game's night unavailable — in goalie availability or staff unavailability —
+ * unless the person still holds another shift that night, in which case the decline was about that game alone.
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -74,18 +74,21 @@ class StaffAvailabilityDeclineTest {
     }
 
     @Test
-    void goalieDeclineMarksTheWeekUnavailable() {
+    void goalieDeclineMarksOnlyThatNightUnavailable() {
+        // 01:00 UTC on the 12th is 8pm Central on the 11th.
         ShiftAssignment declined = shift(1L, 100L, "GOALIE", ShiftAssignment.STATUS_DECLINED);
         when(gameProxyService.getGameById(100L)).thenReturn(game(100L, 3, LocalDateTime.of(2026, 10, 12, 1, 0)));
         when(assignmentRepository.findByUserIdAndStatusIn(eq(USER), any())).thenReturn(List.of());
 
         service.markUnavailableAfterDecline(declined);
 
-        verify(goalieAvailabilityService).setStatus(USER, SEASON, 3, GoalieAvailability.STATUS_UNAVAILABLE);
+        verify(goalieAvailabilityService).setNightStatus(USER, SEASON, LocalDate.of(2026, 10, 11),
+                GoalieAvailability.STATUS_UNAVAILABLE);
+        verify(goalieAvailabilityService, never()).setStatus(anyLong(), anyLong(), any(), anyString());
     }
 
     @Test
-    void goalieStillHoldingAnotherGameThatWeekIsLeftAlone() {
+    void goalieStillHoldingAnotherGameThatNightIsLeftAlone() {
         ShiftAssignment declined = shift(1L, 100L, "GOALIE", ShiftAssignment.STATUS_DECLINED);
         ShiftAssignment kept = shift(2L, 101L, "GOALIE", ShiftAssignment.STATUS_CONFIRMED);
         when(gameProxyService.getGameById(100L)).thenReturn(game(100L, 3, LocalDateTime.of(2026, 10, 12, 1, 0)));
@@ -94,7 +97,22 @@ class StaffAvailabilityDeclineTest {
 
         service.markUnavailableAfterDecline(declined);
 
-        verify(goalieAvailabilityService, never()).setStatus(anyLong(), anyLong(), any(), anyString());
+        verify(goalieAvailabilityService, never()).setNightStatus(anyLong(), anyLong(), any(), anyString());
+    }
+
+    @Test
+    void goalieHoldingAGameOnTheOtherNightOfTheWeekStillGetsThisNightMarked() {
+        // Declines Thursday's game, keeps Friday's: Thursday is still marked out.
+        ShiftAssignment declined = shift(1L, 100L, "GOALIE", ShiftAssignment.STATUS_DECLINED);
+        ShiftAssignment kept = shift(2L, 101L, "GOALIE", ShiftAssignment.STATUS_CONFIRMED);
+        when(gameProxyService.getGameById(100L)).thenReturn(game(100L, 3, LocalDateTime.of(2026, 10, 10, 1, 0)));
+        when(gameProxyService.getGameById(101L)).thenReturn(game(101L, 3, LocalDateTime.of(2026, 10, 11, 1, 0)));
+        when(assignmentRepository.findByUserIdAndStatusIn(eq(USER), any())).thenReturn(List.of(kept));
+
+        service.markUnavailableAfterDecline(declined);
+
+        verify(goalieAvailabilityService).setNightStatus(USER, SEASON, LocalDate.of(2026, 10, 9),
+                GoalieAvailability.STATUS_UNAVAILABLE);
     }
 
     @Test

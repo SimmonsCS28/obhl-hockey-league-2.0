@@ -73,6 +73,19 @@ function getWeekLabel(start) {
     return `Week of ${MONTHS_SHORT[monday.getMonth()]} ${monday.getDate()}`;
 }
 
+// A game night arrives as 'YYYY-MM-DD' (already league-local), e.g. "Thu, Oct 9".
+function formatNight(dateStr) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+}
+
+// Mirrors the backend: every night agrees -> that status; none set -> null; otherwise PARTIAL.
+function weekStatusOf(nights) {
+    const distinct = new Set(nights.map(n => n.status ?? null));
+    if (distinct.size === 1) return [...distinct][0];
+    return 'PARTIAL';
+}
+
 const GoalieAvailability = () => {
     const navigate = useNavigate();
     const { selectedSeasonId } = useSeason();
@@ -96,9 +109,12 @@ const GoalieAvailability = () => {
         return () => { stale = true; };
     }, [seasonId]);
 
+    // Week-level toggle: sets every night of the week.
     const toggleStatus = async (week, next) => {
         const snapshot = weeks;
-        setWeeks(ws => ws.map(w => w.week === week ? { ...w, status: next } : w));
+        setWeeks(ws => ws.map(w => w.week === week
+            ? { ...w, status: next, nights: (w.nights || []).map(n => ({ ...n, status: next })) }
+            : w));
         setPending(p => new Set(p).add(week));
         try {
             const updated = await api.setGoalieAvailability(seasonId, week, next);
@@ -110,9 +126,30 @@ const GoalieAvailability = () => {
         }
     };
 
+    // One night of a multi-night week (e.g. free Thursday, out Friday).
+    const toggleNight = async (week, date, next) => {
+        const snapshot = weeks;
+        setWeeks(ws => ws.map(w => {
+            if (w.week !== week) return w;
+            const nights = w.nights.map(n => n.date === date ? { ...n, status: next } : n);
+            return { ...w, nights, status: weekStatusOf(nights) };
+        }));
+        setPending(p => new Set(p).add(date));
+        try {
+            const updated = await api.setGoalieNightAvailability(seasonId, date, next);
+            setWeeks(updated);
+        } catch {
+            setWeeks(snapshot);
+        } finally {
+            setPending(p => { const n = new Set(p); n.delete(date); return n; });
+        }
+    };
+
     const markAllAvailable = async () => {
         const snapshot = weeks;
-        setWeeks(ws => ws.map(w => ({ ...w, status: 'AVAILABLE' })));
+        setWeeks(ws => ws.map(w => ({
+            ...w, status: 'AVAILABLE', nights: (w.nights || []).map(n => ({ ...n, status: 'AVAILABLE' })),
+        })));
         try {
             let result;
             for (const w of snapshot) {
@@ -126,7 +163,9 @@ const GoalieAvailability = () => {
 
     const clearAll = async () => {
         const snapshot = weeks;
-        setWeeks(ws => ws.map(w => ({ ...w, status: null })));
+        setWeeks(ws => ws.map(w => ({
+            ...w, status: null, nights: (w.nights || []).map(n => ({ ...n, status: null })),
+        })));
         try {
             let result;
             for (const w of snapshot) {
@@ -141,9 +180,11 @@ const GoalieAvailability = () => {
     if (loading) return <div className="ga-state">Loading availability…</div>;
     if (error) return <div className="ga-state ga-state--err">{error}</div>;
 
-    const countAvailable = weeks.filter(w => w.status === 'AVAILABLE').length;
-    const countUnavailable = weeks.filter(w => w.status === 'UNAVAILABLE').length;
-    const countUnset = weeks.filter(w => !w.status).length;
+    // Counted per game night: a split week is one Available and one Out, not a third bucket.
+    const allNights = weeks.flatMap(w => w.nights || []);
+    const countAvailable = allNights.filter(n => n.status === 'AVAILABLE').length;
+    const countUnavailable = allNights.filter(n => n.status === 'UNAVAILABLE').length;
+    const countUnset = allNights.filter(n => !n.status).length;
 
     // Month chips derived from actual data
     const seenMonths = [];
@@ -184,6 +225,7 @@ const GoalieAvailability = () => {
                     <h1 className="ga-title">My Availability</h1>
                     <p className="ga-subtitle">
                         Mark each week of the season so the goalie coordinator can build balanced matchups.
+                        When a week has games on more than one night, mark each night on its own.
                         You don&apos;t pick games — the coordinator schedules you from the available pool and you confirm.
                     </p>
                 </div>
@@ -242,14 +284,17 @@ const GoalieAvailability = () => {
                             {gWeeks.map(w => {
                                 const isAvail = w.status === 'AVAILABLE';
                                 const isUnavail = w.status === 'UNAVAILABLE';
-                                const mod = isAvail ? 'avail' : isUnavail ? 'unavail' : 'unset';
+                                const isPartial = w.status === 'PARTIAL';
+                                const mod = isAvail ? 'avail' : isUnavail ? 'unavail' : isPartial ? 'partial' : 'unset';
                                 const thisWeek = isCurrentWeek(w.startDate);
                                 const isPending = pending.has(w.week);
+                                // Games on more than one night: each night gets its own toggles.
+                                const split = (w.nights || []).length > 1;
 
                                 return (
                                     <div
                                         key={w.week}
-                                        className={`ga-row ga-row--${mod}${thisWeek ? ' ga-row--current' : ''}`}
+                                        className={`ga-row ga-row--${mod}${thisWeek ? ' ga-row--current' : ''}${split ? ' ga-row--split' : ''}`}
                                     >
                                         <div className="ga-row-info">
                                             <div className="ga-row-top">
@@ -257,30 +302,67 @@ const GoalieAvailability = () => {
                                                     {getWeekLabel(w.startDate)}
                                                 </span>
                                                 <span className={`ga-tag ga-tag--${mod}`}>
-                                                    {isAvail ? 'Available' : isUnavail ? 'Out' : 'Not Set'}
+                                                    {isAvail ? 'Available' : isUnavail ? 'Out' : isPartial ? 'Some Nights' : 'Not Set'}
                                                 </span>
                                             </div>
                                             <div className="ga-row-range">{formatRange(w.startDate)}</div>
                                             <div className="ga-row-games">
                                                 {w.gamesCount} {w.gamesCount === 1 ? 'game' : 'games'} scheduled
+                                                {split && ` across ${w.nights.length} nights`}
                                             </div>
                                         </div>
-                                        <div className="ga-row-btns">
-                                            <button
-                                                className={`ga-toggle ga-toggle--avail${isAvail ? ' is-active' : ''}`}
-                                                onClick={() => toggleStatus(w.week, isAvail ? null : 'AVAILABLE')}
-                                                disabled={isPending}
-                                            >
-                                                Available
-                                            </button>
-                                            <button
-                                                className={`ga-toggle ga-toggle--unavail${isUnavail ? ' is-active' : ''}`}
-                                                onClick={() => toggleStatus(w.week, isUnavail ? null : 'UNAVAILABLE')}
-                                                disabled={isPending}
-                                            >
-                                                Unavailable
-                                            </button>
-                                        </div>
+                                        {split ? (
+                                            <div className="ga-nights">
+                                                {w.nights.map(n => {
+                                                    const nAvail = n.status === 'AVAILABLE';
+                                                    const nUnavail = n.status === 'UNAVAILABLE';
+                                                    const nPending = pending.has(n.date) || isPending;
+                                                    return (
+                                                        <div key={n.date} className="ga-night">
+                                                            <div className="ga-night-info">
+                                                                <span className="ga-night-label">{formatNight(n.date)}</span>
+                                                                <span className="ga-night-games">
+                                                                    {n.gamesCount} {n.gamesCount === 1 ? 'game' : 'games'}
+                                                                </span>
+                                                            </div>
+                                                            <div className="ga-row-btns">
+                                                                <button
+                                                                    className={`ga-toggle ga-toggle--sm ga-toggle--avail${nAvail ? ' is-active' : ''}`}
+                                                                    onClick={() => toggleNight(w.week, n.date, nAvail ? null : 'AVAILABLE')}
+                                                                    disabled={nPending}
+                                                                >
+                                                                    Available
+                                                                </button>
+                                                                <button
+                                                                    className={`ga-toggle ga-toggle--sm ga-toggle--unavail${nUnavail ? ' is-active' : ''}`}
+                                                                    onClick={() => toggleNight(w.week, n.date, nUnavail ? null : 'UNAVAILABLE')}
+                                                                    disabled={nPending}
+                                                                >
+                                                                    Unavailable
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <div className="ga-row-btns">
+                                                <button
+                                                    className={`ga-toggle ga-toggle--avail${isAvail ? ' is-active' : ''}`}
+                                                    onClick={() => toggleStatus(w.week, isAvail ? null : 'AVAILABLE')}
+                                                    disabled={isPending}
+                                                >
+                                                    Available
+                                                </button>
+                                                <button
+                                                    className={`ga-toggle ga-toggle--unavail${isUnavail ? ' is-active' : ''}`}
+                                                    onClick={() => toggleStatus(w.week, isUnavail ? null : 'UNAVAILABLE')}
+                                                    disabled={isPending}
+                                                >
+                                                    Unavailable
+                                                </button>
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}

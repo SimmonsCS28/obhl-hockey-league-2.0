@@ -1,5 +1,6 @@
 package com.obhl.gateway.model;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -16,8 +17,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * A goalie's positive availability for one week of a season (v3 Goalie Availability page).
- * Absence of a row means "not set".
+ * A goalie's positive availability for one game night of a season (Goalie Availability page).
+ * Absence of a row means "not set". Nights are the games' America/Chicago calendar dates; a week
+ * with Thursday and Friday games has two rows, so a goalie can be free for only one of them.
+ * {@code week} is carried alongside so week-level reads stay a single indexed lookup.
  */
 @Entity
 @Table(name = "goalie_availability")
@@ -41,6 +44,9 @@ public class GoalieAvailability {
 
     @Column(name = "week", nullable = false)
     private Integer week;
+
+    @Column(name = "game_date", nullable = false)
+    private LocalDate gameDate;
 
     @Column(name = "status", nullable = false, length = 20)
     private String status;
