@@ -100,7 +100,7 @@ argue against `validate` — it argues for fixing these too.
 
 Compounding factors, all previously known:
 
-- **No version tracking.** `run-migrations.bat` globs `*.sql` and re-executes everything, every run.
+- **No version tracking.** `scripts/run-migrations.bat` globs `*.sql` and re-executes everything, every run.
 - **Duplicate `013`** — `013_create_draft_saves.sql` and `013_create_user_roles.sql`. Ordering between
   them is filename-alphabetical, i.e. accidental.
 - **Init-only mount.** `docker-compose.yml:16` mounts migrations at `/docker-entrypoint-initdb.d`,

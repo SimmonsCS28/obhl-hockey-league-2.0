@@ -160,7 +160,7 @@ today.
 
 ## Out of scope
 
-- Anything in `COORDINATOR_CONSOLE_HANDOFF.md` (pieces 1–7), which is built and shipped on
+- Anything in `docs/handoffs/COORDINATOR_CONSOLE_HANDOFF.md` (pieces 1–7), which is built and shipped on
   `coordinator-console-gaps`. Draft mode from that handoff was **cut** and should not be revived here.
 - The goalie auto-proposer bar and its "why" panel.
 - Changing assignment, publish, or email behavior in any way.

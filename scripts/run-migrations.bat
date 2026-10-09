@@ -1,4 +1,6 @@
 @echo off
+REM Runs from the repo root wherever it is launched from.
+cd /d "%~dp0.."
 echo Running database migrations...
 
 for %%f in (database\migrations\*.sql) do (

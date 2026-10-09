@@ -33,7 +33,7 @@ it? If superseded, delete the route and the page rather than repointing the role
 ## 🟠 2. game-service is unauthenticated and published to the internet
 
 `backend/game-service` has no `spring-boot-starter-security`, no `SecurityConfig` and no JWT filter,
-and `oldbuzzardhockey.nginx` proxies it publicly at `location /games-api/`. Unauthenticated, from
+and `deploy/oldbuzzardhockey.nginx` proxies it publicly at `location /games-api/`. Unauthenticated, from
 anywhere:
 
 ```
@@ -126,25 +126,19 @@ A fix exists on the **unmerged** branch `claude/sharp-ellis-1eeb87`, which scope
 forced into other stylesheets. Once that lands: drop the defensive block in `TournamentAdmin.css`,
 and do the owed `.gpb-btn !important` cleanup in `GoalieProposerBar.css`.
 
-## ⚪ 8. `fix_team_constraints.sql` in the repo root is now redundant
+## ✅ 8. `fix_team_constraints.sql` in the repo root is now redundant — DONE 2026-10-09
 
-Its contents were folded into `database/migrations/046_add_season_type.sql`, which applies them
-idempotently as part of the numbered sequence. The root-level copy is now a misleading duplicate
-that implies a manual step still exists. Safe to delete once 046 is on production.
+Its contents were folded into `database/migrations/046_add_season_type.sql`, and production already
+carries the per-season constraints. Deleted in the root-folder cleanup.
 
-## ⚪ 9. `docker-compose-prod.yml` is invalid and `deploy.sh` is harmful
+## ✅ 9. `docker-compose-prod.yml` is invalid and `deploy.sh` is harmful — DONE 2026-10-09
 
-- `docker-compose-prod.yml` line 31 contains a literal escaped `\n` inside a `ports:` value plus a
-  duplicate `ports:` key — it would fail to parse. Nothing references it; production uses the plain
-  `docker-compose.yml`. Delete it, or fix it, before someone reaches for `-f` during a deploy.
-- `deploy.sh` is superseded and would now do damage: it runs `git reset --hard` and then `sed`s
-  frontend sources to rewrite API base URLs, which would clobber the current
-  `import.meta.env.VITE_API_URL` handling. Delete it or clearly mark it dead.
+Both deleted in the root-folder cleanup. Production uses the plain `docker-compose.yml`.
 
 ## ⚪ 10. `TECHNICAL_DEBT.md` items 2 and 3 are stale, and `CLAUDE.md` repeats one
 
 - Item 2 says nginx cannot proxy the Spring services and that only static files are served. The live
-  `oldbuzzardhockey.nginx` proxies all three (`/api/`, `/games-api/`, `/stats-api/`) using
+  `deploy/oldbuzzardhockey.nginx` proxies all three (`/api/`, `/games-api/`, `/stats-api/`) using
   `proxy_http_version 1.0` + `Connection close`. **`CLAUDE.md` repeats this stale claim**, so it
   actively misleads future work.
 - Item 3 says hardcoded production IPs are scattered through the frontend. `frontend/src` is now
@@ -154,7 +148,7 @@ that implies a manual step still exists. Safe to delete once 046 is on productio
 
 - **Assigned/unassigned filter.** The old Goalie Schedule page had a filter that
   `AdminAssignments.jsx` never gained. Deliberately accepted when the legacy pages were deleted. The
-  open design question from `ASSIGNMENTS_HANDOFF.md` still stands: Assignments is multi-role per row
+  open design question from `docs/handoffs/ASSIGNMENTS_HANDOFF.md` still stands: Assignments is multi-role per row
   (5 slots), so "assigned" is not one yes/no — per-column chips may be better than a single filter.
 - **`StaffSchedule.css` could be trimmed** to only the classes `GoalieSchedulePage` and
   `RefereeSchedulePage` actually use, now that its three original consumers are gone. Low value, and

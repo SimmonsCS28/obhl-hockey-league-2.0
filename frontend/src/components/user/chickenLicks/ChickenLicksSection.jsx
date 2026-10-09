@@ -64,7 +64,7 @@ const MENU = [
 /**
  * Chicken Licks team-ordering zone on the user Dashboard. `openOrders` and
  * `onRefresh` are owned by Dashboard.jsx (shared with the teammate-notice
- * banner rendered elsewhere on the page) — see CHICKEN_LICKS_ORDER_HANDBACK.md.
+ * banner rendered elsewhere on the page) — see docs/handoffs/CHICKEN_LICKS_ORDER_HANDBACK.md.
  */
 function ChickenLicksSection({ seasonId, openOrders, onRefresh }) {
     const [editingOrderKey, setEditingOrderKey] = useState(null);

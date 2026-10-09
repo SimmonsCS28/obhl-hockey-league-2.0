@@ -2,7 +2,7 @@
 
 **Audience:** Claude Design. This describes **seven pieces of UI/email design** for the existing
 Coordinator Console. The backend behavior for all of it is already specced in
-`COORDINATOR_CONSOLE_GAPS_SPEC.md` — you do **not** need to design any workflow logic, algorithms,
+`docs/handoffs/COORDINATOR_CONSOLE_GAPS_SPEC.md` — you do **not** need to design any workflow logic, algorithms,
 or API shapes. What's missing is the interface.
 
 Driven by real questions from the league's **referee coordinator** after using the console. Her
@@ -174,7 +174,7 @@ only.
 
 ## 7. Week-schedule block for refs and scorekeepers — **confirmed in scope**
 
-Goalie emails now end with a week-schedule card (shipped; see `GOALIE_WEEK_SCHEDULE_EMAIL_HANDOFF.md`
+Goalie emails now end with a week-schedule card (shipped; see `docs/handoffs/GOALIE_WEEK_SCHEDULE_EMAIL_HANDOFF.md`
 for the design that was built). **The league wants refs to get the same context.**
 
 **The structural difference, which is the actual design problem.** The goalie block pairs each goalie
@@ -212,7 +212,7 @@ vary the row, say so explicitly; that's meaningfully less work to implement.
 
 ## Out of scope
 
-- Backend logic, endpoints, and data gathering — all specced in `COORDINATOR_CONSOLE_GAPS_SPEC.md`.
+- Backend logic, endpoints, and data gathering — all specced in `docs/handoffs/COORDINATOR_CONSOLE_GAPS_SPEC.md`.
 - The confirm/decline landing page (`ConfirmShift.jsx`) — already designed and working.
 - The goalie auto-proposer bar and its why-panel — shipped, not being revisited.
 - Surfacing ref availability in the assign picker — reuses the existing goalie-pool candidate

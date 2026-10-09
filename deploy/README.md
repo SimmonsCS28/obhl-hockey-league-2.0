@@ -5,7 +5,7 @@ whenever the site's frontend is unreachable — most importantly **during deploy
 the frontend container is stopped/rebuilding.
 
 ## How it works
-The **host Nginx** (`oldbuzzardhockey.nginx`) terminates SSL and proxies `/` to the
+The **host Nginx** (`deploy/oldbuzzardhockey.nginx`) terminates SSL and proxies `/` to the
 frontend container on `localhost:8080`. When that upstream is down, Nginx would
 normally return a raw `502 Bad Gateway`. Instead, the config now intercepts upstream
 errors on `location /` and serves this static page:
@@ -29,7 +29,7 @@ rather than an HTML page.
 sudo mkdir -p /var/www/obhl-maintenance
 sudo cp deploy/maintenance.html /var/www/obhl-maintenance/maintenance.html
 
-# Apply the updated host Nginx config (this repo's oldbuzzardhockey.nginx is the
+# Apply the updated host Nginx config (this repo's deploy/oldbuzzardhockey.nginx is the
 # reference copy of the site's server block — update the live file to match), then:
 sudo nginx -t && sudo systemctl reload nginx
 ```

@@ -1173,8 +1173,8 @@ __SLOT1__
     /**
      * Email-safe HTML block showing the whole week's matchups and who is currently filling each slot
      * for {@code role} (any status; empty = "Unassigned"). Highlights the recipient's own game.
-     * Returns "" when there are no games. See GOALIE_WEEK_SCHEDULE_EMAIL_HANDOFF.md and
-     * COORDINATOR_CONSOLE_HANDOFF.md §7.
+     * Returns "" when there are no games. See docs/handoffs/GOALIE_WEEK_SCHEDULE_EMAIL_HANDOFF.md and
+     * docs/handoffs/COORDINATOR_CONSOLE_HANDOFF.md §7.
      *
      * <p>The wrapper is shared across all three roles; only the heading and the row template differ.
      */

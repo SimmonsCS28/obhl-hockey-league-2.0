@@ -177,7 +177,7 @@ goalie slot carries a **team** (they're in a specific net), where a ref or score
 
 ## Out of scope
 
-- The shipped console work in `COORDINATOR_CONSOLE_HANDOFF.md` and `COORDINATOR_RINK_VIEW_HANDOFF.md`.
+- The shipped console work in `docs/handoffs/COORDINATOR_CONSOLE_HANDOFF.md` and `docs/handoffs/COORDINATOR_RINK_VIEW_HANDOFF.md`.
 - Notification preferences for non-coordinators (goalies, refs, scorekeepers receiving their own
   shift mail). Same idea, different audience, worth its own pass.
 - SMS or push. Email only.

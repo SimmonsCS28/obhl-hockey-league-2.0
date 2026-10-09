@@ -1,4 +1,6 @@
 @echo off
+REM Runs from the repo root wherever it is launched from.
+cd /d "%~dp0.."
 echo ================================================
 echo Starting OBHL Backend Services with TEST Database
 echo ================================================

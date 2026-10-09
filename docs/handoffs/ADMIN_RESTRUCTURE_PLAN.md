@@ -54,7 +54,7 @@ SCHEDULING  [v2-GAP group: design folds these into "Assignments"; KEPT until Ass
 ## Execution notes
 - `AdminLayout` + `AdminDashboard` are the structural core — restructure them CENTRALLY (not in parallel worktrees) since everything routes through them.
 - Keep all existing data fetching/props. New modules reuse existing api.js methods.
-- Follow the dark-theme conventions in REDESIGN_HANDOFF.md (obi tokens, clickable cards = div role=button, etc.).
+- Follow the dark-theme conventions in docs/handoffs/REDESIGN_HANDOFF.md (obi tokens, clickable cards = div role=button, etc.).
 - Branch: `ui-ux-redesign` (or a child branch for the restructure).
 
 ## Follow-ups for the next Claude Design handoff (integration PAUSED 2026-06-21)

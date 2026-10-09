@@ -22,7 +22,7 @@ import com.obhl.gateway.service.ChickenLicksOrderService;
 
 /**
  * Chicken Licks team ordering. Every endpoint except GET /standings requires
- * an authenticated user (any role) — see CHICKEN_LICKS_ORDER_HANDBACK.md.
+ * an authenticated user (any role) — see docs/handoffs/CHICKEN_LICKS_ORDER_HANDBACK.md.
  */
 @RestController
 @RequestMapping("/api/v1/chicken-licks")

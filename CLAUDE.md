@@ -44,6 +44,11 @@ docker-compose -f docker-compose.test.yml up -d   # isolated test Postgres on po
 docker-compose down
 ```
 
+### Docs
+- Claude Design handoffs/handbacks, feature specs and plans go in `docs/handoffs/` (not the repo root). Design bundles go in `docs/handoffs/design_bundles/`.
+- General guides live in `docs/`, sample data in `docs/samples/`, one-off/helper scripts in `scripts/` (SQL in `scripts/sql/`), and the host Nginx reference config in `deploy/`.
+- Keep the repo root to README, CLAUDE.md, TECHNICAL_DEBT.md and the docker-compose files. Don't leave logs or scratch output there.
+
 ### Database
 - Migrations live in `database/migrations/`, applied in numeric order. New migrations should follow the `NNN_description.sql` naming convention and increment from the highest existing number.
 - Seed data in `database/seeds/`.

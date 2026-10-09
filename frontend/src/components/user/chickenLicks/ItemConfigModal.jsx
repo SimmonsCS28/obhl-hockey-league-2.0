@@ -1,7 +1,7 @@
 const WING_FLAVORS = ['Original', 'Dry Rub', 'Buffalo', 'BBQ', 'Nude (Plain)'];
 const WING_SAUCES = ['Blue Cheese', 'Ranch', 'BBQ', 'Buffalo'];
 
-/** Shared Wings / Cheeseburger configurator modal — see CHICKEN_LICKS_ORDER_HANDBACK.md. */
+/** Shared Wings / Cheeseburger configurator modal — see docs/handoffs/CHICKEN_LICKS_ORDER_HANDBACK.md. */
 function ItemConfigModal({ kind, draft, setDraft, onCancel, onConfirm, busy }) {
     const isWings = kind === 'wings';
     const price = isWings

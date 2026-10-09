@@ -2,7 +2,7 @@
 
 **Ask:** Add two things to the admin **Assignments** page so it reaches feature parity
 with the old per-role Goalie/Referee/Scorekeeper Schedule pages and those can be
-retired (per `ADMIN_RESTRUCTURE_PLAN.md`, which already calls for consolidating all
+retired (per `docs/handoffs/ADMIN_RESTRUCTURE_PLAN.md`, which already calls for consolidating all
 admin staffing into Assignments):
 
 1. An **assigned / unassigned filter** for the games table.

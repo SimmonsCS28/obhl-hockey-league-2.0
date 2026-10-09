@@ -1291,7 +1291,7 @@
     border-color: rgba(224, 138, 138, 0.35);
 }
 
-/* ---- Playoff bracket slot designation (see BRACKET_SLOT_UI_HANDOFF.md) ----
+/* ---- Playoff bracket slot designation (see docs/handoffs/BRACKET_SLOT_UI_HANDOFF.md) ----
    Amber = this slot hosts a bracket fixture; grey = consolation, the normal case in later rounds. */
 
 .sched-bracket-legend {

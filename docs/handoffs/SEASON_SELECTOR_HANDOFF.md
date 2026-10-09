@@ -51,7 +51,7 @@ like, just what exists to replace:
 their own local season selector (not even synced to the global admin topbar one — a
 known inconsistency, but moot). These three pages are already slated for
 **retirement** once the Assignments page reaches feature parity (see
-`ADMIN_RESTRUCTURE_PLAN.md` and `ASSIGNMENTS_HANDOFF.md`).
+`docs/handoffs/ADMIN_RESTRUCTURE_PLAN.md` and `docs/handoffs/ASSIGNMENTS_HANDOFF.md`).
 
 ## Design tokens
 No new tokens needed — `frontend/src/styles/theme.css` covers everything

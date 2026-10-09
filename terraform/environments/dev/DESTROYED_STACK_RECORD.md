@@ -2,7 +2,7 @@
 
 This Terraform-managed AWS stack was deployed but **never actually used** by the
 running application. The real production app runs on a single EC2 instance via
-`docker compose` (see `aws_deployment_guide.md`) with Postgres in a Docker
+`docker compose` (see `docs/aws_deployment_guide.md`) with Postgres in a Docker
 container — not this RDS instance.
 
 A repo-wide grep found zero references to any of the resource names/endpoints

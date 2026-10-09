@@ -4,7 +4,7 @@ import csv
 csv_emails = set()
 csv_email_to_name = {}
 
-with open('CustomRegistrationReport -  Admin (2).csv', 'r', encoding='utf-8') as f:
+with open('docs/samples/CustomRegistrationReport -  Admin (2).csv', 'r', encoding='utf-8') as f:
     reader = csv.reader(f)
     next(reader)  # Skip header
     for row in reader:

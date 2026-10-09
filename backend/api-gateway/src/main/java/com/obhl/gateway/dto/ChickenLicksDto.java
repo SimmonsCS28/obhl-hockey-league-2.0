@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * DTOs for the Chicken Licks team-ordering feature. See
- * CHICKEN_LICKS_ORDER_HANDBACK.md / the Claude Design handoff for the full
+ * docs/handoffs/CHICKEN_LICKS_ORDER_HANDBACK.md / the Claude Design handoff for the full
  * functional spec.
  */
 public class ChickenLicksDto {

@@ -29,7 +29,7 @@ import com.obhl.gateway.repository.ChickenLicksOrderItemRepository;
 import com.obhl.gateway.repository.ChickenLicksOrderRepository;
 
 /**
- * Chicken Licks team ordering — see CHICKEN_LICKS_ORDER_HANDBACK.md and the
+ * Chicken Licks team ordering — see docs/handoffs/CHICKEN_LICKS_ORDER_HANDBACK.md and the
  * Claude Design handoff for the full functional spec. Personal and team
  * orders are independent (both can be open at once); only the team order's
  * initiator can close/cancel it; only a line's own author can edit/remove it.

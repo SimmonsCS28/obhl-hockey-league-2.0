@@ -81,7 +81,7 @@ generate_*.py
 *_hash.py
 
 # Design handoff / reference material (not app code)
-Website theme integration/
+docs/handoffs/design_bundles/obhl_redesign/
 
 # Uploaded highlight media (local dev; prod uses the highlight_media docker volume)
 backend/api-gateway/media/

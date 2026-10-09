@@ -28,7 +28,7 @@ Verified against main on 2026-08-13. Recent goalie-email work landed machinery t
   — server-rendered, email-safe HTML card of the week's matchups and who's in each net, with the
   recipient's own game highlighted. Currently goalie-only.
 - **Email-template constants** `SCHED_WRAPPER` / `SCHED_ROW` / `SCHED_ROW_RECIPIENT` (lines 526–572),
-  built from the Claude Design template in `GOALIE_WEEK_SCHEDULE_EMAIL_HANDOFF.md`.
+  built from the Claude Design template in `docs/handoffs/GOALIE_WEEK_SCHEDULE_EMAIL_HANDOFF.md`.
 - **`TEAM_HEX`** (line 518) — the frontend's team-color name→hex map mirrored server-side, plus
   `teamSwatchHtml`, `goalieDivHtml`, `teamHex`, and `htmlEscape` helpers (lines 649–692).
 - **Both goalie emails now take a `weekScheduleHtml` parameter**, so `sendShiftProposalEmail` and
@@ -41,7 +41,7 @@ gap below still stands as written. But it raises a scope question worth deciding
 > ~~Should referees get a **week schedule block** in their emails too?~~ **Decided 2026-08-13: yes.**
 > Refs (and scorekeepers) get a week-schedule block. The structural difference is that goalies are
 > team-attached (home net / away net) while refs work the whole game, so the row is a different shape,
-> not a relabel. Designed in `COORDINATOR_CONSOLE_HANDOFF.md` §7; `weekScheduleBlockHtml` will need a
+> not a relabel. Designed in `docs/handoffs/COORDINATOR_CONSOLE_HANDOFF.md` §7; `weekScheduleBlockHtml` will need a
 > role parameter and a ref/scorekeeper row template alongside `SCHED_ROW`.
 
 Nothing else in the coordinator flow changed: `propose()` (line 76), `withdraw()` (line 122), and

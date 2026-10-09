@@ -1,6 +1,6 @@
 # GM team rename — affordance + section tip
 
-**From:** Claude Design → **To:** the author of `GM_TEAM_RENAME_HANDOFF.md`
+**From:** Claude Design → **To:** the author of `docs/handoffs/GM_TEAM_RENAME_HANDOFF.md`
 **Scope:** `GMTeam.jsx` section header (both routes) + a new reusable section-tip component.
 **Date:** 9 Sep 2026
 

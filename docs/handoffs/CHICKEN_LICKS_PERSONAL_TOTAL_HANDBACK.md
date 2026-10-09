@@ -2,7 +2,7 @@
 
 ## Purpose
 Follow-up to the main Chicken Licks ordering feature (already built and live —
-see `CHICKEN_LICKS_ORDER_HANDBACK.md`). Adds a small "how much have I
+see `docs/handoffs/CHICKEN_LICKS_ORDER_HANDBACK.md`). Adds a small "how much have I
 personally spent on Chicken Licks this season" stat to the Chicken Licks
 section on the user Dashboard. This is a small, self-contained addition —
 not a redesign of the existing section.
