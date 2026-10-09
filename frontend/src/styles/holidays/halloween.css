@@ -1,0 +1,70 @@
+/* OBHL holiday theme: Halloween
+ * Contract: every selector is scoped to [data-holiday="halloween"]. CSS + inline SVG only, no JS.
+ * Decorations live in .obi-holiday-fx (behind header content) and .obi-footer::before.
+ */
+
+[data-holiday="halloween"] {
+  --obi-accent: #FF7A1A;
+  --obi-accent-soft: rgba(255, 122, 26, 0.12);
+  --obi-accent-hover: rgba(255, 122, 26, 0.05);
+  --obi-header-border: rgba(150, 82, 214, 0.55);
+  --obi-shadow-gold: 0 4px 14px rgba(255, 122, 26, 0.35);
+  --obi-icy: #BFA6E6;
+}
+
+[data-holiday="halloween"] .obi-holiday-fx {
+  background: radial-gradient(90% 160% at 50% 140%, rgba(122, 63, 176, 0.28), transparent 65%);
+}
+
+[data-holiday="halloween"] .obi-holiday-fx::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'600'%20height%3D'74'%20viewBox%3D'0%200%20600%2074'%3E%3Cg%20transform%3D'translate(60%2016)%20scale(1)'%3E%3Cpath%20fill%3D'%23EDE6F7'%20d%3D'M0%2028V11a11%2011%200%200%201%2022%200v17l-3.7-3.2-3.6%203.2-3.7-3.2-3.7%203.2-3.6-3.2z'%2F%3E%3Ccircle%20cx%3D'7.5'%20cy%3D'11'%20r%3D'1.8'%20fill%3D'%231a1424'%2F%3E%3Ccircle%20cx%3D'14.5'%20cy%3D'11'%20r%3D'1.8'%20fill%3D'%231a1424'%2F%3E%3Cellipse%20cx%3D'11'%20cy%3D'17'%20rx%3D'1.6'%20ry%3D'2.2'%20fill%3D'%231a1424'%2F%3E%3C%2Fg%3E%3Cg%20transform%3D'translate(285%2034)%20scale(0.65)'%3E%3Cpath%20fill%3D'%23EDE6F7'%20d%3D'M0%2028V11a11%2011%200%200%201%2022%200v17l-3.7-3.2-3.6%203.2-3.7-3.2-3.7%203.2-3.6-3.2z'%2F%3E%3Ccircle%20cx%3D'7.5'%20cy%3D'11'%20r%3D'1.8'%20fill%3D'%231a1424'%2F%3E%3Ccircle%20cx%3D'14.5'%20cy%3D'11'%20r%3D'1.8'%20fill%3D'%231a1424'%2F%3E%3Cellipse%20cx%3D'11'%20cy%3D'17'%20rx%3D'1.6'%20ry%3D'2.2'%20fill%3D'%231a1424'%2F%3E%3C%2Fg%3E%3Cg%20transform%3D'translate(470%2010)%20scale(0.85)'%3E%3Cpath%20fill%3D'%23EDE6F7'%20d%3D'M0%2028V11a11%2011%200%200%201%2022%200v17l-3.7-3.2-3.6%203.2-3.7-3.2-3.7%203.2-3.6-3.2z'%2F%3E%3Ccircle%20cx%3D'7.5'%20cy%3D'11'%20r%3D'1.8'%20fill%3D'%231a1424'%2F%3E%3Ccircle%20cx%3D'14.5'%20cy%3D'11'%20r%3D'1.8'%20fill%3D'%231a1424'%2F%3E%3Cellipse%20cx%3D'11'%20cy%3D'17'%20rx%3D'1.6'%20ry%3D'2.2'%20fill%3D'%231a1424'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  background-repeat: repeat;
+  background-size: 600px 74px;
+  opacity: 0.2;
+  animation: obhl-hw-drift 140s linear infinite, obhl-hw-bob 7s ease-in-out infinite alternate;
+}
+
+[data-holiday="halloween"] .obi-holiday-fx::after {
+  content: "";
+  position: absolute;
+  left: 40%; bottom: 1px; width: 96px; height: 24px;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'96'%20height%3D'24'%20viewBox%3D'0%200%2096%2024'%3E%3Cg%20transform%3D'translate(0%204)%20scale(0.66)'%3E%3Crect%20x%3D'13.5'%20y%3D'1'%20width%3D'3'%20height%3D'6'%20rx%3D'1'%20fill%3D'%235B8A2E'%2F%3E%3Cellipse%20cx%3D'15'%20cy%3D'14'%20rx%3D'14'%20ry%3D'9.5'%20fill%3D'%23FF7A1A'%2F%3E%3Cellipse%20cx%3D'15'%20cy%3D'14'%20rx%3D'5.5'%20ry%3D'9.5'%20fill%3D'%23E8650F'%2F%3E%3Cpath%20d%3D'M8%2011l3%203H6zM22%2011l2%203h-5zM9%2018q6%204%2012%200l-2%201.5-2-1-2%201-2-1-2%201z'%20fill%3D'%233A1606'%2F%3E%3C%2Fg%3E%3Cg%20transform%3D'translate(22%200)%20scale(0.85)'%3E%3Crect%20x%3D'13.5'%20y%3D'1'%20width%3D'3'%20height%3D'6'%20rx%3D'1'%20fill%3D'%235B8A2E'%2F%3E%3Cellipse%20cx%3D'15'%20cy%3D'14'%20rx%3D'14'%20ry%3D'9.5'%20fill%3D'%23FF7A1A'%2F%3E%3Cellipse%20cx%3D'15'%20cy%3D'14'%20rx%3D'5.5'%20ry%3D'9.5'%20fill%3D'%23E8650F'%2F%3E%3Cpath%20d%3D'M8%2011l3%203H6zM22%2011l2%203h-5zM9%2018q6%204%2012%200l-2%201.5-2-1-2%201-2-1-2%201z'%20fill%3D'%233A1606'%2F%3E%3C%2Fg%3E%3Cg%20transform%3D'translate(52%206)%20scale(0.6)'%3E%3Crect%20x%3D'13.5'%20y%3D'1'%20width%3D'3'%20height%3D'6'%20rx%3D'1'%20fill%3D'%235B8A2E'%2F%3E%3Cellipse%20cx%3D'15'%20cy%3D'14'%20rx%3D'14'%20ry%3D'9.5'%20fill%3D'%23FF7A1A'%2F%3E%3Cellipse%20cx%3D'15'%20cy%3D'14'%20rx%3D'5.5'%20ry%3D'9.5'%20fill%3D'%23E8650F'%2F%3E%3Cpath%20d%3D'M8%2011l3%203H6zM22%2011l2%203h-5zM9%2018q6%204%2012%200l-2%201.5-2-1-2%201-2-1-2%201z'%20fill%3D'%233A1606'%2F%3E%3C%2Fg%3E%3Cg%20transform%3D'translate(72%203)%20scale(0.75)'%3E%3Crect%20x%3D'13.5'%20y%3D'1'%20width%3D'3'%20height%3D'6'%20rx%3D'1'%20fill%3D'%235B8A2E'%2F%3E%3Cellipse%20cx%3D'15'%20cy%3D'14'%20rx%3D'14'%20ry%3D'9.5'%20fill%3D'%23FF7A1A'%2F%3E%3Cellipse%20cx%3D'15'%20cy%3D'14'%20rx%3D'5.5'%20ry%3D'9.5'%20fill%3D'%23E8650F'%2F%3E%3Cpath%20d%3D'M8%2011l3%203H6zM22%2011l2%203h-5zM9%2018q6%204%2012%200l-2%201.5-2-1-2%201-2-1-2%201z'%20fill%3D'%233A1606'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-size: 96px 24px;
+  opacity: 0.6;
+  
+}
+
+[data-holiday="halloween"] .obi-footer { position: relative; }
+[data-holiday="halloween"] .obi-footer::before {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  right: 28px; top: -24px; width: 96px; height: 24px;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'96'%20height%3D'24'%20viewBox%3D'0%200%2096%2024'%3E%3Cg%20transform%3D'translate(0%204)%20scale(0.66)'%3E%3Crect%20x%3D'13.5'%20y%3D'1'%20width%3D'3'%20height%3D'6'%20rx%3D'1'%20fill%3D'%235B8A2E'%2F%3E%3Cellipse%20cx%3D'15'%20cy%3D'14'%20rx%3D'14'%20ry%3D'9.5'%20fill%3D'%23FF7A1A'%2F%3E%3Cellipse%20cx%3D'15'%20cy%3D'14'%20rx%3D'5.5'%20ry%3D'9.5'%20fill%3D'%23E8650F'%2F%3E%3Cpath%20d%3D'M8%2011l3%203H6zM22%2011l2%203h-5zM9%2018q6%204%2012%200l-2%201.5-2-1-2%201-2-1-2%201z'%20fill%3D'%233A1606'%2F%3E%3C%2Fg%3E%3Cg%20transform%3D'translate(22%200)%20scale(0.85)'%3E%3Crect%20x%3D'13.5'%20y%3D'1'%20width%3D'3'%20height%3D'6'%20rx%3D'1'%20fill%3D'%235B8A2E'%2F%3E%3Cellipse%20cx%3D'15'%20cy%3D'14'%20rx%3D'14'%20ry%3D'9.5'%20fill%3D'%23FF7A1A'%2F%3E%3Cellipse%20cx%3D'15'%20cy%3D'14'%20rx%3D'5.5'%20ry%3D'9.5'%20fill%3D'%23E8650F'%2F%3E%3Cpath%20d%3D'M8%2011l3%203H6zM22%2011l2%203h-5zM9%2018q6%204%2012%200l-2%201.5-2-1-2%201-2-1-2%201z'%20fill%3D'%233A1606'%2F%3E%3C%2Fg%3E%3Cg%20transform%3D'translate(52%206)%20scale(0.6)'%3E%3Crect%20x%3D'13.5'%20y%3D'1'%20width%3D'3'%20height%3D'6'%20rx%3D'1'%20fill%3D'%235B8A2E'%2F%3E%3Cellipse%20cx%3D'15'%20cy%3D'14'%20rx%3D'14'%20ry%3D'9.5'%20fill%3D'%23FF7A1A'%2F%3E%3Cellipse%20cx%3D'15'%20cy%3D'14'%20rx%3D'5.5'%20ry%3D'9.5'%20fill%3D'%23E8650F'%2F%3E%3Cpath%20d%3D'M8%2011l3%203H6zM22%2011l2%203h-5zM9%2018q6%204%2012%200l-2%201.5-2-1-2%201-2-1-2%201z'%20fill%3D'%233A1606'%2F%3E%3C%2Fg%3E%3Cg%20transform%3D'translate(72%203)%20scale(0.75)'%3E%3Crect%20x%3D'13.5'%20y%3D'1'%20width%3D'3'%20height%3D'6'%20rx%3D'1'%20fill%3D'%235B8A2E'%2F%3E%3Cellipse%20cx%3D'15'%20cy%3D'14'%20rx%3D'14'%20ry%3D'9.5'%20fill%3D'%23FF7A1A'%2F%3E%3Cellipse%20cx%3D'15'%20cy%3D'14'%20rx%3D'5.5'%20ry%3D'9.5'%20fill%3D'%23E8650F'%2F%3E%3Cpath%20d%3D'M8%2011l3%203H6zM22%2011l2%203h-5zM9%2018q6%204%2012%200l-2%201.5-2-1-2%201-2-1-2%201z'%20fill%3D'%233A1606'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-size: 96px 24px;
+  
+}
+
+@keyframes obhl-hw-drift { from { background-position: 0 0; } to { background-position: -600px 0px; } }
+@keyframes obhl-hw-bob { from { transform: translateY(-3px); } to { transform: translateY(3px); } }
+
+/* Phones: keep the logo + burger clear */
+@media (max-width: 540px) {
+  [data-holiday="halloween"] .obi-holiday-fx::before {
+    opacity: 0.2;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 30%, #000 58%, #000 76%, transparent 90%);
+            mask-image: linear-gradient(90deg, transparent 0, transparent 30%, #000 58%, #000 76%, transparent 90%);
+  }
+  [data-holiday="halloween"] .obi-holiday-fx::after { display: none; }
+  [data-holiday="halloween"] .obi-footer::before { right: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-holiday="halloween"] .obi-holiday-fx::before,
+  [data-holiday="halloween"] .obi-holiday-fx::after { animation: none; }
+}

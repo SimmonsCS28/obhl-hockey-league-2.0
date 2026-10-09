@@ -14,6 +14,7 @@ import UserManagement from './UserManagement';
 import AnnouncementsManagement from './admin/AnnouncementsManagement';
 import HighlightsManagement from './admin/HighlightsManagement';
 import LeagueRulesAdmin from './LeagueRulesAdmin';
+import HolidayThemesAdmin from './admin/HolidayThemesAdmin';
 import TournamentAdmin from './admin/tournament/TournamentAdmin';
 import TournamentDraft from './admin/tournament/TournamentDraft';
 import TournamentScheduleAdmin from './admin/tournament/TournamentScheduleAdmin';
@@ -40,6 +41,7 @@ function AdminDashboard() {
             {activeTab === 'announcements' && <AnnouncementsManagement />}
             {activeTab === 'highlights' && <HighlightsManagement />}
             {activeTab === 'rules' && <LeagueRulesAdmin />}
+            {activeTab === 'holidays' && <HolidayThemesAdmin />}
             {activeTab === 'tournament' && <TournamentAdmin />}
             {activeTab === 'tournament-draft' && <TournamentDraft />}
             {activeTab === 'tournament-schedule' && <TournamentScheduleAdmin />}

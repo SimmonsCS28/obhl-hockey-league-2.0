@@ -64,6 +64,9 @@ public class SecurityConfig {
                         // are on /user/player-profile/** (authenticated) and ADMIN-only endpoints.
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/media/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/chicken-licks/standings").permitAll()
+                        // Every public-site visitor needs the holiday theme schedule. The PUT is
+                        // ADMIN-only via @PreAuthorize on HolidayThemeController.
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/holiday-theme").permitAll()
                         // The draft is ADMIN-only for EVERY verb including GET, and must be stated
                         // BEFORE the public tournament GET below — matchers are evaluated in order,
                         // so the permitAll would otherwise swallow it and publish the entrant list,

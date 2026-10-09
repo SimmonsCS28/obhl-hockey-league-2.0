@@ -1106,6 +1106,21 @@ const api = {
             body: JSON.stringify({ value })
         });
     },
+    // Public-site holiday themes: { mode: 'auto'|'off', overrides: { [key]: {...} } }.
+    // The calendar itself lives in utils/holidayTheme.js.
+    // Plain fetch with no token: it's a public endpoint loaded on every public page, and a stale
+    // token must not turn a cosmetic lookup into a "session expired" logout.
+    async getHolidayThemeConfig() {
+        const response = await fetch(`${API_BASE_URL}/holiday-theme`);
+        if (!response.ok) throw new Error(`Holiday theme lookup failed (${response.status})`);
+        return response.json();
+    },
+    async saveHolidayThemeConfig(config) {
+        return request('/holiday-theme', {
+            method: 'PUT',
+            body: JSON.stringify(config)
+        });
+    },
     // The workbook is binary, so this can't go through request(), which JSON-parses every
     // response. Resolves to { blob, filename } for the caller to hand to an anchor download.
     async downloadStaffPayReport(seasonId) {

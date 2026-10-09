@@ -424,3 +424,17 @@
 }
 
 /* User pill styles now live in components/common/UserPill.css (shared across layouts). */
+
+/* ---------- Holiday themes ----------
+   Plumbing only. The look of each theme lives in src/styles/holidays/<key>.css, every rule
+   scoped to [data-holiday="<key>"] (see docs/handoffs/HOLIDAY_THEMES_HANDOFF.md). The fx layer only exists
+   while a theme is on, so these rules never touch the normal header. */
+.obi-holiday-fx {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    /* The header (z-index 50) is its own stacking context, so -1 paints the decorations over the
+       header's background but under the logo, links and mobile menu. */
+    z-index: -1;
+}

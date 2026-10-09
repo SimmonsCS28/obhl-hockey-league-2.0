@@ -1,0 +1,69 @@
+/* OBHL holiday theme: Easter
+ * Contract: every selector is scoped to [data-holiday="easter"]. CSS + inline SVG only, no JS.
+ * Decorations live in .obi-holiday-fx (behind header content) and .obi-footer::before.
+ */
+
+[data-holiday="easter"] {
+  --obi-accent: #F7B7D2;
+  --obi-accent-soft: rgba(247, 183, 210, 0.14);
+  --obi-accent-hover: rgba(247, 183, 210, 0.06);
+  --obi-header-border: rgba(184, 216, 245, 0.45);
+  --obi-shadow-gold: 0 4px 14px rgba(247, 183, 210, 0.35);
+  --obi-icy: #B8D8F5;
+}
+
+[data-holiday="easter"] .obi-holiday-fx {
+  background: linear-gradient(180deg, transparent 55%, rgba(201, 240, 194, 0.08));
+}
+
+[data-holiday="easter"] .obi-holiday-fx::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'220'%20height%3D'148'%20viewBox%3D'0%200%20220%20148'%3E%3Ccircle%20cx%3D'114.8'%20cy%3D'83.1'%20r%3D'1.8'%20fill%3D'%23F7B7D2'%2F%3E%3Ccircle%20cx%3D'166.6'%20cy%3D'53.6'%20r%3D'2.2'%20fill%3D'%23B8D8F5'%2F%3E%3Ccircle%20cx%3D'5.7'%20cy%3D'44.2'%20r%3D'1.9'%20fill%3D'%23C9F0C2'%2F%3E%3Ccircle%20cx%3D'44.6'%20cy%3D'107'%20r%3D'1.5'%20fill%3D'%23F7E08A'%2F%3E%3Ccircle%20cx%3D'51.9'%20cy%3D'97.6'%20r%3D'1.7'%20fill%3D'%23F7B7D2'%2F%3E%3Ccircle%20cx%3D'16.6'%20cy%3D'114.4'%20r%3D'2.3'%20fill%3D'%23B8D8F5'%2F%3E%3Ccircle%20cx%3D'201.4'%20cy%3D'134.7'%20r%3D'2.1'%20fill%3D'%23C9F0C2'%2F%3E%3Ccircle%20cx%3D'211'%20cy%3D'3.7'%20r%3D'2.2'%20fill%3D'%23F7E08A'%2F%3E%3Ccircle%20cx%3D'132.2'%20cy%3D'107.2'%20r%3D'2.4'%20fill%3D'%23F7B7D2'%2F%3E%3Ccircle%20cx%3D'8.1'%20cy%3D'20.1'%20r%3D'1.1'%20fill%3D'%23B8D8F5'%2F%3E%3Ccircle%20cx%3D'23.8'%20cy%3D'12.6'%20r%3D'1'%20fill%3D'%23C9F0C2'%2F%3E%3Ccircle%20cx%3D'133.1'%20cy%3D'140'%20r%3D'1.3'%20fill%3D'%23F7E08A'%2F%3E%3Ccircle%20cx%3D'29.4'%20cy%3D'29.9'%20r%3D'2.1'%20fill%3D'%23F7B7D2'%2F%3E%3Ccircle%20cx%3D'53.5'%20cy%3D'67.5'%20r%3D'2.6'%20fill%3D'%23B8D8F5'%2F%3E%3C%2Fsvg%3E");
+  background-repeat: repeat;
+  background-size: 220px 148px;
+  opacity: 0.3;
+  animation: obhl-ea-float 50s linear infinite;
+}
+
+[data-holiday="easter"] .obi-holiday-fx::after {
+  content: "";
+  position: absolute;
+  left: 40%; bottom: 0; width: 180px; height: 22px;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'180'%20height%3D'22'%20viewBox%3D'0%200%20180%2022'%3E%3Cg%20transform%3D'translate(16%2012)%20scale(1)'%3E%3Cellipse%20cx%3D'0'%20cy%3D'0'%20rx%3D'6.5'%20ry%3D'8.5'%20fill%3D'%23F7B7D2'%2F%3E%3Cpath%20d%3D'M-6.3-1.5q3.1%202.4%206.3%200t6.3%200'%20stroke%3D'%23fff'%20stroke-width%3D'1.6'%20fill%3D'none'%2F%3E%3Cpath%20d%3D'M-5.8%203.2q2.9%202%205.8%200t5.8%200'%20stroke%3D'%23fff'%20stroke-width%3D'1.2'%20fill%3D'none'%2F%3E%3C%2Fg%3E%3Cg%20transform%3D'translate(54%2013)%20scale(0.85)'%3E%3Cellipse%20cx%3D'0'%20cy%3D'0'%20rx%3D'6.5'%20ry%3D'8.5'%20fill%3D'%23B8D8F5'%2F%3E%3Cpath%20d%3D'M-6.3-1.5q3.1%202.4%206.3%200t6.3%200'%20stroke%3D'%23F7E08A'%20stroke-width%3D'1.6'%20fill%3D'none'%2F%3E%3Cpath%20d%3D'M-5.8%203.2q2.9%202%205.8%200t5.8%200'%20stroke%3D'%23F7E08A'%20stroke-width%3D'1.2'%20fill%3D'none'%2F%3E%3C%2Fg%3E%3Cg%20transform%3D'translate(92%2012)%20scale(1)'%3E%3Cellipse%20cx%3D'0'%20cy%3D'0'%20rx%3D'6.5'%20ry%3D'8.5'%20fill%3D'%23C9F0C2'%2F%3E%3Cpath%20d%3D'M-6.3-1.5q3.1%202.4%206.3%200t6.3%200'%20stroke%3D'%23F7B7D2'%20stroke-width%3D'1.6'%20fill%3D'none'%2F%3E%3Cpath%20d%3D'M-5.8%203.2q2.9%202%205.8%200t5.8%200'%20stroke%3D'%23F7B7D2'%20stroke-width%3D'1.2'%20fill%3D'none'%2F%3E%3C%2Fg%3E%3Cg%20transform%3D'translate(132%2013)%20scale(0.9)'%3E%3Cellipse%20cx%3D'0'%20cy%3D'0'%20rx%3D'6.5'%20ry%3D'8.5'%20fill%3D'%23F7E08A'%2F%3E%3Cpath%20d%3D'M-6.3-1.5q3.1%202.4%206.3%200t6.3%200'%20stroke%3D'%23B8D8F5'%20stroke-width%3D'1.6'%20fill%3D'none'%2F%3E%3Cpath%20d%3D'M-5.8%203.2q2.9%202%205.8%200t5.8%200'%20stroke%3D'%23B8D8F5'%20stroke-width%3D'1.2'%20fill%3D'none'%2F%3E%3C%2Fg%3E%3Cg%20transform%3D'translate(166%2012)%20scale(0.8)'%3E%3Cellipse%20cx%3D'0'%20cy%3D'0'%20rx%3D'6.5'%20ry%3D'8.5'%20fill%3D'%23D9C8F5'%2F%3E%3Cpath%20d%3D'M-6.3-1.5q3.1%202.4%206.3%200t6.3%200'%20stroke%3D'%23fff'%20stroke-width%3D'1.6'%20fill%3D'none'%2F%3E%3Cpath%20d%3D'M-5.8%203.2q2.9%202%205.8%200t5.8%200'%20stroke%3D'%23fff'%20stroke-width%3D'1.2'%20fill%3D'none'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-size: 180px 22px;
+  opacity: 0.55;
+  
+}
+
+[data-holiday="easter"] .obi-footer { position: relative; }
+[data-holiday="easter"] .obi-footer::before {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  right: 28px; top: -21px; width: 180px; height: 22px;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'180'%20height%3D'22'%20viewBox%3D'0%200%20180%2022'%3E%3Cg%20transform%3D'translate(16%2012)%20scale(1)'%3E%3Cellipse%20cx%3D'0'%20cy%3D'0'%20rx%3D'6.5'%20ry%3D'8.5'%20fill%3D'%23F7B7D2'%2F%3E%3Cpath%20d%3D'M-6.3-1.5q3.1%202.4%206.3%200t6.3%200'%20stroke%3D'%23fff'%20stroke-width%3D'1.6'%20fill%3D'none'%2F%3E%3Cpath%20d%3D'M-5.8%203.2q2.9%202%205.8%200t5.8%200'%20stroke%3D'%23fff'%20stroke-width%3D'1.2'%20fill%3D'none'%2F%3E%3C%2Fg%3E%3Cg%20transform%3D'translate(54%2013)%20scale(0.85)'%3E%3Cellipse%20cx%3D'0'%20cy%3D'0'%20rx%3D'6.5'%20ry%3D'8.5'%20fill%3D'%23B8D8F5'%2F%3E%3Cpath%20d%3D'M-6.3-1.5q3.1%202.4%206.3%200t6.3%200'%20stroke%3D'%23F7E08A'%20stroke-width%3D'1.6'%20fill%3D'none'%2F%3E%3Cpath%20d%3D'M-5.8%203.2q2.9%202%205.8%200t5.8%200'%20stroke%3D'%23F7E08A'%20stroke-width%3D'1.2'%20fill%3D'none'%2F%3E%3C%2Fg%3E%3Cg%20transform%3D'translate(92%2012)%20scale(1)'%3E%3Cellipse%20cx%3D'0'%20cy%3D'0'%20rx%3D'6.5'%20ry%3D'8.5'%20fill%3D'%23C9F0C2'%2F%3E%3Cpath%20d%3D'M-6.3-1.5q3.1%202.4%206.3%200t6.3%200'%20stroke%3D'%23F7B7D2'%20stroke-width%3D'1.6'%20fill%3D'none'%2F%3E%3Cpath%20d%3D'M-5.8%203.2q2.9%202%205.8%200t5.8%200'%20stroke%3D'%23F7B7D2'%20stroke-width%3D'1.2'%20fill%3D'none'%2F%3E%3C%2Fg%3E%3Cg%20transform%3D'translate(132%2013)%20scale(0.9)'%3E%3Cellipse%20cx%3D'0'%20cy%3D'0'%20rx%3D'6.5'%20ry%3D'8.5'%20fill%3D'%23F7E08A'%2F%3E%3Cpath%20d%3D'M-6.3-1.5q3.1%202.4%206.3%200t6.3%200'%20stroke%3D'%23B8D8F5'%20stroke-width%3D'1.6'%20fill%3D'none'%2F%3E%3Cpath%20d%3D'M-5.8%203.2q2.9%202%205.8%200t5.8%200'%20stroke%3D'%23B8D8F5'%20stroke-width%3D'1.2'%20fill%3D'none'%2F%3E%3C%2Fg%3E%3Cg%20transform%3D'translate(166%2012)%20scale(0.8)'%3E%3Cellipse%20cx%3D'0'%20cy%3D'0'%20rx%3D'6.5'%20ry%3D'8.5'%20fill%3D'%23D9C8F5'%2F%3E%3Cpath%20d%3D'M-6.3-1.5q3.1%202.4%206.3%200t6.3%200'%20stroke%3D'%23fff'%20stroke-width%3D'1.6'%20fill%3D'none'%2F%3E%3Cpath%20d%3D'M-5.8%203.2q2.9%202%205.8%200t5.8%200'%20stroke%3D'%23fff'%20stroke-width%3D'1.2'%20fill%3D'none'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-size: 180px 22px;
+  
+}
+
+@keyframes obhl-ea-float { from { background-position: 0 0; } to { background-position: -220px -148px; } }
+
+/* Phones: keep the logo + burger clear */
+@media (max-width: 540px) {
+  [data-holiday="easter"] .obi-holiday-fx::before {
+    opacity: 0.2;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 30%, #000 58%, #000 76%, transparent 90%);
+            mask-image: linear-gradient(90deg, transparent 0, transparent 30%, #000 58%, #000 76%, transparent 90%);
+  }
+  [data-holiday="easter"] .obi-holiday-fx::after { display: none; }
+  [data-holiday="easter"] .obi-footer::before { right: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-holiday="easter"] .obi-holiday-fx::before,
+  [data-holiday="easter"] .obi-holiday-fx::after { animation: none; }
+}

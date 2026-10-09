@@ -1,0 +1,144 @@
+/* Admin → Holiday Themes. Classes prefixed obi-ht- (no CSS scoping in this codebase). */
+
+.obi-ht { display: flex; flex-direction: column; gap: 14px; }
+.obi-ht-muted { color: var(--obi-text-muted); font-size: 13px; }
+.obi-ht-muted code { color: var(--obi-icy); }
+
+.obi-ht-banner {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    border: 1px solid var(--obi-card-border);
+}
+.obi-ht-banner--ok { color: var(--obi-success); border-color: rgba(127, 181, 154, 0.4); }
+.obi-ht-banner--error { color: var(--obi-error); border-color: rgba(224, 138, 138, 0.4); }
+
+.obi-ht-card {
+    background: var(--obi-bg-card);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 12px;
+    padding: 18px 20px 20px;
+}
+.obi-ht-card-hd {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+.obi-ht-card-hd h3 {
+    margin: 0 0 4px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: 0.3px;
+}
+.obi-ht-card-hd p {
+    margin: 0;
+    max-width: 640px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--obi-text-secondary);
+}
+
+.obi-ht-seg {
+    display: inline-flex;
+    border: 1px solid var(--obi-card-border);
+    border-radius: 8px;
+    overflow: hidden;
+}
+.obi-ht-seg-btn {
+    cursor: pointer;
+    background: transparent;
+    color: var(--obi-text-secondary);
+    border: 0;
+    padding: 8px 16px;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+}
+.obi-ht-seg-btn.is-on { background: var(--obi-accent); color: #0b0c0f; }
+
+.obi-ht-table-wrap { overflow-x: auto; }
+.obi-ht-table-wrap.is-off { opacity: 0.5; }
+.obi-ht-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.obi-ht-table th {
+    text-align: left;
+    font-family: var(--obi-font-display);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--obi-text-muted);
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--obi-divider);
+}
+.obi-ht-table td {
+    padding: 10px;
+    border-bottom: 1px solid var(--obi-divider);
+    vertical-align: middle;
+}
+.obi-ht-table tr.is-disabled .obi-ht-name { color: var(--obi-text-dim); }
+.obi-ht-name { font-weight: 600; white-space: nowrap; }
+
+.obi-ht-date {
+    background: var(--obi-bg-elevated);
+    color: var(--obi-text);
+    border: 1px solid var(--obi-card-border);
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-family: inherit;
+    color-scheme: dark;
+}
+.obi-ht-date:disabled { opacity: 0.5; }
+
+.obi-ht-status { display: flex; flex-wrap: wrap; gap: 6px; min-width: 140px; }
+.obi-ht-pill {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--obi-card-border);
+    color: var(--obi-icy);
+    white-space: nowrap;
+}
+.obi-ht-pill--live { color: var(--obi-accent); border-color: var(--obi-header-border); background: var(--obi-accent-soft); }
+.obi-ht-pill--error { color: var(--obi-error); border-color: rgba(224, 138, 138, 0.4); }
+.obi-ht-pill--muted { color: var(--obi-text-muted); }
+
+.obi-ht-actions { white-space: nowrap; text-align: right; }
+.obi-ht-link {
+    background: none;
+    border: 0;
+    padding: 0;
+    margin-left: 12px;
+    cursor: pointer;
+    color: var(--obi-icy);
+    font: inherit;
+    font-size: 13px;
+    text-decoration: underline;
+}
+
+.obi-ht-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+.obi-ht-btn {
+    cursor: pointer;
+    font-family: var(--obi-font-display);
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 8px 18px;
+    border-radius: 8px;
+    color: #0b0c0f;
+    background: var(--obi-accent);
+    border: 1px solid var(--obi-accent);
+}
+.obi-ht-btn:disabled { opacity: 0.45; cursor: not-allowed; }

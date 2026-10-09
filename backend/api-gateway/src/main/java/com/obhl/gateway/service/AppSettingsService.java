@@ -15,6 +15,12 @@ public class AppSettingsService {
     /** Where the end-of-season staff pay workbook is emailed. */
     public static final String FINANCE_REPORT_EMAIL = "finance_report_email";
 
+    /** Public-site holiday theme master switch: "auto" (default) or "off". */
+    public static final String HOLIDAY_THEME_MODE = "holiday_theme_mode";
+
+    /** JSON object of per-holiday overrides (enabled flag, and dates for one year). */
+    public static final String HOLIDAY_THEME_OVERRIDES = "holiday_theme_overrides";
+
     @Autowired
     private AppSettingRepository repository;
 

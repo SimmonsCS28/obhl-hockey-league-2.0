@@ -27,6 +27,7 @@ const NAV = [
     { id: 'announcements', label: 'Announcements' },
     { id: 'highlights', label: 'Highlights' },
     { id: 'rules', label: 'Rules Editor' },
+    { id: 'holidays', label: 'Holiday Themes' },
     // Launcher — opens the role-scoped Coordinator Console (external to the admin shell), per v4 §2c
     { route: '/coordinator', label: 'Coordinator Console' },
     // The old "Scheduling" group (Goalie/Referee/Scorekeeper Schedule) was removed here: staffing
@@ -89,6 +90,7 @@ function AdminLayout({ children, activeTab }) {
         : activeItem?.id === 'gamemgmt' ? 'Box-score editor for completed games'
         : activeItem?.id === 'assignments' ? 'Assign goalies, referees and scorekeepers'
         : activeItem?.id === 'staffpay' ? 'Referee and scorekeeper pay for the season'
+        : activeItem?.id === 'holidays' ? 'Holiday dress-up for the public site'
         : activeItem?.id === 'tournament' ? 'Configure the annual tournament'
         : activeItem?.id === 'tournament-draft' ? 'Build the Classic rosters'
         : activeItem?.id === 'tournament-schedule' ? 'Generate the weekend fixture list'

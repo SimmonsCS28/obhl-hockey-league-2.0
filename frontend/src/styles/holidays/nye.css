@@ -1,0 +1,70 @@
+/* OBHL holiday theme: New Year's Eve
+ * Contract: every selector is scoped to [data-holiday="nye"]. CSS + inline SVG only, no JS.
+ * Decorations live in .obi-holiday-fx (behind header content) and .obi-footer::before.
+ */
+
+[data-holiday="nye"] {
+  --obi-accent: #FFC23D;
+  --obi-accent-soft: rgba(255, 194, 61, 0.14);
+  --obi-accent-hover: rgba(255, 194, 61, 0.06);
+  --obi-header-border: rgba(255, 194, 61, 0.5);
+  --obi-shadow-gold: 0 4px 18px rgba(255, 194, 61, 0.45);
+  --obi-icy: #E9DFC4;
+}
+
+[data-holiday="nye"] .obi-holiday-fx {
+  background: linear-gradient(180deg, rgba(255, 194, 61, 0.05), transparent 70%);
+}
+
+[data-holiday="nye"] .obi-holiday-fx::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'220'%20height%3D'148'%20viewBox%3D'0%200%20220%20148'%3E%3Crect%20x%3D'174.8'%20y%3D'129.9'%20width%3D'2.5'%20height%3D'2.5'%20transform%3D'rotate(20%20174.8%20129.9)'%20fill%3D'%23F6A91C'%2F%3E%3Crect%20x%3D'180.2'%20y%3D'11.5'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(73.2%20180.2%2011.5)'%20fill%3D'%23FFE3A3'%2F%3E%3Crect%20x%3D'33.8'%20y%3D'11.5'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(179.3%2033.8%2011.5)'%20fill%3D'%23FFFFFF'%2F%3E%3Crect%20x%3D'48.4'%20y%3D'93.6'%20width%3D'2.5'%20height%3D'2.5'%20transform%3D'rotate(26%2048.4%2093.6)'%20fill%3D'%23C9A15A'%2F%3E%3Crect%20x%3D'100.6'%20y%3D'87.8'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(24.8%20100.6%2087.8)'%20fill%3D'%23F6A91C'%2F%3E%3Crect%20x%3D'202.8'%20y%3D'130.9'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(160.3%20202.8%20130.9)'%20fill%3D'%23FFE3A3'%2F%3E%3Crect%20x%3D'194.7'%20y%3D'134.3'%20width%3D'2.5'%20height%3D'2.5'%20transform%3D'rotate(137%20194.7%20134.3)'%20fill%3D'%23FFFFFF'%2F%3E%3Crect%20x%3D'60.6'%20y%3D'1.6'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(44.7%2060.6%201.6)'%20fill%3D'%23C9A15A'%2F%3E%3Crect%20x%3D'16.7'%20y%3D'0.2'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(111%2016.7%200.2)'%20fill%3D'%23F6A91C'%2F%3E%3Crect%20x%3D'50.9'%20y%3D'109.7'%20width%3D'2.5'%20height%3D'2.5'%20transform%3D'rotate(88.1%2050.9%20109.7)'%20fill%3D'%23FFE3A3'%2F%3E%3Crect%20x%3D'151.3'%20y%3D'35.2'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(158.8%20151.3%2035.2)'%20fill%3D'%23FFFFFF'%2F%3E%3Crect%20x%3D'51.7'%20y%3D'55.3'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(161%2051.7%2055.3)'%20fill%3D'%23C9A15A'%2F%3E%3Crect%20x%3D'26'%20y%3D'72.4'%20width%3D'2.5'%20height%3D'2.5'%20transform%3D'rotate(0.5%2026%2072.4)'%20fill%3D'%23F6A91C'%2F%3E%3Crect%20x%3D'200.9'%20y%3D'94.3'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(166%20200.9%2094.3)'%20fill%3D'%23FFE3A3'%2F%3E%3Crect%20x%3D'4.6'%20y%3D'133.2'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(33.9%204.6%20133.2)'%20fill%3D'%23FFFFFF'%2F%3E%3Crect%20x%3D'213.1'%20y%3D'83.7'%20width%3D'2.5'%20height%3D'2.5'%20transform%3D'rotate(122.3%20213.1%2083.7)'%20fill%3D'%23C9A15A'%2F%3E%3Crect%20x%3D'58.6'%20y%3D'33'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(37.6%2058.6%2033)'%20fill%3D'%23F6A91C'%2F%3E%3Crect%20x%3D'124.2'%20y%3D'7.7'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(138.5%20124.2%207.7)'%20fill%3D'%23FFE3A3'%2F%3E%3C%2Fsvg%3E");
+  background-repeat: repeat;
+  background-size: 220px 148px;
+  opacity: 0.4;
+  animation: obhl-nye-fall 34s linear infinite;
+}
+
+[data-holiday="nye"] .obi-holiday-fx::after {
+  content: "";
+  position: absolute;
+  left: 46%; top: 2px; width: 70px; height: 70px;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'70'%20height%3D'70'%20viewBox%3D'0%200%2070%2070'%3E%3Cg%20stroke%3D'%23FFD27A'%20stroke-width%3D'1.3'%20stroke-linecap%3D'round'%3E%3Cline%20x1%3D'44.8'%20y1%3D'35'%20x2%3D'63'%20y2%3D'35'%2F%3E%3Ccircle%20cx%3D'65.2'%20cy%3D'35'%20r%3D'1.2'%20stroke%3D'none'%20fill%3D'%23FFD27A'%2F%3E%3Cline%20x1%3D'43.8'%20y1%3D'39.3'%20x2%3D'60.2'%20y2%3D'47.1'%2F%3E%3Ccircle%20cx%3D'62.2'%20cy%3D'48.1'%20r%3D'1.2'%20stroke%3D'none'%20fill%3D'%23FFD27A'%2F%3E%3Cline%20x1%3D'41.1'%20y1%3D'42.7'%20x2%3D'52.5'%20y2%3D'56.9'%2F%3E%3Ccircle%20cx%3D'53.9'%20cy%3D'58.6'%20r%3D'1.2'%20stroke%3D'none'%20fill%3D'%23FFD27A'%2F%3E%3Cline%20x1%3D'37.2'%20y1%3D'44.6'%20x2%3D'41.2'%20y2%3D'62.3'%2F%3E%3Ccircle%20cx%3D'41.7'%20cy%3D'64.5'%20r%3D'1.2'%20stroke%3D'none'%20fill%3D'%23FFD27A'%2F%3E%3Cline%20x1%3D'32.8'%20y1%3D'44.6'%20x2%3D'28.8'%20y2%3D'62.3'%2F%3E%3Ccircle%20cx%3D'28.3'%20cy%3D'64.5'%20r%3D'1.2'%20stroke%3D'none'%20fill%3D'%23FFD27A'%2F%3E%3Cline%20x1%3D'28.9'%20y1%3D'42.7'%20x2%3D'17.5'%20y2%3D'56.9'%2F%3E%3Ccircle%20cx%3D'16.1'%20cy%3D'58.6'%20r%3D'1.2'%20stroke%3D'none'%20fill%3D'%23FFD27A'%2F%3E%3Cline%20x1%3D'26.2'%20y1%3D'39.3'%20x2%3D'9.8'%20y2%3D'47.1'%2F%3E%3Ccircle%20cx%3D'7.8'%20cy%3D'48.1'%20r%3D'1.2'%20stroke%3D'none'%20fill%3D'%23FFD27A'%2F%3E%3Cline%20x1%3D'25.2'%20y1%3D'35'%20x2%3D'7'%20y2%3D'35'%2F%3E%3Ccircle%20cx%3D'4.8'%20cy%3D'35'%20r%3D'1.2'%20stroke%3D'none'%20fill%3D'%23FFD27A'%2F%3E%3Cline%20x1%3D'26.2'%20y1%3D'30.7'%20x2%3D'9.8'%20y2%3D'22.9'%2F%3E%3Ccircle%20cx%3D'7.8'%20cy%3D'21.9'%20r%3D'1.2'%20stroke%3D'none'%20fill%3D'%23FFD27A'%2F%3E%3Cline%20x1%3D'28.9'%20y1%3D'27.3'%20x2%3D'17.5'%20y2%3D'13.1'%2F%3E%3Ccircle%20cx%3D'16.1'%20cy%3D'11.4'%20r%3D'1.2'%20stroke%3D'none'%20fill%3D'%23FFD27A'%2F%3E%3Cline%20x1%3D'32.8'%20y1%3D'25.4'%20x2%3D'28.8'%20y2%3D'7.7'%2F%3E%3Ccircle%20cx%3D'28.3'%20cy%3D'5.5'%20r%3D'1.2'%20stroke%3D'none'%20fill%3D'%23FFD27A'%2F%3E%3Cline%20x1%3D'37.2'%20y1%3D'25.4'%20x2%3D'41.2'%20y2%3D'7.7'%2F%3E%3Ccircle%20cx%3D'41.7'%20cy%3D'5.5'%20r%3D'1.2'%20stroke%3D'none'%20fill%3D'%23FFD27A'%2F%3E%3Cline%20x1%3D'41.1'%20y1%3D'27.3'%20x2%3D'52.5'%20y2%3D'13.1'%2F%3E%3Ccircle%20cx%3D'53.9'%20cy%3D'11.4'%20r%3D'1.2'%20stroke%3D'none'%20fill%3D'%23FFD27A'%2F%3E%3Cline%20x1%3D'43.8'%20y1%3D'30.7'%20x2%3D'60.2'%20y2%3D'22.9'%2F%3E%3Ccircle%20cx%3D'62.2'%20cy%3D'21.9'%20r%3D'1.2'%20stroke%3D'none'%20fill%3D'%23FFD27A'%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-size: 70px 70px;
+  opacity: 0;
+  animation: obhl-nye-pop 7s ease-out infinite;
+}
+
+[data-holiday="nye"] .obi-footer { position: relative; }
+[data-holiday="nye"] .obi-footer::before {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  left: 0; right: 0; top: 0; height: 30px;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'220'%20height%3D'148'%20viewBox%3D'0%200%20220%20148'%3E%3Crect%20x%3D'174.8'%20y%3D'129.9'%20width%3D'2.5'%20height%3D'2.5'%20transform%3D'rotate(20%20174.8%20129.9)'%20fill%3D'%23F6A91C'%2F%3E%3Crect%20x%3D'180.2'%20y%3D'11.5'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(73.2%20180.2%2011.5)'%20fill%3D'%23FFE3A3'%2F%3E%3Crect%20x%3D'33.8'%20y%3D'11.5'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(179.3%2033.8%2011.5)'%20fill%3D'%23FFFFFF'%2F%3E%3Crect%20x%3D'48.4'%20y%3D'93.6'%20width%3D'2.5'%20height%3D'2.5'%20transform%3D'rotate(26%2048.4%2093.6)'%20fill%3D'%23C9A15A'%2F%3E%3Crect%20x%3D'100.6'%20y%3D'87.8'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(24.8%20100.6%2087.8)'%20fill%3D'%23F6A91C'%2F%3E%3Crect%20x%3D'202.8'%20y%3D'130.9'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(160.3%20202.8%20130.9)'%20fill%3D'%23FFE3A3'%2F%3E%3Crect%20x%3D'194.7'%20y%3D'134.3'%20width%3D'2.5'%20height%3D'2.5'%20transform%3D'rotate(137%20194.7%20134.3)'%20fill%3D'%23FFFFFF'%2F%3E%3Crect%20x%3D'60.6'%20y%3D'1.6'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(44.7%2060.6%201.6)'%20fill%3D'%23C9A15A'%2F%3E%3Crect%20x%3D'16.7'%20y%3D'0.2'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(111%2016.7%200.2)'%20fill%3D'%23F6A91C'%2F%3E%3Crect%20x%3D'50.9'%20y%3D'109.7'%20width%3D'2.5'%20height%3D'2.5'%20transform%3D'rotate(88.1%2050.9%20109.7)'%20fill%3D'%23FFE3A3'%2F%3E%3Crect%20x%3D'151.3'%20y%3D'35.2'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(158.8%20151.3%2035.2)'%20fill%3D'%23FFFFFF'%2F%3E%3Crect%20x%3D'51.7'%20y%3D'55.3'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(161%2051.7%2055.3)'%20fill%3D'%23C9A15A'%2F%3E%3Crect%20x%3D'26'%20y%3D'72.4'%20width%3D'2.5'%20height%3D'2.5'%20transform%3D'rotate(0.5%2026%2072.4)'%20fill%3D'%23F6A91C'%2F%3E%3Crect%20x%3D'200.9'%20y%3D'94.3'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(166%20200.9%2094.3)'%20fill%3D'%23FFE3A3'%2F%3E%3Crect%20x%3D'4.6'%20y%3D'133.2'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(33.9%204.6%20133.2)'%20fill%3D'%23FFFFFF'%2F%3E%3Crect%20x%3D'213.1'%20y%3D'83.7'%20width%3D'2.5'%20height%3D'2.5'%20transform%3D'rotate(122.3%20213.1%2083.7)'%20fill%3D'%23C9A15A'%2F%3E%3Crect%20x%3D'58.6'%20y%3D'33'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(37.6%2058.6%2033)'%20fill%3D'%23F6A91C'%2F%3E%3Crect%20x%3D'124.2'%20y%3D'7.7'%20width%3D'4'%20height%3D'1.8'%20transform%3D'rotate(138.5%20124.2%207.7)'%20fill%3D'%23FFE3A3'%2F%3E%3C%2Fsvg%3E");
+  background-repeat: repeat-x;
+  background-size: 220px 148px;
+  opacity: 0.35;
+}
+
+@keyframes obhl-nye-fall { from { background-position: 0 0; } to { background-position: -40px 148px; } }
+@keyframes obhl-nye-pop { 0%, 55% { opacity: 0; transform: scale(0.4); } 70% { opacity: 0.55; transform: scale(1); } 100% { opacity: 0; transform: scale(1.15); } }
+
+/* Phones: keep the logo + burger clear */
+@media (max-width: 540px) {
+  [data-holiday="nye"] .obi-holiday-fx::before {
+    opacity: 0.3;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, transparent 30%, #000 58%, #000 76%, transparent 90%);
+            mask-image: linear-gradient(90deg, transparent 0, transparent 30%, #000 58%, #000 76%, transparent 90%);
+  }
+  [data-holiday="nye"] .obi-holiday-fx::after { display: none; }
+  [data-holiday="nye"] .obi-footer::before { right: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-holiday="nye"] .obi-holiday-fx::before,
+  [data-holiday="nye"] .obi-holiday-fx::after { animation: none; }
+}

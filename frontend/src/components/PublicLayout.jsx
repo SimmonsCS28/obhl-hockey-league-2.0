@@ -3,6 +3,7 @@ import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import logo from '../assets/images/buzzard-logo.png';
 import { useAuth } from '../contexts/AuthContext';
 import UserPill from './common/UserPill';
+import useHolidayTheme from './common/useHolidayTheme';
 import DonateButton from './DonateButton';
 import DonatePopup from './DonatePopup';
 import LoginModal from './LoginModal';
@@ -27,6 +28,10 @@ function PublicLayout() {
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const { isAuthenticated } = useAuth();
+    // Holiday dress-up (utils/holidayTheme.js). Theme CSS is scoped to [data-holiday="<key>"],
+    // so with no theme on, this layout renders exactly as it always has.
+    const holiday = useHolidayTheme();
+    const brandLogo = holiday.logo || logo;
 
     // Close mobile menu on resize to desktop
     useEffect(() => {
@@ -68,11 +73,12 @@ function PublicLayout() {
     );
 
     return (
-        <div className="obi-public-layout">
+        <div className="obi-public-layout" data-holiday={holiday.key || undefined}>
             <header className="obi-header">
+                {holiday.key && <div className="obi-holiday-fx" aria-hidden="true" />}
                 <div className="obi-header-inner">
                     <Link to="/" className="obi-brand" onClick={closeMobileMenu}>
-                        <img src={logo} alt="OBHL" className="obi-brand-logo" />
+                        <img src={brandLogo} alt="OBHL" className="obi-brand-logo" />
                         <span className="obi-wordmark">
                             <span className="obi-wordmark-top">OLD BUZZARD</span>
                             <span className="obi-wordmark-sub">HOCKEY LEAGUE</span>
@@ -114,7 +120,7 @@ function PublicLayout() {
                 <div className="obi-footer-top obi-container">
                     <div className="obi-footer-brand">
                         <div className="obi-footer-brand-row">
-                            <img src={logo} alt="OBHL" className="obi-footer-logo" />
+                            <img src={brandLogo} alt="OBHL" className="obi-footer-logo" />
                             <span className="obi-footer-wordmark">OLD BUZZARD HOCKEY</span>
                         </div>
                         <p className="obi-footer-tagline">
