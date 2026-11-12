@@ -13,7 +13,6 @@ function GameRecap() {
     const location = useLocation();
 
     const [game, setGame] = useState(null);
-    const [tournament, setTournament] = useState(null);
     const [events, setEvents] = useState([]);
     const [staffNames, setStaffNames] = useState(null);
     const [seasonGames, setSeasonGames] = useState([]);
@@ -29,13 +28,6 @@ function GameRecap() {
             setLoading(true);
             const [gameData, teamsData] = await Promise.all([api.getGame(gameId), api.getTeams()]);
 
-            // Resolve the tournament so "back" returns to the Classic rather than the league
-            // schedule. Matched on seasonId, the one-to-one link between the two.
-            if (gameData?.gameType === 'TOURNAMENT') {
-                api.request('/tournaments')
-                    .then(list => setTournament((list || []).find(t => t.seasonId === gameData.seasonId) || null))
-                    .catch(() => setTournament(null));
-            }
             if (!gameData) throw new Error('Game not found');
 
             api.getGames(gameData.seasonId).then(setSeasonGames).catch(() => setSeasonGames([]));
@@ -155,7 +147,7 @@ function GameRecap() {
     const homeWin = game.homeScore > game.awayScore;
     const awayWin = game.awayScore > game.homeScore;
     // "Week 3" means nothing at a two-day tournament; show the stage or round instead.
-    const tournamentBack = tournamentBackTarget(game, tournament?.slug);
+    const tournamentBack = tournamentBackTarget(game);
     const stageLabel = tournamentGameLabel(game) || `Week ${game.week}`;
 
     const metaChips = [formatDate(game.gameDate), game.rink ? `${game.rink} Rink` : null,

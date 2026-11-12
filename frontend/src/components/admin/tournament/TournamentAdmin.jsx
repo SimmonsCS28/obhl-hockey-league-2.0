@@ -447,10 +447,10 @@ function PublishPanel({ draft, set }) {
             <label className="obi-tsetup-check">
                 <input type="checkbox" checked={!!draft.isPublished}
                     onChange={e => set({ isPublished: e.target.checked })} />
-                <span>Visible on the public tournament site</span>
+                <span>Published in tournament listings</span>
             </label>
             <p className="obi-tsetup-hint">
-                Public URL: <code>/tournaments/{draft.slug}</code>
+                The public C League Classic pages have been retired. Tournament administration and records remain available here.
             </p>
         </Panel>
     );

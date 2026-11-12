@@ -4,7 +4,7 @@
  * GamePreview and GameRecap are reused for tournament games rather than duplicated: a tournament
  * game is an ordinary games row, so the pages are already 90% correct. What differs is the small
  * amount of league-specific framing — "Week 3" means nothing at a two-day tournament, and the back
- * link has to return to the Classic rather than the league schedule.
+ * link returns to the league home now that the public Classic microsite has retired.
  */
 
 const STAGE_LABEL = {
@@ -43,7 +43,7 @@ export function tournamentGameLabel(game) {
 }
 
 /** Where "back" should go. Null for league games, so their existing behaviour is untouched. */
-export function tournamentBackTarget(game, tournamentSlug) {
-    if (!isTournamentGame(game) || !tournamentSlug) return null;
-    return { to: `/tournaments/${tournamentSlug}/schedule`, label: 'Classic Schedule' };
+export function tournamentBackTarget(game) {
+    if (!isTournamentGame(game)) return null;
+    return { to: '/', label: 'Home' };
 }

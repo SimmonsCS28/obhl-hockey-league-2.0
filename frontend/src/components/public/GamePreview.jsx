@@ -23,7 +23,6 @@ function GamePreview() {
     const [seasonGames, setSeasonGames] = useState([]);
     /** Computed standings, for tournament games only — see the record/rank note in the loader. */
     const [tournamentStandings, setTournamentStandings] = useState([]);
-    const [tournament, setTournament] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
@@ -55,12 +54,6 @@ function GamePreview() {
                 const standings = await api.request(`/games/tournament-standings?seasonId=${gameData.seasonId}`)
                     .catch(() => []);
                 setTournamentStandings(standings || []);
-
-                // Resolve the slug so "back" returns to the Classic rather than the league
-                // schedule. Matched on seasonId, which is the one-to-one link between them.
-                api.request('/tournaments')
-                    .then(list => setTournament((list || []).find(t => t.seasonId === gameData.seasonId) || null))
-                    .catch(() => setTournament(null));
 
                 // Rank within the team's own division, which is what the bracket actually seeds from.
                 const rankIn = (teamId) => {
@@ -175,7 +168,7 @@ function GamePreview() {
     if (!game || !homeTeam || !awayTeam) return <div className="obi-page obi-gd"><div className="obi-gd-msg">Game details could not be found.</div></div>;
 
     // "Week 3" means nothing at a two-day tournament; show the stage or round instead.
-    const tournamentBack = tournamentBackTarget(game, tournament?.slug);
+    const tournamentBack = tournamentBackTarget(game);
     const periodLabel = tournamentGameLabel(game) || (game.week ? `Week ${game.week}` : null);
 
     const metaChips = [formatDate(game.gameDate), formatTime(game.gameDate),
