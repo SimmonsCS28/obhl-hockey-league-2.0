@@ -136,7 +136,7 @@ function PlayerTable({ rows, teams, view, seasonName }) {
     };
     return <>
         <div className="obi-player-section-title">
-            <div><h2>{view === 'roster' ? 'Season roster' : view === 'skaters' ? 'Scoring leaderboard' : 'Goaltender leaderboard'}</h2>
+            <div><h2>{view === 'roster' ? 'Season roster' : view === 'skaters' ? 'Points leaderboard' : 'Goaltender leaderboard'}</h2>
                 <p>{seasonName}{stats ? ' · Season totals' : ` · ${rows.length} players`}</p></div>
             {stats && <span className="obi-player-sort-note">{`Sorted by ${COLUMNS[view].find(([key]) => key === sort.key)?.[2].toLowerCase()} · ${sort.direction === 'ascending' ? 'ascending' : 'descending'}`}</span>}
         </div>
