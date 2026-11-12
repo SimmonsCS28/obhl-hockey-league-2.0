@@ -28,6 +28,7 @@ public class SecurityConfig {
                                 "/api/v1/game-events", "/api/v1/game-events/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/gm/**").hasAnyRole("ADMIN", "GM", "INTERNAL_SERVICE")
                         .requestMatchers(HttpMethod.POST, "/api/v1/games/*/start", "/api/v1/games/*/finalize",
+                                "/api/v1/games/*/unfinalize",
                                 "/api/v1/games/*/events", "/api/v1/games/*/awards",
                                 "/api/v1/games/*/penalties/validate", "/api/v1/game-events", "/api/v1/game-events/**")
                             .hasAnyRole("ADMIN", "SCOREKEEPER", "INTERNAL_SERVICE")

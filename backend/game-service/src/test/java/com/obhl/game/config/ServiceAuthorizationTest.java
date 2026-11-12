@@ -90,9 +90,25 @@ class ServiceAuthorizationTest {
                     .contentType("application/json").content("{\"scorekeeperId\":42}"))
                     .andExpect(status().isForbidden());
         }
-        mvc.perform(post("/api/v1/games/1/unfinalize").header("Authorization", token("SCOREKEEPER")))
+        mvc.perform(post("/api/v1/games/1/revert-to-scheduled").header("Authorization", token("SCOREKEEPER")))
                 .andExpect(status().isForbidden());
         verify(gameService, never()).updateGame(anyLong(), any());
+        verify(gameService, never()).revertToScheduled(anyLong());
+    }
+
+    @Test void scorekeepersCanReopenGamesWhileUnrelatedRolesCannot() throws Exception {
+        for (String role : List.of("SCOREKEEPER", "ADMIN")) {
+            mvc.perform(post("/api/v1/games/1/unfinalize").header("Authorization", token(role)))
+                    .andExpect(status().isOk());
+        }
+        mvc.perform(post("/api/v1/games/1/unfinalize").header("X-Internal-Service-Key", INTERNAL))
+                .andExpect(status().isOk());
+        for (String role : List.of("USER", "REF", "GM", "GOALIE_COORDINATOR", "INTERNAL_SERVICE")) {
+            mvc.perform(post("/api/v1/games/1/unfinalize").header("Authorization", token(role)))
+                    .andExpect(status().isForbidden());
+        }
+        mvc.perform(post("/api/v1/games/1/unfinalize")).andExpect(status().isUnauthorized());
+        verify(gameService, times(3)).unfinalizeGame(1L);
     }
 
     @Test void adminAndBackendCallsCanMutate() throws Exception {
