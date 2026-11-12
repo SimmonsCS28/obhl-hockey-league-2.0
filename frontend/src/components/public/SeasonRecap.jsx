@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import { request } from '../../services/api';
 import { longDate } from '../../utils/seasonStats';
 import './SeasonRecap.css';
 
@@ -8,6 +10,9 @@ function Matchup({ game }) {
     return <div className="recap-match"><span>{teamName(game.homeTeam)}</span><strong>{game.homeScore ?? '—'} <i>–</i> {game.awayScore ?? '—'}</strong><span>{teamName(game.awayTeam)}</span></div>;
 }
 export default function SeasonRecap({ season }) {
+    const { isAdmin } = useAuth();
+    const [generating, setGenerating] = useState(false);
+    const [generationError, setGenerationError] = useState('');
     const [data, setData] = useState(null);
     const [error, setError] = useState('');
     const [attempt, setAttempt] = useState(0);
@@ -23,9 +28,21 @@ export default function SeasonRecap({ season }) {
     }, [season.id, attempt]);
     if (error) return <div className="recap-state" role="alert">{error}<button onClick={() => setAttempt(n => n + 1)}>Try again</button></div>;
     if (!data) return <p className="recap-state" role="status">Putting the season in perspective…</p>;
+    const generate = async () => {
+        setGenerating(true); setGenerationError('');
+        try { setData(await request(`/seasons/${season.id}/recap/generate`, { method: 'POST' })); }
+        catch (e) { setGenerationError(e.message || 'Could not publish the recap. Please try again.'); }
+        finally { setGenerating(false); }
+    };
     const final = data.champion?.finalGame;
     const highlight = data.highestScoringGame;
     return <div className="recap">
+        {(isAdmin || data.generatedAt) && <div className="recap-publish">
+            <span role="status">{data.generatedAt ? `Updated ${new Date(data.generatedAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'America/Chicago' })} CT` : 'Live preview · no saved recap yet'}</span>
+            {isAdmin && <button onClick={generate} disabled={generating}>{generating ? 'Generating…' : data.generatedAt ? 'Regenerate recap' : 'Generate recap'}</button>}
+            {isAdmin && <small>Save these season highlights to the website. Regenerate after correcting game records.</small>}
+            {generationError && <p role="alert">{generationError}</p>}
+        </div>}
         <p className="recap-dates">{longDate(season.startDate)} — {longDate(season.endDate)} <span>· The season in review</span></p>
         <section className={`recap-champion ${data.champion ? '' : 'is-unrecorded'}`} aria-labelledby="recap-champion-title">
             <div className="recap-trophy" aria-hidden="true">★</div>

@@ -34,3 +34,9 @@
 @media (max-width: 800px) { .recap-numbers { grid-template-columns: repeat(2, 1fr); } .recap-final { flex-basis: 100%; width: 100%; max-width: none; } }
 @media (max-width: 640px) { .recap { padding: 0 16px 20px; } }
 @media (max-width: 480px) { .recap-champion { padding: 22px; gap: 16px; } .recap-trophy { font-size: 36px; } .recap h3 { font-size: 27px; } .recap-numbers { gap: 10px; } .recap-numbers > div { padding: 18px 13px; } .recap-numbers strong { font-size: 34px; } .recap-highlight { padding: 20px; } }
+.recap-publish { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 22px; padding: 14px 16px; background: rgba(157,185,205,.06); border: 1px solid var(--obi-card-border); border-radius: 9px; color: var(--obi-icy); font: 12px var(--obi-font-body); }
+.recap-publish button { padding: 9px 13px; background: var(--obi-accent); color: #11151a; border: 0; border-radius: 6px; font: 700 12px var(--obi-font-body); cursor: pointer; }
+.recap-publish button:disabled { opacity: .6; cursor: wait; }
+.recap-publish button:focus-visible { outline: 2px solid var(--obi-accent); outline-offset: 3px; }
+.recap-publish small { width: 100%; color: var(--obi-text-muted); }
+.recap-publish p { width: 100%; margin: 0; color: var(--obi-error); }

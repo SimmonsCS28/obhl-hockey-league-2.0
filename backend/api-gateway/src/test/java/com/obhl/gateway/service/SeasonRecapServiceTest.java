@@ -2,6 +2,7 @@ package com.obhl.gateway.service;
 
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.UUID;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -20,7 +21,10 @@ class SeasonRecapServiceTest {
         db.execute("CREATE TABLE game_events(game_id bigint, event_type varchar, penalty_minutes int)");
         db.update("INSERT INTO seasons VALUES(1,'completed'),(2,'active'),(3,'completed')");
         db.update("INSERT INTO teams VALUES(10,'Gold'),(11,'Navy')");
-        service = new SeasonRecapService(db);
+        db.execute("CREATE TABLE users(id bigint PRIMARY KEY, username varchar, is_active boolean)");
+        db.execute("CREATE TABLE season_recaps(season_id bigint PRIMARY KEY, recap_json text, generated_at timestamp with time zone, generated_by bigint)");
+        db.update("INSERT INTO users VALUES(7,'admin',true),(8,'inactive',false)");
+        service = new SeasonRecapService(db, new ObjectMapper().findAndRegisterModules());
     }
     void game(long id, long season, String type, String round, String status, Integer home, Integer away, Long forfeit) {
         db.update("INSERT INTO games VALUES(?,?,10,11,?,?,TIMESTAMP '2026-03-01 20:00:00',?,?,?,?,false,false)", id, season, home, away, status, type, round, forfeit);
@@ -35,6 +39,24 @@ class SeasonRecapServiceTest {
         var r=service.get(1);
         assertEquals(2,r.gamesPlayed()); assertEquals(14L,r.totalGoals()); assertEquals(2,r.penaltiesRecorded()); assertEquals(7,r.penaltyMinutes());
         assertEquals("Gold",r.champion().teamName()); assertEquals(1,r.highestScoringGame().id());
+    }
+    @Test void publishedRecapSurvivesChangesUntilRegenerated() {
+        game(1,1,"REGULAR_SEASON",null,"completed",5,3,null);
+        var published = service.generate(1,"admin");
+        assertNotNull(published.generatedAt()); assertEquals(8L, published.totalGoals());
+        db.update("UPDATE games SET home_score=9 WHERE id=1");
+        assertEquals(8L,service.get(1).totalGoals());
+        assertEquals(published.generatedAt(),service.get(1).generatedAt());
+        assertEquals(12L,service.generate(1,"admin").totalGoals());
+        assertEquals(12L,service.get(1).totalGoals());
+        assertEquals(1,db.queryForObject("SELECT count(*) FROM season_recaps",Integer.class));
+        assertEquals(7,db.queryForObject("SELECT generated_by FROM season_recaps",Integer.class));
+    }
+    @Test void publicationRejectsInactiveOrUnknownAccountsAndActiveSeason() {
+        assertEquals(HttpStatus.FORBIDDEN,assertThrows(ResponseStatusException.class,()->service.generate(1,"inactive")).getStatusCode());
+        assertThrows(ResponseStatusException.class,()->service.generate(1,"missing"));
+        assertEquals(HttpStatus.CONFLICT,assertThrows(ResponseStatusException.class,()->service.generate(2,"admin")).getStatusCode());
+        assertEquals(0,db.queryForObject("SELECT count(*) FROM season_recaps",Integer.class));
     }
     @Test void noFinalDoesNotInventChampion() {
         game(1,1,"REGULAR_SEASON",null,"completed",9,0,null);
