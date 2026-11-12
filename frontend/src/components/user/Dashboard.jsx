@@ -10,6 +10,7 @@ import PlayerProfileCard from '../common/PlayerProfileCard';
 import GMTeam from '../gm/GMTeam';
 import GoalieStatsPanel from '../goalie/GoalieStatsPanel';
 import ChickenLicksSection from './chickenLicks/ChickenLicksSection';
+import MemberPolls from './polls/MemberPolls';
 import './Dashboard.css';
 
 // ── Section tip copy ──
@@ -336,12 +337,15 @@ function Dashboard() {
             <div className="dash-subnav">
                 <div className="obi-container dash-subnav-inner">
                     <a href="#my-week" className="dash-subnav-link">My Week</a>
+                    <a href="#polls" className="dash-subnav-link">League Polls</a>
                     {isOfficial && <a href="#signups" className="dash-subnav-link">Signups</a>}
                     {isGM && <a href="#team" className="dash-subnav-link">Team Management</a>}
                     {(isGM || isAdmin) && <a href="#goalie-stats" className="dash-subnav-link">Goalie Stats</a>}
                     <a href="#chicken-licks" className="dash-subnav-link">Chicken Licks</a>
                 </div>
             </div>
+
+            <MemberPolls />
 
             {/* ── MY WEEK ── */}
             <section id="my-week" className="dash-zone obi-container">
