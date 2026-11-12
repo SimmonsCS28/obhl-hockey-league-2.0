@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useBlocker, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import api from '../services/api';
@@ -139,7 +139,7 @@ function LiveScoreEntry(props) {
 
     // Block navigation if dirty
     const blocker = useBlocker(
-        ({ currentLocation, nextLocation }) =>
+        () =>
             isDirty && !gameFinalized
     );
 
@@ -1024,15 +1024,6 @@ function LiveScoreEntry(props) {
         setGoalLimitWarning(validation);
         setGoalStep('assist');
     };
-
-    // Remove an event from the log (local — the final score is what persists on finalize).
-    const performNavigation = useCallback((target) => {
-        if (onBack && target === 'back') {
-            onBack();
-        } else {
-            navigate(target === 'back' ? '/scorekeeper' : target);
-        }
-    }, [onBack, navigate]);
 
     const saveGame = async () => {
         setSavingDraft(true);

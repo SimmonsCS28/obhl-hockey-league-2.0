@@ -38,7 +38,7 @@ function ScoreEntry({ game, onBack, onScoreUpdated }) {
                 onBack();
             }, 1500);
 
-        } catch (error) {
+        } catch {
             setMessage({ type: 'error', text: 'Failed to update score. Please try again.' });
         } finally {
             setSaving(false);

@@ -63,6 +63,7 @@ export function SeasonProvider({ children }) {
     );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- paired context hook is intentionally exported with its provider
 export function useSeason() {
     const ctx = useContext(SeasonContext);
     if (!ctx) throw new Error('useSeason must be used within a SeasonProvider');

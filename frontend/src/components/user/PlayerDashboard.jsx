@@ -70,7 +70,7 @@ const PlayerDashboard = () => {
                 // Fetch data for standings calculation
                 if (data?.team?.seasonId) {
                     try {
-                        const [teamsData, gamesData] = await Promise.all([
+                        const [teamsData] = await Promise.all([
                             api.getTeams(),
                             api.getGames(data.team.seasonId)
                         ]);
@@ -113,7 +113,7 @@ const PlayerDashboard = () => {
     const toDate = (dateStr) => {
         if (!dateStr) return null;
         // If it already has a timezone offset, use as-is; otherwise treat as UTC
-        const normalized = /[Z+\-]\d*$/.test(dateStr) ? dateStr : dateStr + 'Z';
+        const normalized = /[Z+-]\d*$/.test(dateStr) ? dateStr : dateStr + 'Z';
         return new Date(normalized);
     };
 

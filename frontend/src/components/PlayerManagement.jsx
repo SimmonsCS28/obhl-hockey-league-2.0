@@ -229,7 +229,7 @@ function PlayerManagement() {
         if (!password) return '';
         const minLength = password.length >= 8;
         const hasUppercase = /[A-Z]/.test(password);
-        const hasSpecial = /[!@#$%^&*()\-_=+\[\]{}|;:',.<>?/~`]/.test(password);
+        const hasSpecial = /[!@#$%^&*()\-_=+[\]{}|;:',.<>?/~`]/.test(password);
         const noSpaces = !/\s/.test(password);
         if (!minLength) return 'Password must be at least 8 characters';
         if (!hasUppercase) return 'Password must contain at least 1 uppercase letter';
