@@ -28,7 +28,7 @@ Expected fixture: Demo Copper champions, 4–2 final; 5 games played, 37 goals, 
 
 ## Validation
 
-Run `./gradlew test` in `backend/api-gateway`. Eight recap tests exercise SQL against H2 plus aggregation logic: cross-season/game-type exclusions, lowercase event types, missing scores, ties, forfeits, ambiguous/unfinished finals, and empty archives. PostgreSQL/API checks verify the live fixture totals and public routing.
+Run `./gradlew test` in `backend/api-gateway`. Ten recap service tests exercise SQL against H2 plus aggregation and persistence: cross-season/game-type exclusions, lowercase event types, missing scores, ties, forfeits, ambiguous/unfinished finals, empty archives, snapshot regeneration, and inactive publishers. Three controller tests cover public reads and publication authorization. PostgreSQL/API checks verify the live fixture totals and public routing.
 
 Frontend checks: targeted ESLint, production Vite build, desktop/mobile selection and rendering, empty archives, and championship recap links. The pre-existing SeasonContext mixed-export pattern still triggers the repository's React Refresh lint rule. The production build retains its existing bundle-size warning.
 
