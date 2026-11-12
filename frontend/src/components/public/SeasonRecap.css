@@ -1,0 +1,36 @@
+.recap { color: var(--obi-text); padding: 0 32px 28px; }
+.recap-dates { color: var(--obi-text-muted); font: 13px/1.6 var(--obi-font-body); margin: 0 0 26px; }
+.recap-dates span { color: var(--obi-icy); }
+.recap-champion { display: flex; align-items: center; flex-wrap: wrap; gap: 24px; padding: 30px; border: 1px solid rgba(246,169,28,.45); border-radius: 16px; background: radial-gradient(ellipse at top left, rgba(246,169,28,.13), transparent 70%), var(--obi-bg-card); }
+.recap-trophy { font-size: 55px; color: var(--obi-accent); line-height: 1; }
+.recap-champion-copy { flex: 1; min-width: 190px; }
+.recap-eyebrow { color: var(--obi-accent); font: 700 10px var(--obi-font-body); letter-spacing: 2px; text-transform: uppercase; }
+.recap h3 { font: 800 32px/1.2 var(--obi-font-display); margin: 9px 0; overflow-wrap: anywhere; }
+.recap p { color: var(--obi-text-muted); font: 13px/1.7 var(--obi-font-body); }
+.recap-champion-copy p { margin: 0; }
+.recap-final { flex: 0 1 360px; text-align: center; max-width: 430px; }
+.recap-match { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 14px 0; font: 700 16px var(--obi-font-display); }
+.recap-match span { flex: 1; overflow-wrap: anywhere; }
+.recap-match strong { font-size: 30px; white-space: nowrap; color: var(--obi-text); }
+.recap-match i { font-style: normal; font-size: 18px; color: var(--obi-text-dim); }
+.recap a { color: var(--obi-accent); font: 600 12px var(--obi-font-body); text-underline-offset: 4px; }
+.recap a:focus-visible, .recap-state button:focus-visible { outline: 2px solid var(--obi-accent); outline-offset: 4px; }
+.recap-numbers { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 24px 0; }
+.recap-numbers > div { padding: 24px 20px; border: 1px solid var(--obi-card-border); background: var(--obi-bg-card); border-radius: 12px; }
+.recap-numbers strong { display: block; color: var(--obi-accent); font: 800 42px var(--obi-font-display); }
+.recap-numbers span { display: block; font: 700 13px var(--obi-font-body); margin: 8px 0; }
+.recap-numbers small { color: var(--obi-text-muted); font: 11px/1.6 var(--obi-font-body); }
+.recap-highlight { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 24px; padding: 28px; background: rgba(157,185,205,.05); border: 1px solid var(--obi-card-border); border-radius: 12px; }
+.recap-highlight > div { flex: 1; min-width: 220px; }
+.recap-highlight > div:last-child { text-align: center; }
+.recap-highlight h3 { font-size: 28px; }
+.recap .recap-note { font-size: 11px; margin: 14px 0 0; }
+.recap-empty { padding: 22px; border: 1px dashed var(--obi-card-border); border-radius: 12px; }
+.recap-empty h3 { font-size: 23px; }
+.recap-champion.is-unrecorded { border-color: var(--obi-card-border); background: var(--obi-bg-card); }
+.recap-champion.is-unrecorded .recap-trophy { color: var(--obi-text-dim); }
+.recap-state { color: var(--obi-text-muted); padding: 30px 0; font-size: 14px; }
+.recap-state button { display: block; margin-top: 12px; padding: 9px 16px; background: var(--obi-bg-card); border: 1px solid var(--obi-accent); border-radius: 7px; color: var(--obi-accent); cursor: pointer; }
+@media (max-width: 800px) { .recap-numbers { grid-template-columns: repeat(2, 1fr); } .recap-final { flex-basis: 100%; width: 100%; max-width: none; } }
+@media (max-width: 640px) { .recap { padding: 0 16px 20px; } }
+@media (max-width: 480px) { .recap-champion { padding: 22px; gap: 16px; } .recap-trophy { font-size: 36px; } .recap h3 { font-size: 27px; } .recap-numbers { gap: 10px; } .recap-numbers > div { padding: 18px 13px; } .recap-numbers strong { font-size: 34px; } .recap-highlight { padding: 20px; } }
