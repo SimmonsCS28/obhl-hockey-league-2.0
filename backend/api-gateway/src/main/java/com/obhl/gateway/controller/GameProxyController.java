@@ -34,6 +34,23 @@ public class GameProxyController {
         @Value("${api.v1.prefix}")
         private String apiV1Prefix;
 
+        @org.springframework.web.bind.annotation.PostMapping(value = "/upload-slots", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        public ResponseEntity<?> uploadSlots(
+                        @org.springframework.web.bind.annotation.RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+                        @RequestHeader(value = HttpHeaders.AUTHORIZATION, required = false) String authorization) {
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+                if (authorization != null) headers.set(HttpHeaders.AUTHORIZATION, authorization);
+                org.springframework.util.MultiValueMap<String, Object> parts = new org.springframework.util.LinkedMultiValueMap<>();
+                parts.add("file", file.getResource());
+                try {
+                        return restTemplate.exchange(gameServiceUrl + "/api/v1/games/upload-slots",
+                                        HttpMethod.POST, new HttpEntity<>(parts, headers), String.class);
+                } catch (HttpClientErrorException | HttpServerErrorException e) {
+                        return ResponseEntity.status(e.getStatusCode()).body(e.getResponseBodyAsString());
+                }
+        }
+
         /**
          * Proxy all /games requests to the Game Service
          */

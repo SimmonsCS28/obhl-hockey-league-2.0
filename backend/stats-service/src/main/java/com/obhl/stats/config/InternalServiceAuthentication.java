@@ -6,12 +6,9 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 /**
- * Marks a request as coming from one of our own backend services (api-gateway,
- * league-service, game-service) rather than an end user. Granted only when the caller
- * presents the shared X-Internal-Service-Key — never derived from anything a browser
- * client could send. Used to let trusted server-to-server calls (goal-limit checks,
- * draft ordering, stats aggregation) keep reading full player data, incl. skillRating,
- * without requiring those internal calls to carry an end user's JWT.
+ * Backend identity granted only after checking the configured shared service secret.
+ * Browser-facing gateway proxies never supply this credential. It permits trusted
+ * workflow calls without giving a user's JWT the INTERNAL_SERVICE authority.
  */
 public class InternalServiceAuthentication extends AbstractAuthenticationToken {
 

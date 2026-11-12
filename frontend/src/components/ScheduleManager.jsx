@@ -160,7 +160,7 @@ const ScheduleManager = () => {
         formData.append('file', file);
 
         try {
-            // Use GAME_SERVICE_URL directly to bypass API Gateway for file uploads
+            // The compatibility alias routes through the authenticated gateway.
             const response = await axios.post(`${GAME_SERVICE_URL}/games/upload-slots`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });

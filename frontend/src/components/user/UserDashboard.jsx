@@ -69,21 +69,9 @@ const UserDashboard = () => {
 
         try {
             if (shift.role === 'SCOREKEEPER') {
-                await api.updateGame(shift.gameId, { scorekeeperId: -1 });
+                await api.cancelGameShift('scorekeeper', shift.gameId);
             } else if (shift.role === 'REF') {
-                // Fetch game to find which ref slot I am
-                const game = await api.getGame(shift.gameId);
-                const updateData = {};
-                if (game.referee1Id === user.id) {
-                    updateData.referee1Id = null;
-                } else if (game.referee2Id === user.id) {
-                    updateData.referee2Id = null;
-                } else {
-                    alert('Could not find your assignment for this game. You might have already been removed.');
-                    loadData(); // Refresh anyway
-                    return;
-                }
-                await api.updateGame(shift.gameId, updateData);
+                await api.cancelGameShift('referee', shift.gameId);
             } else {
                 alert('Cannot drop this type of shift directly. Please contact the administrator.');
                 return;

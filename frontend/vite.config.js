@@ -11,12 +11,12 @@ export default defineConfig({
         changeOrigin: true,
       },
       '/games-api': {
-        target: 'http://localhost:8002/api/v1',
+        target: 'http://localhost:8000/api/v1',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/games-api/, ''),
       },
       '/stats-api': {
-        target: 'http://localhost:8003/api/v1',
+        target: 'http://localhost:8000/api/v1',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/stats-api/, ''),
       },
