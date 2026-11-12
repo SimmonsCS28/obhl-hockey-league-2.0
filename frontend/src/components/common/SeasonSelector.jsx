@@ -17,6 +17,8 @@ function SeasonSelector({ seasons, selectedSeasonId, onChange, size = 'md', alig
     });
 
     const current = seasons.find(s => s.id === selectedSeasonId) || sorted[0];
+    const inactiveLabel = current?.status === 'completed' ? 'Archived'
+        : current?.status === 'upcoming' ? 'Upcoming' : 'Inactive';
 
     const handlePick = (id) => {
         onChange(id);
@@ -41,7 +43,7 @@ function SeasonSelector({ seasons, selectedSeasonId, onChange, size = 'md', alig
                         <span className="obi-season-picker-tag-dot" />Active
                     </span>
                 ) : (
-                    <span className="obi-season-picker-tag obi-season-picker-tag--archived">Archived</span>
+                    <span className="obi-season-picker-tag obi-season-picker-tag--archived">{inactiveLabel}</span>
                 )}
                 <span className="obi-season-picker-chev" aria-hidden="true">{open ? '▲' : '▼'}</span>
             </button>
