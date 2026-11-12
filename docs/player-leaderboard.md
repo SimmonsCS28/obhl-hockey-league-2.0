@@ -31,7 +31,6 @@ The transaction skips demo seasons that already exist, so rerunning it does not 
 
 - Demo 2026–27: 154 players across two teams; 148 recorded skaters, two skaters without stats, and four goalies. One goalie has no games or shots.
 - Demo 2025–26: 32 players with different totals for archived-season checks.
-- Demo preseason (empty): no players or stats, for empty-state checks.
 
 The fixtures contain invented names and `example.invalid` email addresses. They do not create login accounts, games, or scoring events; the stats are direct season aggregates for this feature's UI testing.
 
@@ -45,6 +44,6 @@ npx eslint src/components/public/PlayersPage.jsx src/components/common/SeasonSel
 npx vite build
 ```
 
-Manual checks: advance the roster pages, change page size, combine a name search with a team filter, sort goals/points/PIM, switch to the archived season and change views, open and close a player profile, and select the empty season. Check goalie save-percentage sorting in both directions: the goalie without shots stays last.
+Manual checks: advance the roster pages, change page size, combine a name search with a team filter, sort goals/points/PIM, switch to the archived season and change views, and open and close a player profile. Check goalie save-percentage sorting in both directions: the goalie without shots stays last.
 
 The repository's existing SeasonContext export pattern triggers `react-refresh/only-export-components`; the leaderboard changes do not introduce that baseline lint violation.

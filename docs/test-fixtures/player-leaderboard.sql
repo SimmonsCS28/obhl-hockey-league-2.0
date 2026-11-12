@@ -15,15 +15,14 @@ DECLARE
     goals integer;
     assists integer;
 BEGIN
-    FOR season_index IN 0..2 LOOP
-        season_name := CASE season_index WHEN 0 THEN 'Demo 2026–27' WHEN 1 THEN 'Demo 2025–26' ELSE 'Demo preseason (empty)' END;
+    FOR season_index IN 0..1 LOOP
+        season_name := CASE season_index WHEN 0 THEN 'Demo 2026–27' ELSE 'Demo 2025–26' END;
         IF EXISTS (SELECT 1 FROM seasons WHERE name=season_name) THEN CONTINUE; END IF;
         INSERT INTO seasons(name,start_date,end_date,status,type,is_active,created_at)
         VALUES (season_name, CASE WHEN season_index=1 THEN DATE '2025-09-01' ELSE DATE '2026-09-01' END,
             CASE WHEN season_index=1 THEN DATE '2026-04-01' ELSE DATE '2027-04-01' END,
-            CASE season_index WHEN 0 THEN 'active' WHEN 1 THEN 'completed' ELSE 'upcoming' END,
+            CASE season_index WHEN 0 THEN 'active' ELSE 'completed' END,
             'LEAGUE', season_index=0, CURRENT_TIMESTAMP) RETURNING id INTO season_key;
-        IF season_index=2 THEN CONTINUE; END IF;
         INSERT INTO teams(name,abbreviation,season_id,team_color,eliminated)
             VALUES ('Demo Gold ' || (2026-season_index), 'DG' || season_index, season_key, '#F6A91C', false) RETURNING id INTO gold_key;
         INSERT INTO teams(name,abbreviation,season_id,team_color,eliminated)
