@@ -1,0 +1,233 @@
+name: Deploy production
+
+# Every push to main asks for approval through the `production` environment, then
+# runs scripts/deploy/deploy.sh on the prod box through AWS SSM Run Command.
+#
+# - AWS access is a short-lived OIDC session: no AWS keys are stored in GitHub, and
+#   nothing connects inbound to the box (the SSM agent on the box polls AWS).
+# - Nothing runs until the owner sets the repository variable PROD_DEPLOY_ENABLED to
+#   `true`. Set it to anything else to pause deploys, e.g. during a manual deploy.
+# - One-time setup: docs/deploy-pipeline-setup.md. Runbook, including what still has
+#   to be deployed by hand: .agent/workflows/deploy-production.md.
+#
+# This repo is public and so are its Actions logs: the instance ID, role ARN and site
+# URL live in `production` environment secrets (GitHub masks them), and deploy.sh
+# keeps container logs on the box instead of printing them.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Dry run - print the plan on the box and change nothing
+        type: boolean
+        default: false
+      migrations_applied:
+        description: I have already applied this range's database migrations to prod by hand
+        type: boolean
+        default: false
+
+permissions:
+  id-token: write
+  contents: read
+
+# Never run two deploys at once, and never cancel one part-way through a build.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  REPO_DIR: /home/ubuntu/obhl-hockey-league-2.0
+  # How long the box may spend on deploy.sh. Keep it, plus SSM delivery, under the
+  # 1h OIDC session, which the polling below also runs on.
+  EXECUTION_TIMEOUT_SECONDS: 2700
+
+jobs:
+  deploy:
+    name: Deploy to production
+    if: vars.PROD_DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    environment: production
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check environment secrets
+        env:
+          ROLE_ARN: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          INSTANCE_ID: ${{ secrets.PROD_INSTANCE_ID }}
+          SITE_URL: ${{ secrets.PROD_SITE_URL }}
+        run: |
+          missing=()
+          [[ -n $ROLE_ARN ]] || missing+=(AWS_DEPLOY_ROLE_ARN)
+          [[ -n $INSTANCE_ID ]] || missing+=(PROD_INSTANCE_ID)
+          [[ -n $SITE_URL ]] || missing+=(PROD_SITE_URL)
+          if ((${#missing[@]})); then
+            echo "::error::Missing production environment secrets: ${missing[*]}. See docs/deploy-pipeline-setup.md."
+            exit 1
+          fi
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: obhl-deploy-${{ github.run_id }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Run deploy.sh on the box
+        id: deploy
+        env:
+          INSTANCE_ID: ${{ secrets.PROD_INSTANCE_ID }}
+          DRY_RUN: ${{ inputs.dry_run }}
+          MIGRATIONS_APPLIED: ${{ inputs.migrations_applied }}
+        run: |
+          set -euo pipefail
+
+          args=""
+          if [[ $DRY_RUN == true ]]; then args="$args --dry-run"; fi
+          if [[ $MIGRATIONS_APPLIED == true ]]; then args="$args --migrations-applied"; fi
+
+          # What SSM runs, as root, with /bin/sh. It drops to ubuntu (owner of the
+          # checkout, in the docker group) and runs deploy.sh as it exists on
+          # origin/main. Taking the script from main rather than from the working
+          # tree means a change to it takes effect on the deploy that ships it, and the
+          # first deploy works before the box has ever pulled the script.
+          cat >bootstrap.sh <<EOF
+          set -eu
+          cd '$REPO_DIR'
+          sudo -H -u ubuntu git fetch --quiet origin main
+          script=\$(mktemp /tmp/obhl-deploy.XXXXXX)
+          trap 'rm -f "\$script"' EXIT
+          sudo -H -u ubuntu git show origin/main:scripts/deploy/deploy.sh >"\$script"
+          chmod 0644 "\$script"
+          sudo -H -u ubuntu bash "\$script"$args
+          EOF
+          echo "::group::Command sent to the box"
+          cat bootstrap.sh
+          echo "::endgroup::"
+
+          params=$(jq -n --rawfile script bootstrap.sh --arg timeout "$EXECUTION_TIMEOUT_SECONDS" \
+            '{commands: ($script | rtrimstr("\n") | split("\n")), executionTimeout: [$timeout]}')
+          command_id=$(aws ssm send-command \
+            --instance-ids "$INSTANCE_ID" \
+            --document-name AWS-RunShellScript \
+            --comment "OBHL deploy, run $GITHUB_RUN_ID, ${GITHUB_SHA::7}" \
+            --parameters "$params" \
+            --timeout-seconds 600 \
+            --query Command.CommandId --output text)
+          echo "SSM command $command_id sent; waiting for it to finish."
+
+          started=$SECONDS
+          deadline=$((SECONDS + EXECUTION_TIMEOUT_SECONDS + 600))
+          next_note=60
+          status=Pending
+          while :; do
+            sleep 10
+            if ! inv=$(aws ssm get-command-invocation --command-id "$command_id" \
+                --instance-id "$INSTANCE_ID" --output json 2>err.txt); then
+              # Right after send-command the invocation can briefly not exist yet.
+              if grep -q InvocationDoesNotExist err.txt && ((SECONDS - started < 120)); then continue; fi
+              cat err.txt
+              exit 1
+            fi
+            status=$(jq -r .Status <<<"$inv")
+            case $status in
+              Pending | InProgress | Delayed) ;;
+              *) break ;;
+            esac
+            if ((SECONDS >= deadline)); then
+              echo "::error::Gave up waiting after $(((SECONDS - started) / 60))m. The command may still be running on the box."
+              exit 1
+            fi
+            if ((SECONDS - started >= next_note)); then
+              echo "  ... $status, $(((SECONDS - started) / 60))m"
+              next_note=$((next_note + 60))
+            fi
+          done
+
+          stdout=$(jq -r '.StandardOutputContent // ""' <<<"$inv")
+          stderr=$(jq -r '.StandardErrorContent // ""' <<<"$inv")
+          rc=$(jq -r '.ResponseCode // -1' <<<"$inv")
+          echo "----- deploy.sh output (status $status, exit $rc) -----"
+          printf '%s\n' "$stdout"
+          if [[ -n $stderr ]]; then
+            echo "----- stderr -----"
+            printf '%s\n' "$stderr"
+          fi
+          if ((${#stdout} >= 24000)); then
+            echo "::warning::SSM keeps only the first 24,000 characters of output; the full log is in ~/obhl-deploy-logs on the box."
+          fi
+
+          # Machine-readable lines from deploy.sh. Validated before use, since they came off the box.
+          result=$(sed -n 's/^DEPLOY_RESULT=//p' <<<"$stdout" | tail -n 1)
+          sha=$(sed -n 's/^DEPLOY_SHA=//p' <<<"$stdout" | tail -n 1)
+          bundle=$(sed -n 's/^DEPLOY_FRONTEND_BUNDLE=//p' <<<"$stdout" | tail -n 1)
+          [[ $result =~ ^[a-z-]+$ ]] || result=""
+          [[ $sha =~ ^[0-9a-f]{40}$ ]] || sha=""
+          [[ $bundle =~ ^/assets/index-[A-Za-z0-9_-]+\.js$ ]] || bundle=""
+          {
+            echo "result=$result"
+            echo "sha=$sha"
+            echo "bundle=$bundle"
+          } >>"$GITHUB_OUTPUT"
+
+          {
+            echo "### Production deploy"
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Result | \`${result:-failed}\` (exit $rc) |"
+            echo "| Commit on the box | \`${sha:-unknown}\` |"
+            echo "| Triggered by | \`$GITHUB_SHA\` |"
+            echo "| Frontend bundle | \`${bundle:-unknown}\` |"
+          } >>"$GITHUB_STEP_SUMMARY"
+
+          if [[ $status == Success ]]; then
+            exit 0
+          fi
+          case $rc in
+            3) echo "::error::Tracked files on the box have local edits. Nothing was deployed. Clean them up by hand, then re-run." ;;
+            4) echo "::error::Manual step needed (migrations or docker-compose.yml). Nothing was pulled or built. The output above says what to do." ;;
+            5) echo "::error::The box cannot fast-forward to origin/main. Nothing was deployed." ;;
+            6) echo "::error::The box's disk is still too full after pruning. Nothing was deployed." ;;
+            7) echo "::error::Another deploy was already running on the box." ;;
+            1) echo "::error::The deploy failed part-way. The output above says what was rebuilt; re-run once fixed." ;;
+            *) echo "::error::SSM command ended as $status (exit $rc)." ;;
+          esac
+          exit 1
+
+      - name: Check the public site serves the new bundle
+        env:
+          SITE_URL: ${{ secrets.PROD_SITE_URL }}
+          BUNDLE: ${{ steps.deploy.outputs.bundle }}
+        run: |
+          set -euo pipefail
+          if [[ -z $BUNDLE ]]; then
+            echo "::error::deploy.sh did not report a frontend bundle: the frontend was not answering on the box."
+            exit 1
+          fi
+          base=${SITE_URL%/}
+          # The host nginx may take a moment to see a recreated frontend container;
+          # until then it serves the maintenance page as a 503.
+          for attempt in 1 2 3 4 5 6 7 8 9 10; do
+            # -s without -S: a curl error would print the host, and Actions logs here are public.
+            code=$(curl -s -o index.html -w '%{http_code}' --max-time 20 \
+              -H 'Cache-Control: no-cache' "$base/?deploy-check=$GITHUB_RUN_ID") || code=000
+            if [[ $code == 200 ]] && grep -qF "$BUNDLE" index.html; then
+              asset=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$base$BUNDLE") || asset=000
+              if [[ $asset == 200 ]]; then
+                echo "Public site returns 200 and serves $BUNDLE (attempt $attempt)."
+                exit 0
+              fi
+              echo "Attempt $attempt: index.html references $BUNDLE, but fetching it returned $asset"
+            elif [[ $code == 200 ]]; then
+              echo "Attempt $attempt: 200, but index.html references $(grep -oE '/assets/index-[A-Za-z0-9_-]+\.js' index.html | head -n 1 || echo 'no bundle'), not $BUNDLE"
+            else
+              echo "Attempt $attempt: HTTP $code"
+            fi
+            sleep 15
+          done
+          echo "::error::The public site is not serving $BUNDLE."
+          exit 1
