@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { getSeasons } from '../services/api';
 
 // Find the active season in a list, falling back to the first entry.
@@ -18,7 +18,7 @@ export function SeasonProvider({ children }) {
     // Safe for the default selection because a tournament season can never be active — the database
     // forbids it (chk_tournament_never_active), so findActive below cannot land on one.
     const [allSeasons, setAllSeasons] = useState([]);
-    const seasons = allSeasons.filter(s => s.type !== 'TOURNAMENT');
+    const seasons = useMemo(() => allSeasons.filter(s => s.type !== 'TOURNAMENT'), [allSeasons]);
     const [selectedSeasonId, setSelectedSeasonId] = useState(null); // null = active season
     const [loadingSeasons, setLoadingSeasons] = useState(true);
 

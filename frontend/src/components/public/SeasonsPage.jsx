@@ -4,10 +4,11 @@ import { computeSeasonStats, seasonStatusMeta } from '../../utils/seasonStats';
 import SeasonSelector from '../common/SeasonSelector';
 import SeasonOverviewCards from '../common/SeasonOverviewCards';
 import heroBg from '../../assets/images/buzzard-full.jpg';
+import SeasonRecap from './SeasonRecap';
 import './SeasonsPage.css';
 
 function SeasonsPage() {
-    const { seasons, selectedSeason, selectedSeasonId, setSelectedSeasonId, resetToActiveSeason } = useSeason();
+    const { seasons, selectedSeason, selectedSeasonId, setSelectedSeasonId, resetToActiveSeason, loadingSeasons } = useSeason();
     // Always open on the active season (the selection is app-global and otherwise sticks).
     useEffect(() => { resetToActiveSeason(); }, [resetToActiveSeason]);
     // Stats are tagged with the season they were computed for, so a season switch shows
@@ -18,7 +19,7 @@ function SeasonsPage() {
     // Fetch teams/players/games for the SELECTED season (not just the active one) to
     // compute the "Season by the Numbers" grid; recompute whenever the selection changes.
     useEffect(() => {
-        if (!selectedSeasonId || !selectedSeason) return undefined;
+        if (!selectedSeasonId || !selectedSeason || selectedSeason.status === 'completed') return undefined;
         let cancelled = false;
         (async () => {
             try {
@@ -59,7 +60,7 @@ function SeasonsPage() {
             </section>
 
             <section className="obi-seasons-body">
-                {isEmpty ? (
+                {loadingSeasons ? <p className="obi-container recap-state" role="status">Loading seasons…</p> : isEmpty ? (
                     <div className="obi-container">
                         <div className="obi-seasons-empty">
                             <div className="obi-seasons-empty-icon" aria-hidden="true">
@@ -103,6 +104,7 @@ function SeasonsPage() {
                                     )}
                                 </div>
 
+                                {selectedSeason.status === 'completed' ? <SeasonRecap key={selectedSeasonId} season={selectedSeason} /> : <>
                                 <div className="obi-seasons-grid">
                                     <SeasonOverviewCards season={selectedSeason} />
                                 </div>
@@ -124,6 +126,7 @@ function SeasonsPage() {
                                         </div>
                                     </div>
                                 )}
+                                </>}
                             </div>
                         )}
                     </div>

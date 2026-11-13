@@ -219,6 +219,7 @@
 }
 
 @media (max-width: 640px) {
+    .obi-seasons-toolbar { margin-left: -18px; margin-right: -18px; padding-left: 18px; padding-right: 18px; }
     .obi-seasons-grid,
     .obi-seasons-numbers-grid { grid-template-columns: repeat(2, 1fr); }
 }
