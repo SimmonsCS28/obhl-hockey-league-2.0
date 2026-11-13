@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { fmtGameDate, fmtGameTime, fmtGameDateTime, gameDayIndex } from '../utils/gameTime';
+import { fmtGameDate, fmtGameTime, gameDayIndex } from '../utils/gameTime';
 import './GameSchedule.css';
 
 // Color helper functions
@@ -41,14 +41,6 @@ function GameSchedule({ games, onSelectGame }) {
     const filteredGames = filter === 'all'
         ? games
         : games.filter(g => g.status === filter);
-
-    const formatDate = (dateString) => fmtGameDateTime(dateString, {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit'
-    });
 
     return (
         <div className="game-schedule">

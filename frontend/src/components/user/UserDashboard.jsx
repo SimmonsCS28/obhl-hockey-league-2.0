@@ -59,6 +59,7 @@ const UserDashboard = () => {
     };
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- mount-time network load shares the explicit refresh handler
         loadData();
     }, []);
 
