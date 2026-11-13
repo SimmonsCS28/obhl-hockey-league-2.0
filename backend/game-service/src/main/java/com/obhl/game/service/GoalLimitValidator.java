@@ -38,7 +38,7 @@ public class GoalLimitValidator {
     // stats-service now masks skillRating unless the caller is staff or a trusted
     // internal service call — this rule engine needs the real value to enforce the
     // 2-goal limit, so it authenticates as an internal service.
-    @Value("${internal.service.key:obhl-internal-service-key-change-in-production}")
+    @Value("${internal.service.key}")
     private String internalServiceKey;
 
     /**

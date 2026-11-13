@@ -688,6 +688,13 @@ const api = {
     // ============================================
     // OPEN SLOTS (ref/scorekeeper self sign-up)
     // ============================================
+    async takeGameShift(role, gameId) {
+        return request(`/shifts/${role}/${gameId}`, { method: 'POST' });
+    },
+    async cancelGameShift(role, gameId) {
+        return request(`/shifts/${role}/${gameId}`, { method: 'DELETE' });
+    },
+
     async getOpenSlots(role, seasonId, week) {
         const params = new URLSearchParams({ role, seasonId, ...(week != null && { week }) }).toString();
         return request(`/open-slots?${params}`);

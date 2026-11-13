@@ -7,17 +7,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Microservices system for managing a hockey league: a React frontend behind Nginx, a Java/Spring Boot API gateway, and three backend services, all sharing one PostgreSQL database.
 
 - **frontend** (React 19 + Vite, served via Nginx) — all UI. `src/components` is organized by role: `admin/`, `gm/`, `goalie/`, `referee/`, `public/`, `common/`. `src/services` holds API clients, `src/contexts` holds auth/app state.
-- **backend/api-gateway** (port 8000) — single entry point for the frontend. Handles auth (JWT), proxies requests to the other services via `*Client.java` (in `client/`) and `*ProxyController.java` (in `controller/`). Most cross-cutting concerns (auth, CORS, role checks) live here.
+- **backend/api-gateway** (port 8000) — entry point for browser API requests. Handles auth (JWT), proxies requests to the other services via `*Client.java` (in `client/`) and `*ProxyController.java` (in `controller/`). Game and Stats also enforce authorization at the service boundary; gateway authentication alone is not sufficient.
 - **backend/league-service** (port 8001) — seasons, leagues, league rules.
 - **backend/game-service** (port 8002) — game scheduling, game events, shifts.
 - **backend/stats-service** (port 8003) — players, player/goalie stats.
 - **database/migrations** — sequential numbered SQL migration files (e.g. `029_add_playoff_fields.sql`), shared by all services against one Postgres database (`obhl_db`).
 
-### Known architectural workarounds (see TECHNICAL_DEBT.md)
+### API routing and security (see docs/security-ws0.md)
 
-- File uploads (multipart/form-data) **cannot** go through the API Gateway — `GameProxyController` reads bodies as String, which breaks binary uploads. The frontend calls game-service directly on port 8002 for these (e.g. `ScheduleManager.jsx` uses `GAME_SERVICE_URL`). Don't "fix" this by routing uploads through the gateway without addressing the proxy first.
-- Nginx cannot proxy to the Spring Boot services due to duplicate `Transfer-Encoding: chunked` headers (502s). Service ports 8000/8002/8003 are exposed directly; Nginx only serves static frontend files. Multiple header-stripping attempts have already failed — see TECHNICAL_DEBT.md before retrying that approach.
-- Frontend has hardcoded production URLs/IPs scattered across files rather than a single config — check TECHNICAL_DEBT.md item 3 before assuming a single source of truth for API base URLs.
+- Schedule CSV uploads use the explicit multipart endpoint in `GameProxyController`; it forwards file bytes and the user's JWT without adding an internal credential. Do not send multipart bodies through the generic String-body proxy or bypass the gateway to work around an upload failure.
+- Host Nginx handles public API routing. `/games-api/` and `/stats-api/` are compatibility aliases to the gateway, not direct-service access. `frontend/nginx.conf` serves static assets; `deploy/oldbuzzardhockey.nginx` is the host reference configuration and must be applied separately to the live host.
+- Compose binds published database, service, and frontend ports to loopback. Only the host reverse proxy should be public; verify live host/firewall settings during rollout rather than assuming the repository config is deployed.
+- Game and Stats validate JWTs and roles, including scorekeeper start/finalize/reopen workflows. Trusted backend calls use a separately configured `INTERNAL_SERVICE_KEY`; browser proxies never add or forward this credential. Preserve these boundaries when adding routes.
+- Follow the config-first, sequential rollout in `docs/security-ws0.md`. The old upload-bypass and publicly exposed-port workarounds are superseded in this branch. Production rollout is still pending.
+- API base paths remain distributed across frontend components; check TECHNICAL_DEBT.md item 3 before assuming a single source of truth.
 
 ## Common Commands
 

@@ -50,6 +50,7 @@ public class SecurityConfig {
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/teams", "/api/v1/teams/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/players", "/api/v1/players/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/stats/**").permitAll()
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/game-events", "/api/v1/game-events/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/users/*/name").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/announcements", "/api/v1/announcements/**").permitAll()
                         .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/v1/rules").permitAll()

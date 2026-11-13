@@ -1,93 +1,77 @@
 package com.obhl.stats.config;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
 import com.obhl.stats.util.JwtUtil;
-
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-/**
- * Two trust paths into stats-service:
- *  - X-Internal-Service-Key: trusted backend-to-backend calls (game-service,
- *    league-service, api-gateway's own internal callers) get full access.
- *  - Authorization: Bearer <jwt>: the same tokens api-gateway issues, forwarded
- *    through when a request originated from an end user (e.g. PlayerProxyController).
- * Requests with neither are left unauthenticated (anonymous) — most endpoints stay
- * open (see SecurityConfig), but field-level masking and @PreAuthorize checks key off
- * the authorities set here.
- */
+/** Authenticates signed gateway tokens or explicitly configured backend credentials. */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    private final JwtUtil jwtUtil;
+    private final byte[] internalServiceKey;
 
-    @Autowired
-    private JwtUtil jwtUtil;
-
-    @Value("${internal.service.key:obhl-internal-service-key-change-in-production}")
-    private String internalServiceKey;
+    public JwtAuthenticationFilter(JwtUtil jwtUtil, @Value("${internal.service.key}") String key) {
+        if (key == null || key.isBlank() || key.length() < 32
+                || key.equals("obhl-internal-service-key-change-in-production")) {
+            throw new IllegalArgumentException("INTERNAL_SERVICE_KEY must be a new secret of at least 32 characters");
+        }
+        this.jwtUtil = jwtUtil;
+        this.internalServiceKey = key.getBytes(StandardCharsets.UTF_8);
+    }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-
-        String internalKeyHeader = request.getHeader("X-Internal-Service-Key");
-        if (internalKeyHeader != null && !internalKeyHeader.isBlank()
-                && internalKeyHeader.equals(internalServiceKey)) {
-            SecurityContextHolder.getContext().setAuthentication(new InternalServiceAuthentication());
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        String authHeader = request.getHeader("Authorization");
-        String token = null;
-        String username = null;
-
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            token = authHeader.substring(7);
-            try {
-                username = jwtUtil.extractUsername(token);
-            } catch (Exception e) {
-                // Invalid token, continue without authentication
+        String internalKey = request.getHeader("X-Internal-Service-Key");
+        if (internalKey != null) {
+            if (!MessageDigest.isEqual(internalServiceKey, internalKey.getBytes(StandardCharsets.UTF_8))) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                return;
             }
-        }
-
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            if (jwtUtil.validateToken(token)) {
-                List<String> roles = jwtUtil.getRolesFromToken(token);
-
-                var authorities = new ArrayList<SimpleGrantedAuthority>();
-                if (roles != null && !roles.isEmpty()) {
+            SecurityContextHolder.getContext().setAuthentication(new InternalServiceAuthentication());
+        } else {
+            String header = request.getHeader("Authorization");
+            if (header != null) {
+                try {
+                    if (!header.startsWith("Bearer ")) throw new IllegalArgumentException("Bearer token required");
+                    String token = header.substring(7);
+                    String username = jwtUtil.extractUsername(token);
+                    if (username == null || username.isBlank()) throw new IllegalArgumentException("Missing username");
+                    List<String> roles = jwtUtil.getRolesFromToken(token);
+                    if (roles == null || roles.isEmpty()) {
+                        String legacyRole = jwtUtil.getRoleFromToken(token);
+                        roles = legacyRole == null ? List.of() : List.of(legacyRole);
+                    }
+                    var authorities = new ArrayList<SimpleGrantedAuthority>();
                     for (String role : roles) {
                         String authority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
-                        authorities.add(new SimpleGrantedAuthority(authority));
+                        // A user JWT must never impersonate a backend service.
+                        if (!InternalServiceAuthentication.AUTHORITY.equals(authority)) {
+                            authorities.add(new SimpleGrantedAuthority(authority));
+                        }
                     }
-                } else {
-                    // Fallback for older tokens carrying a single legacy role claim
-                    String role = jwtUtil.getRoleFromToken(token);
-                    if (role != null) {
-                        String authority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
-                        authorities.add(new SimpleGrantedAuthority(authority));
-                    }
+                    SecurityContextHolder.getContext().setAuthentication(
+                            new UsernamePasswordAuthenticationToken(username, null, authorities));
+                } catch (Exception invalidToken) {
+                    SecurityContextHolder.clearContext();
+                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                    return;
                 }
-
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(username, null,
-                        authorities);
-                SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
-
-        filterChain.doFilter(request, response);
+        chain.doFilter(request, response);
     }
 }

@@ -63,7 +63,7 @@ const ScorekeeperShiftSignup = () => {
 
     const handleTakeShift = async (gameId) => {
         try {
-            await api.updateGame(gameId, { scorekeeperId: user.id });
+            await api.takeGameShift('scorekeeper', gameId);
             await loadSeasonData(selectedSeason);
         } catch (error) {
             console.error('Failed to take shift:', error);
@@ -75,7 +75,7 @@ const ScorekeeperShiftSignup = () => {
         if (!window.confirm('Are you sure you want to cancel this shift?')) return;
 
         try {
-            await api.updateGame(gameId, { scorekeeperId: -1 });
+            await api.cancelGameShift('scorekeeper', gameId);
             await loadSeasonData(selectedSeason);
         } catch (error) {
             console.error('Failed to cancel shift:', error);
