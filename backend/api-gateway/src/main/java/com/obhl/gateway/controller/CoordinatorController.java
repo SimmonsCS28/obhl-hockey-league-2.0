@@ -259,6 +259,24 @@ public class CoordinatorController {
         }
     }
 
+    /**
+     * Unpublish one matchup for a role: its live slots come off the game, stay CONFIRMED, and nobody
+     * is emailed. Publishing the matchup again sends the final-assignment emails.
+     */
+    @PostMapping("/unpublish")
+    public ResponseEntity<?> unpublish(@RequestParam Long gameId, @RequestParam String role,
+            Authentication auth) {
+        String r = role.trim().toUpperCase();
+        if (!canActOn(auth, r)) {
+            return forbidden(r);
+        }
+        try {
+            return ResponseEntity.ok(coordinatorService.unpublishGame(gameId, r));
+        } catch (RuntimeException e) {
+            return badRequest(e);
+        }
+    }
+
     // ---- helpers ----
 
     /** A coordinator may only act on its own role; ADMIN can act on any. */

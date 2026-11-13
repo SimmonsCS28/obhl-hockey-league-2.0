@@ -659,6 +659,11 @@ const api = {
         return request(`/coordinator/assignments/${id}/confirm?role=${role}`, { method: 'POST' });
     },
 
+    // Take one matchup's published slots back off the game. They stay confirmed; nobody is emailed.
+    async unpublishMatchup(gameId, role) {
+        return request(`/coordinator/unpublish?gameId=${gameId}&role=${role}`, { method: 'POST' });
+    },
+
     // Scope narrows season -> week -> single game. dryRun returns the same plan (who gets emailed,
     // who's already live, what's blocked) without writing or sending anything.
     async publishShiftWeek(seasonId, role, week, gameId, dryRun) {
@@ -1203,6 +1208,7 @@ export const {
     designateBracketSlot,
     confirmSignup,
     publishShiftWeek,
+    unpublishMatchup,
     getOpenSlots,
     signupForSlot,
     dropSlotSignup,

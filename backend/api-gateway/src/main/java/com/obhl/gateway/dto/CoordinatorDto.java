@@ -103,6 +103,14 @@ public class CoordinatorDto {
         private boolean notifySent;       // false + attempted = they don't know yet
     }
 
+    /** Outcome of taking a matchup's published slots back off the game. */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class UnpublishResult {
+        private int unpublishedCount;
+    }
+
     /** One slot in a publish plan — someone who will be emailed, is already live, or is blocked. */
     @Data
     @NoArgsConstructor

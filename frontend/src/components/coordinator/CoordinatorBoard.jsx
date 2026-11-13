@@ -567,6 +567,23 @@ function CoordinatorBoard({ role, onAlertCount }) {
         }
     };
 
+    // Take a matchup's live slots back off the game so it can be fixed (a swap, say) and published
+    // again. Everyone stays confirmed and nobody is emailed; the re-publish sends the emails. Returns
+    // the failure message, if any, so the card's confirm can show it in place instead of closing.
+    const handleUnpublish = async (gameId) => {
+        setError('');
+        try {
+            const result = await api.unpublishMatchup(gameId, role);
+            await reloadAssignments();
+            const n = result?.unpublishedCount ?? 0;
+            setBanner(`Unpublished ${n} assignment(s). They're still confirmed, and nobody was emailed — `
+                + 'publish the matchup again to send their assignment emails.');
+            return null;
+        } catch (e) {
+            return e.message || 'Unpublish failed. Nothing changed.';
+        }
+    };
+
     // ---- Derived data ----
 
     const weeks = [...new Set(games.map(g => g.week).filter(w => w != null))].sort((a, b) => a - b);
@@ -663,6 +680,7 @@ function CoordinatorBoard({ role, onAlertCount }) {
             onSimulate={handleSimulate}
             onSwap={handleSwap}
             onPublishMatchup={openMatchupPublish}
+            onUnpublishMatchup={handleUnpublish}
             slotsPerGame={slotsPerGame}
         />
     );
@@ -937,7 +955,10 @@ function pickPillStyle(isPick, teamColor) {
     return { border: `1px solid ${c}`, background: `color-mix(in srgb, ${c} 14%, transparent)` };
 }
 
-function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goaliePool, seasonRoster, staffTeams, staffUnavailable, weekFilter, openPicker, setOpenPicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, onSwap, onPublishMatchup, slotsPerGame }) {
+function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goaliePool, seasonRoster, staffTeams, staffUnavailable, weekFilter, openPicker, setOpenPicker, onAssign, onConfirm, onClear, onSendOne, onSimulate, onSwap, onPublishMatchup, onUnpublishMatchup, slotsPerGame }) {
+    const [confirmingUnpublish, setConfirmingUnpublish] = useState(false);
+    const [unpublishing, setUnpublishing] = useState(false);
+    const [unpublishError, setUnpublishError] = useState('');
     const homeTeam = teamById(game.homeTeamId);
     const awayTeam = teamById(game.awayTeamId);
     const d = toChicago(game.gameDate);
@@ -959,6 +980,28 @@ function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goal
 
     const counts = publishCounts(gameAssignments, totalSlots);
     const note = publishNote(counts);
+
+    // Who is live on this game right now — the people an unpublish takes off the public schedule.
+    const liveNames = gameAssignments
+        .filter(a => a.status === 'CONFIRMED' && a.published === true)
+        .map(a => a.userName || 'Someone');
+    const swapTitle = liveNames.length > 0
+        ? 'These goalies are published — swapping moves them on the public schedule straight away and '
+            + 'emails nobody. Unpublish first if they should get new assignment emails with their new team.'
+        : "Swap the two teams' goalies — keeps each goalie's confirmation, no new email sent";
+
+    const handleUnpublish = async () => {
+        setUnpublishing(true);
+        setUnpublishError('');
+        const failure = await onUnpublishMatchup(game.id);
+        setUnpublishing(false);
+        if (failure) {
+            setUnpublishError(failure);
+            return;
+        }
+        setConfirmingUnpublish(false);
+    };
+    const closeUnpublish = () => { setConfirmingUnpublish(false); setUnpublishError(''); };
 
     const fillLabel = allSet ? 'All Set' : openCount > 0 ? `${openCount} Open` : `${confirmedCount} / ${totalSlots} Set`;
     const fillColor = allSet ? 'var(--obi-success)' : openCount > 0 ? 'var(--obi-icy)' : 'var(--obi-accent)';
@@ -1031,10 +1074,21 @@ function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goal
                     <button
                         type="button"
                         className="cc-swap-btn"
-                        title="Swap the two teams' goalies — keeps each goalie's confirmation, no new email sent"
+                        title={swapTitle}
                         onClick={() => onSwap(game.id)}
                     >
                         &#8646; Swap Goalies
+                    </button>
+                )}
+                {liveNames.length > 0 && (
+                    <button
+                        type="button"
+                        className="cc-swap-btn"
+                        title="Take this matchup off the public schedule so it can be changed and published again"
+                        disabled={confirmingUnpublish}
+                        onClick={() => { setUnpublishError(''); setConfirmingUnpublish(true); }}
+                    >
+                        Unpublish
                     </button>
                 )}
                 <span className={`cc-card-note${counts.toNotify > 0 ? '' : ' is-dim'}`}>{note}</span>
@@ -1048,6 +1102,38 @@ function GameCard({ game, role, teamById, rankByTeam, assignmentFor, staff, goal
                     {counts.toNotify > 0 ? `Publish Matchup · ${counts.toNotify} to notify` : 'Publish Matchup'}
                 </button>
             </div>
+
+            {confirmingUnpublish && (
+                <div className="cc-remove-confirm">
+                    <div className="cc-remove-title">Unpublish this matchup?</div>
+                    {unpublishError
+                        ? <div className="cc-remove-error">{unpublishError}</div>
+                        : <div className="cc-remove-body">{unpublishing
+                            ? 'Taking them off the game…'
+                            : `${liveNames.join(' and ')} ${liveNames.length === 1 ? 'comes' : 'come'} off the `
+                                + 'public schedule, game preview and score entry. They stay confirmed and nobody is '
+                                + 'emailed. Publish the matchup again to send their assignment emails'
+                                + (role === 'GOALIE' ? ' — swap first and those emails carry the new teams.' : '.')}</div>}
+                    <div className="cc-remove-actions">
+                        <button
+                            type="button"
+                            className="cc-remove-go"
+                            disabled={unpublishing}
+                            onClick={handleUnpublish}
+                        >
+                            {unpublishing ? 'Unpublishing…' : unpublishError ? 'Try Again' : 'Unpublish'}
+                        </button>
+                        <button
+                            type="button"
+                            className="cc-remove-keep"
+                            disabled={unpublishing}
+                            onClick={closeUnpublish}
+                        >
+                            Keep Published
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

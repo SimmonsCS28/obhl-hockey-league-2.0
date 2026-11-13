@@ -558,6 +558,45 @@ public class CoordinatorService {
         return toView(a, gameProxyService.getGameById(a.getGameId()));
     }
 
+    /**
+     * Take one matchup's published slots for a role back off the game. The public schedule, game
+     * preview, score entry and everyone's dashboard all read the game's staff columns, so clearing
+     * those columns is the whole unpublish.
+     *
+     * <p>Each row stays CONFIRMED, so the matchup can be fixed (a goalie swap, say) and published
+     * again, and that re-publish sends the final-assignment email with the corrected details.
+     * Nobody is emailed here: these people are still working the game, so a "you're off this game"
+     * notice would be false. Removing someone for real is still Remove, which does tell them.
+     *
+     * <p>All the columns are cleared in a single write, so a failure leaves the matchup either
+     * fully live or fully unpublished, never half of each.
+     */
+    @Transactional
+    public CoordinatorDto.UnpublishResult unpublishGame(Long gameId, String role) {
+        String r = normalizeRole(role);
+        if (gameId == null) {
+            throw new RuntimeException("gameId is required");
+        }
+        List<ShiftAssignment> live = assignmentRepository.findByGameId(gameId).stream()
+                .filter(a -> r.equals(a.getRole()) && Boolean.TRUE.equals(a.getPublished()))
+                .collect(Collectors.toList());
+        if (live.isEmpty()) {
+            throw new RuntimeException("Nothing is published for this game");
+        }
+
+        Map<String, Object> cleared = new java.util.HashMap<>();
+        for (ShiftAssignment a : live) {
+            cleared.put(slotColumn(r, a.getSlot() == null ? 1 : a.getSlot()), -1L);
+        }
+        gameProxyService.updateGameStaff(gameId, cleared);
+
+        for (ShiftAssignment a : live) {
+            a.setPublished(false);
+            assignmentRepository.save(a);
+        }
+        return new CoordinatorDto.UnpublishResult(live.size());
+    }
+
     /** Write all CONFIRMED, not-yet-published assignments for a week onto the games. */
     @Transactional
     public CoordinatorDto.PublishResult publishWeek(Long seasonId, String role, Integer week) {
