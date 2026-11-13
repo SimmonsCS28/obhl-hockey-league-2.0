@@ -1,0 +1,12 @@
+# These paths decide what runs as root on the production box: the workflows (including
+# the deploy-on-merge one), the deploy script it runs over SSM, and the setup guide for
+# the AWS role and GitHub environment behind it. This file is listed too, so the
+# ownership can't be removed without the owner's review.
+#
+# GitHub only enforces this once "Require review from Code Owners" is on for main
+# (see docs/deploy-pipeline-setup.md, section 5).
+
+/.github/workflows/            @SimmonsCS28
+/.github/CODEOWNERS            @SimmonsCS28
+/scripts/deploy/               @SimmonsCS28
+/docs/deploy-pipeline-setup.md @SimmonsCS28

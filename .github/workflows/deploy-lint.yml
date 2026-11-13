@@ -1,0 +1,85 @@
+name: Deploy lint
+
+# Lints the files that decide what runs as root on the prod box: the deploy script
+# (shellcheck) and every workflow, including the shell inside their `run:` steps
+# (actionlint, which calls shellcheck for those).
+#
+# It runs on every PR to main, with no `paths:` filter, so it can be made a required
+# check: a filtered workflow never reports on PRs that skip it, and a required check
+# that never reports blocks the merge.
+#
+# No secrets, a read-only token, and the linters are pinned release binaries checked
+# against a SHA-256, so nothing here changes under us between runs.
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# A new push to the PR replaces the run for the old one.
+concurrency:
+  group: deploy-lint-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+env:
+  SHELLCHECK_VERSION: v0.11.0
+  SHELLCHECK_SHA256: 8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198
+  ACTIONLINT_VERSION: 1.7.12
+  ACTIONLINT_SHA256: 8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8
+
+jobs:
+  lint:
+    # The check is reported under this name; keep it stable if it becomes required.
+    name: deploy-lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install pinned shellcheck and actionlint
+        run: |
+          set -euo pipefail
+          bin=$RUNNER_TEMP/bin
+          mkdir -p "$bin"
+          cd "$RUNNER_TEMP"
+
+          curl -fsSLo shellcheck.tar.xz \
+            "https://github.com/koalaman/shellcheck/releases/download/$SHELLCHECK_VERSION/shellcheck-$SHELLCHECK_VERSION.linux.x86_64.tar.xz"
+          echo "$SHELLCHECK_SHA256  shellcheck.tar.xz" | sha256sum -c -
+          tar -xJf shellcheck.tar.xz
+          install -m 0755 "shellcheck-$SHELLCHECK_VERSION/shellcheck" "$bin/shellcheck"
+
+          curl -fsSLo actionlint.tar.gz \
+            "https://github.com/rhysd/actionlint/releases/download/v$ACTIONLINT_VERSION/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          echo "$ACTIONLINT_SHA256  actionlint.tar.gz" | sha256sum -c -
+          tar -xzf actionlint.tar.gz actionlint
+          install -m 0755 actionlint "$bin/actionlint"
+
+          echo "$bin" >>"$GITHUB_PATH"
+
+      - name: shellcheck scripts/deploy
+        run: |
+          set -euo pipefail
+          shellcheck --version
+          shopt -s nullglob
+          scripts=(scripts/deploy/*.sh)
+          if ((${#scripts[@]} == 0)); then
+            echo "No scripts/deploy/*.sh to check."
+            exit 0
+          fi
+          shellcheck -S style "${scripts[@]}"
+
+      - name: actionlint .github/workflows
+        run: |
+          set -euo pipefail
+          actionlint -version
+          # With no arguments actionlint checks every .github/workflows/*.yml and *.yaml.
+          actionlint -color -shellcheck="$(command -v shellcheck)"
