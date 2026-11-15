@@ -257,6 +257,38 @@ gh api -X PUT repos/SimmonsCS28/obhl-hockey-league-2.0/branches/main/protection 
 EOF
 ```
 
+### Optional: gate changes to the pipeline itself
+
+Two more settings on the same rule, for when you want them. Neither is on yet.
+
+- **Require status checks to pass**, with the `deploy-lint` check. The Deploy lint workflow
+  (`.github/workflows/deploy-lint.yml`) runs shellcheck on `scripts/deploy/` and actionlint on every
+  workflow, on every PR to `main`. It has no path filter, so requiring it never leaves an unrelated PR
+  waiting on a check that will not run. GitHub only offers the check in the list once it has run on
+  a PR.
+- **Require review from Code Owners.** `.github/CODEOWNERS` names you as the owner of
+  `.github/workflows/`, `scripts/deploy/`, this guide and `CODEOWNERS` itself. With this on, a PR that
+  touches them needs your approval, not just any approval. GitHub does not count an author's own
+  approval, so your own PRs to those paths then go through the admin bypass (which works while
+  "Do not allow bypassing" is off).
+
+The same rule with both turned on (this `PUT` replaces the whole rule):
+
+```bash
+gh api -X PUT repos/SimmonsCS28/obhl-hockey-league-2.0/branches/main/protection --input - <<'EOF'
+{
+  "required_status_checks": { "strict": false, "contexts": ["deploy-lint"] },
+  "enforce_admins": false,
+  "required_pull_request_reviews": {
+    "required_approving_review_count": 1,
+    "dismiss_stale_reviews": true,
+    "require_code_owner_reviews": true
+  },
+  "restrictions": null
+}
+EOF
+```
+
 ## 6. Retire the old AWS keys
 
 The repo-level secrets `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` belong to the destroyed
@@ -277,9 +309,9 @@ aws iam update-access-key --user-name <USER> --access-key-id <KEY_ID> --status I
 aws iam delete-access-key --user-name <USER> --access-key-id <KEY_ID>
 ```
 
-The Terraform plan/apply workflows still reference those secrets and will fail if they ever run
-(plan runs on PRs that touch `terraform/**`; apply is manual-only). The stack they managed is gone, so
-that is expected. If Terraform comes back, give it its own OIDC role rather than new keys.
+The Terraform plan/apply workflows that used those secrets have been removed: the stack they managed
+is gone (see `terraform/environments/dev/DESTROYED_STACK_RECORD.md`). The `terraform/` code is still
+in the repo. If Terraform comes back, give it its own OIDC role rather than new keys.
 
 ## 7. Turn it on
 
