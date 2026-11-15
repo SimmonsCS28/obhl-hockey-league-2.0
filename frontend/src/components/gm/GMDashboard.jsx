@@ -112,8 +112,9 @@ function GMDashboard() {
     const saveJersey = async (player) => {
         const newJersey = jerseyEdits[player.id];
         const parsed = parseInt(newJersey, 10);
-        if (isNaN(parsed) || parsed < 0 || parsed > 99) {
-            alert('Jersey number must be between 0 and 99.');
+        // 1-99 matches the DB's chk_jersey_number; 0 is rejected by Postgres.
+        if (isNaN(parsed) || parsed < 1 || parsed > 99) {
+            alert('Jersey number must be between 1 and 99.');
             return;
         }
 
@@ -183,7 +184,7 @@ function GMDashboard() {
                                                     <input
                                                         className="jersey-edit-input"
                                                         type="number"
-                                                        min="0"
+                                                        min="1"
                                                         max="99"
                                                         value={editValue !== undefined ? editValue : (player.jerseyNumber ?? '')}
                                                         onChange={e => handleJerseyChange(player.id, e.target.value)}

@@ -278,7 +278,8 @@ function PlayerManagement() {
             // Prepare data with proper type conversions
             const playerData = {
                 ...formData,
-                jerseyNumber: formData.jerseyNumber ? parseInt(formData.jerseyNumber) : null,
+                // Goalies never carry a jersey number; blank means "no number" for anyone.
+                jerseyNumber: formData.position !== 'G' && formData.jerseyNumber ? parseInt(formData.jerseyNumber) : null,
                 skillRating: formData.skillRating ? parseInt(formData.skillRating) : 5,
                 teamId: formData.teamId ? parseInt(formData.teamId) : null,
                 seasonId: formData.seasonId ? parseInt(formData.seasonId) : null,
@@ -734,13 +735,17 @@ function PlayerManagement() {
                                 </div>
                                 <div className="pmd-field">
                                     <label className="pmd-label">Jersey Number</label>
+                                    {/* Optional: blank saves as no number. Goalies never have one, so
+                                        the field is off for them. The DB's chk_jersey_number allows only
+                                        1-99 (or blank), so 0 is rejected. */}
                                     <input className="pmd-input"
                                         type="number"
-                                        value={formData.jerseyNumber}
+                                        value={formData.position === 'G' ? '' : formData.jerseyNumber}
                                         onChange={(e) => setFormData({ ...formData, jerseyNumber: e.target.value })}
-                                        required
-                                        min="0"
+                                        disabled={formData.position === 'G'}
+                                        min="1"
                                         max="99"
+                                        placeholder={formData.position === 'G' ? 'None (goalie)' : 'None'}
                                     />
                                 </div>
                             </div>
@@ -750,7 +755,11 @@ function PlayerManagement() {
                                     <label className="pmd-label">Position</label>
                                     <select className="pmd-select"
                                         value={formData.position}
-                                        onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                                        onChange={(e) => setFormData({
+                                            ...formData,
+                                            position: e.target.value,
+                                            jerseyNumber: e.target.value === 'G' ? '' : formData.jerseyNumber
+                                        })}
                                         required
                                     >
                                         <option value="F">Forward</option>

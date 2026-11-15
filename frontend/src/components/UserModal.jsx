@@ -217,7 +217,8 @@ const UserModal = ({ user, isCreating, onClose }) => {
             email,
             position: playerData.position,
             shoots: playerData.shoots,
-            jerseyNumber: playerData.jerseyNumber ? parseInt(playerData.jerseyNumber) : null,
+            // Goalies never carry a jersey number.
+            jerseyNumber: playerData.position !== 'G' && playerData.jerseyNumber ? parseInt(playerData.jerseyNumber) : null,
             skillRating: playerData.skillRating ? parseFloat(playerData.skillRating) : 5,
             seasonId: playerData.seasonId ? parseInt(playerData.seasonId) : null,
             teamId: playerData.teamId ? parseInt(playerData.teamId) : null,
@@ -524,8 +525,11 @@ const UserModal = ({ user, isCreating, onClose }) => {
                                 <div style={{ flex: '0 0 118px' }}>
                                     <label className="um-label" htmlFor="um-pJersey">Jersey #</label>
                                     <input
-                                        id="um-pJersey" type="number" min="0" max="99" placeholder="—" className="um-input um-jersey-input"
-                                        value={playerData.jerseyNumber} onChange={(e) => handlePlayerChange('jerseyNumber', e.target.value)} disabled={loading}
+                                        id="um-pJersey" type="number" min="1" max="99"
+                                        placeholder={playerData.position === 'G' ? 'Goalie' : '—'} className="um-input um-jersey-input"
+                                        value={playerData.position === 'G' ? '' : playerData.jerseyNumber}
+                                        onChange={(e) => handlePlayerChange('jerseyNumber', e.target.value)}
+                                        disabled={loading || playerData.position === 'G'}
                                     />
                                 </div>
                             </div>
