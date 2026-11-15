@@ -47,7 +47,7 @@ public class GMController {
      * Update player jersey number (GM can only update their team's players)
      */
     @PatchMapping("/players/{playerId}/jersey")
-    public ResponseEntity<Player> updateJerseyNumber(
+    public ResponseEntity<?> updateJerseyNumber(
             @PathVariable Long playerId,
             @RequestBody Map<String, Object> updates) {
 
@@ -55,12 +55,20 @@ public class GMController {
         if (jerseyObj == null) {
             return ResponseEntity.badRequest().build();
         }
+        Integer newJerseyNumber;
+        try {
+            newJerseyNumber = jerseyObj instanceof Number
+                    ? ((Number) jerseyObj).intValue()
+                    : Integer.parseInt(jerseyObj.toString().trim());
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body(PlayerController.JERSEY_NUMBER_ERROR);
+        }
+        if (!PlayerController.isValidJerseyNumber(newJerseyNumber)) {
+            return ResponseEntity.badRequest().body(PlayerController.JERSEY_NUMBER_ERROR);
+        }
 
         return playerRepository.findById(playerId)
-                .map(player -> {
-                    Integer newJerseyNumber = jerseyObj instanceof Number
-                            ? ((Number) jerseyObj).intValue()
-                            : Integer.parseInt(jerseyObj.toString());
+                .<ResponseEntity<?>>map(player -> {
                     player.setJerseyNumber(newJerseyNumber);
                     Player updated = playerRepository.save(player);
                     return ResponseEntity.ok(updated);
