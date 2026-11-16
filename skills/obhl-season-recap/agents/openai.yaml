@@ -1,0 +1,4 @@
+interface:
+  display_name: "OBHL Season Recap"
+  short_description: "Generate and save an OBHL season recap"
+  default_prompt: "Use $obhl-season-recap to generate and save the recap for a completed OBHL season."

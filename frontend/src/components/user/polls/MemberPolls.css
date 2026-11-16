@@ -1,0 +1,53 @@
+.huddle { padding: 38px 0 44px; scroll-margin-top: 130px; border-bottom: 1px solid var(--obi-card-border); background: radial-gradient(ellipse at 95% 0, rgba(246,169,28,.07), transparent 55%); color: var(--obi-text); }
+.huddle-head { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.huddle-eyebrow { color: var(--obi-accent); font: 700 11px var(--obi-font-body); letter-spacing: 2px; text-transform: uppercase; }
+.huddle h2 { margin: 8px 0; font: 800 38px var(--obi-font-display); }
+.huddle-head p, .huddle-description, .huddle-create p { color: var(--obi-text-muted); font: 14px/1.65 var(--obi-font-body); margin: 0 0 12px; }
+.huddle-note { color: var(--obi-text-muted); font: 12px/1.6 var(--obi-font-body); margin: 16px 0 22px; }
+.huddle-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 350px), 1fr)); gap: 20px; }
+.huddle-card { min-width: 0; border: 1px solid var(--obi-card-border); border-radius: 16px; background: var(--obi-bg-card); padding: 25px; }
+.huddle-card-meta { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; color: var(--obi-text-muted); font-size: 11px; }
+.huddle-badge { color: var(--obi-accent); background: rgba(246,169,28,.1); border: 1px solid rgba(246,169,28,.22); border-radius: 20px; padding: 5px 10px; font: 700 10px var(--obi-font-body); text-transform: uppercase; letter-spacing: 1px; }
+.huddle-badge.is-closed { color: var(--obi-icy); background: rgba(157,185,205,.08); border-color: var(--obi-card-border); }
+.huddle h3 { margin: 20px 0 12px; font: 700 24px/1.25 var(--obi-font-display); overflow-wrap: anywhere; }
+.huddle-description { white-space: pre-wrap; overflow-wrap: anywhere; }
+.huddle fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.huddle-choices legend { font-size: 12px; color: var(--obi-text-muted); margin: 5px 0 10px; }
+.huddle-choices label { display: flex; align-items: center; gap: 12px; padding: 14px; margin-bottom: 9px; border: 1px solid var(--obi-card-border); border-radius: 9px; cursor: pointer; font-size: 14px; overflow-wrap: anywhere; }
+.huddle-choices label:hover { border-color: var(--obi-accent); }
+.huddle-choices label.is-selected { border-color: var(--obi-accent); background: rgba(246,169,28,.07); }
+.huddle-choices input { accent-color: var(--obi-accent); flex: none; width: 17px; height: 17px; }
+.huddle-card-foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-top: 20px; color: var(--obi-text-muted); font-size: 12px; }
+.huddle-button { background: var(--obi-accent); border: 1px solid transparent; color: #11151a; font: 800 13px var(--obi-font-body); padding: 11px 17px; border-radius: 8px; cursor: pointer; }
+.huddle-button:disabled { opacity: .45; cursor: not-allowed; }
+.huddle-link { border: 0; background: transparent; padding: 6px 0; font: 600 12px var(--obi-font-body); color: var(--obi-accent); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+.huddle-link:disabled { opacity: .5; cursor: not-allowed; }
+.huddle-results { display: grid; gap: 18px; margin-top: 23px; }
+.huddle-result-label { display: flex; justify-content: space-between; gap: 15px; font-size: 14px; margin-bottom: 8px; }
+.huddle-result-label > span { overflow-wrap: anywhere; min-width: 0; }
+.huddle-result-label b { white-space: nowrap; }
+.huddle-result small { color: var(--obi-text-muted); font-size: 10px; font-weight: 400; }
+.huddle-result.is-mine small { color: var(--obi-accent); }
+.huddle-track { height: 7px; border-radius: 5px; background: rgba(157,185,205,.12); overflow: hidden; }
+.huddle-track span { display: block; height: 100%; background: var(--obi-icy); border-radius: inherit; transition: width .3s ease; }
+.huddle-result.is-mine .huddle-track span { background: var(--obi-accent); }
+.huddle-admin { border-top: 1px solid var(--obi-card-border); padding-top: 13px; margin-top: 18px; font-size: 12px; }
+.huddle-actions { display: flex; align-items: center; gap: 18px; }
+.huddle-archive { margin-top: 26px; }
+.huddle-archive summary { cursor: pointer; color: var(--obi-icy); font-weight: 600; padding: 12px 0; }
+.huddle-archive summary span { margin-left: 8px; font-size: 12px; }
+.huddle-empty { border: 1px dashed var(--obi-card-border); border-radius: 12px; padding: 25px; font-size: 14px; }
+.huddle-empty p { margin-bottom: 0; color: var(--obi-text-muted); }
+.huddle-create { background: var(--obi-bg-card); border: 1px solid rgba(246,169,28,.4); padding: 25px; border-radius: 15px; margin-top: 20px; max-width: 720px; }
+.huddle-create h3 { margin-top: 0; }
+.huddle-create label { display: block; color: var(--obi-text); font-size: 13px; margin: 15px 0; }
+.huddle-create label > span { color: var(--obi-text-muted); }
+.huddle-create input, .huddle-create textarea { display: block; width: 100%; box-sizing: border-box; margin-top: 7px; border: 1px solid var(--obi-card-border); background: var(--obi-bg); border-radius: 7px; padding: 11px; color: var(--obi-text); font: 14px var(--obi-font-body); color-scheme: dark; }
+.huddle-create-choices > div { display: flex; align-items: center; gap: 15px; }
+.huddle-create-choices label { flex: 1; min-width: 0; }
+.huddle-error { color: var(--obi-error); font-size: 13px; }
+.huddle-error button { background: transparent; border: 0; color: inherit; text-decoration: underline; cursor: pointer; }
+.huddle-success { color: var(--obi-success); font-size: 13px; }
+.huddle button:focus-visible, .huddle input:focus-visible, .huddle textarea:focus-visible, .huddle summary:focus-visible { outline: 2px solid var(--obi-accent); outline-offset: 3px; }
+@media (max-width: 620px) { .huddle-head { align-items: flex-start; flex-direction: column; gap: 5px; } .huddle-card { padding: 20px; } .huddle h2 { font-size: 32px; } }
+@media (prefers-reduced-motion: reduce) { .huddle-track span { transition: none; } }

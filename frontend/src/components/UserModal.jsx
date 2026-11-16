@@ -38,17 +38,45 @@ const emptyPlayerData = () => ({
     isActive: true,
 });
 
+// The editable fields for an existing user, as the form holds them.
+const userFields = (user) => {
+    let roles;
+    if (user.roles && user.roles.length > 0) {
+        roles = Array.isArray(user.roles) ? user.roles : Array.from(user.roles);
+    } else if (user.role) {
+        roles = [user.role];
+    } else {
+        roles = ['USER'];
+    }
+    return {
+        username: user.username || '',
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        roles,
+        teamId: user.teamId || '',
+    };
+};
+
 const UserModal = ({ user, isCreating, onClose }) => {
     const { selectedSeasonId } = useSeason();
     const scrollerRef = useRef(null);
 
     const [availableRoles, setAvailableRoles] = useState(FALLBACK_ROLES);
-    const [formData, setFormData] = useState({
+    // Edit mode is seeded from the user on the FIRST render, not in an effect afterwards.
+    // An empty Username field on mount is what Chrome's password manager fills with the
+    // signed-in admin's own saved login (it ignores autoComplete="off" for that).
+    const [formData, setFormData] = useState(() => ({
         username: '', firstName: '', lastName: '', email: '',
         roles: ['USER'], teamId: '',
         password: '', forceChange: true,
         resetOpen: false, newPassword: '',
-    });
+        ...(user && !isCreating ? userFields(user) : {}),
+    }));
+    // Username stays read-only until the admin clicks or tabs into it: password managers
+    // skip read-only fields, so this is the second guard against the autofill above.
+    const [usernameUnlocked, setUsernameUnlocked] = useState(false);
+    const unlockUsername = () => setUsernameUnlocked(true);
     const [playerExpanded, setPlayerExpanded] = useState(false);
     const [playerData, setPlayerData] = useState(emptyPlayerData());
     const [activeTeamsOnly, setActiveTeamsOnly] = useState(true);
@@ -73,24 +101,9 @@ const UserModal = ({ user, isCreating, onClose }) => {
     }, []);
 
     useEffect(() => {
+        // Keeps the form in step if the parent swaps in a different user while open.
         if (user && !isCreating) {
-            let rolesArray;
-            if (user.roles && user.roles.length > 0) {
-                rolesArray = Array.isArray(user.roles) ? user.roles : Array.from(user.roles);
-            } else if (user.role) {
-                rolesArray = [user.role];
-            } else {
-                rolesArray = ['USER'];
-            }
-            setFormData(prev => ({
-                ...prev,
-                username: user.username || '',
-                firstName: user.firstName || '',
-                lastName: user.lastName || '',
-                email: user.email || '',
-                roles: rolesArray,
-                teamId: user.teamId || '',
-            }));
+            setFormData(prev => ({ ...prev, ...userFields(user) }));
         }
     }, [user, isCreating]);
 
@@ -169,6 +182,14 @@ const UserModal = ({ user, isCreating, onClose }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        // Explicit because the read-only Username field is skipped by the browser's
+        // own `required` check until the admin has clicked into it.
+        if (!formData.username.trim()) {
+            setError('Username is required.');
+            scrollToTop();
+            return;
+        }
+
         if (!formData.roles || formData.roles.length === 0) {
             setError('Please select at least one role.');
             scrollToTop();
@@ -217,7 +238,8 @@ const UserModal = ({ user, isCreating, onClose }) => {
             email,
             position: playerData.position,
             shoots: playerData.shoots,
-            jerseyNumber: playerData.jerseyNumber ? parseInt(playerData.jerseyNumber) : null,
+            // Goalies never carry a jersey number.
+            jerseyNumber: playerData.position !== 'G' && playerData.jerseyNumber ? parseInt(playerData.jerseyNumber) : null,
             skillRating: playerData.skillRating ? parseFloat(playerData.skillRating) : 5,
             seasonId: playerData.seasonId ? parseInt(playerData.seasonId) : null,
             teamId: playerData.teamId ? parseInt(playerData.teamId) : null,
@@ -312,6 +334,8 @@ const UserModal = ({ user, isCreating, onClose }) => {
                             id="um-username" name="username" type="text" className="um-input"
                             value={formData.username} onChange={handleChange} placeholder="jsmith"
                             required disabled={loading}
+                            readOnly={!usernameUnlocked}
+                            onPointerDown={unlockUsername} onFocus={unlockUsername}
                             autoComplete="off" data-lpignore="true" data-1p-ignore="true"
                         />
                     </div>
@@ -524,8 +548,11 @@ const UserModal = ({ user, isCreating, onClose }) => {
                                 <div style={{ flex: '0 0 118px' }}>
                                     <label className="um-label" htmlFor="um-pJersey">Jersey #</label>
                                     <input
-                                        id="um-pJersey" type="number" min="0" max="99" placeholder="—" className="um-input um-jersey-input"
-                                        value={playerData.jerseyNumber} onChange={(e) => handlePlayerChange('jerseyNumber', e.target.value)} disabled={loading}
+                                        id="um-pJersey" type="number" min="1" max="99"
+                                        placeholder={playerData.position === 'G' ? 'Goalie' : '—'} className="um-input um-jersey-input"
+                                        value={playerData.position === 'G' ? '' : playerData.jerseyNumber}
+                                        onChange={(e) => handlePlayerChange('jerseyNumber', e.target.value)}
+                                        disabled={loading || playerData.position === 'G'}
                                     />
                                 </div>
                             </div>

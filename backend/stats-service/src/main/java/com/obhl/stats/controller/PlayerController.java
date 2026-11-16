@@ -129,6 +129,11 @@ public class PlayerController {
 
     @PostMapping
     public ResponseEntity<?> createPlayer(@RequestBody Player player) {
+        // Without this, a 0 would hit the DataIntegrityViolation catch below and be
+        // misreported as a duplicate email.
+        if (!isValidJerseyNumber(player.getJerseyNumber())) {
+            return ResponseEntity.badRequest().body(JERSEY_NUMBER_ERROR);
+        }
         try {
             Player created = playerRepository.save(player);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
@@ -189,17 +194,28 @@ public class PlayerController {
         return ResponseEntity.ok(java.util.Map.of("deactivated", deactivated, "goaliesKept", goaliesKept));
     }
 
+    /**
+     * Mirrors the DB's chk_jersey_number (migration 003): 1-99, or no number at all.
+     * Checked up front so a bad number is a 400 with a reason, not a 500 from Postgres.
+     */
+    static boolean isValidJerseyNumber(Integer jerseyNumber) {
+        return jerseyNumber == null || (jerseyNumber >= 1 && jerseyNumber <= 99);
+    }
+
+    static final java.util.Map<String, String> JERSEY_NUMBER_ERROR =
+            java.util.Map.of("error", "Jersey number must be between 1 and 99, or left blank.");
+
     @PatchMapping("/{playerId}")
     @PutMapping("/{playerId}")
-    public ResponseEntity<Player> updatePlayer(
+    public ResponseEntity<?> updatePlayer(
             @PathVariable Long playerId,
             @RequestBody java.util.Map<String, Object> updates,
             Authentication authentication) {
         return playerRepository.findById(playerId)
-                .map(existing -> {
+                .<ResponseEntity<?>>map(existing -> {
                     if (updates.containsKey("skillRating")
                             && !PlayerAccess.canRateSkill(authentication, existing.getPosition())) {
-                        return ResponseEntity.status(HttpStatus.FORBIDDEN).<Player>build();
+                        return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
                     }
                     if (updates.containsKey("teamId")) {
                         Object val = updates.get("teamId");
@@ -211,7 +227,11 @@ public class PlayerController {
                         existing.setLastName((String) updates.get("lastName"));
                     if (updates.containsKey("jerseyNumber")) {
                         Object val = updates.get("jerseyNumber");
-                        existing.setJerseyNumber(val == null ? null : ((Number) val).intValue());
+                        Integer jerseyNumber = val == null ? null : ((Number) val).intValue();
+                        if (!isValidJerseyNumber(jerseyNumber)) {
+                            return ResponseEntity.badRequest().body(JERSEY_NUMBER_ERROR);
+                        }
+                        existing.setJerseyNumber(jerseyNumber);
                     }
                     if (updates.containsKey("position"))
                         existing.setPosition((String) updates.get("position"));
