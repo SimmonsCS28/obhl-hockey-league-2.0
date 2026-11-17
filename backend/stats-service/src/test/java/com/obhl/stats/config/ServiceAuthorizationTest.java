@@ -111,4 +111,23 @@ class ServiceAuthorizationTest {
         verifyNoInteractions(players);
     }
 
+    @Test void invalidTokensAreAnonymousOnPublicReadsButCannotWrite() throws Exception {
+        for (String auth : List.of("Bearer junk", "Basic junk", signed("ADMIN", SECRET, 1, false),
+                signed("ADMIN", "wrong-signing-key-123456789012345678901234567890", System.currentTimeMillis()+60000, false))) {
+            mvc.perform(get("/api/v1/players").header("Authorization", auth)).andExpect(status().isOk());
+            mvc.perform(delete("/api/v1/players/1").header("Authorization", auth)).andExpect(status().isUnauthorized());
+        }
+    }
+
+    @Test void wrongInternalKeyStillRejectsPublicReadsEvenWithValidJwt() throws Exception {
+        mvc.perform(get("/api/v1/players").header("X-Internal-Service-Key", "wrong")
+                .header("Authorization", token("ADMIN"))).andExpect(status().isUnauthorized());
+    }
+
+    @Test void legacyRoleTokensStillAuthorizeProtectedReads() throws Exception {
+        mvc.perform(get("/api/v1/gm/team/1/roster")
+                .header("Authorization", signed("GM", SECRET, System.currentTimeMillis()+60000, true)))
+                .andExpect(status().isOk());
+    }
+
 }

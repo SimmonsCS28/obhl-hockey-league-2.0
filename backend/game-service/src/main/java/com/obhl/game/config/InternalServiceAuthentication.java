@@ -6,6 +6,7 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 /**
+ * Keep in sync with stats-service's InternalServiceAuthentication.
  * Backend identity granted only after checking the configured shared service secret.
  * Browser-facing gateway proxies never supply this credential. It permits trusted
  * workflow calls without giving a user's JWT the INTERNAL_SERVICE authority.

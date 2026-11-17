@@ -12,12 +12,14 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import com.obhl.game.util.JwtUtil;
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
-/** Authenticates signed gateway tokens or explicitly configured backend credentials. */
+/** Authenticates signed gateway tokens or explicitly configured backend credentials.
+ * Keep in sync with stats-service's JwtAuthenticationFilter. */
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
@@ -48,11 +50,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 try {
                     if (!header.startsWith("Bearer ")) throw new IllegalArgumentException("Bearer token required");
                     String token = header.substring(7);
-                    String username = jwtUtil.extractUsername(token);
+                    Claims claims = jwtUtil.parseClaims(token);
+                    String username = claims.get("username", String.class);
                     if (username == null || username.isBlank()) throw new IllegalArgumentException("Missing username");
-                    List<String> roles = jwtUtil.getRolesFromToken(token);
+                    @SuppressWarnings("unchecked")
+                    List<String> roles = claims.get("roles", List.class);
                     if (roles == null || roles.isEmpty()) {
-                        String legacyRole = jwtUtil.getRoleFromToken(token);
+                        String legacyRole = claims.get("role", String.class);
                         roles = legacyRole == null ? List.of() : List.of(legacyRole);
                     }
                     var authorities = new ArrayList<SimpleGrantedAuthority>();
@@ -67,8 +71,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                             new UsernamePasswordAuthenticationToken(username, null, authorities));
                 } catch (Exception invalidToken) {
                     SecurityContextHolder.clearContext();
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-                    return;
+                    // Public reads remain available; protected routes reject anonymous callers.
                 }
             }
         }

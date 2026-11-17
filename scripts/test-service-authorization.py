@@ -72,7 +72,7 @@ def run(config_path):
         (8000, '/api/v1/games'), (8002, '/api/v1/games'), (8080, '/games-api/games'),
         (8000, '/api/v1/stats/players'), (8003, '/api/v1/stats/players'), (8080, '/stats-api/stats/players'),
         (8000, '/api/v1/players'), (8003, '/api/v1/players'), (8080, '/stats-api/players'),
-        (8000, '/api/v1/game-events'), (8002, '/api/v1/game-events'), (8080, '/games-api/game-events'),
+        (8002, '/api/v1/game-events'),
     ]
     for port, path in targets:
         for label, headers, expected in credentials:
@@ -84,6 +84,9 @@ def run(config_path):
     for port, path in [(8000, '/api/v1/games'), (8002, '/api/v1/games'), (8080, '/games-api/games'),
                        (8000, '/api/v1/players'), (8003, '/api/v1/players'), (8080, '/stats-api/players')]:
         check('public read', port, path, 'GET', {}, 200)
+        check('public read with expired JWT', port, path, 'GET',
+              {'Authorization': 'Bearer ' + token(secret, 'ADMIN', expired=True)}, 200)
+        check('public read with invalid JWT', port, path, 'GET', {'Authorization': 'Bearer invalid'}, 200)
     # A browser cannot elevate its user token by supplying the backend header to a proxy.
     for port, path in [(8000, '/api/v1/players'), (8080, '/stats-api/players')]:
         check('proxy never elevates caller', port, path, 'POST',

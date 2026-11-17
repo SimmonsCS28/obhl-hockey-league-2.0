@@ -134,4 +134,17 @@ class ServiceAuthorizationTest {
         verify(gameService, times(1)).deleteGame(1L);
     }
 
+    @Test void invalidTokensAreAnonymousOnPublicReadsButCannotWrite() throws Exception {
+        for (String auth : List.of("Bearer junk", "Basic junk", signed("ADMIN", SECRET, 1, false),
+                signed("ADMIN", "wrong-signing-key-123456789012345678901234567890", System.currentTimeMillis()+60000, false))) {
+            mvc.perform(get("/api/v1/games").header("Authorization", auth)).andExpect(status().isOk());
+            mvc.perform(delete("/api/v1/games/1").header("Authorization", auth)).andExpect(status().isUnauthorized());
+        }
+    }
+
+    @Test void wrongInternalKeyStillRejectsPublicReadsEvenWithValidJwt() throws Exception {
+        mvc.perform(get("/api/v1/games").header("X-Internal-Service-Key", "wrong")
+                .header("Authorization", token("ADMIN"))).andExpect(status().isUnauthorized());
+    }
+
 }

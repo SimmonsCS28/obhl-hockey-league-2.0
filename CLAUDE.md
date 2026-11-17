@@ -33,6 +33,9 @@ npm run preview  # Preview production build
 ```
 
 ### Backend services (each of api-gateway, league-service, game-service, stats-service)
+Export distinct local `JWT_SECRET` and `INTERNAL_SERVICE_KEY` values before `bootRun`; it does not load
+Compose's `.env`. Generate each with `openssl rand -base64 48`. See
+`.agent/workflows/local-dev-startup.md` for shared values and startup instructions.
 ```bash
 ./gradlew.bat bootRun   # run service locally (Windows)
 ./gradlew.bat build     # build

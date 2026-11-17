@@ -16,7 +16,9 @@ It is a locally validated remediation, not a completed production security asses
 | GM roster reads | ADMIN, GM, GOALIE_COORDINATOR or internal backend credential |
 | Referee/scorekeeper self-service | Existing gateway endpoints determine the user from authentication, then call Game with backend credentials |
 
-Game and Stats validate the gateway's JWT signatures and expiration. Anonymous writes return 401;
+Game and Stats validate the gateway's JWT signatures and expiration. Invalid/expired user tokens
+continue as anonymous: public reads still succeed, while protected routes return 401. A present but
+wrong internal service key always returns 401, including public reads. Anonymous writes return 401;
 authenticated callers without the required role return 403. A JWT claiming INTERNAL_SERVICE cannot
 acquire backend privileges. Unknown service routes are denied. Internal keys are compared in constant
 time, and Game/Stats reject blank, short or the formerly committed default key on startup.
@@ -24,7 +26,8 @@ time, and Game/Stats reject blank, short or the formerly committed default key o
 The public `/games-api/` and `/stats-api/` compatibility aliases now route through the gateway.
 Nginx removes incoming `X-Internal-Service-Key`; gateway browser proxies forward user JWTs, never
 add backend credentials, and never forward that internal header. An explicit multipart proxy preserves
-schedule CSV uploads. The gateway also proxies legacy `/game-events` calls.
+schedule CSV uploads through `/api/v1/games/upload-slots`. The unused gateway `/game-events` proxy
+is removed; active event screens use `/games/{id}/events`. Direct-service event routes remain protected.
 
 ## Deployment requirements: config first, then sequential services
 
@@ -32,6 +35,24 @@ This is the proposed rollout procedure, not an executed production deployment or
 rehearsal. Rehearse against the actual previous images on an isolated stack before applying it to the
 host. The earlier instruction to rebuild everything together is superseded: the production runbook
 requires one Java build at a time because of host memory limits.
+
+### Coordinate with the deployment pipeline
+
+Merge immediately before the scheduled maintenance window and complete this manual rollout the same
+day. The deploy-on-merge workflow invokes `scripts/deploy/deploy.sh`, which stops with exit 4 and
+`MANUAL STEP NEEDED: docker-compose.yml changed` before pulling or building. Every subsequent merge,
+including hotfixes, retains this Compose change in its deploy range and is blocked until the manual
+rollout completes. A green application test run does not remove this deployment hold.
+
+Disable `PROD_DEPLOY_ENABLED` while doing the manual rollout, as required by the deployment runbook,
+so an approved pipeline run cannot overlap the maintenance work.
+
+Follow the [manual deployment workflow](../.agent/workflows/deploy-production.md) for host access and
+operational checks, but use the config-first order and `--no-deps` commands below for this release.
+After successful manual rollout, confirm the host checkout matches the reviewed release and all
+services and host Nginx are healthy before resuming automated deployment. If an earlier failed deploy
+left `refs/obhl-deploy/pending-base`, reconcile it only after verifying every change in that remembered
+range was deployed; do not clear recovery state merely to bypass the Compose guard.
 
 ### Preflight and credentials
 
@@ -54,9 +75,9 @@ requires one Java build at a time because of host memory limits.
 
 ### Recreate old images with the shared environment
 
-The main baseline (`4cecb31`) reads `internal.service.key` through Spring configuration in all four
-services, so `INTERNAL_SERVICE_KEY` overrides the old property value. Confirm this behavior for the
-**actual deployed images**, including profile/command-line overrides, during rehearsal. Do not assume
+The currently deployed images must read `internal.service.key` through Spring configuration in all
+four services so `INTERNAL_SERVICE_KEY` overrides the old property value. Confirm this behavior for
+those exact images, including profile/command-line overrides, during rehearsal. Do not assume
 editing `.env` changes already-running containers. Check key agreement without printing key values.
 
 Run each command separately and verify that service's health before continuing:
@@ -100,7 +121,12 @@ Before reopening writes, verify through the public host:
 
 - Anonymous game/player reads succeed; anonymous writes are denied; ordinary members cannot score,
   reopen games, change schedules, or mutate player records.
-- Admin CSV upload succeeds through the gateway, with no multipart/header regression.
+- Read full-size season game lists and player lists (each over 8 KiB) through `/games-api/games?seasonId=…`
+  and `/stats-api/players?seasonId=…`, as well as the standard `/api/v1/` paths. Verify complete JSON,
+  expected record counts, and no 502, duplicate Transfer-Encoding, or conflicting Content-Length.
+  Include anonymous and stale-token requests. Run this on the rehearsal proxy before switching live
+  Nginx; a near-empty fixture does not test chunked responses.
+- Admin CSV upload succeeds through `/api/v1/games/upload-slots`, with no multipart/header regression.
 - A scorekeeper can score, finalize, reopen to correct a mistake, and re-finalize a designated test game;
   team totals stay correct. Schedule/staff changes and revert-to-scheduled remain admin-only.
 - Coordinator assignments, referee/scorekeeper self-signup/cancellation, GM jersey edits, and draft/player
@@ -146,6 +172,26 @@ in the application Compose file. The test database also needed a missing `roles.
 and a REF seed row to exercise the existing staff flows. These results do not establish that the clean migration sequence
 works, and the existing database/bootstrap problem remains separate work.
 
+## Review validation on November 17, 2026
+
+After merging current main, the second review fixes passed:
+
+- **152 Java 21 tests**: Gateway 86, Game 58, Stats 8; zero failures, errors, or skips. New cases
+  verify invalid/expired/wrong-signature user tokens can read public data but cannot write, invalid
+  internal keys still reject public reads, and legacy role tokens remain supported.
+- **76/76** non-mutating HTTP authorization checks on the updated isolated stack.
+- **24/24** large-response checks with 400 synthetic games (319,528-byte JSON) and 400 players
+  (141,893-byte JSON). Direct Game/Stats responses used chunked transfer. Gateway, standard Nginx
+  API paths, and both compatibility aliases returned complete lists without 502s or ambiguous framing,
+  for anonymous, invalid-token, and expired-token callers. Player field masking remained intact.
+  All synthetic records were removed afterward; no response-header code change was needed.
+- Frontend production build passed with the existing bundle-size warning. Windows startup guards
+  were reviewed but not executed on Windows.
+
+The new `scripts/test-proxy-large-responses.py` makes the large-list check repeatable on the disposable
+stack. This is a current-version proxy rehearsal, **not** a mixed-version rehearsal using the actual
+production images. Production rollout and credential/history remediation remain pending.
+
 ## Reproduce the regression suites
 
 Review follow-up on November 12, 2026: scorekeepers retain `POST /games/{id}/unfinalize`, matching
@@ -159,9 +205,9 @@ or production rehearsal is claimed here.
 From the repository root, with Docker available:
 
 ```bash
-docker build -f deploy/security-test.Dockerfile backend/game-service
-docker build -f deploy/security-test.Dockerfile backend/stats-service
-docker build -f deploy/security-test.Dockerfile backend/api-gateway
+docker build -f scripts/security-test.Dockerfile backend/game-service
+docker build -f scripts/security-test.Dockerfile backend/stats-service
+docker build -f scripts/security-test.Dockerfile backend/api-gateway
 ```
 
 The Dockerfile-specific ignore file deliberately includes tests, overriding the gateway's production
@@ -172,12 +218,16 @@ are ignored local artifacts):
 
 ```bash
 python3 scripts/test-service-authorization.py .obhl-local-security.compose.json --report .obhl-local-security-report.json
+python3 scripts/test-proxy-large-responses.py .obhl-local-security.compose.json
 docker compose -p obhl-security -f .obhl-local-security.compose.json down
 ```
 
-The HTTP script accepts only the named disposable project with loopback ports. It refuses redirects,
+The authorization HTTP script accepts only the named disposable project with loopback ports. It refuses redirects,
 uses malformed request bodies, produces no token/secret output and exits nonzero if any assertion
 fails. Its expected 400 for an authorized caller confirms access to parsing, not a successful write.
+The separate large-response script additionally checks Docker project identity, creates a unique
+synthetic season, and deletes only those fixtures in `finally`. It requires Docker access and the
+existing test schema; it must never target production or a shared development database.
 
 ## Remaining scope
 
