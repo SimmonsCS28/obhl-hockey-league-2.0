@@ -7,6 +7,91 @@ import PlayerProfileCard from './common/PlayerProfileCard';
 import './PlayerManagement.css';
 import './UserManagement.css';
 
+/**
+ * The "Also create as User" account fields, shared by the Add Player and Edit Player panels.
+ *
+ * A text field followed by a password field reads as a login form to Chrome's password
+ * manager, which fills the signed-in ADMIN's own username and password into it (it ignores
+ * autoComplete="off" for credentials). Each field therefore stays read-only until the admin
+ * clicks or tabs into it, because password managers skip read-only fields. This component only
+ * mounts while a panel is open, so each open starts locked again. Read-only inputs also skip the
+ * browser's `required` check, which is why handleSubmit validates these fields itself.
+ */
+function UserAccountFields({ userData, defaultEmail, passwordError, availableRoles, onChange, onToggleRole }) {
+    const [unlocked, setUnlocked] = useState({});
+    const unlock = (field) => setUnlocked(prev => (prev[field] ? prev : { ...prev, [field]: true }));
+    const lockUntilUsed = (field) => ({
+        readOnly: !unlocked[field],
+        onPointerDown: () => unlock(field),
+        onFocus: () => unlock(field),
+        'data-lpignore': 'true',
+        'data-1p-ignore': 'true',
+    });
+
+    return (
+        <>
+            <div className="pmd-field">
+                <label className="pmd-label">Username *</label>
+                <input className="pmd-input"
+                    type="text"
+                    value={userData.username}
+                    onChange={(e) => onChange('username', e.target.value)}
+                    required
+                    autoComplete="off"
+                    {...lockUntilUsed('username')}
+                />
+            </div>
+
+            <div className="pmd-field">
+                <label className="pmd-label">Email * (defaults to player email)</label>
+                <input className="pmd-input"
+                    type="email"
+                    value={userData.email || defaultEmail}
+                    onChange={(e) => onChange('email', e.target.value)}
+                    required
+                    autoComplete="off"
+                    {...lockUntilUsed('email')}
+                />
+            </div>
+
+            <div className="pmd-field">
+                <label className="pmd-label">Password *</label>
+                <input className="pmd-input"
+                    type="password"
+                    value={userData.password}
+                    onChange={(e) => onChange('password', e.target.value)}
+                    required
+                    autoComplete="new-password"
+                    {...lockUntilUsed('password')}
+                />
+                {passwordError && <div className="pmd-field-error">{passwordError}</div>}
+                <small className="pmd-hint">
+                    Min 8 characters, 1 uppercase, 1 special character, no spaces
+                </small>
+            </div>
+
+            <div className="pmd-field">
+                <label className="pmd-label">Roles * (Select at least one)</label>
+                <div className="roles-checkbox-grid">
+                    {availableRoles.map(role => (
+                        <label key={role.name} className="role-checkbox-item">
+                            <input className="pmd-checkbox"
+                                type="checkbox"
+                                checked={userData.roles.includes(role.name)}
+                                onChange={() => onToggleRole(role.name)}
+                            />
+                            <div className="role-checkbox-label">
+                                <span className="role-checkbox-name">{role.name}</span>
+                                <span className="role-checkbox-desc">{role.description}</span>
+                            </div>
+                        </label>
+                    ))}
+                </div>
+            </div>
+        </>
+    );
+}
+
 function PlayerManagement() {
     const { selectedSeasonId, isHistoricalView } = useSeason();
     const [availableRoles, setAvailableRoles] = useState(FALLBACK_ROLES);
@@ -259,7 +344,8 @@ function PlayerManagement() {
 
         // Validate user fields if also creating user
         if (alsoCreateUser) {
-            if (!userData.username || !userData.email || !userData.password) {
+            // Email falls back to the player's email, exactly as the field displays it.
+            if (!userData.username.trim() || !(userData.email || formData.email) || !userData.password) {
                 alert('Username, Email, and Password are required for the user');
                 return;
             }
@@ -278,7 +364,8 @@ function PlayerManagement() {
             // Prepare data with proper type conversions
             const playerData = {
                 ...formData,
-                jerseyNumber: formData.jerseyNumber ? parseInt(formData.jerseyNumber) : null,
+                // Goalies never carry a jersey number; blank means "no number" for anyone.
+                jerseyNumber: formData.position !== 'G' && formData.jerseyNumber ? parseInt(formData.jerseyNumber) : null,
                 skillRating: formData.skillRating ? parseInt(formData.skillRating) : 5,
                 teamId: formData.teamId ? parseInt(formData.teamId) : null,
                 seasonId: formData.seasonId ? parseInt(formData.seasonId) : null,
@@ -734,13 +821,17 @@ function PlayerManagement() {
                                 </div>
                                 <div className="pmd-field">
                                     <label className="pmd-label">Jersey Number</label>
+                                    {/* Optional: blank saves as no number. Goalies never have one, so
+                                        the field is off for them. The DB's chk_jersey_number allows only
+                                        1-99 (or blank), so 0 is rejected. */}
                                     <input className="pmd-input"
                                         type="number"
-                                        value={formData.jerseyNumber}
+                                        value={formData.position === 'G' ? '' : formData.jerseyNumber}
                                         onChange={(e) => setFormData({ ...formData, jerseyNumber: e.target.value })}
-                                        required
-                                        min="0"
+                                        disabled={formData.position === 'G'}
+                                        min="1"
                                         max="99"
+                                        placeholder={formData.position === 'G' ? 'None (goalie)' : 'None'}
                                     />
                                 </div>
                             </div>
@@ -750,7 +841,11 @@ function PlayerManagement() {
                                     <label className="pmd-label">Position</label>
                                     <select className="pmd-select"
                                         value={formData.position}
-                                        onChange={(e) => setFormData({ ...formData, position: e.target.value })}
+                                        onChange={(e) => setFormData({
+                                            ...formData,
+                                            position: e.target.value,
+                                            jerseyNumber: e.target.value === 'G' ? '' : formData.jerseyNumber
+                                        })}
                                         required
                                     >
                                         <option value="F">Forward</option>
@@ -819,59 +914,14 @@ function PlayerManagement() {
                                     {alsoCreateUser && (
                                         <div className="pmd-panel">
                                             <h4 className="pmd-panel-title">User Account Details</h4>
-
-                                            <div className="pmd-field">
-                                                <label className="pmd-label">Username *</label>
-                                                <input className="pmd-input"
-                                                    type="text"
-                                                    value={userData.username}
-                                                    onChange={(e) => handleUserChange('username', e.target.value)}
-                                                    required
-                                                />
-                                            </div>
-
-                                            <div className="pmd-field">
-                                                <label className="pmd-label">Email * (defaults to player email)</label>
-                                                <input className="pmd-input"
-                                                    type="email"
-                                                    value={userData.email || formData.email}
-                                                    onChange={(e) => handleUserChange('email', e.target.value)}
-                                                    required
-                                                />
-                                            </div>
-
-                                            <div className="pmd-field">
-                                                <label className="pmd-label">Password *</label>
-                                                <input className="pmd-input"
-                                                    type="password"
-                                                    value={userData.password}
-                                                    onChange={(e) => handleUserChange('password', e.target.value)}
-                                                    required
-                                                />
-                                                {userPasswordError && <div className="pmd-field-error">{userPasswordError}</div>}
-                                                <small className="pmd-hint">
-                                                    Min 8 characters, 1 uppercase, 1 special character, no spaces
-                                                </small>
-                                            </div>
-
-                                            <div className="pmd-field">
-                                                <label className="pmd-label">Roles * (Select at least one)</label>
-                                                <div className="roles-checkbox-grid">
-                                                    {availableRoles.map(role => (
-                                                        <label key={role.name} className="role-checkbox-item">
-                                                            <input className="pmd-checkbox"
-                                                                type="checkbox"
-                                                                checked={userData.roles.includes(role.name)}
-                                                                onChange={() => handleUserRoleToggle(role.name)}
-                                                            />
-                                                            <div className="role-checkbox-label">
-                                                                <span className="role-checkbox-name">{role.name}</span>
-                                                                <span className="role-checkbox-desc">{role.description}</span>
-                                                            </div>
-                                                        </label>
-                                                    ))}
-                                                </div>
-                                            </div>
+                                            <UserAccountFields
+                                                userData={userData}
+                                                defaultEmail={formData.email}
+                                                passwordError={userPasswordError}
+                                                availableRoles={availableRoles}
+                                                onChange={handleUserChange}
+                                                onToggleRole={handleUserRoleToggle}
+                                            />
                                         </div>
                                     )}
                                 </>
@@ -899,59 +949,14 @@ function PlayerManagement() {
                                                     className="pm-linked-close"
                                                 >×</button>
                                             </div>
-
-                                            <div className="pmd-field">
-                                                <label className="pmd-label">Username *</label>
-                                                <input className="pmd-input"
-                                                    type="text"
-                                                    value={userData.username}
-                                                    onChange={(e) => handleUserChange('username', e.target.value)}
-                                                    required
-                                                />
-                                            </div>
-
-                                            <div className="pmd-field">
-                                                <label className="pmd-label">Email * (defaults to player email)</label>
-                                                <input className="pmd-input"
-                                                    type="email"
-                                                    value={userData.email || formData.email}
-                                                    onChange={(e) => handleUserChange('email', e.target.value)}
-                                                    required
-                                                />
-                                            </div>
-
-                                            <div className="pmd-field">
-                                                <label className="pmd-label">Password *</label>
-                                                <input className="pmd-input"
-                                                    type="password"
-                                                    value={userData.password}
-                                                    onChange={(e) => handleUserChange('password', e.target.value)}
-                                                    required
-                                                />
-                                                {userPasswordError && <div className="pmd-field-error">{userPasswordError}</div>}
-                                                <small className="pmd-hint">
-                                                    Min 8 characters, 1 uppercase, 1 special character, no spaces
-                                                </small>
-                                            </div>
-
-                                            <div className="pmd-field">
-                                                <label className="pmd-label">Roles * (Select at least one)</label>
-                                                <div className="roles-checkbox-grid">
-                                                    {availableRoles.map(role => (
-                                                        <label key={role.name} className="role-checkbox-item">
-                                                            <input className="pmd-checkbox"
-                                                                type="checkbox"
-                                                                checked={userData.roles.includes(role.name)}
-                                                                onChange={() => handleUserRoleToggle(role.name)}
-                                                            />
-                                                            <div className="role-checkbox-label">
-                                                                <span className="role-checkbox-name">{role.name}</span>
-                                                                <span className="role-checkbox-desc">{role.description}</span>
-                                                            </div>
-                                                        </label>
-                                                    ))}
-                                                </div>
-                                            </div>
+                                            <UserAccountFields
+                                                userData={userData}
+                                                defaultEmail={formData.email}
+                                                passwordError={userPasswordError}
+                                                availableRoles={availableRoles}
+                                                onChange={handleUserChange}
+                                                onToggleRole={handleUserRoleToggle}
+                                            />
                                         </div>
                                     )}
                                 </>

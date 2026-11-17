@@ -6,6 +6,36 @@ description: Deploy main branch to production AWS server
 
 This workflow deploys the latest main branch code to the production AWS EC2 server.
 
+## Normally the pipeline does this
+
+Merges to `main` deploy through GitHub Actions: `.github/workflows/deploy-production.yml` waits
+for approval in the `production` environment, then runs `scripts/deploy/deploy.sh` on the box
+through AWS SSM. The script is this runbook automated: it checks for drift, prunes Docker build
+cache if the disk is over 80%, rebuilds only the services whose files changed, one at a time,
+waiting for each to turn healthy, does the frontend last, and never runs `docker compose down`.
+One-time setup is in `docs/deploy-pipeline-setup.md`; until the repository variable
+`PROD_DEPLOY_ENABLED` is `true`, the pipeline does nothing and this runbook is still the way to
+deploy.
+
+The pipeline stops **before pulling anything** and asks for a person when:
+
+| Situation | What to do |
+| --- | --- |
+| The range has files under `database/migrations/` (exit 4) | Apply them by hand as below, **before** any service rebuilds. The failed run prints a ready-made command per file. Then Actions > Deploy production > Run workflow with **migrations applied** ticked, which deploys the rest. |
+| `docker-compose.yml` changed (exit 4) | A compose change can touch any service, postgres included. Deploy that range by hand with the steps below, recreating each affected service on its own. |
+| Tracked files on the box have local edits (exit 3) | Find out where the drift came from, get it into a PR or discard it, then re-run. |
+| `/` still over 90% full after pruning (exit 6) | `docker system df`, free space by hand, re-run. Postgres shares the disk. |
+
+Also still by hand, because the pipeline does not touch the host: changes under `deploy/` (host
+nginx config, the maintenance page; see `deploy/README.md`), and new variables the box's `.env`
+needs (watch for `.env.example` changes; the pipeline warns but cannot fill them in).
+
+If you deploy by hand, set `PROD_DEPLOY_ENABLED` to `false` first so an approved run cannot start
+underneath you (the script also takes a lock on the box), and back to `true` afterwards. On the box,
+`scripts/deploy/deploy.sh --dry-run` prints exactly what the pipeline would do, and running it
+without `--dry-run` over SSH is a fine way to do a by-hand deploy of an ordinary range. Its full
+output is kept in `~/obhl-deploy-logs`.
+
 **Read this first:** the box has 3.7Gi of RAM. Building every service at once has taken
 production down before (a ~1 hour outage on 2026-07-01). A 2Gi swapfile now cushions it, but the
 rule still stands: **only rebuild the services you actually changed**, and if you genuinely need
@@ -78,6 +108,14 @@ Migrations are **not** applied by this workflow. If the pull brought in new file
 ssh -i "C:\Users\Simmo\obhl-key.pem" ubuntu@44.193.17.173 "cd obhl-hockey-league-2.0 && docker exec -i obhl-postgres psql -U obhl_admin -d obhl_db < database/migrations/NNN_description.sql"
 ```
 
+When the pipeline stopped on a migration, nothing has been pulled yet, so the files are not in the
+working tree. Apply them from the fetched commit instead (the failed run prints this line per file,
+with the commit filled in), then re-run the workflow with **migrations applied** ticked:
+
+```bash
+cd ~/obhl-hockey-league-2.0 && git fetch origin main && git show origin/main:database/migrations/NNN_description.sql | docker exec -i obhl-postgres psql -v ON_ERROR_STOP=1 -U obhl_admin -d obhl_db
+```
+
 ## Post-Deployment
 
 - The site is at https://oldbuzzardhockey.com — `http://44.193.17.173` 301s there, so test the
@@ -89,7 +127,13 @@ ssh -i "C:\Users\Simmo\obhl-key.pem" ubuntu@44.193.17.173 "cd obhl-hockey-league
 
 ## If it goes wrong
 
-Roll back to the previous commit and rebuild the same single service:
+With the pipeline on, the clean rollback is a revert PR on `main`: it deploys like any other merge.
+A failed pipeline run says which services it finished; the box remembers where that deploy started,
+so the next run (a re-run, or the fix-forward merge) also rebuilds whatever the failed one skipped.
+
+For an emergency rollback on the box itself, set `PROD_DEPLOY_ENABLED` to `false` first: the next
+approved run would otherwise redeploy `main`, bad commit and all. Then roll back to the previous
+commit and rebuild the same single service:
 
 ```bash
 ssh -i "C:\Users\Simmo\obhl-key.pem" ubuntu@44.193.17.173 "cd obhl-hockey-league-2.0 && git reset --hard HEAD~1 && docker compose up -d --build frontend"
