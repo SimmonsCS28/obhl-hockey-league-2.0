@@ -14,14 +14,15 @@ name: Deploy lint
 on:
   pull_request:
     branches: [main]
+  merge_group:
 
 permissions:
   contents: read
 
 # A new push to the PR replaces the run for the old one.
 concurrency:
-  group: deploy-lint-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: deploy-lint-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   SHELLCHECK_VERSION: v0.11.0

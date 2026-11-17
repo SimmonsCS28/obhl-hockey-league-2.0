@@ -23,7 +23,6 @@ function ScorekeeperDashboard() {
                 api.getSeasons()
             ]);
 
-
             // Get active season
             const activeSeason = seasonsData.find(s => s.isActive) || seasonsData[0];
 

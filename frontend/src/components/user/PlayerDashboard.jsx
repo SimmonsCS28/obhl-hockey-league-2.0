@@ -5,6 +5,7 @@ import api from '../../services/api';
 import TeamBadge from '../common/TeamBadge';
 import PendingShifts from './PendingShifts';
 import { ordinal, sortByStandings } from '../../utils/standings';
+import { fmtGameDate, fmtGameTime } from '../../utils/gameTime';
 import './PlayerDashboard.css'; // Will create this next
 
 const PlayerDashboard = () => {
@@ -70,10 +71,7 @@ const PlayerDashboard = () => {
                 // Fetch data for standings calculation
                 if (data?.team?.seasonId) {
                     try {
-                        const [teamsData] = await Promise.all([
-                            api.getTeams(),
-                            api.getGames(data.team.seasonId)
-                        ]);
+                        const teamsData = await api.getTeams();
 
                         const standings = sortByStandings(
                             teamsData.filter(t => t.seasonId === data.team.seasonId)
@@ -108,26 +106,9 @@ const PlayerDashboard = () => {
 
     const isGM = user?.roles?.includes('GM');
 
-    // gameDate arrives as UTC ISO datetime without 'Z', e.g. '2026-01-10T04:15:00'
-    // Append 'Z' to force UTC parsing, then display in America/Chicago (CST/CDT)
-    const toDate = (dateStr) => {
-        if (!dateStr) return null;
-        // If it already has a timezone offset, use as-is; otherwise treat as UTC
-        const normalized = /[Z+-]\d*$/.test(dateStr) ? dateStr : dateStr + 'Z';
-        return new Date(normalized);
-    };
-
-    const formatTime = (dateStr) => {
-        const d = toDate(dateStr);
-        if (!d || isNaN(d)) return '';
-        return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Chicago' });
-    };
-
-    const formatDate = (dateStr) => {
-        const d = toDate(dateStr);
-        if (!d || isNaN(d)) return '';
-        return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'America/Chicago' });
-    };
+    const formatDate = (dateStr) => fmtGameDate(dateStr, {
+        weekday: 'short', month: 'short', day: 'numeric',
+    });
 
     return (
         <div className="player-dashboard">
@@ -255,7 +236,7 @@ const PlayerDashboard = () => {
                             </div>
                             <div className="game-info-row">
                                 <span className="game-info-label">Time:</span>
-                                <span className="game-info-value">{formatTime(nextGame.gameDate)}</span>
+                                <span className="game-info-value">{fmtGameTime(nextGame.gameDate)}</span>
                             </div>
                             <div className="game-info-row">
                                 <span className="game-info-label">Opponent:</span>
@@ -322,7 +303,7 @@ const PlayerDashboard = () => {
                                 </div>
                                 <div className="game-info-row">
                                     <span className="game-info-label">Time:</span>
-                                    <span className="game-info-value">{formatTime(prevGame.gameDate)}</span>
+                                    <span className="game-info-value">{fmtGameTime(prevGame.gameDate)}</span>
                                 </div>
                                 <div className="game-info-row">
                                     <span className="game-info-label">Opponent:</span>
@@ -398,7 +379,7 @@ const PlayerDashboard = () => {
                                         return (
                                             <tr key={game.id}>
                                                 <td>{formatDate(game.gameDate)}</td>
-                                                <td>{formatTime(game.gameDate)}</td>
+                                                <td>{fmtGameTime(game.gameDate)}</td>
                                                 <td>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                         <TeamBadge

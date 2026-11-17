@@ -12,8 +12,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  group: ci-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   backend:
@@ -68,7 +68,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       # Existing hook dependency warnings remain visible; new warnings fail CI.
-      - run: npm run lint -- --max-warnings 14
+      - run: npm run lint
       - run: npm test
       - run: npm run build
 
@@ -81,27 +81,14 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
-        with:
-          go-version: '1.25'
-          cache: false
-      - name: Install workflow validator
-        run: go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
-      - name: Validate all GitHub workflows
-        run: actionlint -color
       - name: Check whitespace in PR changes
         if: github.event_name == 'pull_request'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: git diff --check "$BASE_SHA...$HEAD_SHA"
-      - name: Run Python helper tests when present
-        run: |
-          if [ -d scripts/tests ]; then
-            python3 -m unittest discover -s scripts/tests -v
-          else
-            echo 'No Python helper suite on this branch yet.' >> "$GITHUB_STEP_SUMMARY"
-          fi
+      - name: Run Python helper tests
+        run: python3 -m unittest discover -s scripts/tests -v
 
   required:
     name: CI / required

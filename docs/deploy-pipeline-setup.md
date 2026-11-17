@@ -234,56 +234,45 @@ gh secret set PROD_SITE_URL --env production
 
 ## 5. Protect `main`
 
-Today anyone with write access can push straight to `main`, and `main` is now what gets deployed.
+For the complete CI/review policy, see [Pull request checks](pull-request-checks.md#required-owner-setup-to-block-merges).
+That guide recommends separate rulesets for mandatory checks and PR review so the owner can bypass
+an impossible self-review without bypassing tests. The classic-rule examples below retain admin
+bypass across the whole rule; admins must still wait for both checks and seek the other maintainer's
+review. Do not enable the last-push approval requirement for this two-maintainer workflow.
 
-Settings > Branches > Add classic branch protection rule, branch name pattern `main`:
+If using classic branch protection instead of the recommended rulesets, configure a rule targeting
+`main` in Settings > Branches with:
 
-- Require a pull request before merging, with **1 required approval**.
-- Dismiss stale pull request approvals when new commits are pushed (recommended).
-- "Do not allow bypassing the above settings": your call. GitHub never counts an author's approval of
-  their own PR, so with it **off** you can still merge your own PRs as an admin when no one else is
-  around to approve; with it **on**, your own changes need Jordan's approval too.
+- One required approving review, code-owner review, stale approval dismissal, and resolved conversations.
+- Both **`CI / required`** and **`deploy-lint`** as required checks, with branches required to be up to date.
+  `deploy-lint` checks deployment shell scripts and all workflows without a PR path filter. GitHub
+  offers a check in the selector after it has run.
+- Force pushes and branch deletion disabled.
+- **Require approval of the most recent reviewable push** off, so the reviewer can approve after
+  helping update a two-maintainer PR.
+- **Do not allow bypassing the above settings** off. SimmonsCS28 alone owns the workflow,
+  deployment-script, CODEOWNERS, and deployment-guide paths. An owner-authored PR cannot satisfy
+  its own code-owner approval, even if LewisJor approves. This requires the admin exception;
+  ordinary changes should still receive the other maintainer's review. Classic protection cannot
+  restrict this exception to review alone, which is why the separate rulesets are preferred.
 
-Force pushes and branch deletion are blocked by default once a rule exists. Or with `gh`:
-
-```bash
-gh api -X PUT repos/SimmonsCS28/obhl-hockey-league-2.0/branches/main/protection --input - <<'EOF'
-{
-  "required_status_checks": null,
-  "enforce_admins": false,
-  "required_pull_request_reviews": { "required_approving_review_count": 1, "dismiss_stale_reviews": true },
-  "restrictions": null
-}
-EOF
-```
-
-### Optional: gate changes to the pipeline itself
-
-Two more settings on the same rule, for when you want them. Neither is on yet.
-
-- **Require status checks to pass**, with the `deploy-lint` check. The Deploy lint workflow
-  (`.github/workflows/deploy-lint.yml`) runs shellcheck on `scripts/deploy/` and actionlint on every
-  workflow, on every PR to `main`. It has no path filter, so requiring it never leaves an unrelated PR
-  waiting on a check that will not run. GitHub only offers the check in the list once it has run on
-  a PR.
-- **Require review from Code Owners.** `.github/CODEOWNERS` names you as the owner of
-  `.github/workflows/`, `scripts/deploy/`, this guide and `CODEOWNERS` itself. With this on, a PR that
-  touches them needs your approval, not just any approval. GitHub does not count an author's own
-  approval, so your own PRs to those paths then go through the admin bypass (which works while
-  "Do not allow bypassing" is off).
-
-The same rule with both turned on (this `PUT` replaces the whole rule):
+The classic equivalent below replaces the whole rule. Inspect and preserve any additional existing
+protections before applying it:
 
 ```bash
 gh api -X PUT repos/SimmonsCS28/obhl-hockey-league-2.0/branches/main/protection --input - <<'EOF'
 {
-  "required_status_checks": { "strict": false, "contexts": ["deploy-lint"] },
+  "required_status_checks": { "strict": true, "contexts": ["CI / required", "deploy-lint"] },
   "enforce_admins": false,
   "required_pull_request_reviews": {
     "required_approving_review_count": 1,
     "dismiss_stale_reviews": true,
-    "require_code_owner_reviews": true
+    "require_code_owner_reviews": true,
+    "require_last_push_approval": false
   },
+  "required_conversation_resolution": true,
+  "allow_force_pushes": false,
+  "allow_deletions": false,
   "restrictions": null
 }
 EOF

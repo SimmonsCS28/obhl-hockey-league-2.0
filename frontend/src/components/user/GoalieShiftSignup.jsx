@@ -48,8 +48,6 @@ const GoalieShiftSignup = () => {
                 return;
             }
 
-
-
             const [gameDaysRes, availabilityRes, assignmentsRes] = await Promise.all([
                 api.get(`/shifts/goalie/game-days?seasonId=${activeSeason.id}`),
                 api.get('/shifts/goalie/my-availability'),

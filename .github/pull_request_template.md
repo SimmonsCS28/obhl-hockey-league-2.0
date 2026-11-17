@@ -13,5 +13,5 @@ Note migrations, configuration changes, and rollback considerations, or state no
 
 ## Before merge
 
-- [ ] `CI / required` passes on the latest change.
+- [ ] `CI / required` and `deploy-lint` pass on the latest change.
 - [ ] Another maintainer has reviewed the PR and conversations are resolved.
