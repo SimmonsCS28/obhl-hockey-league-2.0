@@ -28,3 +28,8 @@ updates:
     groups:
       gradle-minor-patch:
         update-types: [minor, patch]
+    ignore:
+      # jjwt 0.12+ removed the parser API that JwtUtil uses (parserBuilder, setSigningKey,
+      # parseClaimsJws, getBody), so the gateway and stats-service stop compiling.
+      # PR #38 rewrites that code; upgrade jjwt by hand when it re-lands, then drop this.
+      - dependency-name: "io.jsonwebtoken:*"
