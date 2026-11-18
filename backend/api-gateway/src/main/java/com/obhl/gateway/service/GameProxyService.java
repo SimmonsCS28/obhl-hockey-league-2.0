@@ -26,16 +26,6 @@ public class GameProxyService {
     @Value("${game.service.url:http://localhost:8002}")
     private String gameServiceUrl;
 
-    @Value("${internal.service.key}")
-    private String internalServiceKey;
-
-    private HttpHeaders internalHeaders() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("X-Internal-Service-Key", internalServiceKey);
-        return headers;
-    }
-
     /**
      * Get all game days for a season
      */
@@ -125,7 +115,7 @@ public class GameProxyService {
      */
     public void assignReferee(Long gameId, Long userId) {
         String url = gameServiceUrl + "/api/v1/games/" + gameId + "/referee/" + userId;
-        restTemplate.postForEntity(url, new HttpEntity<>(internalHeaders()), Void.class);
+        restTemplate.postForEntity(url, null, Void.class);
     }
 
     /**
@@ -133,7 +123,7 @@ public class GameProxyService {
      */
     public void removeReferee(Long gameId, Long userId) {
         String url = gameServiceUrl + "/api/v1/games/" + gameId + "/referee/" + userId;
-        restTemplate.exchange(url, HttpMethod.DELETE, new HttpEntity<>(internalHeaders()), Void.class);
+        restTemplate.delete(url);
     }
 
     /**
@@ -141,7 +131,7 @@ public class GameProxyService {
      */
     public void assignScorekeeper(Long gameId, Long userId) {
         String url = gameServiceUrl + "/api/v1/games/" + gameId + "/scorekeeper/" + userId;
-        restTemplate.postForEntity(url, new HttpEntity<>(internalHeaders()), Void.class);
+        restTemplate.postForEntity(url, null, Void.class);
     }
 
     /**
@@ -149,7 +139,7 @@ public class GameProxyService {
      */
     public void removeScorekeeper(Long gameId, Long userId) {
         String url = gameServiceUrl + "/api/v1/games/" + gameId + "/scorekeeper/" + userId;
-        restTemplate.exchange(url, HttpMethod.DELETE, new HttpEntity<>(internalHeaders()), Void.class);
+        restTemplate.delete(url);
     }
 
     /**
@@ -180,7 +170,8 @@ public class GameProxyService {
      */
     public void updateGameStaff(Long gameId, Map<String, Object> fields) {
         String url = gameServiceUrl + "/api/v1/games/" + gameId;
-        HttpHeaders headers = internalHeaders();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
         restTemplate.exchange(url, HttpMethod.PATCH, new HttpEntity<>(fields, headers), Void.class);
     }
 }
