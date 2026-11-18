@@ -1,3 +1,9 @@
+# Request review from both maintainers for changes anywhere in the repository.
+#
+# CODEOWNERS uses the LAST matching pattern, so this catch-all must stay first: the
+# deploy paths below override it.
+* @SimmonsCS28 @LewisJor
+
 # These paths decide what runs as root on the production box: the workflows (including
 # the deploy-on-merge one), the deploy script it runs over SSM, and the setup guide for
 # the AWS role and GitHub environment behind it. This file is listed too, so the

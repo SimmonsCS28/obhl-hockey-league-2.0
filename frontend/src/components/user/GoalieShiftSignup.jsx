@@ -16,7 +16,6 @@ const GoalieShiftSignup = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
-    const [seasonId, setSeasonId] = useState(null);
     const [showUnsavedModal, setShowUnsavedModal] = useState(false);
     const [pendingNavigation, setPendingNavigation] = useState(null);
 
@@ -48,10 +47,6 @@ const GoalieShiftSignup = () => {
                 setLoading(false);
                 return;
             }
-
-            setSeasonId(activeSeason.id);
-
-            setSeasonId(activeSeason.id);
 
             const [gameDaysRes, availabilityRes, assignmentsRes] = await Promise.all([
                 api.get(`/shifts/goalie/game-days?seasonId=${activeSeason.id}`),

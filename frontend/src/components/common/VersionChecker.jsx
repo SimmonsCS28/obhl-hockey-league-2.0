@@ -28,6 +28,7 @@ const VersionChecker = ({ interval = 300000 }) => { // Default to 5 minutes
 
     useEffect(() => {
         // Initial check
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- starts an async network check; updates occur after fetch resolves
         checkVersion();
 
         // Set up interval

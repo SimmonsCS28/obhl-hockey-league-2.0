@@ -116,7 +116,7 @@ const ScheduleManager = () => {
             if (activeSeason) {
                 setSelectedSeason(activeSeason.id);
             }
-        } catch (error) {
+        } catch {
             showMessage('error', 'Failed to load seasons');
         }
     };
@@ -125,7 +125,7 @@ const ScheduleManager = () => {
         try {
             const response = await axios.get(`${API_BASE_URL}/teams?seasonId=${seasonId}`);
             setTeams(response.data);
-        } catch (error) {
+        } catch {
             showMessage('error', 'Failed to load teams');
         }
     };
@@ -293,7 +293,7 @@ const ScheduleManager = () => {
 
                     // 2. Create new games
                     for (const game of pendingChanges.addedGames) {
-                        const { id, ...gameData } = game; // Remove temp ID
+                        const { id: _id, ...gameData } = game; // Remove temp ID
                         await axios.post(`${API_BASE_URL}/games`, gameData);
                     }
 

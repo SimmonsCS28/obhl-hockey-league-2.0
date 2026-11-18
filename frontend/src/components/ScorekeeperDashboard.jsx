@@ -6,7 +6,6 @@ import './ScorekeeperDashboard.css';
 
 function ScorekeeperDashboard() {
     const [games, setGames] = useState([]);
-    const [teams, setTeams] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
@@ -23,8 +22,6 @@ function ScorekeeperDashboard() {
                 api.getTeams(),
                 api.getSeasons()
             ]);
-
-            setTeams(teamsData);
 
             // Get active season
             const activeSeason = seasonsData.find(s => s.isActive) || seasonsData[0];

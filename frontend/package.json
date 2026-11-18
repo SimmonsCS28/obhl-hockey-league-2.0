@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node scripts/generate-version.js && vite",
     "build": "node scripts/generate-version.js && vite build",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 14",
+    "test": "node --test tests/*.test.js",
     "preview": "vite preview"
   },
   "dependencies": {

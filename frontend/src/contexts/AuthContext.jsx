@@ -19,6 +19,7 @@ const isTokenExpired = (token) => {
     }
 };
 
+// eslint-disable-next-line react-refresh/only-export-components -- paired context hook is intentionally exported with its provider
 export const useAuth = () => {
     const context = useContext(AuthContext);
     if (!context) {
@@ -40,6 +41,7 @@ export const AuthProvider = ({ children }) => {
         const storedToken = localStorage.getItem('token');
 
         if (storedUser && storedToken && !isTokenExpired(storedToken)) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate the external browser session once before releasing the loading gate
             setUser(JSON.parse(storedUser));
         } else if (storedUser || storedToken) {
             // Stale/expired session — clean up silently (no alert; the user wasn't mid-action).

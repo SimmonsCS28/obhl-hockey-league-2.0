@@ -348,7 +348,7 @@ const api = {
                 method: 'POST',
                 body: JSON.stringify({ playerId, teamId })
             });
-        } catch (error) {
+        } catch {
             console.warn('Penalty validation endpoint failed, falling back to default');
             return {
                 shouldEject: false,
@@ -364,7 +364,7 @@ const api = {
     // PLAYERS API
     // TODO: Add when backend is ready
     // ============================================
-    async getPlayersByGame(gameId) {
+    async getPlayersByGame() {
         // TODO: Implement real API call to get players for a specific game
         // const response = await fetch(`${API_BASE_URL}/games/${gameId}/players`);
         // if (!response.ok) throw new Error('Failed to fetch players');
@@ -374,7 +374,7 @@ const api = {
         return Promise.resolve([]);
     },
 
-    async getPlayersByTeam(teamId) {
+    async getPlayersByTeam() {
         // TODO: Implement real API call to get players for a specific team
         // const response = await fetch(`${API_BASE_URL}/teams/${teamId}/players`);
         // if (!response.ok) throw new Error('Failed to fetch players');
@@ -530,10 +530,6 @@ const api = {
     // ============================================
     async getAllGoalieUnavailability() {
         return request('/shifts/goalie/all-unavailability');
-    },
-
-    async getMyAssignments() {
-        return request('/shifts/goalie/my-assignments');
     },
 
     async getMyShifts() {
