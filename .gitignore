@@ -85,3 +85,11 @@ docs/handoffs/design_bundles/obhl_redesign/
 
 # Uploaded highlight media (local dev; prod uses the highlight_media docker volume)
 backend/api-gateway/media/
+
+# Disposable WS0 validation artifacts
+.obhl-local-security*
+
+# Removed exposed credentials and database export; keep them out of new commits.
+/GM_LOGIN_CREDENTIALS.md
+/login.json
+/prod_backup.sql

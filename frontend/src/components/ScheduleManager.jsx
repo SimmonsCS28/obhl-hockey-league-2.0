@@ -8,8 +8,7 @@ import {
 import './ScheduleManager.css';
 
 const API_BASE_URL = '/api/v1';
-// TODO: Fix API Gateway multipart proxy and use API_BASE_URL for all requests
-const GAME_SERVICE_URL = '/games-api'; // Proxy through Nginx
+// Compatibility alias: host Nginx routes uploads through the gateway's multipart endpoint.
 
 // Bracket fixtures available in each playoff round. A playoff week offers a slot for every team,
 // but only these are actual bracket games — the rest are consolation. Options are always scoped to
@@ -160,8 +159,8 @@ const ScheduleManager = () => {
         formData.append('file', file);
 
         try {
-            // Use GAME_SERVICE_URL directly to bypass API Gateway for file uploads
-            const response = await axios.post(`${GAME_SERVICE_URL}/games/upload-slots`, formData, {
+            // Use the gateway multipart route through the standard API path.
+            const response = await axios.post(`${API_BASE_URL}/games/upload-slots`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' }
             });
             setParsedSlots(response.data);

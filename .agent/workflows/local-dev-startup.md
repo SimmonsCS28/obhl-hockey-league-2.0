@@ -6,6 +6,26 @@ description: Start local development environment — backend services in Docker,
 
 Starts all backend microservices and the database in Docker, then launches the Vite dev server so the frontend has full hot-module-replacement (HMR). The Docker `frontend` container is intentionally excluded — the Vite dev server replaces it locally.
 
+## Required local secrets (before any Compose command)
+
+Copy `.env.example` to `.env` if you do not already have one; preserve existing local values.
+Set **both** `JWT_SECRET` and `INTERNAL_SERVICE_KEY` to different random values. Generate each with:
+
+```bash
+openssl rand -base64 48
+```
+
+The internal key must be at least 32 characters and is shared by all four backends. Gateway, Game,
+and Stats share the same JWT secret. Never use production values locally or commit these secrets.
+Compose loads `.env` automatically and refuses even `up -d postgres` when the required keys are absent.
+Run `docker compose config --quiet` to validate without printing secrets.
+
+For `gradlew bootRun`, `.env` is **not** loaded automatically: export both variables into the shell
+that launches every service. In Windows Command Prompt, set them with `set "JWT_SECRET=..."` and
+`set "INTERNAL_SERVICE_KEY=..."` before running `scripts\start-test-services.bat`. That script checks
+both keys before opening service windows. In Bash, use `export JWT_SECRET=...` and
+`export INTERNAL_SERVICE_KEY=...`. Keep Resend disabled for local testing.
+
 ## Steps
 
 1. Stop any running containers to ensure a clean state
@@ -27,7 +47,7 @@ docker compose -f docker-compose.yml ps
 ```bash
 npm run dev
 ```
-> Run this command inside `e:\projects\obhl-hockey-league-2.0\frontend`
+> Run this command inside the checkout's `frontend/` directory.
 
 5. Verify all backend containers are running
 ```bash

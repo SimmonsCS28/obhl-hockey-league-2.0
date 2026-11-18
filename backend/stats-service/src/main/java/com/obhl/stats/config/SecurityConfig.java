@@ -1,40 +1,42 @@
 package com.obhl.stats.config;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import jakarta.servlet.DispatcherType;
 
-/**
- * Deliberately permissive at the HTTP-authorization layer: stats-service's existing
- * endpoints (jersey updates, player CRUD, stats increments, etc.) have never required
- * auth and several internal callers depend on that (see JwtAuthenticationFilter). This
- * class exists to (a) enable @PreAuthorize method security for the one endpoint that
- * now needs a real role check (GMController#updateSkillRating), and (b) populate the
- * SecurityContext so controllers can read the caller's roles for field-level masking.
- * It is not a general lockdown of the service.
- */
+/** Enforce authorization in the service even when the gateway is bypassed. */
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true)
+@EnableMethodSecurity
 public class SecurityConfig {
-
-    @Autowired
-    private JwtAuthenticationFilter jwtAuthenticationFilter;
-
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(csrf -> csrf.disable())
+    public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationFilter jwtFilter) throws Exception {
+        http.csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
+                .authorizeHttpRequests(auth -> auth
+                        .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/players", "/api/v1/players/**",
+                                "/api/v1/stats/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/gm/**")
+                            .hasAnyRole("ADMIN", "GM", "GOALIE_COORDINATOR", "INTERNAL_SERVICE")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/gm/players/*/jersey").hasAnyRole("ADMIN", "GM")
+                        .requestMatchers(HttpMethod.PATCH, "/api/v1/gm/players/*/skill")
+                            .hasAnyRole("ADMIN", "GM", "GOALIE_COORDINATOR")
+                        .requestMatchers("/api/v1/players", "/api/v1/players/**", "/api/v1/stats/**")
+                            .hasAnyRole("ADMIN", "INTERNAL_SERVICE")
+                        .anyRequest().denyAll())
+                .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, exception) ->
+                        response.sendError(401)))
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 }
