@@ -61,9 +61,13 @@ const RefereeShiftSignup = () => {
         }
     };
 
-    const handleTakeShift = async (gameId) => {
+    const handleTakeShift = async (gameId, slot) => {
         try {
-            await api.takeGameShift('referee', gameId);
+            const updateData = {};
+            if (slot === 1) updateData.referee1Id = user.id;
+            if (slot === 2) updateData.referee2Id = user.id;
+
+            await api.updateGame(gameId, updateData);
             await loadSeasonData(selectedSeason);
         } catch (error) {
             console.error('Failed to take shift:', error);
@@ -71,11 +75,15 @@ const RefereeShiftSignup = () => {
         }
     };
 
-    const handleCancelShift = async (gameId) => {
+    const handleCancelShift = async (gameId, slot) => {
         if (!window.confirm('Are you sure you want to cancel this shift?')) return;
 
         try {
-            await api.cancelGameShift('referee', gameId);
+            const updateData = {};
+            if (slot === 1) updateData.referee1Id = null;
+            if (slot === 2) updateData.referee2Id = null;
+
+            await api.updateGame(gameId, updateData);
             await loadSeasonData(selectedSeason);
         } catch (error) {
             console.error('Failed to cancel shift:', error);

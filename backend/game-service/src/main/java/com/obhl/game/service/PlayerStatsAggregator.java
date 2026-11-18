@@ -29,9 +29,6 @@ public class PlayerStatsAggregator {
     @Value("${stats.service.url:http://localhost:8003/api/v1}")
     private String statsServiceUrl;
 
-    @Value("${internal.service.key}")
-    private String internalServiceKey;
-
     /**
      * Aggregates game events into player stats and updates the stats service
      */
@@ -156,9 +153,7 @@ public class PlayerStatsAggregator {
     private void updatePlayerStats(PlayerStatsUpdateDto stats) {
         try {
             String url = statsServiceUrl + "/stats/players/increment";
-            org.springframework.http.HttpHeaders headers = new org.springframework.http.HttpHeaders();
-            headers.set("X-Internal-Service-Key", internalServiceKey);
-            restTemplate.postForObject(url, new org.springframework.http.HttpEntity<>(stats, headers), Void.class);
+            restTemplate.postForObject(url, stats, Void.class);
             logger.debug("Updated stats for player {}: G:{} A:{} P:{} PM:{}",
                     stats.getPlayerId(), stats.getGoals(), stats.getAssists(),
                     stats.getPoints(), stats.getPenaltyMinutes());

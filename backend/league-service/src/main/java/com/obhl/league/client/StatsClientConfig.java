@@ -18,7 +18,7 @@ import feign.RequestInterceptor;
  */
 public class StatsClientConfig {
 
-    @Value("${internal.service.key}")
+    @Value("${internal.service.key:obhl-internal-service-key-change-in-production}")
     private String internalServiceKey;
 
     @Bean

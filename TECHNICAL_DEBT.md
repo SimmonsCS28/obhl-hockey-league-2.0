@@ -5,38 +5,50 @@ This document tracks known technical debt, workarounds, and future improvements 
 ## 🔴 High Priority
 
 ### 1. API Gateway Multipart File Upload Proxy
-**Status**: Implemented and locally validated in PR #38; production verification pending.
+**Status**: Workaround in place  
+**Issue**: API Gateway's `GameProxyController` cannot properly proxy multipart/form-data requests (file uploads) because it reads the request body as a String, which doesn't work for binary data.
 
-The former direct-service upload workaround is superseded. `GameProxyController` now has an explicit
-multipart schedule-upload endpoint that forwards file bytes and the caller's JWT. `ScheduleManager`
-uses the `/games-api` compatibility alias; the updated host Nginx reference sends that alias through
-the gateway. Browser requests never receive an internal service credential.
+**Current Workaround**: 
+- Frontend calls game-service directly on port 8002 for file uploads
+- `ScheduleManager.jsx` uses `GAME_SERVICE_URL` constant to bypass API Gateway
 
-**Remaining work**:
-- Deploy the gateway before switching live Nginx aliases, following `docs/security-ws0.md`.
-- Smoke-test authorized CSV uploads and denied unauthenticated uploads in the target environment.
-- Preserve the explicit multipart handler: the generic String-body proxy is not a file-upload path.
+**Proper Fix Needed**:
+- Implement a proper multipart proxy in `GameProxyController.java` that forwards the entire request without reading the body
+- Update frontend to use `API_BASE_URL` for all requests
+- Close port 8002 from public access once fixed
 
-**Files affected**:
+**Files Affected**:
 - `backend/api-gateway/src/main/java/com/obhl/gateway/controller/GameProxyController.java`
-- `frontend/src/components/ScheduleManager.jsx`
-- `deploy/oldbuzzardhockey.nginx`
+- `frontend/src/components/ScheduleManager.jsx` (line 7 has TODO comment)
+
+**References**: 
+- See conversation Step 5976 where this workaround was implemented
 
 ---
 
-### 2. Nginx API Routing and Historical Transfer-Encoding Workaround
-**Status**: Gateway routing locally validated in PR #38; live host configuration still requires rollout.
+### 2. Nginx Transfer-Encoding Duplicate Header Issue
+**Status**: Bypassed  
+**Issue**: Nginx returns 502 Bad Gateway when proxying requests to Spring Boot services due to duplicate `Transfer-Encoding: chunked` headers.
 
-Earlier deployment notes reported duplicate Transfer-Encoding headers and worked around them with
-direct service access. They are historical context, not instructions to expose ports or bypass auth.
-The current host Nginx reference proxies `/api/`, `/games-api/`, and `/stats-api/` through the gateway;
-the frontend container's Nginx serves static files. Local authorization checks cover the proxy aliases,
-but do not certify the live host's header behavior or configuration.
+**Current Workaround**:
+- Exposed service ports directly (8000, 8002, 8003) instead of proxying through Nginx
+- Frontend makes direct calls to these ports
+- Nginx only serves static frontend files on port 80
 
-**Remaining work**:
-- Compare `deploy/oldbuzzardhockey.nginx` with the active host configuration; preserve TLS and unrelated settings.
-- Patch the live aliases only after the new gateway and backends are healthy; run `nginx -t` before reloading.
-- Verify both ordinary JSON and multipart responses through the public host. Diagnose any 502s without restoring public service bypasses.
+**Proper Fix Needed**:
+- Investigate why Spring Boot is sending duplicate Transfer-Encoding headers
+- Configure Nginx to properly handle or strip duplicate headers
+- Route all API traffic through Nginx for better security
+
+**Files Affected**:
+- `frontend/nginx.conf`
+- Spring Boot services configuration
+
+**Attempted Fixes** (all failed):
+- Setting `server.compression.enabled=false` in Spring Boot
+- Creating `DuplicateHeaderFilter.java` servlet filter
+- Creating `TomcatConfig.java` to disable chunked encoding
+- Various Nginx proxy settings (`chunked_transfer_encoding off`, `proxy_buffering off`, etc.)
 
 ---
 
@@ -47,9 +59,8 @@ but do not certify the live host's header behavior or configuration.
 **Issue**: Frontend has hardcoded production IP addresses scattered across multiple files instead of using a centralized configuration.
 
 **Current State**:
-- API base paths are still declared in multiple components as well as the shared client.
-- Schedule uploads use `/games-api`; the shared client uses `/api/v1`. Both go through the gateway with the updated host configuration.
-- Inventory any remaining hardcoded origins before declaring URL centralization complete.
+- All localhost URLs have been replaced with production IP `44.193.17.173`
+- Different components use different approaches (some use constants, some hardcode)
 
 **Improvement Needed**:
 - Create a single `config.js` file with environment-based URL configuration
@@ -83,19 +94,21 @@ but do not certify the live host's header behavior or configuration.
 ---
 
 ### 5. Port Exposure Security
-**Status**: Loopback bindings implemented in PR #38; production exposure verification pending.
+**Status**: Functional but not ideal  
+**Issue**: Multiple backend service ports are exposed directly to the internet.
 
-Compose now binds Postgres (5432), all four Java services (8000–8003), and the frontend (8080)
-to `127.0.0.1`. The public entry point is host Nginx, which routes browser API traffic through the
-gateway. Game and Stats independently authorize mutations even if the gateway is bypassed locally.
+**Current Exposed Ports**:
+- 80: Frontend (Nginx) ✅ Necessary
+- 8000: API Gateway ✅ Acceptable
+- 8002: Game Service ⚠️ Should be behind gateway
+- 8003: Stats Service ⚠️ Should be behind gateway
 
-**Remaining work**:
-- Recreate containers with the updated Compose configuration as part of the staged rollout.
-- Verify actual listener addresses and external reachability after deployment; close obsolete firewall/security-group allowances where appropriate.
-- Keep the backend shared credential out of browser configuration and preserve Nginx header stripping.
+**Improvement Needed**:
+- Route all requests through API Gateway (port 8000 only)
+- Close ports 8002 and 8003 from public access
+- Only allow internal Docker network access to individual services
 
-This change does not establish that the live server or AWS security groups already match the repository.
-See `docs/security-ws0.md` for prerequisites, service order, smoke checks, and rollback boundaries.
+**Prerequisite**: Fix #1 (API Gateway multipart proxy) first
 
 ---
 
@@ -176,9 +189,10 @@ depends on them.
 
 ## 📝 Notes
 
-- **Last Updated**: 2026-11-12
+- **Last Updated**: 2026-09-12
 - **Priority Legend**: 🔴 High | 🟡 Medium | 🟢 Low
-- Historical notes recorded production-IP substitution and service-port security-group allowances. Recheck live configuration during rollout; these are not the intended routing model or a current exposure assessment.
+- All hardcoded `localhost` URLs were replaced with production IP on 2026-01-07
+- AWS Security Group configured with ports: 80, 8000, 8002, 8003
 
 ## 🔍 How to Add New Items
 
