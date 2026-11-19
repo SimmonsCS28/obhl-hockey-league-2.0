@@ -52,6 +52,9 @@ dependencies {
 	
 	// HTTP Client for PATCH support
 	implementation 'org.apache.httpcomponents.client5:httpclient5:5.4.1'
+	// Makes the Feign clients use Apache HttpClient 5 too. Without it Spring Cloud OpenFeign
+	// falls back to the JDK HttpURLConnection, which cannot send PATCH (LeagueClient.toggleActive 500'd).
+	implementation 'io.github.openfeign:feign-hc5'
 	
 	// Database
 	runtimeOnly 'org.postgresql:postgresql'

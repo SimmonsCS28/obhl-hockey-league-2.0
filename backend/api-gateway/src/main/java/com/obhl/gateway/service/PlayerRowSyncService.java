@@ -32,9 +32,9 @@ import com.obhl.gateway.dto.PlayerDto;
  * player's save. The card reads the profile first anyway, so a missed fan-out only
  * leaves an admin view slightly stale until the next save.
  *
- * RestTemplate rather than StatsClient because Feign's default client cannot send
- * PATCH (there is no feign-hc5 on the classpath), and stats-service maps this update
- * as PATCH/PUT only.
+ * RestTemplate rather than StatsClient because this predates feign-hc5 on the gateway's
+ * classpath, when Feign's default JDK client could not send PATCH; stats-service maps
+ * this update as PATCH/PUT only.
  */
 @Service
 public class PlayerRowSyncService {
